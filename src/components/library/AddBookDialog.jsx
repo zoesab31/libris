@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     music: "",
     music_artist: "",
     is_shared_reading: false,
+    start_date: "",
+    end_date: "",
   });
 
   const createMutation = useMutation({
@@ -57,7 +60,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const resetForm = () => {
     setStep(1);
     setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "" });
-    setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false });
+    setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
 
   return (
@@ -162,6 +165,33 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+              <Label className="text-sm font-medium">📅 Dates de lecture (important pour le défi annuel !)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="start" className="text-xs">Date de début</Label>
+                  <Input
+                    id="start"
+                    type="date"
+                    value={userBookData.start_date}
+                    onChange={(e) => setUserBookData({...userBookData, start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end" className="text-xs">Date de fin</Label>
+                  <Input
+                    id="end"
+                    type="date"
+                    value={userBookData.end_date}
+                    onChange={(e) => setUserBookData({...userBookData, end_date: e.target.value})}
+                  />
+                </div>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                💡 La date de fin détermine dans quelle année ce livre comptera pour votre objectif
+              </p>
             </div>
 
             {(userBookData.status === "Lu" || userBookData.status === "En cours") && (

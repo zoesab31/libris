@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['readingGoal'] }); // Added this line
       toast.success("Livre mis à jour !");
     },
   });
@@ -215,26 +217,39 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="start">Date de début</Label>
-                <Input
-                  id="start"
-                  type="date"
-                  value={editedData.start_date || ""}
-                  onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                />
+            {/* Start of new/modified "Dates de lecture" section */}
+            <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Dates de lecture (pour le défi annuel)
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="start" className="text-xs">Date de début</Label>
+                  <Input
+                    id="start"
+                    type="date"
+                    value={editedData.start_date || ""}
+                    onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end" className="text-xs">Date de fin</Label>
+                  <Input
+                    id="end"
+                    type="date"
+                    value={editedData.end_date || ""}
+                    onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="end">Date de fin</Label>
-                <Input
-                  id="end"
-                  type="date"
-                  value={editedData.end_date || ""}
-                  onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                />
-              </div>
+              {editedData.status === "Lu" && !editedData.end_date && (
+                <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                  ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
+                </p>
+              )}
             </div>
+            {/* End of new/modified "Dates de lecture" section */}
 
             <Button
               onClick={handleSave}

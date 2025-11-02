@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -119,6 +120,7 @@ export default function Dashboard() {
               currentGoal={readingGoal}
               booksReadThisYear={booksReadThisYear}
               year={currentYear}
+              user={user}
             />
             
             <CurrentlyReading 
