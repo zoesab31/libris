@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import StatsCard from "../components/dashboard/StatsCard";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import CurrentlyReading from "../components/dashboard/CurrentlyReading";
+import ReadingGoalCard from "../components/dashboard/ReadingGoalCard";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const currentYear = new Date().getFullYear();
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -33,8 +35,27 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ReadingComment.list('-created_date', 5),
   });
 
+  const { data: readingGoal } = useQuery({
+    queryKey: ['readingGoal', currentYear],
+    queryFn: async () => {
+      const goals = await base44.entities.ReadingGoal.filter({ 
+        created_by: user?.email,
+        year: currentYear 
+      });
+      return goals[0] || null;
+    },
+    enabled: !!user,
+  });
+
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const readBooks = myBooks.filter(b => b.status === "Lu");
+  
+  const booksReadThisYear = readBooks.filter(b => {
+    if (!b.end_date) return false;
+    const endYear = new Date(b.end_date).getFullYear();
+    return endYear === currentYear;
+  }).length;
+
   const totalPages = readBooks.reduce((sum, userBook) => {
     const book = allBooks.find(b => b.id === userBook.book_id);
     return sum + (book?.page_count || 0);
@@ -94,6 +115,12 @@ export default function Dashboard() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            <ReadingGoalCard 
+              currentGoal={readingGoal}
+              booksReadThisYear={booksReadThisYear}
+              year={currentYear}
+            />
+            
             <CurrentlyReading 
               books={currentlyReading} 
               allBooks={allBooks}
