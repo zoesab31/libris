@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, User, Users, LogOut } from "lucide-react";
+import { BookOpen, Library, Sparkles, User, Users, LogOut, Trophy, BookUser } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -27,6 +27,16 @@ const navigationItems = [
     title: "Ma Bibliothèque",
     url: createPageUrl("MyLibrary"),
     icon: Library,
+  },
+  {
+    title: "Mes Auteurs",
+    url: createPageUrl("Authors"),
+    icon: BookUser,
+  },
+  {
+    title: "Bingo Lecture",
+    url: createPageUrl("Bingo"),
+    icon: Trophy,
   },
   {
     title: "Découvrir",
