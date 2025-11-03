@@ -8,6 +8,7 @@ import NailInspo from './pages/NailInspo';
 import Discover from './pages/Discover';
 import Maps from './pages/Maps';
 import Profile from './pages/Profile';
+import SharedReadings from './pages/SharedReadings';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Discover": Discover,
     "Maps": Maps,
     "Profile": Profile,
+    "SharedReadings": SharedReadings,
 }
 
 export const pagesConfig = {

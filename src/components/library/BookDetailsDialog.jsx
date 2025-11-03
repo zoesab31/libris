@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, MessageSquare, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Star, Music, Calendar, MessageSquare, Plus, Trash2, AlertTriangle, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -20,11 +20,14 @@ const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState(userBook);
+  const [uploading, setUploading] = useState(false);
   const [newComment, setNewComment] = useState({
     comment: "",
     page_number: "",
+    chapter: "",
     mood: "😊",
     is_spoiler: false,
+    photo_url: "",
   });
 
   const { data: customShelves = [] } = useQuery({
@@ -44,8 +47,17 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['readingGoal'] }); // Added this line
+      queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       toast.success("Livre mis à jour !");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => base44.entities.UserBook.delete(userBook.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("Livre supprimé de votre bibliothèque");
+      onOpenChange(false);
     },
   });
 
@@ -58,7 +70,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      setNewComment({ comment: "", page_number: "", mood: "😊", is_spoiler: false });
+      setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
       toast.success("Commentaire ajouté !");
     },
   });
@@ -70,6 +82,23 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       toast.success("Commentaire supprimé");
     },
   });
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      setNewComment({ ...newComment, photo_url: result.file_url });
+      toast.success("Photo uploadée !");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Erreur lors de l'upload de l'image.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -217,7 +246,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               </div>
             </div>
 
-            {/* Start of new/modified "Dates de lecture" section */}
             <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -249,16 +277,29 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 </p>
               )}
             </div>
-            {/* End of new/modified "Dates de lecture" section */}
 
-            <Button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="w-full text-white font-medium"
-              style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
-            >
-              Enregistrer les modifications
-            </Button>
+            <div className="flex justify-between pt-4">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (confirm("Êtes-vous sûre de vouloir supprimer ce livre de votre bibliothèque ?")) {
+                    deleteMutation.mutate();
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+                className="text-white font-medium"
+                style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+              >
+                Enregistrer les modifications
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-4 py-4">
@@ -266,7 +307,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
                 Ajouter un commentaire
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label htmlFor="page">Page / %</Label>
                   <Input
@@ -275,6 +316,15 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     value={newComment.page_number}
                     onChange={(e) => setNewComment({...newComment, page_number: e.target.value})}
                     placeholder="Ex: 150"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="chapter">Chapitre</Label>
+                  <Input
+                    id="chapter"
+                    value={newComment.chapter}
+                    onChange={(e) => setNewComment({...newComment, chapter: e.target.value})}
+                    placeholder="Ex: Ch. 5"
                   />
                 </div>
                 <div>
@@ -304,6 +354,36 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                   rows={3}
                 />
               </div>
+
+              <div>
+                <Label>Photo du moment</Label>
+                <div className="flex gap-3">
+                  <Input
+                    value={newComment.photo_url}
+                    onChange={(e) => setNewComment({...newComment, photo_url: e.target.value})}
+                    placeholder="URL de la photo ou..."
+                  />
+                  <label className="cursor-pointer flex items-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Button type="button" variant="outline" disabled={uploading}>
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    </Button>
+                  </label>
+                </div>
+              </div>
+
+              {newComment.photo_url && (
+                <div className="rounded-xl overflow-hidden">
+                  <img src={newComment.photo_url} alt="Preview" className="w-full h-48 object-cover" />
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Switch
@@ -339,12 +419,18 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       borderColor: 'var(--beige)'
                     }}
                   >
+                    {comment.photo_url && (
+                      <div className="mb-3 rounded-lg overflow-hidden">
+                        <img src={comment.photo_url} alt="Moment de lecture" className="w-full h-48 object-cover" />
+                      </div>
+                    )}
+                    
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">{comment.mood}</span>
                         <div>
                           <p className="text-sm font-medium" style={{ color: 'var(--deep-brown)' }}>
-                            Page {comment.page_number || '?'}
+                            {comment.chapter ? comment.chapter : `Page ${comment.page_number || '?'}`}
                           </p>
                           <p className="text-xs" style={{ color: 'var(--soft-brown)' }}>
                             {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}

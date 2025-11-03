@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users, Edit, MessageSquare } from "lucide-react";
+import { BookOpen, Star, Music, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BookDetailsDialog from "./BookDetailsDialog";
 
 export default function BookGrid({ userBooks, allBooks, customShelves, isLoading }) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
+  const [sortBy, setSortBy] = useState("recent");
 
   if (isLoading) {
     return (
@@ -34,14 +36,46 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
     );
   }
 
+  // Sort books
+  const sortedBooks = [...userBooks].sort((a, b) => {
+    // Always put "En cours" books first
+    if (a.status === "En cours" && b.status !== "En cours") return -1;
+    if (b.status === "En cours" && a.status !== "En cours") return 1;
+    
+    // Then apply the selected sort
+    if (sortBy === "rating") {
+      return (b.rating || 0) - (a.rating || 0);
+    } else if (sortBy === "title") {
+      const bookA = allBooks.find(book => book.id === a.book_id);
+      const bookB = allBooks.find(book => book.id === b.book_id);
+      return (bookA?.title || "").localeCompare(bookB?.title || "");
+    }
+    // Default: recent (updated_date)
+    return new Date(b.updated_date) - new Date(a.updated_date);
+  });
+
   return (
     <>
+      <div className="mb-4 flex justify-end">
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Trier par" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Plus récents</SelectItem>
+            <SelectItem value="rating">Note (meilleure d'abord)</SelectItem>
+            <SelectItem value="title">Titre (A-Z)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {userBooks.map((userBook) => {
+        {sortedBooks.map((userBook) => {
           const book = allBooks.find(b => b.id === userBook.book_id);
           if (!book) return null;
           
           const shelf = customShelves.find(s => s.name === userBook.custom_shelf);
+          const isCurrentlyReading = userBook.status === "En cours";
 
           return (
             <div 
@@ -50,6 +84,12 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
               className="group cursor-pointer"
             >
               <div className="relative mb-3">
+                {isCurrentlyReading && (
+                  <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                    En cours
+                  </div>
+                )}
+                
                 <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
                               transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
                      style={{ backgroundColor: 'var(--beige)' }}>
