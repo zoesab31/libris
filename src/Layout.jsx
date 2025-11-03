@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, User, Users, LogOut, Trophy, BookUser, Quote, Image, Palette } from "lucide-react";
+import { BookOpen, Library, Sparkles, User, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -54,6 +54,11 @@ const navigationItems = [
     icon: Palette,
   },
   {
+    title: "Maps",
+    url: createPageUrl("Maps"),
+    icon: Map,
+  },
+  {
     title: "Découvrir",
     url: createPageUrl("Discover"),
     icon: Sparkles,
@@ -86,14 +91,13 @@ export default function Layout({ children, currentPageName }) {
     <SidebarProvider>
       <style>{`
         :root {
-          --cream: #FFF5F7;
-          --beige: #FFE4E9;
-          --soft-pink: #FFB6C8;
-          --warm-pink: #FF8FAB;
-          --deep-pink: #E75480;
-          --gold: #FFD700;
-          --rose-gold: #F4C2C2;
-          --dark-text: #5C2E3E;
+          --cream: #FBF7F4;
+          --beige: #E8DED2;
+          --soft-brown: #C4A484;
+          --warm-brown: #8B6F47;
+          --deep-brown: #5C4033;
+          --gold: #D4AF37;
+          --rose-gold: #E6C7B8;
         }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
@@ -101,15 +105,15 @@ export default function Layout({ children, currentPageName }) {
           <SidebarHeader className="border-b p-6" style={{ borderColor: 'var(--beige)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
-                   style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}>
+                   style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
+                <h2 className="font-bold text-lg" style={{ color: 'var(--deep-brown)' }}>
                   Nos Livres
                 </h2>
-                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                  Notre bibliothèque partagée 🌸
+                <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                  Notre bibliothèque partagée
                 </p>
               </div>
             </div>
@@ -129,7 +133,7 @@ export default function Layout({ children, currentPageName }) {
                             : 'hover:bg-opacity-50'
                         }`}
                         style={location.pathname === item.url ? {
-                          background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))'
+                          background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))'
                         } : {}}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
@@ -149,14 +153,14 @@ export default function Layout({ children, currentPageName }) {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                       style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--rose-gold))' }}>
+                       style={{ background: 'linear-gradient(135deg, var(--soft-brown), var(--rose-gold))' }}>
                     {user.full_name?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
+                    <p className="font-medium text-sm truncate" style={{ color: 'var(--deep-brown)' }}>
                       {user.full_name || 'Lectrice'}
                     </p>
-                    <p className="text-xs truncate" style={{ color: 'var(--warm-pink)' }}>
+                    <p className="text-xs truncate" style={{ color: 'var(--warm-brown)' }}>
                       {user.email}
                     </p>
                   </div>
@@ -166,7 +170,7 @@ export default function Layout({ children, currentPageName }) {
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                   style={{ 
                     backgroundColor: 'var(--beige)',
-                    color: 'var(--warm-pink)'
+                    color: 'var(--warm-brown)'
                   }}
                 >
                   <LogOut className="w-4 h-4" />
@@ -181,7 +185,7 @@ export default function Layout({ children, currentPageName }) {
           <header className="bg-white border-b px-6 py-4 md:hidden" style={{ borderColor: 'var(--beige)' }}>
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors" />
-              <h1 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-xl font-bold" style={{ color: 'var(--deep-brown)' }}>
                 Nos Livres
               </h1>
             </div>
