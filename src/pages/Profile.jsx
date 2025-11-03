@@ -1,0 +1,134 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Heart, Plus, User } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AddBookBoyfriendDialog from "../components/profile/AddBookBoyfriendDialog";
+import BookBoyfriendCard from "../components/profile/BookBoyfriendCard";
+
+export default function Profile() {
+  const [user, setUser] = useState(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedGender, setSelectedGender] = useState("male");
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: bookBoyfriends = [], isLoading } = useQuery({
+    queryKey: ['bookBoyfriends'],
+    queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: user?.email }, 'rank'),
+    enabled: !!user,
+  });
+
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+  });
+
+  const maleCharacters = bookBoyfriends.filter(bf => !bf.gender || bf.gender === 'male');
+  const femaleCharacters = bookBoyfriends.filter(bf => bf.gender === 'female');
+
+  return (
+    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                 style={{ background: 'linear-gradient(135deg, var(--rose-gold), var(--gold))' }}>
+              <Heart className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+                Mes Personnages Préférés 💕
+              </h1>
+              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+                {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} adoré{bookBoyfriends.length > 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            className="shadow-lg text-white font-medium px-6 rounded-xl"
+            style={{ background: 'linear-gradient(135deg, var(--rose-gold), var(--gold))' }}>
+            <Plus className="w-5 h-5 mr-2" />
+            Ajouter un personnage
+          </Button>
+        </div>
+
+        <Tabs value={selectedGender} onValueChange={setSelectedGender}>
+          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8">
+            <TabsTrigger value="male" className="data-[state=active]:text-white rounded-lg">
+              Personnages masculins ({maleCharacters.length})
+            </TabsTrigger>
+            <TabsTrigger value="female" className="data-[state=active]:text-white rounded-lg">
+              Personnages féminins ({femaleCharacters.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="male">
+            {maleCharacters.length > 0 ? (
+              <div className="space-y-4">
+                {maleCharacters.map((character) => {
+                  const book = allBooks.find(b => b.id === character.book_id);
+                  return (
+                    <BookBoyfriendCard 
+                      key={character.id} 
+                      character={character} 
+                      book={book}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--rose-gold)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+                  Aucun personnage masculin
+                </h3>
+                <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+                  Ajoutez vos book boyfriends préférés
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="female">
+            {femaleCharacters.length > 0 ? (
+              <div className="space-y-4">
+                {femaleCharacters.map((character) => {
+                  const book = allBooks.find(b => b.id === character.book_id);
+                  return (
+                    <BookBoyfriendCard 
+                      key={character.id} 
+                      character={character} 
+                      book={book}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--rose-gold)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+                  Aucun personnage féminin
+                </h3>
+                <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+                  Ajoutez vos personnages féminins préférés
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <AddBookBoyfriendDialog 
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          books={allBooks}
+          existingCharacters={bookBoyfriends}
+        />
+      </div>
+    </div>
+  );
+}

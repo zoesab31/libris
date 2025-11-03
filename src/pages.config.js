@@ -7,6 +7,7 @@ import FanArt from './pages/FanArt';
 import NailInspo from './pages/NailInspo';
 import Discover from './pages/Discover';
 import Maps from './pages/Maps';
+import Profile from './pages/Profile';
 import Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "NailInspo": NailInspo,
     "Discover": Discover,
     "Maps": Maps,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {
