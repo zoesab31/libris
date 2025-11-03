@@ -5,6 +5,8 @@ import Authors from './pages/Authors';
 import Quotes from './pages/Quotes';
 import FanArt from './pages/FanArt';
 import NailInspo from './pages/NailInspo';
+import Discover from './pages/Discover';
+import Maps from './pages/Maps';
 import Layout from './Layout.jsx';
 
 
@@ -16,6 +18,8 @@ export const PAGES = {
     "Quotes": Quotes,
     "FanArt": FanArt,
     "NailInspo": NailInspo,
+    "Discover": Discover,
+    "Maps": Maps,
 }
 
 export const pagesConfig = {
