@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -5,13 +6,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("library");
+  const [shelfFilter, setShelfFilter] = useState("all");
+  const [showSharedReadings, setShowSharedReadings] = useState(false);
+  const [sharedReadingTab, setSharedReadingTab] = useState("in_progress");
   
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
@@ -88,6 +98,16 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'characters',
   });
 
+  const { data: sharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadingsWithFriend', userEmail],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const myReadings = await base44.entities.SharedReading.filter({ created_by: currentUser.email });
+      return myReadings.filter(sr => sr.participants?.includes(userEmail));
+    },
+    enabled: !!currentUser && !!userEmail,
+  });
+
   const readBooks = userBooks.filter(b => b.status === "Lu");
   const totalPages = readBooks.reduce((sum, ub) => {
     const book = allBooks.find(b => b.id === ub.book_id);
@@ -121,6 +141,18 @@ export default function UserProfile() {
   const secondaryColor = isOwnProfile ? 'var(--warm-pink)' : '#A78BFA';
   const displayName = friendName || profileUser.display_name || profileUser.full_name || userEmail?.split('@')[0] || 'Amie';
 
+  // Filter books by shelf
+  const filteredBooks = shelfFilter === "all" 
+    ? userBooks 
+    : userBooks.filter(ub => ub.custom_shelf === shelfFilter);
+
+  // Group shared readings by status
+  const inProgressReadings = sharedReadings.filter(sr => sr.status === "En cours");
+  const upcomingReadings = sharedReadings.filter(sr => sr.status === "À venir");
+  const completedReadings = sharedReadings.filter(sr => sr.status === "Terminée");
+
+  const totalSharedReadings = sharedReadings.length;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       {/* Header with banner */}
@@ -136,22 +168,30 @@ export default function UserProfile() {
       {/* Profile info */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-20">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-end mb-8">
-          <div className="w-40 h-40 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-white">
+          {/* Large centered profile picture */}
+          <div className="w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-white bg-white mx-auto md:mx-0"
+               style={{ 
+                 boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                 transition: 'transform 0.2s'
+               }}
+               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
             {profileUser.profile_picture ? (
               <img 
                 src={profileUser.profile_picture} 
                 alt={displayName} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
+                style={{ aspectRatio: '1 / 1' }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
+              <div className="w-full h-full flex items-center justify-center text-6xl md:text-7xl font-bold text-white"
                    style={{ backgroundColor: accentColor }}>
                 {displayName[0]?.toUpperCase() || 'A'}
               </div>
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 text-center md:text-left">
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {displayName}
             </h1>
@@ -160,7 +200,7 @@ export default function UserProfile() {
             </p>
 
             {!isOwnProfile && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-center md:justify-start flex-wrap">
                 <Button
                   onClick={handleChat}
                   className="text-white font-medium"
@@ -173,12 +213,26 @@ export default function UserProfile() {
                   <Users className="w-4 h-4 mr-2" />
                   Amie
                 </Button>
+                <Button 
+                  variant="outline" 
+                  style={{ borderColor: accentColor, color: accentColor }}
+                  onClick={() => setShowSharedReadings(true)}
+                >
+                  <UsersRound className="w-4 h-4 mr-2" />
+                  Lectures communes
+                  {totalSharedReadings > 0 && (
+                    <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                          style={{ backgroundColor: accentColor }}>
+                      {totalSharedReadings}
+                    </span>
+                  )}
+                </Button>
               </div>
             )}
           </div>
 
           {/* Stats */}
-          <div className="flex gap-6">
+          <div className="flex gap-6 mx-auto md:mx-0">
             <div className="text-center">
               <p className="text-3xl font-bold" style={{ color: accentColor }}>
                 {readBooks.length}
@@ -244,8 +298,43 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="library">
+            {/* Shelf filters */}
+            {userCustomShelves.length > 0 && (
+              <div className="mb-6 flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setShelfFilter("all")}
+                  className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: shelfFilter === "all" ? accentColor : 'white',
+                    color: shelfFilter === "all" ? 'white' : accentColor,
+                    border: `2px solid ${accentColor}`
+                  }}
+                >
+                  Tous ({userBooks.length})
+                </button>
+                {userCustomShelves.map(shelf => {
+                  const count = userBooks.filter(b => b.custom_shelf === shelf.name).length;
+                  return (
+                    <button
+                      key={shelf.id}
+                      onClick={() => setShelfFilter(shelf.name)}
+                      className="px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2"
+                      style={{
+                        backgroundColor: shelfFilter === shelf.name ? accentColor : 'white',
+                        color: shelfFilter === shelf.name ? 'white' : accentColor,
+                        border: `2px solid ${accentColor}`
+                      }}
+                    >
+                      <span>{shelf.icon}</span>
+                      {shelf.name} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="grid md:grid-cols-4 gap-4">
-              {userBooks.map(ub => {
+              {filteredBooks.map(ub => {
                 const book = allBooks.find(b => b.id === ub.book_id);
                 const shelf = ub.custom_shelf ? userCustomShelves.find(s => s.name === ub.custom_shelf) : null;
                 
@@ -280,10 +369,12 @@ export default function UserProfile() {
                 );
               })}
             </div>
-            {userBooks.length === 0 && (
+            {filteredBooks.length === 0 && (
               <div className="text-center py-12">
                 <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <p style={{ color: 'var(--warm-pink)' }}>Aucun livre dans la bibliothèque</p>
+                <p style={{ color: 'var(--warm-pink)' }}>
+                  {shelfFilter === "all" ? "Aucun livre dans la bibliothèque" : `Aucun livre dans "${shelfFilter}"`}
+                </p>
               </div>
             )}
           </TabsContent>
@@ -407,6 +498,128 @@ export default function UserProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Shared Readings Sheet */}
+      <Sheet open={showSharedReadings} onOpenChange={setShowSharedReadings}>
+        <SheetContent side="right" className="w-full sm:w-[540px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Lectures communes avec {displayName}</SheetTitle>
+          </SheetHeader>
+
+          <Tabs value={sharedReadingTab} onValueChange={setSharedReadingTab} className="mt-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="in_progress">En cours ({inProgressReadings.length})</TabsTrigger>
+              <TabsTrigger value="upcoming">À venir ({upcomingReadings.length})</TabsTrigger>
+              <TabsTrigger value="completed">Terminées ({completedReadings.length})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="in_progress" className="space-y-4 mt-4">
+              {inProgressReadings.map(sr => {
+                const book = allBooks.find(b => b.id === sr.book_id);
+                return (
+                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
+                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
+                    <div className="flex gap-3">
+                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book?.cover_url && (
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                          {sr.title}
+                        </h3>
+                        <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                          {book?.title}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(createPageUrl("Chat"));
+                          }}>
+                            <MessageCircle className="w-3 h-3 mr-1" />
+                            Chat
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {inProgressReadings.length === 0 && (
+                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
+                  Aucune lecture en cours
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="upcoming" className="space-y-4 mt-4">
+              {upcomingReadings.map(sr => {
+                const book = allBooks.find(b => b.id === sr.book_id);
+                return (
+                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
+                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
+                    <div className="flex gap-3">
+                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book?.cover_url && (
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                          {sr.title}
+                        </h3>
+                        <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                          {book?.title}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {upcomingReadings.length === 0 && (
+                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
+                  Aucune lecture à venir
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="space-y-4 mt-4">
+              {completedReadings.map(sr => {
+                const book = allBooks.find(b => b.id === sr.book_id);
+                return (
+                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
+                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
+                    <div className="flex gap-3">
+                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book?.cover_url && (
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                          {sr.title}
+                        </h3>
+                        <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                          {book?.title}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {completedReadings.length === 0 && (
+                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
+                  Aucune lecture terminée
+                </p>
+              )}
+            </TabsContent>
+          </Tabs>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
