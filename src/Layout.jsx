@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -162,20 +163,26 @@ export default function Layout({ children, currentPageName }) {
           <SidebarFooter className="border-t p-4" style={{ borderColor: 'var(--beige)' }}>
             {user && (
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                       style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
-                    {user.full_name?.[0]?.toUpperCase() || 'U'}
+                <Link to={createPageUrl("AccountSettings")}>
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-opacity-10 hover:bg-pink-500 transition-colors cursor-pointer">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
+                         style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
+                      {user.profile_picture ? (
+                        <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        user.full_name?.[0]?.toUpperCase() || 'U'
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
+                        {user.full_name || 'Lectrice'}
+                      </p>
+                      <p className="text-xs truncate font-medium" style={{ color: 'var(--deep-pink)' }}>
+                        {user.email}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
-                      {user.full_name || 'Lectrice'}
-                    </p>
-                    <p className="text-xs truncate font-medium" style={{ color: 'var(--deep-pink)' }}>
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"

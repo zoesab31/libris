@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Added Tabs imports
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Edit } from "lucide-react"; // Added Sparkles, Plus, BookOpen, Edit
+import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain", 
@@ -20,13 +20,13 @@ const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 
 export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("discover"); // New state for tabs
-  const [searchQuery, setSearchQuery] = useState(""); // New state for search input
-  const [aiResults, setAiResults] = useState([]); // New state for AI search results
-  const [isSearching, setIsSearching] = useState(false); // New state for search loading
-  const [editingCover, setEditingCover] = useState(null); // New state for inline cover editing
+  const [activeTab, setActiveTab] = useState("discover");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [aiResults, setAiResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [editingCover, setEditingCover] = useState(null);
 
-  const [step, setStep] = useState(1); // Existing step for manual addition
+  const [step, setStep] = useState(1);
   const [bookData, setBookData] = useState({
     title: "",
     author: "",
@@ -70,7 +70,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   publication_year: { type: "number" },
                   cover_url: { type: "string" }
                 },
-                required: ["title", "author", "synopsis", "genre", "cover_url"] // Ensure required fields
+                required: ["title", "author", "synopsis", "genre", "cover_url"]
               }
             }
           },
@@ -95,28 +95,17 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         author: book.author,
         synopsis: book.synopsis,
         genre: book.genre,
-        // publication_year: book.publication_year, // Removed as it's not a direct field in existing bookData
+        // publication_year: book.publication_year,
         cover_url: book.cover_url,
       });
       await base44.entities.UserBook.create({
         book_id: createdBook.id,
-        status: "À lire", // Default status when adding from AI
+        status: "À lire",
       });
-      
-      // Add points logic
-      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-      if (existingPoints.length > 0) {
-        await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-          total_points: (existingPoints[0].total_points || 0) + 10
-        });
-      } else {
-        await base44.entities.ReadingPoints.create({ total_points: 10, points_spent: 0, created_by: user.email }); // Ensure created_by is set
-      }
       
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      toast.success("Livre ajouté à votre bibliothèque ! +10 points 🌟");
+      toast.success("Livre ajouté à votre bibliothèque !");
       onOpenChange(false);
       resetForm();
     } catch (error) {
@@ -133,22 +122,11 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         book_id: book.id,
         rating: userBookData.rating ? parseFloat(userBookData.rating) : undefined,
       });
-      
-      // Add points logic for manual creation
-      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-      if (existingPoints.length > 0) {
-        await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-          total_points: (existingPoints[0].total_points || 0) + 10
-        });
-      } else {
-        await base44.entities.ReadingPoints.create({ total_points: 10, points_spent: 0, created_by: user.email }); // Ensure created_by is set
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] }); // Invalidate reading points
-      toast.success("Livre ajouté à votre bibliothèque ! +10 points 🌟");
+      toast.success("Livre ajouté à votre bibliothèque !");
       onOpenChange(false);
       resetForm();
     },
@@ -160,10 +138,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   const resetForm = () => {
     setStep(1);
-    setActiveTab("discover"); // Reset active tab
-    setSearchQuery(""); // Reset search query
-    setAiResults([]); // Reset AI results
-    setEditingCover(null); // Reset cover editing state
+    setActiveTab("discover");
+    setSearchQuery("");
+    setAiResults([]);
+    setEditingCover(null);
     setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "" });
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
@@ -179,7 +157,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto"> {/* Max width changed to 5xl */}
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
             📚 Ajouter un livre
@@ -277,11 +255,11 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   </div>
                   <Button
                     onClick={() => createFromAI(book)}
-                    className="w-full text-white text-sm mt-auto" // mt-auto pushes button to bottom
+                    className="w-full text-white text-sm mt-auto"
                     style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Ajouter (+10 pts)
+                    Ajouter
                   </Button>
                 </div>
               ))}
@@ -505,7 +483,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                         Ajout...
                       </>
                     ) : (
-                      "Ajouter à ma bibliothèque (+10 pts)"
+                      "Ajouter à ma bibliothèque"
                     )}
                   </Button>
                 </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ export default function Maps() {
     return acc;
   }, {});
 
-  const categories = ["À la maison", "Au parc", "Au café", "En voiture", "Autre"];
+  const categories = ["À la maison", "Au parc", "Au café", "Salle de sport", "En voiture", "Autre"];
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export default function LocationCard({ location, book }) {
     "À la maison": "🏠",
     "Au parc": "🌳",
     "Au café": "☕",
+    "Salle de sport": "🏋️",
     "En voiture": "🚗",
     "Autre": "📍"
   };
@@ -82,6 +84,21 @@ export default function LocationCard({ location, book }) {
           </p>
         )}
       </CardContent>
+
+      {location.google_maps_url && (
+        <div className="px-4 pb-4">
+          <Button
+            asChild
+            variant="outline"
+            className="w-full"
+            style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
+          >
+            <a href={location.google_maps_url} target="_blank" rel="noopener noreferrer">
+              🗺️ Voir sur Google Maps
+            </a>
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }
