@@ -25,6 +25,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const [aiResults, setAiResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [editingCover, setEditingCover] = useState(null);
+  const [selectedBooks, setSelectedBooks] = useState([]); // New state for multiple selections
 
   const [step, setStep] = useState(1);
   const [bookData, setBookData] = useState({
@@ -127,6 +128,35 @@ RÈGLES ABSOLUES :
     }
   };
 
+  const createMultipleFromAI = async () => {
+    try {
+      for (const book of selectedBooks) {
+        const createdBook = await base44.entities.Book.create({
+          title: book.title,
+          author: book.author,
+          synopsis: book.synopsis,
+          genre: book.genre,
+          publication_year: book.publication_year,
+          isbn: book.isbn !== "unknown" ? book.isbn : undefined,
+          cover_url: book.cover_url || "",
+        });
+        await base44.entities.UserBook.create({
+          book_id: createdBook.id,
+          status: "À lire",
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success(`${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ajouté${selectedBooks.length > 1 ? 's' : ''} !`);
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating books from AI results:", error);
+      toast.error("Erreur lors de l'ajout des livres.");
+    }
+  };
+
   const createFromAI = async (book) => {
     try {
       const createdBook = await base44.entities.Book.create({
@@ -186,6 +216,7 @@ RÈGLES ABSOLUES :
     setSearchQuery("");
     setAiResults([]);
     setEditingCover(null);
+    setSelectedBooks([]); // Clear selected books on reset
     setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "", tags: [] });
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
@@ -205,6 +236,15 @@ RÈGLES ABSOLUES :
     setAiResults(updated);
     setEditingCover(null);
     toast.success("Couverture mise à jour !");
+  };
+
+  const toggleBookSelection = (book) => {
+    const isSelected = selectedBooks.some(b => b.title === book.title && b.author === book.author);
+    if (isSelected) {
+      setSelectedBooks(selectedBooks.filter(b => !(b.title === book.title && b.author === book.author)));
+    } else {
+      setSelectedBooks([...selectedBooks, book]);
+    }
   };
 
   return (
@@ -253,88 +293,136 @@ RÈGLES ABSOLUES :
               </Button>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-              {aiResults.map((book, idx) => (
-                <div key={idx} className="p-4 rounded-xl border-2 transition-all hover:shadow-lg flex flex-col"
-                     style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
-                  <div className="flex gap-3 mb-3 flex-grow">
-                    <div className="relative group flex-shrink-0">
-                      <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book.cover_url ? (
-                          <img
-                            src={book.cover_url}
-                            alt={book.title}
-                            className="w-full h-full object-cover"
-                            onError={() => handleImageError(idx)}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-8 h-8" style={{ color: 'var(--deep-pink)' }} />
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute -top-1 -right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setEditingCover(idx)}
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      {editingCover === idx && (
-                        <div className="absolute inset-0 bg-black/90 p-1 flex flex-col gap-1 rounded-lg z-10">
-                          <Input
-                            placeholder="URL couverture"
-                            defaultValue={book.cover_url}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                updateCoverUrl(idx, e.currentTarget.value);
-                              }
-                            }}
-                            className="text-xs h-6 bg-white text-black"
-                          />
-                          <Button
-                            size="sm"
-                            className="h-5 text-xs bg-white text-black hover:bg-gray-100"
-                            onClick={() => {
-                              const input = document.querySelector('input[placeholder="URL couverture"]');
-                              if (input) updateCoverUrl(idx, input.value);
-                            }}
-                          >
-                            OK
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: 'var(--dark-text)' }}>
-                        {book.title}
-                      </h4>
-                      <p className="text-xs font-medium mb-1" style={{ color: 'var(--deep-pink)' }}>
-                        {book.author}
-                      </p>
-                      {book.isbn && book.isbn !== "unknown" && (
-                        <p className="text-[10px] mb-1 font-mono" style={{ color: 'var(--warm-pink)' }}>
-                          ISBN: {book.isbn}
-                        </p>
-                      )}
-                      <p className="text-xs line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                        {book.synopsis}
-                      </p>
-                    </div>
-                  </div>
+            {selectedBooks.length > 0 && (
+              <div className="flex items-center justify-between p-4 rounded-xl"
+                   style={{ backgroundColor: 'var(--cream)', borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--deep-pink)' }}>
+                <span className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                  {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2">
                   <Button
-                    onClick={() => createFromAI(book)}
-                    className="w-full text-white text-sm mt-auto"
+                    variant="outline"
+                    onClick={() => setSelectedBooks([])}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={createMultipleFromAI}
+                    className="text-white"
                     style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Ajouter
+                    Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
                   </Button>
                 </div>
-              ))}
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+              {aiResults.map((book, idx) => {
+                const isSelected = selectedBooks.some(b => b.title === book.title && b.author === book.author);
+
+                return (
+                  <div key={idx}
+                       className={`p-4 rounded-xl border-2 transition-all hover:shadow-lg flex flex-col ${
+                         isSelected ? 'shadow-lg' : ''
+                       }`}
+                       style={{
+                         backgroundColor: 'white',
+                         borderColor: isSelected ? 'var(--deep-pink)' : 'var(--soft-pink)'
+                       }}>
+                    <div className="flex gap-3 mb-3 flex-grow">
+                      <div className="relative group flex-shrink-0">
+                        <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {book.cover_url ? (
+                            <img
+                              src={book.cover_url}
+                              alt={book.title}
+                              className="w-full h-full object-cover"
+                              onError={() => handleImageError(idx)}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <BookOpen className="w-8 h-8" style={{ color: 'var(--deep-pink)' }} />
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="absolute -top-1 -right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => setEditingCover(idx)}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        {editingCover === idx && (
+                          <div className="absolute inset-0 bg-black/90 p-1 flex flex-col gap-1 rounded-lg z-10">
+                            <Input
+                              placeholder="URL couverture"
+                              defaultValue={book.cover_url}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateCoverUrl(idx, e.currentTarget.value);
+                                }
+                              }}
+                              className="text-xs h-6 bg-white text-black"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-5 text-xs bg-white text-black hover:bg-gray-100"
+                              onClick={() => {
+                                const input = document.querySelector('input[placeholder="URL couverture"]');
+                                if (input) updateCoverUrl(idx, input.value);
+                              }}
+                            >
+                              OK
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </h4>
+                        <p className="text-xs font-medium mb-1" style={{ color: 'var(--deep-pink)' }}>
+                          {book.author}
+                        </p>
+                        {book.isbn && book.isbn !== "unknown" && (
+                          <p className="text-[10px] mb-1 font-mono" style={{ color: 'var(--warm-pink)' }}>
+                            ISBN: {book.isbn}
+                          </p>
+                        )}
+                        <p className="text-xs line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                          {book.synopsis}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => toggleBookSelection(book)}
+                        variant={isSelected ? "default" : "outline"}
+                        className="flex-1 text-sm"
+                        style={isSelected ? {
+                          background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                          color: 'white'
+                        } : {}}
+                      >
+                        {isSelected ? '✓ Sélectionné' : 'Sélectionner'}
+                      </Button>
+                      <Button
+                        onClick={() => createFromAI(book)}
+                        variant="outline"
+                        size="icon"
+                        className="text-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
               {aiResults.length === 0 && searchQuery.trim() && !isSearching && (
                 <p className="col-span-full text-center text-gray-500">
                   Aucun résultat trouvé pour "{searchQuery}".

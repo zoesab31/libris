@@ -56,7 +56,13 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       const oldStatus = userBook.status;
       const newStatus = data.status;
       
+      // Update the UserBook
       await base44.entities.UserBook.update(userBook.id, data);
+      
+      // Also update the Book entity tags if they changed
+      if (data.tags !== undefined) {
+        await base44.entities.Book.update(book.id, { tags: data.tags });
+      }
       
       // Award points when marking as "Lu"
       if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
@@ -73,6 +79,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       toast.success("Livre mis à jour !");
@@ -223,7 +230,24 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   };
 
+  const toggleServicePress = () => {
+    const currentTags = book.tags || [];
+    const hasTag = currentTags.includes("Service Press");
+    
+    const newTags = hasTag 
+      ? currentTags.filter(t => t !== "Service Press")
+      : [...currentTags, "Service Press"];
+    
+    updateMutation.mutate({
+      ...editedData,
+      tags: newTags,
+      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+    });
+  };
+
   if (!book) return null;
+
+  const isServicePress = book.tags?.includes("Service Press");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -244,6 +268,36 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 py-4">
+            {userBook.status === "À lire" && (
+              <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
+                   style={{ 
+                     backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
+                     borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
+                   }}
+                   onClick={toggleServicePress}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📬</span>
+                    <div>
+                      <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
+                        Service Press
+                      </p>
+                      <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
+                        Marquer ce livre comme prioritaire
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`w-12 h-6 rounded-full transition-all ${
+                    isServicePress ? 'bg-white' : 'bg-gray-300'
+                  }`}>
+                    <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
+                      isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
+                    }`} />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-6">
               <div className="relative">
                 <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
