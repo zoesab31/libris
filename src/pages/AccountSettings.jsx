@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle } from "lucide-react";
+import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle, Download } from "lucide-react"; // Added Download
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -33,6 +33,8 @@ export default function AccountSettings() {
     profile_picture: "",
     theme: "light",
   });
+  const [deferredPrompt, setDeferredPrompt] = useState(null); // New state
+  const [isInstalled, setIsInstalled] = useState(false); // New state
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -46,6 +48,23 @@ export default function AccountSettings() {
         theme: u.theme || "light",
       });
     }).catch(() => {});
+
+    // Check if app is installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    // Handle install prompt
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const handleFileSelect = (e) => {
@@ -75,6 +94,26 @@ export default function AccountSettings() {
       setUploading(false);
       setSelectedImage(null);
     }
+  };
+
+  // New function for PWA installation
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      toast.info("L'installation n'est pas disponible sur ce navigateur");
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      toast.success("✅ Application installée avec succès !");
+      setIsInstalled(true);
+    } else {
+      toast.info("Installation annulée");
+    }
+
+    setDeferredPrompt(null);
   };
 
   const updateMutation = useMutation({
@@ -164,6 +203,73 @@ export default function AccountSettings() {
             </p>
           </div>
         </div>
+
+        {/* Install App Card */}
+        {!isInstalled && deferredPrompt && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2"
+               style={{ borderColor: 'var(--soft-pink)' }}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                <Download className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  📱 Installer l'application
+                </h3>
+                <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                  Installez Nos Livres sur votre téléphone ou ordinateur pour un accès rapide et une expérience optimale !
+                </p>
+                <div className="space-y-2 text-xs mb-4" style={{ color: 'var(--dark-text)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">✨</span>
+                    <span>Accès instantané depuis votre écran d'accueil</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🔔</span>
+                    <span>Notifications pour ne rien manquer</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📴</span>
+                    <span>Fonctionne même hors ligne</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🚀</span>
+                    <span>Plus rapide et plus fluide</span>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleInstallApp}
+                  className="w-full text-white font-medium py-6"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Installer l'application
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isInstalled && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2"
+               style={{ borderColor: 'var(--beige)' }}>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                   style={{ backgroundColor: 'var(--cream)' }}>
+                <CheckCircle2 className="w-7 h-7" style={{ color: 'var(--deep-pink)' }} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                  ✅ Application installée
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  Vous utilisez déjà l'application installée !
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <div className="space-y-6">
