@@ -104,8 +104,12 @@ export default function Dashboard() {
     return sum + (book?.page_count || 0);
   }, 0);
   const sharedReadings = myBooks.filter(b => b.is_shared_reading);
-  const avgRating = readBooks.length > 0 
-    ? (readBooks.reduce((sum, b => sum + (b.rating || 0), 0) / readBooks.filter(b => b.rating).length).toFixed(1)
+  
+  // Calculate average rating: filter for books that have a rating (not null/undefined)
+  // then sum their ratings and divide by the count of such books.
+  const ratedBooks = readBooks.filter(b => b.rating !== undefined && b.rating !== null);
+  const avgRating = ratedBooks.length > 0 
+    ? (ratedBooks.reduce((sum, b) => sum + b.rating, 0) / ratedBooks.length).toFixed(1)
     : 0;
 
   // Combine my comments and friends comments
