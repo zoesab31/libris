@@ -1,13 +1,57 @@
 
 import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users } from "lucide-react";
+import { BookOpen, Star, Music, Users, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import BookDetailsDialog from "./BookDetailsDialog";
 
-export default function BookGrid({ userBooks, allBooks, customShelves, isLoading }) {
+export default function BookGrid({ userBooks, allBooks, customShelves, isLoading, selectionMode, selectedBooks, onSelectionChange, onExitSelectionMode }) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
+  const queryClient = useQueryClient();
+
+  const deleteMultipleMutation = useMutation({
+    mutationFn: async (bookIds) => {
+      for (const bookId of bookIds) {
+        const userBook = userBooks.find(ub => ub.id === bookId);
+        if (!userBook) continue;
+
+        const book = allBooks.find(b => b.id === userBook.book_id);
+        if (!book) continue;
+
+        // Delete associated data
+        const relatedComments = await base44.entities.ReadingComment.filter({ user_book_id: userBook.id });
+        await Promise.all(relatedComments.map(c => base44.entities.ReadingComment.delete(c.id)));
+
+        // Delete user book
+        await base44.entities.UserBook.delete(userBook.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      toast.success(`${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} supprimé${selectedBooks.length > 1 ? 's' : ''}`);
+      onExitSelectionMode();
+    },
+    onError: (error) => {
+      console.error("Error deleting books:", error);
+      toast.error("Erreur lors de la suppression des livres.");
+    }
+  });
+
+  const toggleBookSelection = (bookId) => {
+    if (selectedBooks.includes(bookId)) {
+      onSelectionChange(selectedBooks.filter(id => id !== bookId));
+    } else {
+      onSelectionChange([...selectedBooks, bookId]);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,20 +110,59 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
     return new Date(b.updated_date) - new Date(a.updated_date);
   });
 
+  // Handle delete when selection mode and books selected
+  React.useEffect(() => {
+    if (selectionMode && selectedBooks.length > 0) {
+      // Listen for delete confirmation (triggered by parent component)
+      const handleKeyPress = (e) => {
+        if (e.key === 'Delete' && selectedBooks.length > 0) {
+          if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+            deleteMultipleMutation.mutate(selectedBooks);
+          }
+        }
+      };
+      window.addEventListener('keydown', handleKeyPress);
+      return () => window.removeEventListener('keydown', handleKeyPress);
+    }
+  }, [selectionMode, selectedBooks, deleteMultipleMutation]);
+
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Trier par" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Plus récents</SelectItem>
-            <SelectItem value="rating">Note (meilleure d'abord)</SelectItem>
-            <SelectItem value="title">Titre (A-Z)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {!selectionMode && (
+        <div className="mb-4 flex justify-end">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Plus récents</SelectItem>
+              <SelectItem value="rating">Note (meilleure d'abord)</SelectItem>
+              <SelectItem value="title">Titre (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {selectionMode && selectedBooks.length > 0 && (
+        <div className="mb-4 p-4 rounded-xl flex items-center justify-between" 
+             style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
+          <span className="font-bold">
+            {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => {
+              if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+                deleteMultipleMutation.mutate(selectedBooks);
+              }
+            }}
+            disabled={deleteMultipleMutation.isPending}
+            className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+          >
+            {deleteMultipleMutation.isPending ? "Suppression..." : "Supprimer"}
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {sortedBooks.map((userBook) => {
@@ -89,13 +172,34 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
           const shelf = customShelves.find(s => s.name === userBook.custom_shelf);
           const isCurrentlyReading = userBook.status === "En cours";
           const isServicePress = book.tags?.includes("Service Press");
+          const isSelected = selectedBooks.includes(userBook.id);
 
           return (
             <div 
               key={userBook.id}
-              onClick={() => setSelectedUserBook(userBook)}
-              className="group cursor-pointer"
+              onClick={() => {
+                if (selectionMode) {
+                  toggleBookSelection(userBook.id);
+                } else {
+                  setSelectedUserBook(userBook);
+                }
+              }}
+              className={`group cursor-pointer relative ${
+                selectionMode && isSelected ? 'ring-4 ring-pink-500' : ''
+              }`}
             >
+              {selectionMode && (
+                <div className="absolute -top-2 -right-2 z-20">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all ${
+                    isSelected 
+                      ? 'bg-gradient-to-br from-pink-500 to-pink-600 scale-110' 
+                      : 'bg-white border-2 border-gray-300'
+                  }`}>
+                    {isSelected && <Check className="w-5 h-5 text-white" />}
+                  </div>
+                </div>
+              )}
+
               <div className="relative mb-3">
                 {isCurrentlyReading && (
                   <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
@@ -175,7 +279,7 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
         })}
       </div>
 
-      {selectedUserBook && (
+      {selectedUserBook && !selectionMode && (
         <BookDetailsDialog
           userBook={selectedUserBook}
           book={allBooks.find(b => b.id === selectedUserBook.book_id)}
