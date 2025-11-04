@@ -34,7 +34,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     genre: "",
     page_count: "",
     synopsis: "",
-    tags: [], // Added tags
+    tags: [],
   });
   const [userBookData, setUserBookData] = useState({
     status: "À lire",
@@ -47,15 +47,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
   });
 
-  // Function to construct OpenLibrary cover URL from ISBN
-  const getOpenLibraryCover = (isbn) => {
-    if (!isbn) return null;
-    // Remove any dashes or spaces from ISBN
-    const cleanIsbn = isbn.replace(/[-\s]/g, '');
-    return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`;
-  };
-
-  // Function to search books using AI with better cover handling
+  // Function to search books using AI with DIRECT cover URL fetching
   const searchBooks = async () => {
     if (!searchQuery.trim()) return;
 
@@ -64,32 +56,43 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Recherche de livres pour : "${searchQuery}"
 
-IMPORTANT - ISBN OBLIGATOIRE :
-Tu DOIS retourner l'ISBN-13 (ou ISBN-10 si ISBN-13 indisponible) pour CHAQUE livre.
-L'ISBN est CRUCIAL pour afficher les couvertures.
+MISSION CRITIQUE : Tu DOIS fournir une URL de couverture FONCTIONNELLE pour chaque livre.
 
-Format de réponse pour chaque livre :
+MÉTHODE OBLIGATOIRE :
+1. Cherche le livre sur Google Images, Goodreads, Babelio, Amazon
+2. Trouve l'URL DIRECTE de l'image de couverture (pas un lien vers une page)
+3. Vérifie que l'URL se termine par .jpg, .jpeg, .png ou .webp
+4. Retourne cette URL COMPLÈTE dans cover_url
+
+SOURCES RECOMMANDÉES (dans l'ordre) :
+1. **Babelio** : https://www.babelio.com/ - Cherche le livre et copie l'URL de la couverture
+2. **Goodreads** : Les URLs ressemblent à https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/...
+3. **Amazon** : https://m.media-amazon.com/images/I/[ID].jpg
+4. **OpenLibrary** : https://covers.openlibrary.org/b/isbn/[ISBN]-L.jpg (si tu as l'ISBN)
+
+EXEMPLE D'URL VALIDE :
+✅ https://images-na.ssl-images-amazon.com/images/I/51234567890.jpg
+✅ https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1234567890/12345678.jpg
+✅ https://covers.openlibrary.org/b/isbn/9782290233832-L.jpg
+❌ https://www.amazon.fr/dp/B08XYZ (pas une image directe)
+❌ https://www.babelio.com/livres/... (pas une image directe)
+
+Pour chaque livre, retourne :
 {
-  "title": "Titre exact du livre",
+  "title": "Titre EXACT du livre",
   "author": "Nom complet de l'auteur",
-  "isbn": "ISBN-13 ou ISBN-10 (OBLIGATOIRE - cherche bien !)",
+  "isbn": "ISBN si disponible (optionnel)",
   "synopsis": "Résumé en 2-3 lignes",
   "genre": "Genre parmi: Romance, Fantasy, Thriller, Policier, Science-Fiction, Contemporain, Historique, Young Adult, New Adult, Dystopie, Paranormal, Autre",
-  "publication_year": année de publication
+  "publication_year": année,
+  "cover_url": "URL DIRECTE ET COMPLÈTE de l'image (OBLIGATOIRE)"
 }
 
 RÈGLES ABSOLUES :
-✅ L'ISBN est OBLIGATOIRE - cherche-le sur Google, OpenLibrary, Goodreads, Amazon
-✅ Privilégie l'ISBN-13 (13 chiffres)
-✅ Si tu trouves seulement l'ISBN-10 (10 chiffres), retourne-le
-✅ Si vraiment AUCUN ISBN n'existe (très rare), mets "unknown"
-✅ Retourne 6-8 suggestions pertinentes
-✅ Assure-toi que le titre et l'auteur sont EXACTS
-
-Exemples d'ISBN valides :
-- ISBN-13: 9782290233832
-- ISBN-10: 2290233838
-- Format avec tirets: 978-2-290-23383-2 (acceptable aussi)`,
+✅ cover_url doit être une URL complète et directe vers une IMAGE
+✅ cover_url doit commencer par "http://" ou "https://"
+✅ cover_url ne doit JAMAIS être vide
+✅ Retourne 6-8 suggestions pertinentes`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -104,9 +107,10 @@ Exemples d'ISBN valides :
                   synopsis: { type: "string" },
                   genre: { type: "string" },
                   publication_year: { type: "number" },
-                  isbn: { type: "string" }
+                  isbn: { type: "string" }, // Optional now
+                  cover_url: { type: "string" }
                 },
-                required: ["title", "author", "synopsis", "genre", "isbn"]
+                required: ["title", "author", "synopsis", "genre", "cover_url"]
               }
             }
           },
@@ -114,15 +118,7 @@ Exemples d'ISBN valides :
         }
       });
 
-      // Process results and generate cover URLs from ISBN
-      const booksWithCovers = (result.books || []).map(book => ({
-        ...book,
-        cover_url: book.isbn && book.isbn !== "unknown"
-          ? getOpenLibraryCover(book.isbn)
-          : ""
-      }));
-
-      setAiResults(booksWithCovers);
+      setAiResults(result.books || []);
     } catch (error) {
       console.error("Error searching books with AI:", error);
       toast.error("Erreur lors de la recherche de livres. Veuillez réessayer.");
@@ -194,28 +190,12 @@ Exemples d'ISBN valides :
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
 
-  // Improved handleImageError to try fallback
+  // Simple handleImageError - just clear the URL
   const handleImageError = (idx) => {
     const updated = [...aiResults];
-    const book = updated[idx];
-
-    // If cover failed and we have ISBN, try alternative format
-    if (book.isbn && book.isbn !== "unknown") {
-      const cleanIsbn = book.isbn.replace(/[-\s]/g, '');
-      // Try medium size instead of large
-      const alternativeUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
-
-      // Only try the alternative if it's not already the current one to avoid infinite loop
-      if (book.cover_url !== alternativeUrl) {
-        updated[idx].cover_url = alternativeUrl;
-        setAiResults(updated);
-        return;
-      }
-    }
-
-    // If all fails, clear the URL
     updated[idx].cover_url = "";
     setAiResults(updated);
+    toast.error("Impossible de charger cette couverture. Vous pouvez modifier l'URL manuellement.");
   };
 
   // Function to update cover URL for AI results inline
