@@ -21,26 +21,48 @@ export default function UserProfile() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  // Redirect to own profile if no email provided or if it's current user's email
+  // Redirect to own profile if no email provided
   useEffect(() => {
-    if (!userEmail || (currentUser && userEmail === currentUser.email)) {
+    if (!userEmail) {
       navigate(createPageUrl("Profile"));
     }
-  }, [userEmail, currentUser, navigate]);
+  }, [userEmail, navigate]);
 
-  const { data: allUsers = [], isLoading: loadingUser } = useQuery({
-    queryKey: ['allUsers'],
+  // Get friendship data to get friend's name
+  const { data: friendships = [], isLoading: loadingFriendship } = useQuery({
+    queryKey: ['friendships', userEmail],
     queryFn: async () => {
-      return base44.entities.User.list();
+      if (!currentUser) return [];
+      // Get friendships where this user is the friend
+      const asCreator = await base44.entities.Friendship.filter({ 
+        created_by: currentUser.email,
+        friend_email: userEmail,
+        status: "Acceptée"
+      });
+      // Get friendships where current user is the friend
+      const asFriend = await base44.entities.Friendship.filter({
+        created_by: userEmail,
+        friend_email: currentUser.email,
+        status: "Acceptée"
+      });
+      return [...asCreator, ...asFriend];
     },
+    enabled: !!currentUser && !!userEmail,
   });
 
-  const profileUser = allUsers.find(u => u.email === userEmail);
+  const friendship = friendships[0];
+  
+  // Build profile user object from friendship data
+  const profileUser = friendship ? {
+    email: userEmail,
+    full_name: friendship.friend_email === userEmail ? friendship.friend_name : currentUser?.full_name,
+    display_name: friendship.friend_email === userEmail ? friendship.friend_name : currentUser?.display_name,
+  } : null;
 
   const { data: userBooks = [] } = useQuery({
     queryKey: ['userBooks', userEmail],
     queryFn: () => base44.entities.UserBook.filter({ created_by: userEmail }),
-    enabled: !!userEmail,
+    enabled: !!userEmail && !!profileUser,
   });
 
   const { data: allBooks = [] } = useQuery({
@@ -51,32 +73,19 @@ export default function UserProfile() {
   const { data: userQuotes = [] } = useQuery({
     queryKey: ['userQuotes', userEmail],
     queryFn: () => base44.entities.Quote.filter({ created_by: userEmail }, '-created_date'),
-    enabled: !!userEmail && activeTab === 'quotes',
+    enabled: !!userEmail && activeTab === 'quotes' && !!profileUser,
   });
 
   const { data: userFanArts = [] } = useQuery({
     queryKey: ['userFanArts', userEmail],
     queryFn: () => base44.entities.FanArt.filter({ created_by: userEmail }),
-    enabled: !!userEmail && activeTab === 'fanart',
+    enabled: !!userEmail && activeTab === 'fanart' && !!profileUser,
   });
 
   const { data: userCharacters = [] } = useQuery({
     queryKey: ['userCharacters', userEmail],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: userEmail }, 'rank'),
-    enabled: !!userEmail && activeTab === 'characters',
-  });
-
-  const { data: isFriend } = useQuery({
-    queryKey: ['isFriend', userEmail],
-    queryFn: async () => {
-      const friendships = await base44.entities.Friendship.filter({
-        created_by: currentUser?.email,
-        friend_email: userEmail,
-        status: "Acceptée"
-      });
-      return friendships.length > 0;
-    },
-    enabled: !!currentUser && !!userEmail && currentUser?.email !== userEmail,
+    enabled: !!userEmail && activeTab === 'characters' && !!profileUser,
   });
 
   const readBooks = userBooks.filter(b => b.status === "Lu");
@@ -89,7 +98,7 @@ export default function UserProfile() {
     navigate(createPageUrl("Chat"));
   };
 
-  if (loadingUser) {
+  if (loadingFriendship) {
     return (
       <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
         <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -112,7 +121,7 @@ export default function UserProfile() {
             Profil introuvable
           </h2>
           <p className="mb-6" style={{ color: 'var(--warm-pink)' }}>
-            Cet utilisateur n'existe pas ou n'est pas accessible
+            Cette personne n'est pas dans votre liste d'amies ou le profil n'existe pas
           </p>
           <Button
             onClick={() => navigate(createPageUrl("Friends"))}
@@ -148,14 +157,10 @@ export default function UserProfile() {
       <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-20">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-end mb-8">
           <div className="w-40 h-40 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-white">
-            {profileUser.profile_picture ? (
-              <img src={profileUser.profile_picture} alt={profileUser.full_name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
-                   style={{ backgroundColor: accentColor }}>
-                {profileUser.full_name?.[0]?.toUpperCase() || 'U'}
-              </div>
-            )}
+            <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
+                 style={{ backgroundColor: accentColor }}>
+              {profileUser.full_name?.[0]?.toUpperCase() || profileUser.email?.[0]?.toUpperCase() || 'U'}
+            </div>
           </div>
 
           <div className="flex-1">
@@ -176,12 +181,10 @@ export default function UserProfile() {
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Chat
                 </Button>
-                {isFriend && (
-                  <Button variant="outline" style={{ borderColor: accentColor, color: accentColor }}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Amie
-                  </Button>
-                )}
+                <Button variant="outline" style={{ borderColor: accentColor, color: accentColor }}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Amie
+                </Button>
               </div>
             )}
           </div>
