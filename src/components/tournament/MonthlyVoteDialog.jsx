@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,12 +5,15 @@ import { BookOpen, Star } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useUser } from '@/hooks/useUser'; // Assuming a useUser hook exists to get the current user
 
 export default function MonthlyVoteDialog({ month, monthName, year, books, currentVote, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [selectedBookId, setSelectedBookId] = useState(currentVote?.book_id || "");
-  const { user } = useUser(); // Get the current user from context or a hook
+  const [user, setUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
 
   const voteMutation = useMutation({
     mutationFn: async (bookId) => {
@@ -25,25 +27,19 @@ export default function MonthlyVoteDialog({ month, monthName, year, books, curre
         });
         
         // Award 10 points for voting
-        // Assuming 'created_by' is the field for user identification (e.g., email)
         const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user?.email });
         if (existingPoints.length > 0) {
           await base44.entities.ReadingPoints.update(existingPoints[0].id, {
             total_points: (existingPoints[0].total_points || 0) + 10
           });
         } else {
-          // If no existing points, create a new entry for the user
-          await base44.entities.ReadingPoints.create({ 
-            total_points: 10, 
-            points_spent: 0, 
-            created_by: user?.email // Link points to the user
-          });
+          await base44.entities.ReadingPoints.create({ total_points: 10, points_spent: 0 });
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monthlyVotes'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] }); // Invalidate reading points query
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       toast.success(`Vote enregistré pour ${monthName} ! ${!currentVote ? '+10 points 🌟' : ''}`);
       onOpenChange(false);
     },
