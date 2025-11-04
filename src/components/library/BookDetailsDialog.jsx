@@ -21,6 +21,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState(userBook);
   const [uploading, setUploading] = useState(false);
+  const [editingCover, setEditingCover] = useState(false);
+  const [newCoverUrl, setNewCoverUrl] = useState("");
   const [newComment, setNewComment] = useState({
     comment: "",
     page_number: "",
@@ -56,6 +58,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       toast.success("Livre mis à jour !");
     },
+  });
+
+  const updateBookCoverMutation = useMutation({
+    mutationFn: (coverUrl) => base44.entities.Book.update(book.id, { cover_url: coverUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks as it might display book details
+      setEditingCover(false);
+      setNewCoverUrl("");
+      toast.success("Couverture mise à jour !");
+    },
+    onError: (error) => {
+        console.error("Error updating book cover:", error);
+        toast.error("Erreur lors de la mise à jour de la couverture.");
+    }
   });
 
   const deleteMutation = useMutation({
@@ -176,91 +193,133 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
           <TabsContent value="details" className="space-y-4 py-4">
             <div className="flex gap-6">
-              <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
-                   style={{ backgroundColor: 'var(--beige)' }}>
-                {book.cover_url ? (
-                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Star className="w-12 h-12" style={{ color: 'var(--warm-brown)' }} />
-                  </div>
-                )}
+              <div className="relative">
+                <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
+                     style={{ backgroundColor: 'var(--beige)' }}>
+                  {book.cover_url ? (
+                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Star className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                    </div>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                  onClick={() => setEditingCover(!editingCover)}
+                >
+                  Changer la couverture
+                </Button>
               </div>
 
-              <div className="flex-1 space-y-4">
-                <div>
-                  <Label htmlFor="status">Statut</Label>
-                  <Select 
-                    value={editedData.status} 
-                    onValueChange={(value) => setEditedData({...editedData, status: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {editingCover && (
+                <div className="flex-1 space-y-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                  <Label>Nouvelle URL de couverture</Label>
+                  <Input
+                    value={newCoverUrl}
+                    onChange={(e) => setNewCoverUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingCover(false);
+                        setNewCoverUrl("");
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
+                      disabled={!newCoverUrl || updateBookCoverMutation.isPending}
+                      className="text-white"
+                      style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}
+                    >
+                      Enregistrer
+                    </Button>
+                  </div>
                 </div>
+              )}
 
-                {customShelves.length > 0 && (
+              {!editingCover && (
+                <div className="flex-1 space-y-4">
                   <div>
-                    <Label htmlFor="shelf">Étagère personnalisée</Label>
+                    <Label htmlFor="status">Statut</Label>
                     <Select 
-                      value={editedData.custom_shelf || ""} 
-                      onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                      value={editedData.status} 
+                      onValueChange={(value) => setEditedData({...editedData, status: value})}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Aucune" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={null}>Aucune</SelectItem>
-                        {customShelves.map(s => (
-                          <SelectItem key={s.id} value={s.name}>
-                            {s.icon} {s.name}
-                          </SelectItem>
+                        {STATUSES.map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="rating">Note (sur 5)</Label>
-                    <Input
-                      id="rating"
-                      type="number"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={editedData.rating || ""}
-                      onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
-                    />
+                  {customShelves.length > 0 && (
+                    <div>
+                      <Label htmlFor="shelf">Étagère personnalisée</Label>
+                      <Select 
+                        value={editedData.custom_shelf || ""} 
+                        onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Aucune" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={null}>Aucune</SelectItem>
+                          {customShelves.map(s => (
+                            <SelectItem key={s.id} value={s.name}>
+                              {s.icon} {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="rating">Note (sur 5)</Label>
+                      <Input
+                        id="rating"
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.5"
+                        value={editedData.rating || ""}
+                        onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="character">Personnage préféré</Label>
+                      <Input
+                        id="character"
+                        value={editedData.favorite_character || ""}
+                        onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                        placeholder="Book boyfriend..."
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="character">Personnage préféré</Label>
-                    <Input
-                      id="character"
-                      value={editedData.favorite_character || ""}
-                      onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                      placeholder="Book boyfriend..."
+
+                  <div className="flex items-center justify-between p-3 rounded-lg" 
+                       style={{ backgroundColor: 'var(--cream)' }}>
+                    <Label htmlFor="shared">Lecture commune</Label>
+                    <Switch
+                      id="shared"
+                      checked={editedData.is_shared_reading}
+                      onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
                     />
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg" 
-                     style={{ backgroundColor: 'var(--cream)' }}>
-                  <Label htmlFor="shared">Lecture commune</Label>
-                  <Switch
-                    id="shared"
-                    checked={editedData.is_shared_reading}
-                    onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             <div>

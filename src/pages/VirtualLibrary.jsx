@@ -131,6 +131,14 @@ export default function VirtualLibrary() {
     },
   });
 
+  const updateBookColorMutation = useMutation({
+    mutationFn: ({ bookId, color }) => base44.entities.UserBook.update(bookId, { book_color: color }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
+      toast.success("Couleur enregistrée !");
+    },
+  });
+
   const availablePoints = (points?.total_points || 0) - (points?.points_spent || 0);
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
@@ -156,6 +164,11 @@ export default function VirtualLibrary() {
     // Logic for positioning will be added
     setDraggedBook(null);
     setDraggedDecor(null);
+  };
+
+  const handleColorChange = (userBookId, color) => {
+    setBookColors({...bookColors, [userBookId]: color});
+    updateBookColorMutation.mutate({ bookId: userBookId, color });
   };
 
   return (
@@ -213,37 +226,37 @@ export default function VirtualLibrary() {
               <div className="space-y-6">
                 {Array(shelves).fill(0).map((_, shelfNum) => (
                   <div key={shelfNum} className="relative">
-                    <div className="h-40 rounded-lg shadow-lg flex items-end p-4 gap-1 overflow-x-auto"
+                    <div className="h-48 rounded-lg shadow-lg flex items-end p-4 gap-2 overflow-x-auto"
                          style={{ backgroundColor: '#8B4513' }}>
                       {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
-                        const bookColor = bookColors[userBook.id] || "#FFB3D9";
+                        const bookColor = userBook.book_color || bookColors[userBook.id] || "#FFB3D9";
                         
                         return (
                           <div key={userBook.id || idx} 
                                draggable
                                onDragStart={(e) => handleDragStart(e, userBook, 'book')}
-                               className="w-12 h-32 rounded-sm shadow-md transform hover:scale-105 transition-transform flex flex-col items-center justify-center p-1 flex-shrink-0 cursor-move relative group"
+                               className="w-16 h-40 rounded-sm shadow-md transform hover:scale-105 transition-transform flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group"
                                style={{ backgroundColor: bookColor }}>
                             {/* Vertical text on book spine */}
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="transform -rotate-90 whitespace-nowrap">
-                                <p className="text-[8px] font-bold text-white leading-tight line-clamp-1">
+                                <p className="text-[10px] font-bold text-white leading-tight line-clamp-1 mb-1">
                                   {book?.title || 'Livre'}
                                 </p>
-                                <p className="text-[6px] text-white opacity-80 text-center">
+                                <p className="text-[8px] text-white opacity-90 text-center">
                                   {book?.author || ''}
                                 </p>
                               </div>
                             </div>
                             
                             {/* Color picker on hover */}
-                            <div className="absolute -top-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white p-2 rounded-lg shadow-xl">
                               <input 
                                 type="color" 
                                 value={bookColor}
-                                onChange={(e) => setBookColors({...bookColors, [userBook.id]: e.target.value})}
-                                className="w-8 h-8 rounded cursor-pointer"
+                                onChange={(e) => handleColorChange(userBook.id, e.target.value)}
+                                className="w-12 h-12 rounded cursor-pointer border-2 border-gray-300"
                               />
                             </div>
                           </div>

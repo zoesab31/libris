@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,21 +7,37 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddFanArtDialog({ open, onOpenChange, books, existingFolders }) {
   const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [fanArtData, setFanArtData] = useState({
-    folder_name: "",
-    book_id: "",
     image_url: "",
+    book_id: "",
     artist_name: "",
     source_url: "",
+    folder_name: "",
     note: "",
   });
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooksForFanArt', user?.email],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Filter to only show books that user has in their library
+  const availableBooks = books.filter(book => 
+    myBooks.some(ub => ub.book_id === book.id)
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FanArt.create(data),
@@ -28,7 +45,7 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
       toast.success("Fan art ajouté !");
       onOpenChange(false);
-      setFanArtData({ folder_name: "", book_id: "", image_url: "", artist_name: "", source_url: "", note: "" });
+      setFanArtData({ image_url: "", book_id: "", artist_name: "", source_url: "", folder_name: "", note: "" });
     },
   });
 
@@ -50,7 +67,7 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
             🎨 Ajouter un fan art
@@ -87,9 +104,9 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
                 <SelectValue placeholder="Optionnel" />
               </SelectTrigger>
               <SelectContent>
-                {books.map((book) => (
+                {availableBooks.map((book) => (
                   <SelectItem key={book.id} value={book.id}>
-                    {book.title} - {book.author}
+                    {book.title}
                   </SelectItem>
                 ))}
               </SelectContent>

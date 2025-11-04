@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddBookBoyfriendDialog({ open, onOpenChange, books, existingCharacters }) {
   const queryClient = useQueryClient();
+  const [user, setUser] = React.useState(null);
   const [uploading, setUploading] = useState(false);
   const [characterData, setCharacterData] = useState({
     character_name: "",
@@ -23,20 +25,35 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
     image_url: "",
   });
 
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooksForCharacters'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Filter to only show books that user has in their library
+  const availableBooks = books.filter(book =>
+    myBooks.some(ub => ub.book_id === book.id)
+  );
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.BookBoyfriend.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookBoyfriends'] });
       toast.success("Personnage ajouté !");
       onOpenChange(false);
-      setCharacterData({ 
-        character_name: "", 
-        book_id: "", 
+      setCharacterData({
+        character_name: "",
+        book_id: "",
         rank: existingCharacters.length + 1,
         gender: "male",
-        why_i_love_him: "", 
-        best_quote: "", 
-        image_url: "" 
+        why_i_love_him: "",
+        best_quote: "",
+        image_url: ""
       });
     },
   });
@@ -85,7 +102,7 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
-                  {books.map((book) => (
+                  {availableBooks.map((book) => (
                     <SelectItem key={book.id} value={book.id}>
                       {book.title}
                     </SelectItem>

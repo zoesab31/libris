@@ -7,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddLocationDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
+  const [user, setUser] = React.useState(null);
   const [uploading, setUploading] = useState(false);
   const [locationData, setLocationData] = useState({
     location_name: "",
@@ -23,6 +24,21 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
     note: "",
     google_maps_url: "", // Added new field
   });
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooksForLocations'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Filter to only show books that user has in their library
+  const availableBooks = books.filter(book => 
+    myBooks.some(ub => ub.book_id === book.id)
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ReadingLocation.create(data),
@@ -149,7 +165,7 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
                   <SelectValue placeholder="Optionnel" />
                 </SelectTrigger>
                 <SelectContent>
-                  {books.map((book) => (
+                  {availableBooks.map((book) => (
                     <SelectItem key={book.id} value={book.id}>
                       {book.title}
                     </SelectItem>

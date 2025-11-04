@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
+  const [user, setUser] = React.useState(null);
   const [readingData, setReadingData] = useState({
     title: "",
     book_id: "",
@@ -20,6 +22,25 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
     status: "À venir",
     participants: [],
   });
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {
+      // Handle error if user is not logged in or session expired
+      // For this context, we can just keep user as null.
+      console.error("Failed to fetch user data.");
+    });
+  }, []);
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooksForSharedReading'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Filter to only show books that user has in their library
+  const availableBooks = books.filter(book => 
+    myBooks.some(ub => ub.book_id === book.id)
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.SharedReading.create(data),
@@ -37,6 +58,9 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
         participants: [],
       });
     },
+    onError: (error) => {
+        toast.error("Échec de la création de la lecture commune: " + error.message);
+    }
   });
 
   return (
@@ -66,7 +90,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
                 <SelectValue placeholder="Sélectionner un livre" />
               </SelectTrigger>
               <SelectContent>
-                {books.map((book) => (
+                {availableBooks.map((book) => (
                   <SelectItem key={book.id} value={book.id}>
                     {book.title} - {book.author}
                   </SelectItem>

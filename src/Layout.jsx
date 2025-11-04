@@ -104,12 +104,12 @@ export default function Layout({ children, currentPageName }) {
         :root {
           --cream: #FFF0F5;
           --beige: #FFD6E8;
-          --soft-pink: #FF69B4; /* Updated value */
-          --warm-pink: #FF1493; /* Updated value */
-          --deep-pink: #C71585; /* Updated value */
+          --soft-pink: #FF1493; /* Updated value */
+          --warm-pink: #C71585; /* Updated value */
+          --deep-pink: #8B008B; /* Updated value */
           --gold: #FFD700;
           --rose-gold: #F4C2C2;
-          --dark-text: #8B0052;
+          --dark-text: #4B0082; /* Updated value */
         }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
