@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -189,37 +190,57 @@ export default function VirtualLibrary() {
                             onDragStart={(e) => handleDragStart(e, userBook.id)}
                             onDragOver={(e) => handleDragOver(e, globalIndex)}
                             onDrop={(e) => handleDrop(e, globalIndex)}
-                            className={`w-16 h-[180px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-pointer relative ${
+                            className={`w-16 h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
                               dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
                             }`}
                             style={{ 
                               backgroundColor: bookColor,
                               opacity: draggedBookId === userBook.id ? 0.5 : 1,
-                              zIndex: isColorPickerOpen ? 50 : 10
+                              zIndex: isColorPickerOpen ? 50 : 10,
+                              padding: '12px 0'
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenColorPicker(userBook.id);
                             }}
+                            title={`${book?.title || 'Livre'} - ${book?.author || ''}`}
                           >
-                            <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
-                              <div className="transform -rotate-90 whitespace-nowrap">
-                                <p className="text-sm font-bold leading-tight mb-1 max-w-[160px] truncate"
-                                   style={{ color: textColor }}
-                                   title={book?.title || 'Livre'}>
+                            {/* Spine with vertical text using writing-mode */}
+                            <div className="h-full flex items-center justify-center overflow-hidden"
+                                 style={{
+                                   writingMode: 'vertical-rl',
+                                   textOrientation: 'mixed',
+                                   transform: 'rotate(180deg)',
+                                   width: '100%'
+                                 }}>
+                              <div className="flex flex-col items-center gap-2">
+                                <p className="font-bold text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-h-[150px] text-center"
+                                   style={{ 
+                                     color: textColor,
+                                     fontSize: '14px',
+                                     fontWeight: 700,
+                                     WebkitFontSmoothing: 'antialiased',
+                                     textRendering: 'optimizeLegibility'
+                                   }}>
                                   {book?.title || 'Livre'}
                                 </p>
-                                <p className="text-xs opacity-90 text-center"
-                                   style={{ color: textColor }}>
-                                  {book?.author || ''}
-                                </p>
+                                {book?.author && (
+                                  <p className="text-xs opacity-80 whitespace-nowrap overflow-hidden text-ellipsis"
+                                     style={{ 
+                                       color: textColor,
+                                       fontSize: '11px'
+                                     }}>
+                                    {book.author}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>
                         </PopoverTrigger>
                         
                         <PopoverContent 
-                          className="w-64 p-3" 
+                          className="w-64 p-3 bg-white border-2" 
+                          style={{ borderColor: 'var(--beige)' }}
                           align="start"
                           side="bottom"
                           onClick={(e) => e.stopPropagation()}
