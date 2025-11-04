@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ChevronLeft, Library, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BookGrid from "../components/library/BookGrid";
 
 export default function ShelfView() {
-  const { shelfId } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Get shelf ID from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const shelfId = urlParams.get('id');
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const { data: shelf, isLoading: loadingShelf } = useQuery({
     queryKey: ['shelf', shelfId],
     queryFn: async () => {
+      if (!user) return null;
       const shelves = await base44.entities.CustomShelf.filter({ 
-        created_by: user?.email 
+        created_by: user.email 
       });
       return shelves.find(s => s.id === shelfId);
     },
@@ -40,6 +44,12 @@ export default function ShelfView() {
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
+  });
+
+  const { data: customShelves = [] } = useQuery({
+    queryKey: ['customShelves'],
+    queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
+    enabled: !!user,
   });
 
   // Filter books for this shelf
@@ -75,14 +85,15 @@ export default function ShelfView() {
       break;
   }
 
-  if (loadingShelf || !shelf) {
+  // Loading state
+  if (loadingShelf || !user) {
     return (
       <div className="p-4 md:p-8 min-h-screen flex items-center justify-center" 
            style={{ backgroundColor: 'var(--cream)' }}>
         <div className="text-center">
           <Library className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
           <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
-            {user ? "Chargement de l'étagère..." : "Chargement..."}
+            Chargement de l'étagère...
           </p>
         </div>
       </div>
@@ -90,7 +101,7 @@ export default function ShelfView() {
   }
 
   // 404 - Shelf not found
-  if (user && !loadingShelf && !shelf) {
+  if (!shelf) {
     return (
       <div className="p-4 md:p-8 min-h-screen flex items-center justify-center" 
            style={{ backgroundColor: 'var(--cream)' }}>
@@ -121,7 +132,7 @@ export default function ShelfView() {
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <Link 
-            to={createPageUrl("MyLibrary")}
+            to={createPageUrl("MyLibrary") + "?tab=custom"}
             className="hover:underline transition-all"
             style={{ color: 'var(--warm-pink)' }}
           >
@@ -139,7 +150,7 @@ export default function ShelfView() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(createPageUrl("MyLibrary"))}
+              onClick={() => navigate(createPageUrl("MyLibrary") + "?tab=custom")}
               className="shadow-md"
               style={{ backgroundColor: 'white' }}
             >
@@ -196,7 +207,7 @@ export default function ShelfView() {
           <BookGrid 
             userBooks={shelfBooks}
             allBooks={allBooks}
-            customShelves={[shelf]}
+            customShelves={customShelves}
             isLoading={loadingBooks}
             selectionMode={false}
             selectedBooks={[]}

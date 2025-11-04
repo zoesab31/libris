@@ -12,6 +12,20 @@ import { useNavigate } from "react-router-dom";
 
 export default function MyLibrary() {
   const navigate = useNavigate();
+
+  // Helper function to create page URLs
+  // This function maps a logical page name to its corresponding URL path.
+  // For ShelfView, it returns "/shelves", which will then be appended with the ID as a query parameter.
+  const createPageUrl = (pageName) => {
+    switch (pageName) {
+      case "ShelfView":
+        return "/shelves";
+      // Add other page names and their paths here as needed
+      default:
+        return "/"; // Fallback for unknown page names
+    }
+  };
+
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
@@ -211,7 +225,7 @@ export default function MyLibrary() {
                   return (
                     <div
                       key={shelf.id}
-                      onClick={() => navigate(`/shelves/${shelf.id}`)}
+                      onClick={() => navigate(createPageUrl("ShelfView") + "?id=" + shelf.id)}
                       className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
                       style={{
                         backgroundColor: 'white',
