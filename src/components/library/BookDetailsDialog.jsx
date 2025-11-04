@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -20,10 +19,10 @@ const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState(userBook);
-  const [uploading, setUploading] = useState(false); // This state is for cover upload
+  const [uploading, setUploading] = useState(false);
   const [editingCover, setEditingCover] = useState(false);
   const [newCoverUrl, setNewCoverUrl] = useState("");
-  const [activeTab, setActiveTab] = useState("details"); // New state for active tab
+  const [activeTab, setActiveTab] = useState("details");
   const [newComment, setNewComment] = useState({
     comment: "",
     page_number: "",
@@ -32,7 +31,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     is_spoiler: false,
     photo_url: "",
   });
-  const [uploadingPhoto, setUploadingPhoto] = useState(false); // This state is for comment photo upload
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -42,10 +41,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
     queryFn: async () => {
-      if (!user) return []; // Ensure user is loaded
+      if (!user) return [];
       return base44.entities.CustomShelf.filter({ created_by: user.email });
     },
-    enabled: !!user, // Only run query if user is available
+    enabled: !!user,
   });
 
   const { data: comments = [] } = useQuery({
@@ -53,14 +52,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     queryFn: () => base44.entities.ReadingComment.filter({ user_book_id: userBook.id }, '-created_date'),
   });
 
-  // New mutation to update only UserBook fields
   const updateUserBookMutation = useMutation({
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
-    onSuccess: (data, variables) => { // 'variables' here contains the data passed to mutationFn
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("✅ Modifications enregistrées !");
 
-      // Check for status change and award points
       const oldStatus = userBook.status;
       const newStatus = variables.status;
       if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
@@ -73,14 +70,13 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  // New mutation to update Book tags (extracted from original updateMutation)
   const updateBookTagsMutation = useMutation({
     mutationFn: async (tags) => {
       return base44.entities.Book.update(book.id, { tags });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks as it might display book details
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("Tags du livre mis à jour !");
     },
     onError: (error) => {
@@ -89,7 +85,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  // New mutation to award points for marking a book as "Lu" (extracted from original updateMutation)
   const awardPointsForLuStatusMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("User not loaded, cannot award points.");
@@ -117,7 +112,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (coverUrl) => base44.entities.Book.update(book.id, { cover_url: coverUrl }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks as it might display book details
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       setEditingCover(false);
       setNewCoverUrl("");
       toast.success("Couverture mise à jour !");
@@ -128,7 +123,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  // New mutation to delete only the UserBook (as per outline, original was more complex)
   const deleteUserBookMutation = useMutation({
     mutationFn: () => base44.entities.UserBook.delete(userBook.id),
     onSuccess: () => {
@@ -142,7 +136,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  // New mutation for creating a comment (as per outline)
   const createCommentMutation = useMutation({
     mutationFn: async (commentData) => {
       return base44.entities.ReadingComment.create({
@@ -152,11 +145,11 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] }); // Keep specific invalidation key
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] }); // Invalidate recent comments
+      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
       toast.success("✅ Commentaire ajouté !");
       setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
-      awardPointsForCommentMutation.mutate(); // Trigger points award after comment creation
+      awardPointsForCommentMutation.mutate();
     },
     onError: (error) => {
       console.error("Error adding comment:", error);
@@ -164,7 +157,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  // New mutation to award points for adding a comment (extracted from original addCommentMutation)
   const awardPointsForCommentMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("User not loaded, cannot award points.");
@@ -229,7 +221,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       ? currentTags.filter(t => t !== "Service Press")
       : [...currentTags, "Service Press"];
     
-    // Use the new updateBookTagsMutation for book tags
     updateBookTagsMutation.mutate(newTags);
   };
 
@@ -240,7 +231,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border border-neutral-200 rounded-2xl shadow-2xl">
-        {/* Header - fond blanc pur */}
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -253,18 +243,15 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex-shrink-0 bg-neutral-100 p-1 grid grid-cols-4">
+          <TabsList className="flex-shrink-0 bg-neutral-100 p-1 grid grid-cols-3">
             <TabsTrigger value="details" style={{ color: '#000000' }}>Détails</TabsTrigger>
-            <TabsTrigger value="reading" style={{ color: '#000000' }}>Lecture</TabsTrigger>
+            <TabsTrigger value="synopsis" style={{ color: '#000000' }}>Synopsis</TabsTrigger>
             <TabsTrigger value="comments" style={{ color: '#000000' }}>Commentaires ({comments.length})</TabsTrigger>
-            <TabsTrigger value="advanced" style={{ color: '#000000' }}>Avancé</TabsTrigger>
           </TabsList>
 
-          {/* Body - scroll avec fond blanc */}
           <div className="flex-1 overflow-y-auto bg-white">
             <div className="p-6">
               <TabsContent value="details">
-                {/* Existing 'details' content (user-book specific) */}
                 <div className="space-y-4 py-4 bg-white">
                   {userBook.status === "À lire" && (
                     <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
@@ -512,15 +499,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </Button>
                   </div>
                 </div>
+              </TabsContent>
 
-                {/* Separator for Book Details vs User Book Details */}
-                <div className="py-6 border-b border-neutral-200">
-                  <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                    📖 Détails du livre
-                  </h3>
-                </div>
-
-                {/* Existing 'synopsis' content (book specific static details) */}
+              <TabsContent value="synopsis">
                 <div className="space-y-4 py-4 bg-white">
                   <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
                     {book.synopsis ? (
@@ -604,23 +585,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 </div>
               </TabsContent>
 
-              <TabsContent value="reading">
-                <div className="py-4 bg-white">
-                  {/* Content for the new 'Lecture' tab goes here */}
-                  <div className="text-center py-12 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
-                      Contenu de l'onglet "Lecture"
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                      Cet onglet permettra de gérer les objectifs de lecture, le suivi des pages, etc.
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-
               <TabsContent value="comments">
-                {/* Existing 'comments' content */}
                 <div className="space-y-4 py-4 bg-white">
                   <div className="p-4 rounded-xl space-y-4" style={{ backgroundColor: 'var(--cream)' }}>
                     <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
@@ -839,21 +804,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                         </p>
                       </div>
                     )}
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="advanced">
-                <div className="py-4 bg-white">
-                  {/* Content for the new 'Advanced' tab goes here */}
-                  <div className="text-center py-12 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
-                      Contenu de l'onglet "Avancé"
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                      Cet onglet pourrait contenir des réglages avancés ou des informations techniques.
-                    </p>
                   </div>
                 </div>
               </TabsContent>
