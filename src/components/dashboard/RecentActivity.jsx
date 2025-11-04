@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,6 @@ export default function RecentActivity({ comments, allBooks, myFriends = [] }) {
                     </Button>
                   )}
 
-                  {/* Photos */}
                   {comment.photos && comment.photos.length > 0 && (
                     <div className="flex gap-2 mb-3 flex-wrap">
                       {comment.photos.map((photo, idx) => (
