@@ -4,21 +4,35 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Upload, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ImageCropper from "@/components/profile/ImageCropper";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
     display_name: "",
     profile_picture: "",
   });
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -31,19 +45,32 @@ export default function AccountSettings() {
     }).catch(() => {});
   }, []);
 
-  const handleFileUpload = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedImage(event.target.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (blob) => {
     setUploading(true);
+    setShowCropper(false);
+    
     try {
+      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
       const result = await base44.integrations.Core.UploadFile({ file });
       setProfileData({ ...profileData, profile_picture: result.file_url });
-      toast.success("Photo uploadée !");
+      toast.success("Photo recadrée et uploadée !");
     } catch (error) {
       toast.error("Erreur lors de l'upload");
     } finally {
       setUploading(false);
+      setSelectedImage(null);
     }
   };
 
@@ -55,6 +82,55 @@ export default function AccountSettings() {
       toast.success("✅ Profil mis à jour !");
       setTimeout(() => setShowSuccess(false), 2000);
     },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      // Delete all user data
+      const myBooks = await base44.entities.UserBook.filter({ created_by: user.email });
+      const myComments = await base44.entities.ReadingComment.filter({ created_by: user.email });
+      const myShelves = await base44.entities.CustomShelf.filter({ created_by: user.email });
+      const myCharacters = await base44.entities.BookBoyfriend.filter({ created_by: user.email });
+      const myGoals = await base44.entities.ReadingGoal.filter({ created_by: user.email });
+      const myQuotes = await base44.entities.Quote.filter({ created_by: user.email });
+      const myFanArts = await base44.entities.FanArt.filter({ created_by: user.email });
+      const myNailInspos = await base44.entities.NailInspo.filter({ created_by: user.email });
+      const myLocations = await base44.entities.ReadingLocation.filter({ created_by: user.email });
+      const mySharedReadings = await base44.entities.SharedReading.filter({ created_by: user.email });
+      const myFriendships = await base44.entities.Friendship.filter({ created_by: user.email });
+      const myNotifications = await base44.entities.Notification.filter({ created_by: user.email });
+      const myPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+      const myBingos = await base44.entities.BingoChallenge.filter({ created_by: user.email });
+      
+      // Delete all in parallel
+      await Promise.all([
+        ...myBooks.map(b => base44.entities.UserBook.delete(b.id)),
+        ...myComments.map(c => base44.entities.ReadingComment.delete(c.id)),
+        ...myShelves.map(s => base44.entities.CustomShelf.delete(s.id)),
+        ...myCharacters.map(c => base44.entities.BookBoyfriend.delete(c.id)),
+        ...myGoals.map(g => base44.entities.ReadingGoal.delete(g.id)),
+        ...myQuotes.map(q => base44.entities.Quote.delete(q.id)),
+        ...myFanArts.map(f => base44.entities.FanArt.delete(f.id)),
+        ...myNailInspos.map(n => base44.entities.NailInspo.delete(n.id)),
+        ...myLocations.map(l => base44.entities.ReadingLocation.delete(l.id)),
+        ...mySharedReadings.map(s => base44.entities.SharedReading.delete(s.id)),
+        ...myFriendships.map(f => base44.entities.Friendship.delete(f.id)),
+        ...myNotifications.map(n => base44.entities.Notification.delete(n.id)),
+        ...myPoints.map(p => base44.entities.ReadingPoints.delete(p.id)),
+        ...myBingos.map(b => base44.entities.BingoChallenge.delete(b.id)),
+      ]);
+
+      // Logout
+      base44.auth.logout();
+    },
+    onSuccess: () => {
+      toast.success("Compte supprimé avec succès");
+      navigate("/");
+    },
+    onError: (error) => {
+      console.error("Error deleting account:", error);
+      toast.error("Erreur lors de la suppression du compte");
+    }
   });
 
   if (!user) return null;
@@ -86,7 +162,7 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           <div className="space-y-6">
             <div className="flex flex-col items-center gap-4">
               <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg"
@@ -104,7 +180,7 @@ export default function AccountSettings() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleFileUpload}
+                  onChange={handleFileSelect}
                   className="hidden"
                   disabled={uploading}
                 />
@@ -176,7 +252,109 @@ export default function AccountSettings() {
             </Button>
           </div>
         </div>
+
+        {/* Danger Zone */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-red-200">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-bold text-red-600">Zone dangereuse</h2>
+          </div>
+          <p className="text-sm mb-4 text-gray-600">
+            La suppression de votre compte est irréversible. Toutes vos données seront définitivement supprimées.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            className="w-full"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Supprimer mon compte
+          </Button>
+        </div>
       </div>
+
+      {/* Image Cropper Dialog */}
+      <Dialog open={showCropper} onOpenChange={setShowCropper}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recadrer votre photo</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <ImageCropper
+              imageUrl={selectedImage}
+              onCropComplete={handleCropComplete}
+              onCancel={() => {
+                setShowCropper(false);
+                setSelectedImage(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-6 h-6" />
+              Confirmer la suppression du compte
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-4">
+              <p className="font-semibold">Cette action est irréversible !</p>
+              <p>Toutes vos données seront supprimées :</p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Tous vos livres et commentaires</li>
+                <li>Vos étagères personnalisées</li>
+                <li>Vos personnages préférés</li>
+                <li>Vos citations et fan arts</li>
+                <li>Vos lectures communes</li>
+                <li>Vos amitiés et notifications</li>
+              </ul>
+              <div className="pt-4">
+                <Label htmlFor="confirm">
+                  Tapez <strong>SUPPRIMER</strong> pour confirmer
+                </Label>
+                <Input
+                  id="confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="SUPPRIMER"
+                  className="mt-2"
+                />
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteAccountMutation.mutate()}
+              disabled={deleteConfirmText !== "SUPPRIMER" || deleteAccountMutation.isPending}
+            >
+              {deleteAccountMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer définitivement
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

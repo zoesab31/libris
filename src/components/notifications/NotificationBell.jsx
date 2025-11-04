@@ -17,20 +17,28 @@ export default function NotificationBell({ user }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const prevCountRef = useRef(0);
-  const audioRef = useRef(null);
+  const audioContextRef = useRef(null);
 
-  // Initialize audio element
+  // Initialize audio on mount
   useEffect(() => {
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUR0MU6rkMsB0JhA4jdXyzH4rBiVzxe/glEoOE1q37uedUQ8IQJrd8cR1IwU1idP00oIyBhxqvu/mnlATDFSr5u22aRoGN4vU8cp8KwYlc8Xw4JNKDBRV');
+    // Create AudioContext on user interaction
+    const initAudio = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    };
+    
+    document.addEventListener('click', initAudio, { once: true });
+    return () => document.removeEventListener('click', initAudio);
   }, []);
 
-  const { data: notifications = [], refetch } = useQuery({
+  const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => base44.entities.Notification.filter({ 
       created_by: user?.email 
     }, '-created_date', 50),
     enabled: !!user,
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
   });
 
   const markAsReadMutation = useMutation({
@@ -43,15 +51,54 @@ export default function NotificationBell({ user }) {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // Play sound when new notification arrives
+  // Play notification sound
+  const playNotificationSound = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const context = audioContextRef.current;
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+
+      // Pleasant notification sound
+      oscillator.frequency.setValueAtTime(800, context.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, context.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.3, context.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.3);
+
+      oscillator.start(context.currentTime);
+      oscillator.stop(context.currentTime + 0.3);
+
+      // Second beep
+      setTimeout(() => {
+        const osc2 = context.createOscillator();
+        const gain2 = context.createGain();
+        
+        osc2.connect(gain2);
+        gain2.connect(context.destination);
+        
+        osc2.frequency.setValueAtTime(600, context.currentTime);
+        gain2.gain.setValueAtTime(0.2, context.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.2);
+        
+        osc2.start(context.currentTime);
+        osc2.stop(context.currentTime + 0.2);
+      }, 150);
+    } catch (error) {
+      console.log('Could not play notification sound:', error);
+    }
+  };
+
+  // Detect new notifications and play sound
   useEffect(() => {
     if (unreadCount > prevCountRef.current && prevCountRef.current > 0) {
-      // New notification arrived
-      if (audioRef.current) {
-        audioRef.current.play().catch(err => {
-          console.log('Could not play notification sound:', err);
-        });
-      }
+      playNotificationSound();
     }
     prevCountRef.current = unreadCount;
   }, [unreadCount]);
@@ -59,7 +106,6 @@ export default function NotificationBell({ user }) {
   const handleNotificationClick = (notification) => {
     markAsReadMutation.mutate(notification.id);
     
-    // Navigate based on link type
     switch (notification.link_type) {
       case 'book':
         navigate(createPageUrl("MyLibrary"));
