@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Crown, Calendar, ThumbsDown, BookOpen, X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Added CardHeader, CardTitle
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import MonthlyVoteDialog from "../components/tournament/MonthlyVoteDialog";
 import TournamentBracket from "../components/tournament/TournamentBracket";
@@ -237,77 +238,84 @@ export default function BookTournament() {
 
           <TabsContent value="worst">
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <ThumbsDown className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--warm-pink)' }} />
-                <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                  Pire Lecture {currentYear}
-                </h2>
-                <p style={{ color: 'var(--warm-pink)' }}>
-                  Sélectionnez le livre qui vous a le plus déçu cette année
-                </p>
-              </div>
-
               {worstBook ? (
-                <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
-                  <div className="h-2" style={{ backgroundColor: '#EF4444' }} />
-                  <CardContent className="p-8">
+                <Card className="shadow-xl border-0 overflow-hidden">
+                  <div className="h-3 animate-pulse" style={{ background: 'linear-gradient(90deg, #EF4444, #DC2626, #EF4444)' }} />
+                  <CardHeader className="text-center pb-4">
+                    <CardTitle className="text-3xl font-bold flex items-center justify-center gap-3" 
+                               style={{ color: 'var(--dark-text)' }}>
+                      <ThumbsDown className="w-10 h-10 text-red-500" />
+                      Pire Lecture {currentYear}
+                      <ThumbsDown className="w-10 h-10 text-red-500" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center pb-8">
                     {worstBook.book_id ? (
                       <>
                         {selectedWorstBook && (
-                          <div className="flex gap-6 mb-6">
-                            <div className="w-32 h-48 rounded-lg overflow-hidden shadow-md"
+                          <>
+                            <div className="w-48 h-72 rounded-xl overflow-hidden shadow-2xl mb-6"
                                  style={{ backgroundColor: 'var(--beige)' }}>
                               {selectedWorstBook.cover_url ? (
                                 <img src={selectedWorstBook.cover_url} alt={selectedWorstBook.title} 
                                      className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                  <BookOpen className="w-20 h-20" style={{ color: 'var(--warm-pink)' }} />
                                 </div>
                               )}
                             </div>
-                            <div>
-                              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                                {selectedWorstBook.title}
-                              </h3>
-                              <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
-                                {selectedWorstBook.author}
-                              </p>
-                              {worstBook.reason && (
-                                <div>
-                                  <p className="text-sm font-semibold mb-2" style={{ color: 'var(--dark-text)' }}>
-                                    Pourquoi :
-                                  </p>
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {worstBook.reason}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                            <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: 'var(--dark-text)' }}>
+                              {selectedWorstBook.title}
+                            </h2>
+                            <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
+                              par {selectedWorstBook.author}
+                            </p>
+                            {worstBook.reason && (
+                              <div className="w-full max-w-lg p-6 rounded-xl mb-6" style={{ backgroundColor: 'var(--cream)' }}>
+                                <p className="text-sm font-semibold mb-2 text-center" style={{ color: 'var(--dark-text)' }}>
+                                  Pourquoi cette déception :
+                                </p>
+                                <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                                  {worstBook.reason}
+                                </p>
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-lg font-semibold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      <div className="text-center py-12">
+                        <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <X className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                        <p className="text-xl font-semibold mb-2" style={{ color: 'var(--dark-text)' }}>
                           Aucun livre sélectionné
                         </p>
-                        <p style={{ color: 'var(--warm-pink)' }}>
+                        <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
                           Vous avez choisi de ne pas désigner de pire lecture cette année
                         </p>
                       </div>
                     )}
                     <Button
                       onClick={openWorstDialog}
-                      className="w-full mt-4 text-white"
-                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                      variant="outline"
+                      style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
                     >
                       Modifier la sélection
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="text-center">
+                <div className="text-center py-12">
+                  <ThumbsDown className="w-20 h-20 mx-auto mb-6" style={{ color: 'var(--warm-pink)', opacity: 0.3 }} />
+                  <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                    Pire Lecture {currentYear}
+                  </h2>
+                  <p className="text-lg mb-8" style={{ color: 'var(--warm-pink)' }}>
+                    Sélectionnez le livre qui vous a le plus déçu cette année
+                  </p>
                   <Button
                     onClick={openWorstDialog}
                     size="lg"
