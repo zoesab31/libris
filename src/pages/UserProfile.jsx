@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Palette, Heart, AlertCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function UserProfile() {
@@ -21,48 +21,32 @@ export default function UserProfile() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  // Redirect to own profile if no email provided
+  // Redirect if no email
   useEffect(() => {
     if (!userEmail) {
-      navigate(createPageUrl("Profile"));
+      navigate(createPageUrl("Friends"));
     }
   }, [userEmail, navigate]);
 
-  // Get friendship data to get friend's name
-  const { data: friendships = [], isLoading: loadingFriendship } = useQuery({
-    queryKey: ['friendships', userEmail],
+  // Get friend name from friendship
+  const { data: friendName } = useQuery({
+    queryKey: ['friendName', userEmail],
     queryFn: async () => {
-      if (!currentUser) return [];
-      // Get friendships where this user is the friend
-      const asCreator = await base44.entities.Friendship.filter({ 
+      if (!currentUser) return null;
+      const friendships = await base44.entities.Friendship.filter({ 
         created_by: currentUser.email,
         friend_email: userEmail,
         status: "Acceptée"
       });
-      // Get friendships where current user is the friend
-      const asFriend = await base44.entities.Friendship.filter({
-        created_by: userEmail,
-        friend_email: currentUser.email,
-        status: "Acceptée"
-      });
-      return [...asCreator, ...asFriend];
+      return friendships[0]?.friend_name || userEmail?.split('@')[0] || 'Amie';
     },
     enabled: !!currentUser && !!userEmail,
   });
 
-  const friendship = friendships[0];
-  
-  // Build profile user object from friendship data
-  const profileUser = friendship ? {
-    email: userEmail,
-    full_name: friendship.friend_email === userEmail ? friendship.friend_name : currentUser?.full_name,
-    display_name: friendship.friend_email === userEmail ? friendship.friend_name : currentUser?.display_name,
-  } : null;
-
   const { data: userBooks = [] } = useQuery({
     queryKey: ['userBooks', userEmail],
     queryFn: () => base44.entities.UserBook.filter({ created_by: userEmail }),
-    enabled: !!userEmail && !!profileUser,
+    enabled: !!userEmail,
   });
 
   const { data: allBooks = [] } = useQuery({
@@ -73,19 +57,19 @@ export default function UserProfile() {
   const { data: userQuotes = [] } = useQuery({
     queryKey: ['userQuotes', userEmail],
     queryFn: () => base44.entities.Quote.filter({ created_by: userEmail }, '-created_date'),
-    enabled: !!userEmail && activeTab === 'quotes' && !!profileUser,
+    enabled: !!userEmail && activeTab === 'quotes',
   });
 
   const { data: userFanArts = [] } = useQuery({
     queryKey: ['userFanArts', userEmail],
     queryFn: () => base44.entities.FanArt.filter({ created_by: userEmail }),
-    enabled: !!userEmail && activeTab === 'fanart' && !!profileUser,
+    enabled: !!userEmail && activeTab === 'fanart',
   });
 
   const { data: userCharacters = [] } = useQuery({
     queryKey: ['userCharacters', userEmail],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: userEmail }, 'rank'),
-    enabled: !!userEmail && activeTab === 'characters' && !!profileUser,
+    enabled: !!userEmail && activeTab === 'characters',
   });
 
   const readBooks = userBooks.filter(b => b.status === "Lu");
@@ -98,12 +82,17 @@ export default function UserProfile() {
     navigate(createPageUrl("Chat"));
   };
 
-  if (loadingFriendship) {
+  if (!userEmail) {
+    return null;
+  }
+
+  // Show loading while we fetch the friend name
+  if (!friendName) {
     return (
       <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
         <div className="flex flex-col items-center justify-center gap-4 py-20">
-          <div className="w-16 h-16 rounded-full border-4 border-t-pink-500 animate-spin" 
-               style={{ borderColor: 'var(--beige)', borderTopColor: 'var(--deep-pink)' }} />
+          <Loader2 className="w-16 h-16 animate-spin" 
+               style={{ color: 'var(--deep-pink)' }} />
           <p className="text-lg font-medium" style={{ color: 'var(--warm-pink)' }}>
             Chargement du profil...
           </p>
@@ -112,34 +101,10 @@ export default function UserProfile() {
     );
   }
 
-  if (!profileUser) {
-    return (
-      <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
-        <div className="max-w-md mx-auto py-20">
-          <AlertCircle className="w-20 h-20 mx-auto mb-6" style={{ color: 'var(--warm-pink)' }} />
-          <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-            Profil introuvable
-          </h2>
-          <p className="mb-6" style={{ color: 'var(--warm-pink)' }}>
-            Cette personne n'est pas dans votre liste d'amies ou le profil n'existe pas
-          </p>
-          <Button
-            onClick={() => navigate(createPageUrl("Friends"))}
-            className="text-white font-medium"
-            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à mes amies
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const isOwnProfile = currentUser?.email === userEmail;
-  // Rose pour son profil, VIOLET pour les amis
   const accentColor = isOwnProfile ? 'var(--deep-pink)' : '#8B5CF6';
   const secondaryColor = isOwnProfile ? 'var(--warm-pink)' : '#A78BFA';
+  const displayName = friendName || userEmail?.split('@')[0] || 'Amie';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -159,16 +124,16 @@ export default function UserProfile() {
           <div className="w-40 h-40 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-white">
             <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
                  style={{ backgroundColor: accentColor }}>
-              {profileUser.full_name?.[0]?.toUpperCase() || profileUser.email?.[0]?.toUpperCase() || 'U'}
+              {displayName[0]?.toUpperCase() || 'A'}
             </div>
           </div>
 
           <div className="flex-1">
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {profileUser.display_name || profileUser.full_name || 'Lectrice'}
+              {displayName}
             </h1>
             <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
-              {profileUser.email}
+              {userEmail}
             </p>
 
             {!isOwnProfile && (
