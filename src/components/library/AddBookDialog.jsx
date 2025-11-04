@@ -47,56 +47,49 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
   });
 
-  // Function to search books using AI with ENHANCED cover URL fetching
+  // Function to construct OpenLibrary cover URL from ISBN
+  const getOpenLibraryCover = (isbn) => {
+    if (!isbn) return null;
+    // Remove any dashes or spaces from ISBN
+    const cleanIsbn = isbn.replace(/[-\s]/g, '');
+    return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`;
+  };
+
+  // Function to search books using AI with better cover handling
   const searchBooks = async () => {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Tu es un expert en recherche de livres et couvertures. Recherche: "${searchQuery}".
+        prompt: `Recherche de livres pour : "${searchQuery}"
 
-IMPÉRATIF ABSOLU - Pour chaque livre, tu DOIS trouver une URL de couverture VALIDE :
+IMPORTANT - ISBN OBLIGATOIRE :
+Tu DOIS retourner l'ISBN-13 (ou ISBN-10 si ISBN-13 indisponible) pour CHAQUE livre.
+L'ISBN est CRUCIAL pour afficher les couvertures.
 
-MÉTHODES PRIORITAIRES (dans l'ordre) :
-
-1. **OpenLibrary (PRIORITÉ ABSOLUE)** :
-   - Format ISBN-13 (préféré): https://covers.openlibrary.org/b/isbn/[ISBN-13]-L.jpg
-   - Format ISBN-10: https://covers.openlibrary.org/b/isbn/[ISBN-10]-L.jpg  
-   - Format OLID: https://covers.openlibrary.org/b/olid/[OLID]-L.jpg
-   - Exemple: https://covers.openlibrary.org/b/isbn/9782253006329-L.jpg
-
-2. **Google Books API** :
-   - Utilise l'API Google Books (books.googleapis.com/books/v1/volumes)
-   - Récupère le lien "imageLinks.thumbnail" ou "imageLinks.smallThumbnail"
-   - Remplace "zoom=1" par "zoom=2" pour meilleure qualité
-   - Exemple: http://books.google.com/books/content?id=XXX&printsec=frontcover&img=1&zoom=2
-
-3. **Amazon Images** :
-   - Format: https://images-na.ssl-images-amazon.com/images/P/[ASIN].jpg
-   - OU: https://m.media-amazon.com/images/I/[IMAGE_ID].jpg
-
-4. **Autres sources fiables** :
-   - Goodreads: https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/[ID]/[BOOK_ID].jpg
-   - Babelio
+Format de réponse pour chaque livre :
+{
+  "title": "Titre exact du livre",
+  "author": "Nom complet de l'auteur",
+  "isbn": "ISBN-13 ou ISBN-10 (OBLIGATOIRE - cherche bien !)",
+  "synopsis": "Résumé en 2-3 lignes",
+  "genre": "Genre parmi: Romance, Fantasy, Thriller, Policier, Science-Fiction, Contemporain, Historique, Young Adult, New Adult, Dystopie, Paranormal, Autre",
+  "publication_year": année de publication
+}
 
 RÈGLES ABSOLUES :
-- ✅ Vérifie que l'URL commence par "http://" ou "https://"
-- ✅ Pour OpenLibrary, utilise TOUJOURS "-L.jpg" (large) pour bonne qualité
-- ✅ Si ISBN disponible, TOUJOURS l'utiliser en priorité
-- ✅ Teste mentalement que l'URL est bien formée
-- ✅ Préfère OpenLibrary > Google Books > Amazon > Autres
-- ❌ NE JAMAIS laisser cover_url vide si le livre existe réellement
-- ✅ Retourne 6-8 suggestions pertinentes
+✅ L'ISBN est OBLIGATOIRE - cherche-le sur Google, OpenLibrary, Goodreads, Amazon
+✅ Privilégie l'ISBN-13 (13 chiffres)
+✅ Si tu trouves seulement l'ISBN-10 (10 chiffres), retourne-le
+✅ Si vraiment AUCUN ISBN n'existe (très rare), mets "unknown"
+✅ Retourne 6-8 suggestions pertinentes
+✅ Assure-toi que le titre et l'auteur sont EXACTS
 
-Pour chaque livre, fournis OBLIGATOIREMENT :
-- title (titre exact)
-- author (auteur complet)
-- isbn (ISBN-13 de préférence, sinon ISBN-10)
-- synopsis (résumé 2-3 lignes)
-- genre (précis parmi la liste fournie)
-- publication_year
-- cover_url (URL VALIDE ET TESTABLE - JAMAIS VIDE)`,
+Exemples d'ISBN valides :
+- ISBN-13: 9782290233832
+- ISBN-10: 2290233838
+- Format avec tirets: 978-2-290-23383-2 (acceptable aussi)`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -111,10 +104,9 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                   synopsis: { type: "string" },
                   genre: { type: "string" },
                   publication_year: { type: "number" },
-                  cover_url: { type: "string" },
                   isbn: { type: "string" }
                 },
-                required: ["title", "author", "synopsis", "genre", "cover_url"]
+                required: ["title", "author", "synopsis", "genre", "isbn"]
               }
             }
           },
@@ -122,7 +114,15 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
         }
       });
 
-      setAiResults(result.books || []);
+      // Process results and generate cover URLs from ISBN
+      const booksWithCovers = (result.books || []).map(book => ({
+        ...book,
+        cover_url: book.isbn && book.isbn !== "unknown"
+          ? getOpenLibraryCover(book.isbn)
+          : ""
+      }));
+
+      setAiResults(booksWithCovers);
     } catch (error) {
       console.error("Error searching books with AI:", error);
       toast.error("Erreur lors de la recherche de livres. Veuillez réessayer.");
@@ -131,7 +131,6 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
     }
   };
 
-  // Function to create a book from AI search result
   const createFromAI = async (book) => {
     try {
       const createdBook = await base44.entities.Book.create({
@@ -139,8 +138,9 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
         author: book.author,
         synopsis: book.synopsis,
         genre: book.genre,
-        // publication_year: book.publication_year,
-        cover_url: book.cover_url,
+        publication_year: book.publication_year,
+        isbn: book.isbn !== "unknown" ? book.isbn : undefined,
+        cover_url: book.cover_url || "",
       });
       await base44.entities.UserBook.create({
         book_id: createdBook.id,
@@ -194,10 +194,27 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
 
-  // Function to handle image error
+  // Improved handleImageError to try fallback
   const handleImageError = (idx) => {
     const updated = [...aiResults];
-    updated[idx].cover_url = ""; // Clear broken URL
+    const book = updated[idx];
+
+    // If cover failed and we have ISBN, try alternative format
+    if (book.isbn && book.isbn !== "unknown") {
+      const cleanIsbn = book.isbn.replace(/[-\s]/g, '');
+      // Try medium size instead of large
+      const alternativeUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`;
+
+      // Only try the alternative if it's not already the current one to avoid infinite loop
+      if (book.cover_url !== alternativeUrl) {
+        updated[idx].cover_url = alternativeUrl;
+        setAiResults(updated);
+        return;
+      }
+    }
+
+    // If all fails, clear the URL
+    updated[idx].cover_url = "";
     setAiResults(updated);
   };
 
@@ -243,7 +260,7 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && searchBooks()}
-                placeholder="Romance fantasy, thriller..."
+                placeholder="Titre du livre ou auteur..."
                 className="flex-1 border-2"
                 style={{ borderColor: 'var(--soft-pink)' }}
               />
@@ -270,6 +287,7 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                             alt={book.title}
                             className="w-full h-full object-cover"
                             onError={() => handleImageError(idx)}
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -297,7 +315,16 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                             }}
                             className="text-xs h-6 bg-white text-black"
                           />
-                          <Button size="sm" className="h-5 text-xs bg-white text-black hover:bg-gray-100" onClick={() => updateCoverUrl(idx, document.querySelector(`input[placeholder='URL couverture']`).value)}>OK</Button>
+                          <Button
+                            size="sm"
+                            className="h-5 text-xs bg-white text-black hover:bg-gray-100"
+                            onClick={() => {
+                              const input = document.querySelector('input[placeholder="URL couverture"]');
+                              if (input) updateCoverUrl(idx, input.value);
+                            }}
+                          >
+                            OK
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -305,10 +332,15 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                       <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: 'var(--dark-text)' }}>
                         {book.title}
                       </h4>
-                      <p className="text-xs font-medium mb-2" style={{ color: 'var(--deep-pink)' }}>
+                      <p className="text-xs font-medium mb-1" style={{ color: 'var(--deep-pink)' }}>
                         {book.author}
                       </p>
-                      <p className="text-xs line-clamp-3" style={{ color: 'var(--dark-text)' }}>
+                      {book.isbn && book.isbn !== "unknown" && (
+                        <p className="text-[10px] mb-1 font-mono" style={{ color: 'var(--warm-pink)' }}>
+                          ISBN: {book.isbn}
+                        </p>
+                      )}
+                      <p className="text-xs line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                         {book.synopsis}
                       </p>
                     </div>
@@ -406,8 +438,8 @@ Pour chaque livre, fournis OBLIGATOIREMENT :
                           }
                         }}
                         className={`p-2 rounded-lg text-sm font-medium transition-all ${
-                          (bookData.tags || []).includes(tag) 
-                            ? 'shadow-md scale-105' 
+                          (bookData.tags || []).includes(tag)
+                            ? 'shadow-md scale-105'
                             : 'hover:shadow-md'
                         }`}
                         style={{
