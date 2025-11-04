@@ -12,6 +12,7 @@ import SharedReadings from './pages/SharedReadings';
 import BookTournament from './pages/BookTournament';
 import VirtualLibrary from './pages/VirtualLibrary';
 import AccountSettings from './pages/AccountSettings';
+import Friends from './pages/Friends';
 import Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "BookTournament": BookTournament,
     "VirtualLibrary": VirtualLibrary,
     "AccountSettings": AccountSettings,
+    "Friends": Friends,
 }
 
 export const pagesConfig = {

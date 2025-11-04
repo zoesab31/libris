@@ -223,10 +223,10 @@ export default function VirtualLibrary() {
                  }}
                  onDrop={handleDrop}
                  onDragOver={(e) => e.preventDefault()}>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {Array(shelves).fill(0).map((_, shelfNum) => (
                   <div key={shelfNum} className="relative">
-                    <div className="h-48 rounded-lg shadow-lg flex items-end p-4 gap-2 overflow-x-auto"
+                    <div className="min-h-[200px] rounded-lg shadow-lg flex items-end p-4 gap-3 overflow-x-auto"
                          style={{ backgroundColor: '#8B4513' }}>
                       {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
@@ -236,28 +236,34 @@ export default function VirtualLibrary() {
                           <div key={userBook.id || idx} 
                                draggable
                                onDragStart={(e) => handleDragStart(e, userBook, 'book')}
-                               className="w-16 h-40 rounded-sm shadow-md transform hover:scale-105 transition-transform flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group"
+                               className="w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group"
                                style={{ backgroundColor: bookColor }}>
                             {/* Vertical text on book spine */}
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center justify-center p-2">
                               <div className="transform -rotate-90 whitespace-nowrap">
-                                <p className="text-[10px] font-bold text-white leading-tight line-clamp-1 mb-1">
+                                <p className="text-xs font-bold text-white leading-tight mb-1 max-w-[180px] truncate">
                                   {book?.title || 'Livre'}
                                 </p>
-                                <p className="text-[8px] text-white opacity-90 text-center">
+                                <p className="text-[10px] text-white opacity-90 text-center">
                                   {book?.author || ''}
                                 </p>
                               </div>
                             </div>
                             
-                            {/* Color picker on hover */}
-                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white p-2 rounded-lg shadow-xl">
-                              <input 
-                                type="color" 
-                                value={bookColor}
-                                onChange={(e) => handleColorChange(userBook.id, e.target.value)}
-                                className="w-12 h-12 rounded cursor-pointer border-2 border-gray-300"
-                              />
+                            {/* Color picker - always visible on hover */}
+                            <div className="absolute -top-14 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                              <div className="bg-white p-3 rounded-xl shadow-2xl border-2" style={{ borderColor: 'var(--soft-pink)' }}>
+                                <label className="flex flex-col items-center gap-2 cursor-pointer">
+                                  <span className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>Couleur</span>
+                                  <input 
+                                    type="color" 
+                                    value={bookColor}
+                                    onChange={(e) => handleColorChange(userBook.id, e.target.value)}
+                                    className="w-16 h-16 rounded-lg cursor-pointer border-2"
+                                    style={{ borderColor: 'var(--soft-pink)' }}
+                                  />
+                                </label>
+                              </div>
                             </div>
                           </div>
                         );

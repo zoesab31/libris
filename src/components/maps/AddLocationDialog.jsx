@@ -22,7 +22,7 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
     book_id: "",
     date: new Date().toISOString().split('T')[0],
     note: "",
-    google_maps_url: "", // Added new field
+    // google_maps_url: "", // Removed new field
   });
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
         book_id: "", 
         date: new Date().toISOString().split('T')[0], 
         note: "",
-        google_maps_url: "", // Reset new field on success
+        // google_maps_url: "", // Removed reset new field on success
       });
     },
   });
@@ -104,14 +104,15 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
                 <SelectItem value="À la maison">🏠 À la maison</SelectItem>
                 <SelectItem value="Au parc">🌳 Au parc</SelectItem>
                 <SelectItem value="Au café">☕ Au café</SelectItem>
-                <SelectItem value="Salle de sport">🏋️ Salle de sport</SelectItem> {/* Added new SelectItem */}
+                <SelectItem value="Salle de sport">🏋️ Salle de sport</SelectItem>
                 <SelectItem value="En voiture">🚗 En voiture</SelectItem>
                 <SelectItem value="Autre">📍 Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* New Google Maps URL input */}
+          {/* New Google Maps URL input was here - REMOVED */}
+          {/*
           <div>
             <Label htmlFor="maps">Lien Google Maps (optionnel)</Label>
             <Input
@@ -124,7 +125,8 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
               💡 Ouvrez Google Maps, trouvez votre lieu et copiez le lien ici
             </p>
           </div>
-          {/* End of new Google Maps URL input */}
+          */}
+          {/* End of new Google Maps URL input - REMOVED */}
 
           <div>
             <Label>Photo du moment</Label>

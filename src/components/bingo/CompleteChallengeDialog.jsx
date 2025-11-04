@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,25 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.BingoChallenge.update(challenge.id, data),
+    mutationFn: async (data) => {
+      await base44.entities.BingoChallenge.update(challenge.id, data);
+      
+      // Award 20 points when completing a challenge
+      if (!challenge.is_completed && data.is_completed && user?.email) { // Ensure user.email exists before proceeding
+        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+        if (existingPoints.length > 0) {
+          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+            total_points: (existingPoints[0].total_points || 0) + 20
+          });
+        } else {
+          await base44.entities.ReadingPoints.create({ total_points: 20, points_spent: 0, created_by: user.email });
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
-      toast.success(challenge.is_completed ? "Défi marqué comme incomplet" : "Défi validé !");
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] }); // Invalidate reading points query
+      toast.success(challenge.is_completed ? "Défi marqué comme incomplet" : "Défi validé ! +20 points 🌟");
       onOpenChange(false);
     },
   });

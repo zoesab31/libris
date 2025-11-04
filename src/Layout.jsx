@@ -35,6 +35,11 @@ const navigationItems = [
     icon: Store,
   },
   {
+    title: "Mes Amies",
+    url: createPageUrl("Friends"),
+    icon: Users,
+  },
+  {
     title: "Abécédaire",
     url: createPageUrl("Authors"),
     icon: BookUser,
@@ -47,7 +52,7 @@ const navigationItems = [
   {
     title: "Bingo Lecture",
     url: createPageUrl("Bingo"),
-    icon: Sparkles, // Updated from Trophy to Sparkles
+    icon: Sparkles,
   },
   {
     title: "Tournoi du Livre",

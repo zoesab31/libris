@@ -44,12 +44,12 @@ export default function LocationCard({ location, book }) {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{categoryIcons[location.category]}</span>
-              <h3 className="font-bold text-lg" style={{ color: 'var(--deep-brown)' }}>
+              <h3 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
                 {location.location_name}
               </h3>
             </div>
             <p className="text-xs px-2 py-1 rounded-full inline-block mb-2" 
-               style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-brown)' }}>
+               style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-pink)' }}>
               {location.category}
             </p>
           </div>
@@ -64,14 +64,14 @@ export default function LocationCard({ location, book }) {
         </div>
 
         {book && (
-          <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--warm-brown)' }}>
+          <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--warm-pink)' }}>
             <BookOpen className="w-4 h-4" />
             <span>{book.title}</span>
           </div>
         )}
 
         {location.date && (
-          <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--warm-brown)' }}>
+          <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--warm-pink)' }}>
             <Calendar className="w-4 h-4" />
             <span>{format(new Date(location.date), 'dd MMMM yyyy', { locale: fr })}</span>
           </div>
@@ -79,26 +79,11 @@ export default function LocationCard({ location, book }) {
 
         {location.note && (
           <p className="text-sm mt-3 pt-3 border-t" 
-             style={{ color: 'var(--deep-brown)', borderColor: 'var(--beige)' }}>
+             style={{ color: 'var(--dark-text)', borderColor: 'var(--beige)' }}>
             {location.note}
           </p>
         )}
       </CardContent>
-
-      {location.google_maps_url && (
-        <div className="px-4 pb-4">
-          <Button
-            asChild
-            variant="outline"
-            className="w-full"
-            style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
-          >
-            <a href={location.google_maps_url} target="_blank" rel="noopener noreferrer">
-              🗺️ Voir sur Google Maps
-            </a>
-          </Button>
-        </div>
-      )}
     </Card>
   );
 }

@@ -52,10 +52,29 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
+    mutationFn: async (data) => {
+      const oldStatus = userBook.status;
+      const newStatus = data.status;
+      
+      await base44.entities.UserBook.update(userBook.id, data);
+      
+      // Award points when marking as "Lu"
+      if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
+        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+        if (existingPoints.length > 0) {
+          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+            total_points: (existingPoints[0].total_points || 0) + 50
+          });
+        } else {
+          await base44.entities.ReadingPoints.create({ total_points: 50, points_spent: 0, created_by: user.email });
+        }
+        toast.success("Livre marqué comme lu ! +50 points 🌟");
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       toast.success("Livre mis à jour !");
     },
   });
@@ -126,16 +145,31 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (data) => base44.entities.ReadingComment.create({
-      ...data,
-      user_book_id: userBook.id,
-      book_id: book.id,
-    }),
+    mutationFn: async (data) => {
+      await base44.entities.ReadingComment.create({
+        ...data,
+        user_book_id: userBook.id,
+        book_id: book.id,
+      });
+      
+      // Award 5 points for adding a comment
+      if (user) {
+        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+        if (existingPoints.length > 0) {
+          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+            total_points: (existingPoints[0].total_points || 0) + 5
+          });
+        } else {
+          await base44.entities.ReadingPoints.create({ total_points: 5, points_spent: 0, created_by: user.email });
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
-      toast.success("Commentaire ajouté !");
+      toast.success("Commentaire ajouté ! +5 points 🌟");
     },
   });
 

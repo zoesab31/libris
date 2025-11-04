@@ -245,7 +245,7 @@ export default function Dashboard() {
             </Card>
 
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
-              <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--rose-gold), var(--soft-brown))' }} />
+              <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--rose-gold), var(--soft-pink))' }} />
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
                   <Heart className="w-5 h-5" />
@@ -253,14 +253,20 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Link to={createPageUrl("Friends")}>
+                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Gérer mes amies
+                  </Button>
+                </Link>
                 <Link to={createPageUrl("SharedReadings")}>
-                  <Button variant="outline" className="w-full justify-start" style={{ borderColor: 'var(--beige)' }}>
+                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Users className="w-4 h-4 mr-2" />
                     Lectures communes
                   </Button>
                 </Link>
                 <Link to={createPageUrl("Profile")}>
-                  <Button variant="outline" className="w-full justify-start" style={{ borderColor: 'var(--beige)' }}>
+                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Heart className="w-4 h-4 mr-2" />
                     Mes Book Boyfriends
                   </Button>
