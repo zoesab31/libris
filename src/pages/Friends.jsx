@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Users, Plus, Check, X, Mail, Copy, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function Friends() {
   const [user, setUser] = useState(null);
   const [friendCode, setFriendCode] = useState("");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
@@ -274,8 +277,9 @@ export default function Friends() {
           {acceptedFriends.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
               {acceptedFriends.map((friend) => (
-                <Card key={friend.id} className="shadow-lg border-0 hover:shadow-xl transition-all" 
-                      style={{ backgroundColor: 'white' }}>
+                <Card key={friend.id} className="shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer" 
+                      style={{ backgroundColor: 'white' }}
+                      onClick={() => navigate(createPageUrl("UserProfile") + `?userEmail=${friend.friend_email}`)}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -288,14 +292,17 @@ export default function Friends() {
                             {friend.friend_name}
                           </p>
                           <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                            {friend.friend_email}
+                            Voir le profil →
                           </p>
                         </div>
                       </div>
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => rejectFriendMutation.mutate(friend.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          rejectFriendMutation.mutate(friend.id);
+                        }}
                       >
                         <X className="w-4 h-4 text-red-500" />
                       </Button>

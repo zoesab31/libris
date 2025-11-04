@@ -232,7 +232,32 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white text-neutral-900 border border-neutral-200 rounded-2xl shadow-2xl">
+      <DialogContent className="book-modal-panel max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white text-neutral-900 border border-neutral-200 rounded-2xl shadow-2xl">
+        <style>{`
+          .book-modal-panel,
+          .book-modal-panel * {
+            background-color: unset;
+            color: inherit;
+          }
+          .book-modal-panel {
+            background-color: #fff !important;
+            color: #111827 !important;
+            border-color: #e5e7eb !important;
+          }
+          .book-modal-panel .tab-header,
+          .book-modal-panel .tab-body,
+          .book-modal-panel .section,
+          .book-modal-panel .card,
+          .book-modal-panel .form,
+          .book-modal-panel [role="tabpanel"] {
+            background: #fff !important;
+            border-color: #e5e7eb !important;
+          }
+          .book-modal-panel hr {
+            border-color: #eee !important;
+          }
+        `}</style>
+
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -244,7 +269,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden bg-white">
           <TabsList className="flex-shrink-0 bg-neutral-50 p-1 grid grid-cols-3 border-b border-neutral-200">
             <TabsTrigger value="details" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
               Détails
@@ -258,7 +283,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
           </TabsList>
 
           <div className="flex-1 overflow-y-auto bg-white">
-            <div className="p-6">
+            <div className="p-6 bg-white">
               <TabsContent value="details">
                 <div className="space-y-4 py-4 bg-white">
                   {userBook.status === "À lire" && (

@@ -15,6 +15,7 @@ import AccountSettings from './pages/AccountSettings';
 import Friends from './pages/Friends';
 import ShelfView from './pages/ShelfView';
 import Chat from './pages/Chat';
+import UserProfile from './pages/UserProfile';
 import Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "Friends": Friends,
     "ShelfView": ShelfView,
     "Chat": Chat,
+    "UserProfile": UserProfile,
 }
 
 export const pagesConfig = {

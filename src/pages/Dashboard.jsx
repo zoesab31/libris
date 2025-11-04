@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import YearSelector from "../components/dashboard/YearSelector";
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -339,12 +340,15 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Link to={createPageUrl("Friends")}>
-                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Gérer mes amies
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start font-medium"
+                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                  onClick={() => navigate(createPageUrl("Friends"))}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Gérer mes amies
+                </Button>
                 <Link to={createPageUrl("SharedReadings")}>
                   <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Users className="w-4 h-4 mr-2" />
