@@ -191,32 +191,32 @@ export default function Dashboard() {
     .slice(0, 8);
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+    <div className="p-3 md:p-4 lg:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2" style={{ color: 'var(--dark-text)' }}>
               Bonjour {user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice'} 📚
             </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+            <p className="text-base md:text-lg" style={{ color: 'var(--warm-pink)' }}>
               Bienvenue dans votre univers littéraire
             </p>
           </div>
-          <Link to={createPageUrl("MyLibrary")}>
-            <Button className="shadow-lg text-white font-medium px-6 py-6 rounded-xl transition-all hover:shadow-xl"
+          <Link to={createPageUrl("MyLibrary")} className="w-full md:w-auto">
+            <Button className="w-full md:w-auto shadow-lg text-white font-medium px-4 md:px-6 py-4 md:py-6 rounded-xl transition-all hover:shadow-xl text-sm md:text-base"
                     style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}>
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               Ajouter un livre
             </Button>
           </Link>
         </div>
 
         {/* Year Selector */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <YearSelector currentYear={selectedYear} onYearChange={setSelectedYear} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
           <StatsCard 
             title="Livres lus" 
             value={booksReadThisYear}
@@ -243,8 +243,8 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             <ReadingGoalCard 
               currentGoal={readingGoal}
               booksReadThisYear={booksReadThisYear}
@@ -267,17 +267,17 @@ export default function Dashboard() {
               myFriends={myFriends}
             />
 
-            {/* New section: Friends' finished books */}
+            {/* Friends' finished books */}
             {friendsFinishedBooks.length > 0 && (
               <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
                 <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--soft-pink), var(--lavender))' }} />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl" style={{ color: 'var(--dark-text)' }}>
-                    <Users className="w-6 h-6" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-xl" style={{ color: 'var(--dark-text)' }}>
+                    <Users className="w-5 h-5 md:w-6 md:h-6" />
                     Livres terminés par mes amies
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 md:p-6">
                   <div className="space-y-3">
                     {friendsFinishedBooks.map((userBook) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
@@ -287,33 +287,33 @@ export default function Dashboard() {
                       return (
                         <div
                           key={userBook.id}
-                          className="flex gap-4 p-4 rounded-xl transition-all hover:shadow-md"
+                          className="flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl transition-all hover:shadow-md"
                           style={{ backgroundColor: 'var(--cream)' }}
                         >
-                          <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                          <div className="w-12 h-16 md:w-16 md:h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
                                style={{ backgroundColor: 'var(--beige)' }}>
                             {book.cover_url ? (
                               <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
+                                <BookOpen className="w-6 h-6 md:w-8 md:h-8" style={{ color: 'var(--warm-pink)' }} />
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
                                    style={{ backgroundColor: 'var(--soft-pink)' }}>
                                 {friend.friend_name?.[0]?.toUpperCase() || 'A'}
                               </div>
-                              <p className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
+                              <p className="text-xs md:text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
                                 {friend.friend_name?.split(' ')[0]} a terminé
                               </p>
                             </div>
-                            <h3 className="font-bold text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                            <h3 className="font-bold text-xs md:text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                               {book.title}
                             </h3>
-                            <p className="text-xs mb-1" style={{ color: 'var(--warm-pink)' }}>
+                            <p className="text-[10px] md:text-xs mb-1" style={{ color: 'var(--warm-pink)' }}>
                               {book.author}
                             </p>
                             {userBook.rating !== undefined && userBook.rating !== null && (
@@ -321,7 +321,7 @@ export default function Dashboard() {
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star
                                     key={i}
-                                    className="w-3 h-3"
+                                    className="w-2.5 h-2.5 md:w-3 md:h-3"
                                     style={{
                                       fill: i < userBook.rating ? 'var(--gold)' : 'none',
                                       stroke: 'var(--gold)',
@@ -340,22 +340,21 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
               <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--gold))' }} />
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Music className="w-5 h-5" />
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: 'var(--dark-text)' }}>
+                  <Music className="w-4 h-4 md:w-5 md:h-5" />
                   Ma Playlist Littéraire 🎵
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 md:p-6">
                 {myBooks.filter(b => b.music).slice(0, 3).length > 0 ? (
                   <div className="space-y-3">
                     {myBooks.filter(b => b.music).slice(0, 3).map((userBook) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       
-                      // Extract video ID from YouTube link if present
                       let youtubeId = null;
                       if (userBook.music_link) {
                         const match = userBook.music_link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
@@ -364,23 +363,23 @@ export default function Dashboard() {
                       
                       return (
                         <div key={userBook.id} 
-                             className="group relative p-4 rounded-xl transition-all hover:shadow-md"
+                             className="group relative p-3 md:p-4 rounded-xl transition-all hover:shadow-md"
                              style={{ 
                                background: 'linear-gradient(135deg, var(--soft-pink), var(--beige))',
                              }}>
                           <div className="flex items-center gap-3">
-                            <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md animate-pulse"
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-md animate-pulse"
                                  style={{ backgroundColor: 'var(--deep-pink)' }}>
-                              <Music className="w-7 h-7 text-white" />
+                              <Music className="w-6 h-6 md:w-7 md:h-7 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                              <p className="font-bold text-xs md:text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                                 🎵 {userBook.music}
                               </p>
-                              <p className="text-xs font-medium mb-1" style={{ color: 'var(--warm-pink)' }}>
+                              <p className="text-[10px] md:text-xs font-medium mb-1" style={{ color: 'var(--warm-pink)' }}>
                                 par {userBook.music_artist}
                               </p>
-                              <p className="text-xs line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                              <p className="text-[10px] md:text-xs line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                                 📚 {book?.title}
                               </p>
                               {userBook.music_link && (
@@ -388,7 +387,7 @@ export default function Dashboard() {
                                   href={userBook.music_link} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-xs underline mt-1 block"
+                                  className="text-[10px] md:text-xs underline mt-1 block"
                                   style={{ color: 'var(--deep-pink)' }}
                                 >
                                   🔗 Écouter
@@ -415,8 +414,8 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Music className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                    <Music className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p className="text-xs md:text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
                       Associez des musiques à vos livres pour créer votre playlist
                     </p>
                   </div>
@@ -426,16 +425,16 @@ export default function Dashboard() {
 
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
               <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--rose-gold), var(--soft-pink))' }} />
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
-                  <Heart className="w-5 h-5" />
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: 'var(--deep-brown)' }}>
+                  <Heart className="w-4 h-4 md:w-5 md:h-5" />
                   Accès rapide
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="p-4 md:p-6 space-y-2">
                 <Button
                   variant="outline"
-                  className="w-full justify-start font-medium"
+                  className="w-full justify-start font-medium text-sm md:text-base"
                   style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
                   onClick={() => navigate(createPageUrl("Friends"))}
                 >
@@ -443,19 +442,19 @@ export default function Dashboard() {
                   Gérer mes amies
                 </Button>
                 <Link to={createPageUrl("SharedReadings")}>
-                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                  <Button variant="outline" className="w-full justify-start font-medium text-sm md:text-base" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Users className="w-4 h-4 mr-2" />
                     Lectures communes
                   </Button>
                 </Link>
                 <Link to={createPageUrl("Profile")}>
-                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                  <Button variant="outline" className="w-full justify-start font-medium text-sm md:text-base" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Heart className="w-4 h-4 mr-2" />
                     Mes Personnages Préférés
                   </Button>
                 </Link>
                 <Link to={createPageUrl("Chat")}>
-                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                  <Button variant="outline" className="w-full justify-start font-medium text-sm md:text-base" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Chat entre amies
                   </Button>
