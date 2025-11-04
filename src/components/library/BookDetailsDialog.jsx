@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, MessageSquare, Plus, Trash2, AlertTriangle, Upload, Loader2 } from "lucide-react";
+import { Star, Music, Calendar, MessageSquare, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -260,8 +260,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Détails</TabsTrigger>
+            <TabsTrigger value="synopsis">Synopsis</TabsTrigger>
             <TabsTrigger value="comments">
               Commentaires ({comments.length})
             </TabsTrigger>
@@ -513,6 +514,88 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 Enregistrer
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="synopsis" className="space-y-4 py-4">
+            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+              {book.synopsis ? (
+                <div>
+                  <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                    📖 Synopsis
+                  </h3>
+                  <p className="text-base leading-relaxed" style={{ color: 'var(--dark-text)' }}>
+                    {book.synopsis}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                  <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
+                    Aucun synopsis disponible
+                  </p>
+                  <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
+                    Modifiez le livre pour ajouter un synopsis
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {book.genre && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                  Genre :
+                </span>
+                <span className="px-3 py-1 rounded-full text-sm font-medium"
+                      style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
+                  {book.genre}
+                </span>
+              </div>
+            )}
+
+            {book.page_count && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                  Nombre de pages :
+                </span>
+                <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                  {book.page_count}
+                </span>
+              </div>
+            )}
+
+            {book.publication_year && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                  Année de publication :
+                </span>
+                <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                  {book.publication_year}
+                </span>
+              </div>
+            )}
+
+            {book.tags && book.tags.length > 0 && (
+              <div>
+                <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                  Tags :
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {book.tags.map((tag, idx) => (
+                    <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
+                          style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
+                      {tag === "Service Press" && "📬 "}
+                      {tag === "Audio" && "🎧 "}
+                      {tag === "Numérique" && "📱 "}
+                      {tag === "Broché" && "📕 "}
+                      {tag === "Relié" && "📘 "}
+                      {tag === "Poche" && "📙 "}
+                      {tag === "Wattpad" && "🌟 "}
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-4 py-4">

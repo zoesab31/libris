@@ -332,55 +332,9 @@ RÈGLES ABSOLUES :
                          borderColor: isSelected ? 'var(--deep-pink)' : 'var(--soft-pink)'
                        }}>
                     <div className="flex gap-3 mb-3 flex-grow">
-                      <div className="relative group flex-shrink-0">
-                        <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {book.cover_url ? (
-                            <img
-                              src={book.cover_url}
-                              alt={book.title}
-                              className="w-full h-full object-cover"
-                              onError={() => handleImageError(idx)}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="w-8 h-8" style={{ color: 'var(--deep-pink)' }} />
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="absolute -top-1 -right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => setEditingCover(idx)}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        {editingCover === idx && (
-                          <div className="absolute inset-0 bg-black/90 p-1 flex flex-col gap-1 rounded-lg z-10">
-                            <Input
-                              placeholder="URL couverture"
-                              defaultValue={book.cover_url}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  updateCoverUrl(idx, e.currentTarget.value);
-                                }
-                              }}
-                              className="text-xs h-6 bg-white text-black"
-                            />
-                            <Button
-                              size="sm"
-                              className="h-5 text-xs bg-white text-black hover:bg-gray-100"
-                              onClick={() => {
-                                const input = document.querySelector('input[placeholder="URL couverture"]');
-                                if (input) updateCoverUrl(idx, input.value);
-                              }}
-                            >
-                              OK
-                            </Button>
-                          </div>
-                        )}
+                      <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md flex items-center justify-center flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        <BookOpen className="w-8 h-8" style={{ color: 'var(--deep-pink)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: 'var(--dark-text)' }}>
@@ -389,12 +343,7 @@ RÈGLES ABSOLUES :
                         <p className="text-xs font-medium mb-1" style={{ color: 'var(--deep-pink)' }}>
                           {book.author}
                         </p>
-                        {book.isbn && book.isbn !== "unknown" && (
-                          <p className="text-[10px] mb-1 font-mono" style={{ color: 'var(--warm-pink)' }}>
-                            ISBN: {book.isbn}
-                          </p>
-                        )}
-                        <p className="text-xs line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                        <p className="text-xs line-clamp-3" style={{ color: 'var(--dark-text)' }}>
                           {book.synopsis}
                         </p>
                       </div>
