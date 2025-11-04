@@ -144,30 +144,59 @@ export default function Layout({ children, currentPageName }) {
           background-color: var(--cream);
           color: var(--dark-text);
         }
+
+        /* Sidebar styles for dark theme */
+        .dark-theme .sidebar-container {
+          background-color: #0f1419 !important;
+          border-right-color: #2d3748 !important;
+        }
+
+        .dark-theme .sidebar-header {
+          border-bottom-color: #2d3748 !important;
+        }
+
+        .dark-theme .sidebar-footer {
+          border-top-color: #2d3748 !important;
+        }
+
+        .dark-theme .sidebar-link {
+          color: #cbd5e0;
+        }
+
+        .dark-theme .sidebar-link:hover {
+          background-color: rgba(255, 107, 157, 0.1);
+        }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
-        <Sidebar className="border-r" style={{ 
-          borderColor: 'var(--beige)',
-          backgroundColor: isDark ? '#0f1419' : 'white'
-        }}>
-          <SidebarHeader className="border-b p-6" style={{ borderColor: 'var(--beige)' }}>
+        <Sidebar 
+          className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
+          style={{ 
+            borderColor: isDark ? '#2d3748' : 'var(--beige)',
+            backgroundColor: isDark ? '#0f1419' : 'white'
+          }}>
+          <SidebarHeader 
+            className="border-b p-6 sidebar-header" 
+            style={{ 
+              borderColor: isDark ? '#2d3748' : 'var(--beige)',
+              backgroundColor: isDark ? '#0f1419' : 'transparent'
+            }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
+                <h2 className="font-bold text-lg" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
                   Nos Livres
                 </h2>
-                <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
+                <p className="text-xs font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
                   Notre bibliothèque partagée 🌸
                 </p>
               </div>
             </div>
           </SidebarHeader>
           
-          <SidebarContent className="p-3">
+          <SidebarContent className="p-3" style={{ backgroundColor: isDark ? '#0f1419' : 'transparent' }}>
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -175,7 +204,7 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        className={`mb-1 rounded-xl transition-all duration-200 ${
+                        className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
                           location.pathname === item.url 
                             ? 'text-white shadow-md' 
                             : 'hover:bg-opacity-50'
@@ -183,7 +212,8 @@ export default function Layout({ children, currentPageName }) {
                         style={location.pathname === item.url ? {
                           background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
                         } : {
-                          color: isDark ? 'var(--dark-text)' : 'inherit'
+                          color: isDark ? '#cbd5e0' : 'inherit',
+                          backgroundColor: 'transparent'
                         }}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
@@ -198,11 +228,19 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t p-4" style={{ borderColor: 'var(--beige)' }}>
+          <SidebarFooter 
+            className="border-t p-4 sidebar-footer" 
+            style={{ 
+              borderColor: isDark ? '#2d3748' : 'var(--beige)',
+              backgroundColor: isDark ? '#0f1419' : 'transparent'
+            }}>
             {user && (
               <div className="space-y-3">
                 <Link to={createPageUrl("AccountSettings")}>
-                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-opacity-10 hover:bg-pink-500 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-opacity-10 transition-colors cursor-pointer"
+                       style={{ 
+                         backgroundColor: isDark ? 'rgba(255, 107, 157, 0.1)' : 'transparent',
+                       }}>
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
                          style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
                       {user.profile_picture ? (
@@ -212,10 +250,10 @@ export default function Layout({ children, currentPageName }) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
+                      <p className="font-medium text-sm truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
                         {user.full_name || 'Lectrice'}
                       </p>
-                      <p className="text-xs truncate font-medium" style={{ color: 'var(--deep-pink)' }}>
+                      <p className="text-xs truncate font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
                         {user.email}
                       </p>
                     </div>
@@ -225,8 +263,8 @@ export default function Layout({ children, currentPageName }) {
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                   style={{ 
-                    backgroundColor: 'var(--beige)',
-                    color: 'var(--deep-pink)'
+                    backgroundColor: isDark ? '#16213e' : 'var(--beige)',
+                    color: isDark ? '#ff6b9d' : 'var(--deep-pink)'
                   }}
                 >
                   <LogOut className="w-4 h-4" />
@@ -240,12 +278,13 @@ export default function Layout({ children, currentPageName }) {
         <main className="flex-1 flex flex-col">
           <header className="border-b px-6 py-4 flex items-center justify-between" 
                   style={{ 
-                    borderColor: 'var(--beige)',
+                    borderColor: isDark ? '#2d3748' : 'var(--beige)',
                     backgroundColor: isDark ? '#0f1419' : 'white'
                   }}>
             <div className="flex items-center gap-4 md:hidden">
-              <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors" />
-              <h1 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors" 
+                              style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
+              <h1 className="text-xl font-bold" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
                 Nos Livres
               </h1>
             </div>
@@ -254,7 +293,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex items-center gap-3">
                 <Link to={createPageUrl("Chat")}>
                   <Button variant="ghost" size="icon" className="relative">
-                    <MessageCircle className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                    <MessageCircle className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
                   </Button>
                 </Link>
                 <NotificationBell user={user} />
