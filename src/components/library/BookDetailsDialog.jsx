@@ -7,10 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, MessageSquare, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen } from "lucide-react";
+import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X } from "lucide-react"; // Added X icon
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -23,6 +22,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const [uploading, setUploading] = useState(false);
   const [editingCover, setEditingCover] = useState(false);
   const [newCoverUrl, setNewCoverUrl] = useState("");
+  const [activeTab, setActiveTab] = useState("details"); // New state for active tab
   const [newComment, setNewComment] = useState({
     comment: "",
     page_number: "",
@@ -251,525 +251,552 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2"
-                     style={{ borderColor: '#e5e7eb' }}>
-        <DialogHeader className="border-b pb-4" style={{ borderColor: '#e5e7eb' }}>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
-            {book.title}
-          </DialogTitle>
-          <p style={{ color: 'var(--warm-pink)' }}>par {book.author}</p>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border border-neutral-200 rounded-2xl shadow-2xl">
+        {/* Header - fond blanc pur */}
+        <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold text-neutral-900">
+                {book.title}
+              </DialogTitle>
+              <p className="text-sm text-neutral-500 mt-1">par {book.author}</p>
+            </div>
+            <button 
+              onClick={() => onOpenChange(false)}
+              className="rounded-lg p-2 hover:bg-neutral-100 transition-colors"
+            >
+              <X className="w-5 h-5 text-neutral-500" />
+            </button>
+          </div>
         </DialogHeader>
 
-        <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white border-2" 
-                    style={{ borderColor: 'var(--beige)' }}>
-            <TabsTrigger value="details" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              Détails
-            </TabsTrigger>
-            <TabsTrigger value="synopsis" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              Synopsis
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              Commentaires ({comments.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs - fond neutre clair */}
+        <div className="flex gap-2 px-6 pt-4 bg-neutral-50 border-b border-neutral-200 flex-shrink-0">
+          {[
+            { id: "details", label: "Détails" },
+            { id: "synopsis", label: "Synopsis" },
+            { id: "comments", label: `Commentaires (${comments.length})` }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-2.5 rounded-t-xl font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-rose-600 border-t border-x border-neutral-200 -mb-px'
+                  : 'bg-transparent text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          <TabsContent value="details" className="space-y-4 py-4 bg-white">
-            {userBook.status === "À lire" && (
-              <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
-                   style={{ 
-                     backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
-                     borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
-                   }}
-                   onClick={toggleServicePress}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📬</span>
-                    <div>
-                      <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
-                        Service Press
-                      </p>
-                      <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
-                        Marquer ce livre comme prioritaire
-                      </p>
+        {/* Body - scroll avec fond blanc */}
+        <div className="flex-1 overflow-y-auto bg-white">
+          <div className="p-6">
+            {activeTab === "details" && (
+              <div className="space-y-4 py-4 bg-white"> {/* Original className from TabsContent */}
+                {userBook.status === "À lire" && (
+                  <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
+                       style={{ 
+                         backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
+                         borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
+                       }}
+                       onClick={toggleServicePress}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">📬</span>
+                        <div>
+                          <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
+                            Service Press
+                          </p>
+                          <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
+                            Marquer ce livre comme prioritaire
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`w-12 h-6 rounded-full transition-all ${
+                        isServicePress ? 'bg-white' : 'bg-gray-300'
+                      }`}>
+                        <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
+                          isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
+                        }`} />
+                      </div>
                     </div>
                   </div>
-                  <div className={`w-12 h-6 rounded-full transition-all ${
-                    isServicePress ? 'bg-white' : 'bg-gray-300'
-                  }`}>
-                    <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
-                      isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
-                    }`} />
+                )}
+
+                <div className="flex gap-6">
+                  <div className="relative">
+                    <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {book.cover_url ? (
+                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Star className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                      onClick={() => setEditingCover(!editingCover)}
+                    >
+                      Changer la couverture
+                    </Button>
                   </div>
+
+                  {editingCover && (
+                    <div className="flex-1 space-y-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                      <Label>Nouvelle URL de couverture</Label>
+                      <Input
+                        value={newCoverUrl}
+                        onChange={(e) => setNewCoverUrl(e.target.value)}
+                        placeholder="https://..."
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditingCover(false);
+                            setNewCoverUrl("");
+                          }}
+                        >
+                          Annuler
+                        </Button>
+                        <Button
+                          onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
+                          disabled={!newCoverUrl || updateBookCoverMutation.isPending}
+                          className="text-white"
+                          style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}
+                        >
+                          Enregistrer
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!editingCover && (
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <Label htmlFor="status">Statut</Label>
+                        <Select 
+                          value={editedData.status} 
+                          onValueChange={(value) => setEditedData({...editedData, status: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUSES.map(s => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {customShelves.length > 0 && (
+                        <div>
+                          <Label htmlFor="shelf">Étagère personnalisée</Label>
+                          <Select 
+                            value={editedData.custom_shelf || ""} 
+                            onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Aucune" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={null}>Aucune</SelectItem> {/* Changed to empty string for consistent UI with placeholder */}
+                              {customShelves.map(s => (
+                                <SelectItem key={s.id} value={s.name}>
+                                  {s.icon} {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="rating">Note (sur 5)</Label>
+                          <Input
+                            id="rating"
+                            type="number"
+                            min="0"
+                            max="5"
+                            step="0.5"
+                            value={editedData.rating || ""}
+                            onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="character">Personnage préféré</Label>
+                          <Input
+                            id="character"
+                            value={editedData.favorite_character || ""}
+                            onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                            placeholder="Book boyfriend..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg" 
+                           style={{ backgroundColor: 'var(--cream)' }}>
+                        <Label htmlFor="shared">Lecture commune</Label>
+                        <Switch
+                          id="shared"
+                          checked={editedData.is_shared_reading}
+                          onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="review">Mon avis</Label>
+                  <Textarea
+                    id="review"
+                    value={editedData.review || ""}
+                    onChange={(e) => setEditedData({...editedData, review: e.target.value})}
+                    placeholder="Qu'avez-vous pensé de ce livre ?"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Music className="w-4 h-4" />
+                    Musique associée
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      value={editedData.music || ""}
+                      onChange={(e) => setEditedData({...editedData, music: e.target.value})}
+                      placeholder="Titre"
+                    />
+                    <Input
+                      value={editedData.music_artist || ""}
+                      onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
+                      placeholder="Artiste"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Dates de lecture (pour le défi annuel)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start" className="text-xs">Date de début</Label>
+                      <Input
+                        id="start"
+                        type="date"
+                        value={editedData.start_date || ""}
+                        onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end" className="text-xs">Date de fin</Label>
+                      <Input
+                        id="end"
+                        type="date"
+                        value={editedData.end_date || ""}
+                        onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  {editedData.status === "Lu" && !editedData.end_date && (
+                    <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                      ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => deleteMutation.mutate()}
+                    disabled={deleteMutation.isPending}
+                    className="text-white font-medium border-0"
+                    style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer
+                  </Button>
+                  <Button
+                    onClick={() => updateMutation.mutate({
+                      ...editedData,
+                      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+                    })}
+                    disabled={updateMutation.isPending}
+                    className="text-white font-medium"
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  >
+                    Enregistrer
+                  </Button>
                 </div>
               </div>
             )}
 
-            <div className="flex gap-6">
-              <div className="relative">
-                <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
-                     style={{ backgroundColor: 'var(--beige)' }}>
-                  {book.cover_url ? (
-                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+            {activeTab === "synopsis" && (
+              <div className="space-y-4 py-4 bg-white"> {/* Original className from TabsContent */}
+                <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                  {book.synopsis ? (
+                    <div>
+                      <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                        📖 Synopsis
+                      </h3>
+                      <p className="text-base leading-relaxed" style={{ color: 'var(--dark-text)' }}>
+                        {book.synopsis}
+                      </p>
+                    </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Star className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                    <div className="text-center py-12">
+                      <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                      <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
+                        Aucun synopsis disponible
+                      </p>
+                      <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
+                        Modifiez le livre pour ajouter un synopsis
+                      </p>
                     </div>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2"
-                  onClick={() => setEditingCover(!editingCover)}
-                >
-                  Changer la couverture
-                </Button>
-              </div>
 
-              {editingCover && (
-                <div className="flex-1 space-y-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                  <Label>Nouvelle URL de couverture</Label>
-                  <Input
-                    value={newCoverUrl}
-                    onChange={(e) => setNewCoverUrl(e.target.value)}
-                    placeholder="https://..."
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingCover(false);
-                        setNewCoverUrl("");
-                      }}
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
-                      disabled={!newCoverUrl || updateBookCoverMutation.isPending}
-                      className="text-white"
-                      style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}
-                    >
-                      Enregistrer
-                    </Button>
+                {book.genre && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                      Genre :
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-sm font-medium"
+                          style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
+                      {book.genre}
+                    </span>
                   </div>
-                </div>
-              )}
+                )}
 
-              {!editingCover && (
-                <div className="flex-1 space-y-4">
+                {book.page_count && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                      Nombre de pages :
+                    </span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                      {book.page_count}
+                    </span>
+                  </div>
+                )}
+
+                {book.publication_year && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                      Année de publication :
+                    </span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                      {book.publication_year}
+                    </span>
+                  </div>
+                )}
+
+                {book.tags && book.tags.length > 0 && (
                   <div>
-                    <Label htmlFor="status">Statut</Label>
-                    <Select 
-                      value={editedData.status} 
-                      onValueChange={(value) => setEditedData({...editedData, status: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                      Tags :
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {book.tags.map((tag, idx) => (
+                        <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
+                              style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
+                          {tag === "Service Press" && "📬 "}
+                          {tag === "Audio" && "🎧 "}
+                          {tag === "Numérique" && "📱 "}
+                          {tag === "Broché" && "📕 "}
+                          {tag === "Relié" && "📘 "}
+                          {tag === "Poche" && "📙 "}
+                          {tag === "Wattpad" && "🌟 "}
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                )}
+              </div>
+            )}
 
-                  {customShelves.length > 0 && (
+            {activeTab === "comments" && (
+              <div className="space-y-4 py-4 bg-white"> {/* Original className from TabsContent */}
+                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                  <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
+                    Ajouter un commentaire
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="shelf">Étagère personnalisée</Label>
+                      <Label htmlFor="page">Page / %</Label>
+                      <Input
+                        id="page"
+                        type="number"
+                        value={newComment.page_number}
+                        onChange={(e) => setNewComment({...newComment, page_number: e.target.value})}
+                        placeholder="Ex: 150"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="chapter">Chapitre</Label>
+                      <Input
+                        id="chapter"
+                        value={newComment.chapter}
+                        onChange={(e) => setNewComment({...newComment, chapter: e.target.value})}
+                        placeholder="Ex: Ch. 5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="mood">Humeur</Label>
                       <Select 
-                        value={editedData.custom_shelf || ""} 
-                        onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                        value={newComment.mood} 
+                        onValueChange={(value) => setNewComment({...newComment, mood: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Aucune" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={null}>Aucune</SelectItem>
-                          {customShelves.map(s => (
-                            <SelectItem key={s.id} value={s.name}>
-                              {s.icon} {s.name}
-                            </SelectItem>
+                          {["😊", "😍", "😢", "😱", "🤔", "😡", "🥰"].map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="comment">Votre commentaire, théorie, impression...</Label>
+                    <Textarea
+                      id="comment"
+                      value={newComment.comment}
+                      onChange={(e) => setNewComment({...newComment, comment: e.target.value})}
+                      placeholder="Partagez vos pensées..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Photo du moment</Label>
+                    <div className="flex gap-3">
+                      <Input
+                        value={newComment.photo_url}
+                        onChange={(e) => setNewComment({...newComment, photo_url: e.target.value})}
+                        placeholder="URL de la photo ou..."
+                      />
+                      <label className="cursor-pointer flex items-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                        <Button type="button" variant="outline" disabled={uploading}>
+                          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        </Button>
+                      </label>
+                    </div>
+                  </div>
+
+                  {newComment.photo_url && (
+                    <div className="rounded-xl overflow-hidden">
+                      <img src={newComment.photo_url} alt="Preview" className="w-full h-48 object-cover" />
+                    </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="rating">Note (sur 5)</Label>
-                      <Input
-                        id="rating"
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.5"
-                        value={editedData.rating || ""}
-                        onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="spoiler"
+                        checked={newComment.is_spoiler}
+                        onCheckedChange={(checked) => setNewComment({...newComment, is_spoiler: checked})}
                       />
+                      <Label htmlFor="spoiler" className="text-sm cursor-pointer">
+                        Contient des spoilers
+                      </Label>
                     </div>
-                    <div>
-                      <Label htmlFor="character">Personnage préféré</Label>
-                      <Input
-                        id="character"
-                        value={editedData.favorite_character || ""}
-                        onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                        placeholder="Book boyfriend..."
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 rounded-lg" 
-                       style={{ backgroundColor: 'var(--cream)' }}>
-                    <Label htmlFor="shared">Lecture commune</Label>
-                    <Switch
-                      id="shared"
-                      checked={editedData.is_shared_reading}
-                      onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="review">Mon avis</Label>
-              <Textarea
-                id="review"
-                value={editedData.review || ""}
-                onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                placeholder="Qu'avez-vous pensé de ce livre ?"
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Music className="w-4 h-4" />
-                Musique associée
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  value={editedData.music || ""}
-                  onChange={(e) => setEditedData({...editedData, music: e.target.value})}
-                  placeholder="Titre"
-                />
-                <Input
-                  value={editedData.music_artist || ""}
-                  onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
-                  placeholder="Artiste"
-                />
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Dates de lecture (pour le défi annuel)
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start" className="text-xs">Date de début</Label>
-                  <Input
-                    id="start"
-                    type="date"
-                    value={editedData.start_date || ""}
-                    onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end" className="text-xs">Date de fin</Label>
-                  <Input
-                    id="end"
-                    type="date"
-                    value={editedData.end_date || ""}
-                    onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                  />
-                </div>
-              </div>
-              {editedData.status === "Lu" && !editedData.end_date && (
-                <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                  ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-                className="text-white font-medium border-0"
-                style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Supprimer
-              </Button>
-              <Button
-                onClick={() => updateMutation.mutate({
-                  ...editedData,
-                  rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
-                })}
-                disabled={updateMutation.isPending}
-                className="text-white font-medium"
-                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-              >
-                Enregistrer
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="synopsis" className="space-y-4 py-4 bg-white">
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-              {book.synopsis ? (
-                <div>
-                  <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                    📖 Synopsis
-                  </h3>
-                  <p className="text-base leading-relaxed" style={{ color: 'var(--dark-text)' }}>
-                    {book.synopsis}
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                  <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
-                    Aucun synopsis disponible
-                  </p>
-                  <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
-                    Modifiez le livre pour ajouter un synopsis
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {book.genre && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                  Genre :
-                </span>
-                <span className="px-3 py-1 rounded-full text-sm font-medium"
-                      style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
-                  {book.genre}
-                </span>
-              </div>
-            )}
-
-            {book.page_count && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                  Nombre de pages :
-                </span>
-                <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                  {book.page_count}
-                </span>
-              </div>
-            )}
-
-            {book.publication_year && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                  Année de publication :
-                </span>
-                <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                  {book.publication_year}
-                </span>
-              </div>
-            )}
-
-            {book.tags && book.tags.length > 0 && (
-              <div>
-                <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                  Tags :
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {book.tags.map((tag, idx) => (
-                    <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
-                          style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
-                      {tag === "Service Press" && "📬 "}
-                      {tag === "Audio" && "🎧 "}
-                      {tag === "Numérique" && "📱 "}
-                      {tag === "Broché" && "📕 "}
-                      {tag === "Relié" && "📘 "}
-                      {tag === "Poche" && "📙 "}
-                      {tag === "Wattpad" && "🌟 "}
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="comments" className="space-y-4 py-4 bg-white">
-            <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-              <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
-                Ajouter un commentaire
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label htmlFor="page">Page / %</Label>
-                  <Input
-                    id="page"
-                    type="number"
-                    value={newComment.page_number}
-                    onChange={(e) => setNewComment({...newComment, page_number: e.target.value})}
-                    placeholder="Ex: 150"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="chapter">Chapitre</Label>
-                  <Input
-                    id="chapter"
-                    value={newComment.chapter}
-                    onChange={(e) => setNewComment({...newComment, chapter: e.target.value})}
-                    placeholder="Ex: Ch. 5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="mood">Humeur</Label>
-                  <Select 
-                    value={newComment.mood} 
-                    onValueChange={(value) => setNewComment({...newComment, mood: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["😊", "😍", "😢", "😱", "🤔", "😡", "🥰"].map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="comment">Votre commentaire, théorie, impression...</Label>
-                <Textarea
-                  id="comment"
-                  value={newComment.comment}
-                  onChange={(e) => setNewComment({...newComment, comment: e.target.value})}
-                  placeholder="Partagez vos pensées..."
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label>Photo du moment</Label>
-                <div className="flex gap-3">
-                  <Input
-                    value={newComment.photo_url}
-                    onChange={(e) => setNewComment({...newComment, photo_url: e.target.value})}
-                    placeholder="URL de la photo ou..."
-                  />
-                  <label className="cursor-pointer flex items-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                    <Button type="button" variant="outline" disabled={uploading}>
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    <Button
+                      onClick={() => addCommentMutation.mutate(newComment)}
+                      disabled={!newComment.comment || addCommentMutation.isPending}
+                      size="sm"
+                      className="text-white"
+                      style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
                     </Button>
-                  </label>
-                </div>
-              </div>
-
-              {newComment.photo_url && (
-                <div className="rounded-xl overflow-hidden">
-                  <img src={newComment.photo_url} alt="Preview" className="w-full h-48 object-cover" />
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="spoiler"
-                    checked={newComment.is_spoiler}
-                    onCheckedChange={(checked) => setNewComment({...newComment, is_spoiler: checked})}
-                  />
-                  <Label htmlFor="spoiler" className="text-sm cursor-pointer">
-                    Contient des spoilers
-                  </Label>
-                </div>
-                <Button
-                  onClick={() => addCommentMutation.mutate(newComment)}
-                  disabled={!newComment.comment || addCommentMutation.isPending}
-                  size="sm"
-                  className="text-white"
-                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Ajouter
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="p-4 rounded-xl border"
-                    style={{ 
-                      backgroundColor: 'white',
-                      borderColor: 'var(--beige)'
-                    }}
-                  >
-                    {comment.photo_url && (
-                      <div className="mb-3 rounded-lg overflow-hidden">
-                        <img src={comment.photo_url} alt="Moment de lecture" className="w-full h-48 object-cover" />
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{comment.mood}</span>
-                        <div>
-                          <p className="text-sm font-medium" style={{ color: 'var(--deep-brown)' }}>
-                            {comment.chapter ? comment.chapter : `Page ${comment.page_number || '?'}`}
-                          </p>
-                          <p className="text-xs" style={{ color: 'var(--soft-brown)' }}>
-                            {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {comment.is_spoiler && (
-                          <span className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                                style={{ backgroundColor: 'var(--rose-gold)', color: 'var(--deep-brown)' }}>
-                            <AlertTriangle className="w-3 h-3" />
-                            Spoiler
-                          </span>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteCommentMutation.mutate(comment.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-sm" style={{ color: 'var(--deep-brown)' }}>
-                      {comment.comment}
-                    </p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8" style={{ color: 'var(--warm-brown)' }}>
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  Aucun commentaire pour ce livre
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+
+                <div className="space-y-3">
+                  {comments.length > 0 ? (
+                    comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="p-4 rounded-xl border"
+                        style={{ 
+                          backgroundColor: 'white',
+                          borderColor: 'var(--beige)'
+                        }}
+                      >
+                        {comment.photo_url && (
+                          <div className="mb-3 rounded-lg overflow-hidden">
+                            <img src={comment.photo_url} alt="Moment de lecture" className="w-full h-48 object-cover" />
+                          </div>
+                        )}
+                        
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{comment.mood}</span>
+                            <div>
+                              <p className="text-sm font-medium" style={{ color: 'var(--deep-brown)' }}>
+                                {comment.chapter ? comment.chapter : `Page ${comment.page_number || '?'}`}
+                              </p>
+                              <p className="text-xs" style={{ color: 'var(--soft-brown)' }}>
+                                {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {comment.is_spoiler && (
+                              <span className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                                    style={{ backgroundColor: 'var(--rose-gold)', color: 'var(--deep-brown)' }}>
+                                <AlertTriangle className="w-3 h-3" />
+                                Spoiler
+                              </span>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteCommentMutation.mutate(comment.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--deep-brown)' }}>
+                          {comment.comment}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8" style={{ color: 'var(--warm-brown)' }}>
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" /> {/* MessageSquare import needed */}
+                      Aucun commentaire pour ce livre
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
