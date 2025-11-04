@@ -293,7 +293,7 @@ export default function Dashboard() {
                 <Link to={createPageUrl("Profile")}>
                   <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Heart className="w-4 h-4 mr-2" />
-                    Mes Book Boyfriends
+                    Mes Personnages Préférés
                   </Button>
                 </Link>
               </CardContent>
