@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,13 @@ import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Palette, Heart
 import { createPageUrl } from "@/utils";
 
 export default function UserProfile() {
-  const { userEmail } = useParams();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("library");
+  
+  // Get userEmail from URL query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const userEmail = urlParams.get('userEmail');
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -88,12 +91,14 @@ export default function UserProfile() {
   }
 
   const isOwnProfile = currentUser?.email === userEmail;
-  const accentColor = isOwnProfile ? 'var(--deep-pink)' : '#3B82F6';
+  // Rose pour son profil, VIOLET pour les amis
+  const accentColor = isOwnProfile ? 'var(--deep-pink)' : '#8B5CF6';
+  const secondaryColor = isOwnProfile ? 'var(--warm-pink)' : '#A78BFA';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       {/* Header with banner */}
-      <div className="relative h-48" style={{ background: `linear-gradient(135deg, ${accentColor}, ${isOwnProfile ? 'var(--warm-pink)' : '#60A5FA'})` }}>
+      <div className="relative h-48" style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
         <div className="absolute top-4 left-4">
           <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -230,6 +235,12 @@ export default function UserProfile() {
                 );
               })}
             </div>
+            {userBooks.length === 0 && (
+              <div className="text-center py-12">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun livre dans la bibliothèque</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="quotes">
@@ -250,6 +261,12 @@ export default function UserProfile() {
                 );
               })}
             </div>
+            {userQuotes.length === 0 && (
+              <div className="text-center py-12">
+                <Quote className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucune citation</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="fanart">
@@ -260,6 +277,12 @@ export default function UserProfile() {
                 </Card>
               ))}
             </div>
+            {userFanArts.length === 0 && (
+              <div className="text-center py-12">
+                <Image className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun fan art</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="characters">
@@ -288,6 +311,12 @@ export default function UserProfile() {
                 );
               })}
             </div>
+            {userCharacters.length === 0 && (
+              <div className="text-center py-12">
+                <Heart className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun personnage préféré</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
