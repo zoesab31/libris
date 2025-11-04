@@ -47,7 +47,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
   });
 
-  // Function to search books using AI with MUCH better cover URL fetching
+  // Function to search books using AI with ENHANCED cover URL fetching
   const searchBooks = async () => {
     if (!searchQuery.trim()) return;
 
@@ -56,35 +56,47 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Tu es un expert en recherche de livres et couvertures. Recherche: "${searchQuery}".
 
-IMPÉRATIF - Pour chaque livre, tu DOIS trouver une URL de couverture VALIDE et ACCESSIBLE :
+IMPÉRATIF ABSOLU - Pour chaque livre, tu DOIS trouver une URL de couverture VALIDE :
 
-1. PRIORITÉ 1 - OpenLibrary (le plus fiable) :
-   Format: https://covers.openlibrary.org/b/isbn/[ISBN]-L.jpg
-   OU: https://covers.openlibrary.org/b/olid/[OLID]-L.jpg
+MÉTHODES PRIORITAIRES (dans l'ordre) :
 
-2. PRIORITÉ 2 - Google Books API :
-   Cherche l'image via l'API Google Books et retourne l'URL HTTPS complète
+1. **OpenLibrary (PRIORITÉ ABSOLUE)** :
+   - Format ISBN-13 (préféré): https://covers.openlibrary.org/b/isbn/[ISBN-13]-L.jpg
+   - Format ISBN-10: https://covers.openlibrary.org/b/isbn/[ISBN-10]-L.jpg  
+   - Format OLID: https://covers.openlibrary.org/b/olid/[OLID]-L.jpg
+   - Exemple: https://covers.openlibrary.org/b/isbn/9782253006329-L.jpg
 
-3. PRIORITÉ 3 - Autres sources fiables :
-   - Amazon Images (format HTTPS)
-   - Goodreads covers
-   - Babelio covers
+2. **Google Books API** :
+   - Utilise l'API Google Books (books.googleapis.com/books/v1/volumes)
+   - Récupère le lien "imageLinks.thumbnail" ou "imageLinks.smallThumbnail"
+   - Remplace "zoom=1" par "zoom=2" pour meilleure qualité
+   - Exemple: http://books.google.com/books/content?id=XXX&printsec=frontcover&img=1&zoom=2
 
-RÈGLES STRICTES :
-- TOUJOURS privilégier une vraie URL plutôt que de laisser vide
-- Vérifier que l'URL commence par "https://"
-- Utiliser "-L.jpg" pour OpenLibrary (grande taille)
-- Si tu as un ISBN, TOUJOURS l'utiliser
-- Retourne 6-8 suggestions pertinentes
+3. **Amazon Images** :
+   - Format: https://images-na.ssl-images-amazon.com/images/P/[ASIN].jpg
+   - OU: https://m.media-amazon.com/images/I/[IMAGE_ID].jpg
 
-Pour chaque livre, fournis :
-- Titre exact
-- Auteur complet
-- ISBN (si connu)
-- Résumé bref (2-3 lignes)
-- Genre précis
-- Année de publication
-- cover_url (URL VALIDE ET ACCESSIBLE - ne JAMAIS laisser vide si le livre existe)`,
+4. **Autres sources fiables** :
+   - Goodreads: https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/[ID]/[BOOK_ID].jpg
+   - Babelio
+
+RÈGLES ABSOLUES :
+- ✅ Vérifie que l'URL commence par "http://" ou "https://"
+- ✅ Pour OpenLibrary, utilise TOUJOURS "-L.jpg" (large) pour bonne qualité
+- ✅ Si ISBN disponible, TOUJOURS l'utiliser en priorité
+- ✅ Teste mentalement que l'URL est bien formée
+- ✅ Préfère OpenLibrary > Google Books > Amazon > Autres
+- ❌ NE JAMAIS laisser cover_url vide si le livre existe réellement
+- ✅ Retourne 6-8 suggestions pertinentes
+
+Pour chaque livre, fournis OBLIGATOIREMENT :
+- title (titre exact)
+- author (auteur complet)
+- isbn (ISBN-13 de préférence, sinon ISBN-10)
+- synopsis (résumé 2-3 lignes)
+- genre (précis parmi la liste fournie)
+- publication_year
+- cover_url (URL VALIDE ET TESTABLE - JAMAIS VIDE)`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -379,25 +391,43 @@ Pour chaque livre, fournis :
                 </div>
 
                 <div>
-                  <Label htmlFor="tags">Tags (optionnel)</Label>
-                  <Select
-                    value={bookData.tags?.[0] || ""}
-                    onValueChange={(value) => setBookData({...bookData, tags: value ? [value] : []})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>Aucun</SelectItem>
-                      <SelectItem value="Service Press">📬 Service Press</SelectItem>
-                      <SelectItem value="Audio">🎧 Audio</SelectItem>
-                      <SelectItem value="Numérique">📱 Numérique</SelectItem>
-                      <SelectItem value="Broché">📕 Broché</SelectItem>
-                      <SelectItem value="Relié">📘 Relié</SelectItem>
-                      <SelectItem value="Poche">📙 Poche</SelectItem>
-                      <SelectItem value="Wattpad">🌟 Wattpad</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Tags</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {["Service Press", "Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          const currentTags = bookData.tags || [];
+                          if (currentTags.includes(tag)) {
+                            setBookData({...bookData, tags: currentTags.filter(t => t !== tag)});
+                          } else {
+                            setBookData({...bookData, tags: [...currentTags, tag]});
+                          }
+                        }}
+                        className={`p-2 rounded-lg text-sm font-medium transition-all ${
+                          (bookData.tags || []).includes(tag) 
+                            ? 'shadow-md scale-105' 
+                            : 'hover:shadow-md'
+                        }`}
+                        style={{
+                          backgroundColor: (bookData.tags || []).includes(tag) ? 'var(--soft-pink)' : 'white',
+                          color: (bookData.tags || []).includes(tag) ? 'white' : 'var(--dark-text)',
+                          border: '2px solid',
+                          borderColor: (bookData.tags || []).includes(tag) ? 'var(--deep-pink)' : 'var(--beige)'
+                        }}
+                      >
+                        {tag === "Service Press" && "📬 "}
+                        {tag === "Audio" && "🎧 "}
+                        {tag === "Numérique" && "📱 "}
+                        {tag === "Broché" && "📕 "}
+                        {tag === "Relié" && "📘 "}
+                        {tag === "Poche" && "📙 "}
+                        {tag === "Wattpad" && "🌟 "}
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>

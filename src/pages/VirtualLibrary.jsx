@@ -1,19 +1,8 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { Store, BookOpen } from "lucide-react";
 import { toast } from "sonner";
-
-// Plant decorations that will be randomly placed
-const PLANTS = [
-  { emoji: "🌿", name: "Fougère" },
-  { emoji: "🪴", name: "Plante en pot" },
-  { emoji: "🌱", name: "Petite plante" },
-  { emoji: "🍃", name: "Lierre" },
-  { emoji: "🌾", name: "Herbe décorative" },
-  { emoji: "🎋", name: "Bambou" },
-];
 
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
@@ -54,34 +43,8 @@ export default function VirtualLibrary() {
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu");
-  const shelves = Math.ceil(readBooks.length / 15) || 3;
-
-  // Generate random plants for shelves (max 2 per shelf, not all shelves have plants)
-  const getShelfPlants = (shelfNum) => {
-    // Use shelf number as seed for consistency
-    const random = (seed) => {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    };
-    
-    // 60% chance of having plants on a shelf
-    if (random(shelfNum * 123) > 0.6) return [];
-    
-    // 1 or 2 plants max
-    const plantCount = random(shelfNum * 456) > 0.5 ? 2 : 1;
-    const plants = [];
-    
-    for (let i = 0; i < plantCount; i++) {
-      const plantIndex = Math.floor(random(shelfNum * (i + 1) * 789) * PLANTS.length);
-      const position = random(shelfNum * (i + 1) * 321) * 80 + 10; // 10% to 90% of width
-      plants.push({
-        ...PLANTS[plantIndex],
-        position: position
-      });
-    }
-    
-    return plants;
-  };
+  // Calculate number of shelves needed (15 books per shelf, minimum 3 shelves)
+  const shelves = Math.max(Math.ceil(readBooks.length / 15), 3);
 
   const handleDragStart = (e, userBookId) => {
     setDraggedBookId(userBookId);
@@ -141,7 +104,7 @@ export default function VirtualLibrary() {
                 Ma Bibliothèque Virtuelle
               </h1>
               <p className="text-lg font-medium" style={{ color: 'var(--deep-pink)' }}>
-                {readBooks.length} livres lus
+                {readBooks.length} livres lus • {shelves} étagère{shelves > 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -153,87 +116,78 @@ export default function VirtualLibrary() {
                minHeight: '600px'
              }}>
           <div className="space-y-8">
-            {Array(shelves).fill(0).map((_, shelfNum) => {
-              const shelfPlants = getShelfPlants(shelfNum);
-              
-              return (
-                <div key={shelfNum} className="relative">
-                  <div className="min-h-[220px] rounded-lg shadow-lg flex items-end p-4 gap-3 overflow-x-auto relative"
-                       style={{ backgroundColor: '#8B4513' }}>
-                    {/* Plants on shelf */}
-                    {shelfPlants.map((plant, idx) => (
-                      <div key={idx}
-                           className="absolute bottom-4 text-4xl"
-                           style={{ left: `${plant.position}%`, transform: 'translateX(-50%)' }}>
-                        {plant.emoji}
-                      </div>
-                    ))}
+            {Array(shelves).fill(0).map((_, shelfNum) => (
+              <div key={shelfNum} className="relative">
+                <div className="min-h-[220px] rounded-lg shadow-lg flex items-end p-4 gap-3 overflow-x-auto"
+                     style={{ backgroundColor: '#8B4513' }}>
+                  {/* Books */}
+                  {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
+                    const book = allBooks.find(b => b.id === userBook.book_id);
+                    const bookColor = userBook.book_color || "#FFB3D9";
+                    const globalIndex = shelfNum * 15 + idx;
                     
-                    {/* Books */}
-                    {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      const bookColor = userBook.book_color || "#FFB3D9";
-                      const globalIndex = shelfNum * 15 + idx;
-                      
-                      return (
-                        <div 
-                          key={userBook.id || idx}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, userBook.id)}
-                          onDragOver={(e) => handleDragOver(e, globalIndex)}
-                          onDrop={(e) => handleDrop(e, globalIndex)}
-                          className={`w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
-                            dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
-                          }`}
-                          style={{ 
-                            backgroundColor: bookColor,
-                            opacity: draggedBookId === userBook.id ? 0.5 : 1,
-                            zIndex: 10
-                          }}
-                        >
-                          {/* Vertical text on book spine */}
-                          <div className="absolute inset-0 flex items-center justify-center p-2">
-                            <div className="transform -rotate-90 whitespace-nowrap">
-                              <p className="text-xs font-bold text-white leading-tight mb-1 max-w-[180px] truncate">
-                                {book?.title || 'Livre'}
-                              </p>
-                              <p className="text-[10px] text-white opacity-90 text-center">
-                                {book?.author || ''}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Color picker - BELOW the book */}
-                          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                            <div className="bg-white p-2 rounded-xl shadow-2xl border-2" 
-                                 style={{ borderColor: 'var(--soft-pink)' }}>
-                              <label className="flex flex-col items-center gap-1 cursor-pointer">
-                                <span className="text-xs font-bold whitespace-nowrap" style={{ color: 'var(--deep-pink)' }}>
-                                  🎨
-                                </span>
-                                <input 
-                                  type="color" 
-                                  value={bookColor}
-                                  onChange={(e) => handleColorChange(userBook.id, e.target.value)}
-                                  className="w-12 h-12 rounded-lg cursor-pointer border-2"
-                                  style={{ borderColor: 'var(--soft-pink)' }}
-                                />
-                              </label>
-                            </div>
+                    return (
+                      <div 
+                        key={userBook.id || idx}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, userBook.id)}
+                        onDragOver={(e) => handleDragOver(e, globalIndex)}
+                        onDrop={(e) => handleDrop(e, globalIndex)}
+                        className={`w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
+                          dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
+                        }`}
+                        style={{ 
+                          backgroundColor: bookColor,
+                          opacity: draggedBookId === userBook.id ? 0.5 : 1,
+                          zIndex: 10
+                        }}
+                      >
+                        {/* Vertical text on book spine */}
+                        <div className="absolute inset-0 flex items-center justify-center p-2">
+                          <div className="transform -rotate-90 whitespace-nowrap">
+                            <p className="text-xs font-bold text-white leading-tight mb-1 max-w-[180px] truncate">
+                              {book?.title || 'Livre'}
+                            </p>
+                            <p className="text-[10px] text-white opacity-90 text-center">
+                              {book?.author || ''}
+                            </p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                        
+                        {/* Color picker - BELOW the book */}
+                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                          <div className="bg-white p-2 rounded-xl shadow-2xl border-2" 
+                               style={{ borderColor: 'var(--soft-pink)' }}>
+                            <label className="flex flex-col items-center gap-1 cursor-pointer">
+                              <span className="text-xs font-bold whitespace-nowrap" style={{ color: 'var(--deep-pink)' }}>
+                                🎨
+                              </span>
+                              <input 
+                                type="color" 
+                                value={bookColor}
+                                onChange={(e) => handleColorChange(userBook.id, e.target.value)}
+                                className="w-12 h-12 rounded-lg cursor-pointer border-2"
+                                style={{ borderColor: 'var(--soft-pink)' }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="mt-6 p-6 rounded-xl text-center" style={{ backgroundColor: 'white' }}>
           <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
-            🌿 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
+            📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
+            <br />
+            <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+              Les étagères s'ajoutent automatiquement quand vous avez plus de 15 livres par étagère
+            </span>
           </p>
         </div>
       </div>
