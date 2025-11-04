@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Crop, ZoomIn, ZoomOut } from 'lucide-react';
+import { Crop, ZoomIn, ZoomOut, Minus, Plus } from 'lucide-react';
 
 export default function ImageCropper({ imageUrl, onCropComplete, onCancel }) {
   const canvasRef = useRef(null);
@@ -27,10 +26,10 @@ export default function ImageCropper({ imageUrl, onCropComplete, onCancel }) {
 
   const drawImage = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas?.getContext('2d');
     const img = imageRef.current;
 
-    if (!img || !canvas) return;
+    if (!img || !canvas || !ctx) return;
 
     const size = 400;
     canvas.width = size;
@@ -97,6 +96,10 @@ export default function ImageCropper({ imageUrl, onCropComplete, onCancel }) {
     }, 'image/jpeg', 0.95);
   };
 
+  const adjustZoom = (delta) => {
+    setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -116,28 +119,46 @@ export default function ImageCropper({ imageUrl, onCropComplete, onCancel }) {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <ZoomOut className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-          <Slider
-            value={[zoom]}
-            onValueChange={(value) => setZoom(value[0])}
-            min={0.5}
-            max={3}
-            step={0.1}
-            className="flex-1"
-          />
-          <ZoomIn className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => adjustZoom(-0.1)}
+            disabled={zoom <= 0.5}
+          >
+            <Minus className="w-4 h-4" />
+          </Button>
+          
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100">
+            <ZoomOut className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+            <span className="text-sm font-medium w-12 text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <ZoomIn className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+          </div>
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => adjustZoom(0.1)}
+            disabled={zoom >= 3}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
         <p className="text-xs text-center" style={{ color: 'var(--warm-pink)' }}>
-          Déplacez l'image et ajustez le zoom
+          Déplacez l'image et ajustez le zoom avec les boutons
         </p>
       </div>
 
       <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel}>
           Annuler
         </Button>
         <Button
+          type="button"
           onClick={handleCrop}
           className="text-white font-medium"
           style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
