@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ export default function AccountSettings() {
     full_name: "",
     display_name: "",
     profile_picture: "",
+    theme: "light",
   });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export default function AccountSettings() {
         full_name: u.full_name || "",
         display_name: u.display_name || "",
         profile_picture: u.profile_picture || "",
+        theme: u.theme || "light",
       });
     }).catch(() => {});
   }, []);
@@ -228,6 +231,52 @@ export default function AccountSettings() {
               <p className="text-xs mt-1" style={{ color: 'var(--deep-pink)' }}>
                 L'email ne peut pas être modifié
               </p>
+            </div>
+
+            {/* Theme selector */}
+            <div>
+              <Label htmlFor="theme">Thème de l'application</Label>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setProfileData({...profileData, theme: "light"})}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    profileData.theme === "light" 
+                      ? 'border-pink-500 bg-pink-50' 
+                      : 'border-gray-200 hover:border-pink-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">☀️</div>
+                    <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                      Clair
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                      Thème lumineux
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setProfileData({...profileData, theme: "dark"})}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    profileData.theme === "dark" 
+                      ? 'border-pink-500 bg-pink-50' 
+                      : 'border-gray-200 hover:border-pink-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🌙</div>
+                    <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                      Sombre
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                      Thème nuit
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <Button

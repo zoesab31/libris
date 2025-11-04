@@ -96,9 +96,20 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Apply theme class to body
+  useEffect(() => {
+    if (user?.theme === 'dark') {
+      document.documentElement.classList.add('dark-theme');
+    } else {
+      document.documentElement.classList.remove('dark-theme');
+    }
+  }, [user?.theme]);
+
   const handleLogout = () => {
     base44.auth.logout();
   };
+
+  const isDark = user?.theme === 'dark';
 
   return (
     <SidebarProvider>
@@ -115,9 +126,30 @@ export default function Layout({ children, currentPageName }) {
           --lavender: #E6B3E8;
           --peach: #FFCCCB;
         }
+
+        .dark-theme {
+          --cream: #1a1a2e;
+          --beige: #16213e;
+          --soft-pink: #ff6b9d;
+          --warm-pink: #ff3d7f;
+          --deep-pink: #ff0066;
+          --gold: #ffd700;
+          --rose-gold: #ff9eb3;
+          --dark-text: #ffc0cb;
+          --lavender: #c77dff;
+          --peach: #ff8fa3;
+        }
+
+        .dark-theme body {
+          background-color: var(--cream);
+          color: var(--dark-text);
+        }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
-        <Sidebar className="border-r" style={{ borderColor: 'var(--beige)' }}>
+        <Sidebar className="border-r" style={{ 
+          borderColor: 'var(--beige)',
+          backgroundColor: isDark ? '#0f1419' : 'white'
+        }}>
           <SidebarHeader className="border-b p-6" style={{ borderColor: 'var(--beige)' }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
@@ -150,7 +182,9 @@ export default function Layout({ children, currentPageName }) {
                         }`}
                         style={location.pathname === item.url ? {
                           background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
-                        } : {}}
+                        } : {
+                          color: isDark ? 'var(--dark-text)' : 'inherit'
+                        }}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                           <item.icon className="w-5 h-5" />
@@ -204,7 +238,11 @@ export default function Layout({ children, currentPageName }) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: 'var(--beige)' }}>
+          <header className="border-b px-6 py-4 flex items-center justify-between" 
+                  style={{ 
+                    borderColor: 'var(--beige)',
+                    backgroundColor: isDark ? '#0f1419' : 'white'
+                  }}>
             <div className="flex items-center gap-4 md:hidden">
               <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors" />
               <h1 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
