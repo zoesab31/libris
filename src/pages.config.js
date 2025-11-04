@@ -14,6 +14,7 @@ import VirtualLibrary from './pages/VirtualLibrary';
 import AccountSettings from './pages/AccountSettings';
 import Friends from './pages/Friends';
 import ShelfView from './pages/ShelfView';
+import Chat from './pages/Chat';
 import Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "AccountSettings": AccountSettings,
     "Friends": Friends,
     "ShelfView": ShelfView,
+    "Chat": Chat,
 }
 
 export const pagesConfig = {

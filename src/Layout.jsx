@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import { Button } from "@/components/ui/button"; // Added import for Button component
 
 const navigationItems = [
   {
@@ -210,8 +211,17 @@ export default function Layout({ children, currentPageName }) {
                 Nos Livres
               </h1>
             </div>
-            <div className="hidden md:block" /> {/* This div acts as a spacer for larger screens */}
-            {user && <NotificationBell user={user} />}
+            <div className="hidden md:block" />
+            {user && (
+              <div className="flex items-center gap-3">
+                <Link to={createPageUrl("Chat")}>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <MessageCircle className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                  </Button>
+                </Link>
+                <NotificationBell user={user} />
+              </div>
+            )}
           </header>
 
           <div className="flex-1 overflow-auto">
