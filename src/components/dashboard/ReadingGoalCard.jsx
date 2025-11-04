@@ -153,7 +153,7 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               </p>
               <Button
                 onClick={() => setShowDialog(true)}
-                className="text-black font-medium"
+                className="text-white font-medium"
                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
               >
                 <Target className="w-4 h-4 mr-2" />
@@ -211,7 +211,7 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               <Button
                 onClick={() => createOrUpdateMutation.mutate(goalCount)}
                 disabled={createOrUpdateMutation.isPending || !goalCount}
-                className="w-full text-white font-medium py-6"
+                className="w-full text-black font-medium py-6"
                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
               >
                 {createOrUpdateMutation.isPending ? "Enregistrement..." : "Enregistrer l'objectif"}
