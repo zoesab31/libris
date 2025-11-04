@@ -1,88 +1,83 @@
-// MyLibrary.tsx
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Library } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
-import BookDetailsSheet from "../components/library/BookDetailsSheet";
 
 export default function MyLibrary() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
   const [showShelves, setShowShelves] = useState(false);
-  const [selectedUserBook, setSelectedUserBook] = useState<any | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const { data: myBooks = [], isLoading } = useQuery({
-    queryKey: ["myBooks", user?.email],
+    queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
     enabled: !!user,
   });
 
   const { data: allBooks = [] } = useQuery({
-    queryKey: ["books"],
+    queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
   });
 
   const { data: customShelves = [] } = useQuery({
-    queryKey: ["customShelves", user?.email],
+    queryKey: ['customShelves'],
     queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
     enabled: !!user,
   });
 
-  const filteredBooks =
-    activeTab === "tous"
-      ? myBooks
-      : myBooks.filter((b: any) => {
-          if (activeTab === "custom") return b.custom_shelf;
-          return b.status === activeTab;
-        });
+  const filteredBooks = activeTab === "tous" 
+    ? myBooks 
+    : myBooks.filter(b => {
+        if (activeTab === "custom") return b.custom_shelf;
+        return b.status === activeTab;
+      });
 
-  const getBookDetails = (userBook: any) =>
-    allBooks.find((b: any) => b.id === userBook.book_id);
+  const getBookDetails = (userBook) => {
+    return allBooks.find(b => b.id === userBook.book_id);
+  };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: "var(--cream)" }}>
+    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-              style={{ background: "linear-gradient(135deg, var(--deep-pink), var(--warm-pink))" }}
-            >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <Library className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: "var(--dark-text)" }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Ma Bibliothèque
               </h1>
-              <p className="text-lg" style={{ color: "var(--warm-pink)" }}>
-                {myBooks.length} livre{myBooks.length > 1 ? "s" : ""} dans votre collection
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                {myBooks.length} livre{myBooks.length > 1 ? 's' : ''} dans votre collection
               </p>
             </div>
           </div>
           <div className="flex gap-3">
-            <Button
+            <Button 
               variant="outline"
               onClick={() => setShowShelves(true)}
               className="font-medium"
-              style={{ borderColor: "var(--beige)", color: "var(--deep-pink)" }}
+              style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
             >
               Gérer mes étagères
             </Button>
-            <Button
+            <Button 
               onClick={() => setShowAddBook(true)}
               className="shadow-lg text-white font-medium px-6 rounded-xl"
-              style={{ background: "linear-gradient(135deg, var(--deep-pink), var(--warm-pink))" }}
-            >
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <Plus className="w-5 h-5 mr-2" />
               Ajouter un livre
             </Button>
@@ -92,19 +87,51 @@ export default function MyLibrary() {
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
-              {["tous","En cours","Lu","À lire","Mes envies","Abandonné"].map(val => (
-                <TabsTrigger
-                  key={val}
-                  value={val}
-                  className="rounded-lg font-medium data-[state=active]:text-white"
-                  style={activeTab === val ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
-                >
-                  {val === "Lu" ? "Lus" : val}
-                </TabsTrigger>
-              ))}
+              <TabsTrigger 
+                value="tous" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "tous" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                Tous
+              </TabsTrigger>
+              <TabsTrigger 
+                value="En cours" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "En cours" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                En cours
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Lu" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Lu" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                Lus
+              </TabsTrigger>
+              <TabsTrigger 
+                value="À lire" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "À lire" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                À lire
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Mes envies" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Mes envies" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                Mes envies
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Abandonné" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Abandonné" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
+                Abandonnés
+              </TabsTrigger>
               {customShelves.length > 0 && (
-                <TabsTrigger
-                  value="custom"
+                <TabsTrigger 
+                  value="custom" 
                   className="rounded-lg font-medium data-[state=active]:text-white"
                   style={activeTab === "custom" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
                 >
@@ -115,22 +142,23 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        <BookGrid
+        <BookGrid 
           userBooks={filteredBooks}
           allBooks={allBooks}
           customShelves={customShelves}
           isLoading={isLoading}
-          onSelect={(ub:any) => setSelectedUserBook(ub)} // <— clic ouvre le sheet
         />
 
-        <AddBookDialog open={showAddBook} onOpenChange={setShowAddBook} user={user} />
-        <CustomShelvesManager open={showShelves} onOpenChange={setShowShelves} shelves={customShelves} />
+        <AddBookDialog 
+          open={showAddBook}
+          onOpenChange={setShowAddBook}
+          user={user}
+        />
 
-        <BookDetailsSheet
-          open={!!selectedUserBook}
-          onOpenChange={(o)=>!o && setSelectedUserBook(null)}
-          userBook={selectedUserBook}
-          book={selectedUserBook ? getBookDetails(selectedUserBook) : null}
+        <CustomShelvesManager 
+          open={showShelves}
+          onOpenChange={setShowShelves}
+          shelves={customShelves}
         />
       </div>
     </div>
