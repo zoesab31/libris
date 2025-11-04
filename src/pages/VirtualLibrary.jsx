@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -43,20 +42,30 @@ const DECOR_ITEMS = [
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [bookColors, setBookColors] = useState({});
-  const [draggedBook, setDraggedBook] = useState(null);
-  const [draggedDecor, setDraggedDecor] = useState(null);
+  const [draggedBookId, setDraggedBookId] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(async (u) => {
+      setUser(u);
+      
+      // Give 20000 points if user doesn't have any
+      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: u.email });
+      if (existingPoints.length === 0) {
+        await base44.entities.ReadingPoints.create({ 
+          total_points: 20000, 
+          points_spent: 0 
+        });
+      }
+    }).catch(() => {});
   }, []);
 
-  const { data: points } = useQuery({
+  const { data: points, refetch: refetchPoints } = useQuery({
     queryKey: ['readingPoints'],
     queryFn: async () => {
       const result = await base44.entities.ReadingPoints.filter({ created_by: user?.email });
-      return result[0] || { total_points: 0, points_spent: 0 };
+      return result[0] || { total_points: 20000, points_spent: 0 };
     },
     enabled: !!user,
   });
@@ -69,7 +78,7 @@ export default function VirtualLibrary() {
 
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooksForDisplay'],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }, 'shelf_position'),
     enabled: !!user,
   });
 
@@ -139,6 +148,15 @@ export default function VirtualLibrary() {
     },
   });
 
+  const reorderBooksMutation = useMutation({
+    mutationFn: async ({ bookId, newPosition }) => {
+      await base44.entities.UserBook.update(bookId, { shelf_position: newPosition });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
+    },
+  });
+
   const availablePoints = (points?.total_points || 0) - (points?.points_spent || 0);
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
@@ -149,25 +167,47 @@ export default function VirtualLibrary() {
     ? DECOR_ITEMS 
     : DECOR_ITEMS.filter(item => item.category === selectedCategory);
 
-  const handleDragStart = (e, item, type = 'book') => {
-    if (type === 'book') {
-      setDraggedBook(item);
-      setDraggedDecor(null); // Ensure only one is dragged
-    } else {
-      setDraggedDecor(item);
-      setDraggedBook(null); // Ensure only one is dragged
-    }
+  const handleDragStart = (e, userBookId) => {
+    setDraggedBookId(userBookId);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDrop = (e) => {
+  const handleDragOver = (e, index) => {
     e.preventDefault();
-    // Logic for positioning will be added
-    setDraggedBook(null);
-    setDraggedDecor(null);
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (!draggedBookId) return;
+
+    const draggedIndex = readBooks.findIndex(b => b.id === draggedBookId);
+    if (draggedIndex === -1 || draggedIndex === dropIndex) {
+      setDraggedBookId(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Reorder books
+    const newBooks = [...readBooks];
+    const [removed] = newBooks.splice(draggedIndex, 1);
+    newBooks.splice(dropIndex, 0, removed);
+
+    // Update positions
+    for (let i = 0; i < newBooks.length; i++) {
+      await reorderBooksMutation.mutateAsync({ 
+        bookId: newBooks[i].id, 
+        newPosition: i 
+      });
+    }
+
+    setDraggedBookId(null);
+    setDragOverIndex(null);
   };
 
   const handleColorChange = (userBookId, color) => {
-    setBookColors({...bookColors, [userBookId]: color});
     updateBookColorMutation.mutate({ bookId: userBookId, color });
   };
 
@@ -220,9 +260,7 @@ export default function VirtualLibrary() {
                  style={{ 
                    background: 'linear-gradient(to bottom, #FFE4E1, #FFF0F5)',
                    minHeight: '600px'
-                 }}
-                 onDrop={handleDrop}
-                 onDragOver={(e) => e.preventDefault()}>
+                 }}>
               <div className="space-y-8">
                 {Array(shelves).fill(0).map((_, shelfNum) => (
                   <div key={shelfNum} className="relative">
@@ -230,14 +268,24 @@ export default function VirtualLibrary() {
                          style={{ backgroundColor: '#8B4513' }}>
                       {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
-                        const bookColor = userBook.book_color || bookColors[userBook.id] || "#FFB3D9";
+                        const bookColor = userBook.book_color || "#FFB3D9";
+                        const globalIndex = shelfNum * 15 + idx;
                         
                         return (
-                          <div key={userBook.id || idx} 
-                               draggable
-                               onDragStart={(e) => handleDragStart(e, userBook, 'book')}
-                               className="w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group"
-                               style={{ backgroundColor: bookColor }}>
+                          <div 
+                            key={userBook.id || idx}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, userBook.id)}
+                            onDragOver={(e) => handleDragOver(e, globalIndex)}
+                            onDrop={(e) => handleDrop(e, globalIndex)}
+                            className={`w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
+                              dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
+                            }`}
+                            style={{ 
+                              backgroundColor: bookColor,
+                              opacity: draggedBookId === userBook.id ? 0.5 : 1
+                            }}
+                          >
                             {/* Vertical text on book spine */}
                             <div className="absolute inset-0 flex items-center justify-center p-2">
                               <div className="transform -rotate-90 whitespace-nowrap">
@@ -250,16 +298,19 @@ export default function VirtualLibrary() {
                               </div>
                             </div>
                             
-                            {/* Color picker - always visible on hover */}
-                            <div className="absolute -top-14 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-                              <div className="bg-white p-3 rounded-xl shadow-2xl border-2" style={{ borderColor: 'var(--soft-pink)' }}>
-                                <label className="flex flex-col items-center gap-2 cursor-pointer">
-                                  <span className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>Couleur</span>
+                            {/* Color picker - ALWAYS visible above the book */}
+                            <div className="absolute -top-20 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                              <div className="bg-white p-4 rounded-2xl shadow-2xl border-4" 
+                                   style={{ borderColor: 'var(--soft-pink)' }}>
+                                <label className="flex flex-col items-center gap-3 cursor-pointer">
+                                  <span className="text-sm font-bold whitespace-nowrap" style={{ color: 'var(--deep-pink)' }}>
+                                    🎨 Changer la couleur
+                                  </span>
                                   <input 
                                     type="color" 
                                     value={bookColor}
                                     onChange={(e) => handleColorChange(userBook.id, e.target.value)}
-                                    className="w-16 h-16 rounded-lg cursor-pointer border-2"
+                                    className="w-20 h-20 rounded-xl cursor-pointer border-4"
                                     style={{ borderColor: 'var(--soft-pink)' }}
                                   />
                                 </label>
@@ -278,8 +329,6 @@ export default function VirtualLibrary() {
                   const item = DECOR_ITEMS.find(i => i.id === decor.decor_id);
                   return (
                     <div key={decor.id || idx}
-                         draggable
-                         onDragStart={(e) => handleDragStart(e, decor, 'decor')}
                          className="absolute text-5xl cursor-move pointer-events-auto"
                          style={{
                            left: decor.position_x ? `${decor.position_x}%` : `${(idx * 18 + 5) % 85}%`,

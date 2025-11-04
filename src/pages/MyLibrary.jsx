@@ -87,27 +87,54 @@ export default function MyLibrary() {
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
-              <TabsTrigger value="tous" className="data-[state=active]:text-white rounded-lg data-[state=active]:shadow-md"
-                           style={{ '--tw-shadow-color': 'var(--warm-brown)' }}>
+              <TabsTrigger 
+                value="tous" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "tous" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 Tous
               </TabsTrigger>
-              <TabsTrigger value="En cours" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="En cours" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "En cours" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 En cours
               </TabsTrigger>
-              <TabsTrigger value="Lu" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="Lu" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Lu" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 Lus
               </TabsTrigger>
-              <TabsTrigger value="À lire" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="À lire" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "À lire" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 À lire
               </TabsTrigger>
-              <TabsTrigger value="Mes envies" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="Mes envies" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Mes envies" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 Mes envies
               </TabsTrigger>
-              <TabsTrigger value="Abandonné" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="Abandonné" 
+                className="rounded-lg font-medium data-[state=active]:text-white"
+                style={activeTab === "Abandonné" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+              >
                 Abandonnés
               </TabsTrigger>
               {customShelves.length > 0 && (
-                <TabsTrigger value="custom" className="data-[state=active]:text-white rounded-lg">
+                <TabsTrigger 
+                  value="custom" 
+                  className="rounded-lg font-medium data-[state=active]:text-white"
+                  style={activeTab === "custom" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                >
                   Étagères perso
                 </TabsTrigger>
               )}

@@ -198,13 +198,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   };
 
-  const handleSave = () => {
-    updateMutation.mutate({
-      ...editedData,
-      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
-    });
-  };
-
   if (!book) return null;
 
   return (
@@ -418,26 +411,27 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               )}
             </div>
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-end gap-3 pt-4">
               <Button
-                variant="destructive"
-                onClick={() => {
-                  if (confirm("Êtes-vous sûre de vouloir supprimer ce livre de votre bibliothèque et toutes les données associées (commentaires, personnages favoris, citations, etc.) ?")) {
-                    deleteMutation.mutate();
-                  }
-                }}
+                variant="outline"
+                onClick={() => deleteMutation.mutate()}
                 disabled={deleteMutation.isPending}
+                className="text-white font-medium border-0"
+                style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Supprimer
               </Button>
               <Button
-                onClick={handleSave}
+                onClick={() => updateMutation.mutate({
+                  ...editedData,
+                  rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+                })}
                 disabled={updateMutation.isPending}
                 className="text-white font-medium"
-                style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
               >
-                Enregistrer les modifications
+                Enregistrer
               </Button>
             </div>
           </TabsContent>
