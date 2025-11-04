@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2 } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function UserProfile() {
@@ -13,7 +13,6 @@ export default function UserProfile() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("library");
   
-  // Get userEmail from URL query params
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
 
@@ -21,14 +20,19 @@ export default function UserProfile() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  // Redirect if no email
   useEffect(() => {
     if (!userEmail) {
       navigate(createPageUrl("Friends"));
     }
   }, [userEmail, navigate]);
 
-  // Get friend name from friendship
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
+  const profileUser = allUsers.find(u => u.email === userEmail);
+
   const { data: friendName } = useQuery({
     queryKey: ['friendName', userEmail],
     queryFn: async () => {
@@ -54,6 +58,12 @@ export default function UserProfile() {
     queryFn: () => base44.entities.Book.list(),
   });
 
+  const { data: userCustomShelves = [] } = useQuery({
+    queryKey: ['userCustomShelves', userEmail],
+    queryFn: () => base44.entities.CustomShelf.filter({ created_by: userEmail }),
+    enabled: !!userEmail && activeTab === 'library',
+  });
+
   const { data: userQuotes = [] } = useQuery({
     queryKey: ['userQuotes', userEmail],
     queryFn: () => base44.entities.Quote.filter({ created_by: userEmail }, '-created_date'),
@@ -64,6 +74,12 @@ export default function UserProfile() {
     queryKey: ['userFanArts', userEmail],
     queryFn: () => base44.entities.FanArt.filter({ created_by: userEmail }),
     enabled: !!userEmail && activeTab === 'fanart',
+  });
+
+  const { data: userNailInspos = [] } = useQuery({
+    queryKey: ['userNailInspos', userEmail],
+    queryFn: () => base44.entities.NailInspo.filter({ created_by: userEmail }, '-created_date'),
+    enabled: !!userEmail && activeTab === 'nailinspo',
   });
 
   const { data: userCharacters = [] } = useQuery({
@@ -86,8 +102,7 @@ export default function UserProfile() {
     return null;
   }
 
-  // Show loading while we fetch the friend name
-  if (!friendName) {
+  if (!friendName || !profileUser) {
     return (
       <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
         <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -104,7 +119,7 @@ export default function UserProfile() {
   const isOwnProfile = currentUser?.email === userEmail;
   const accentColor = isOwnProfile ? 'var(--deep-pink)' : '#8B5CF6';
   const secondaryColor = isOwnProfile ? 'var(--warm-pink)' : '#A78BFA';
-  const displayName = friendName || userEmail?.split('@')[0] || 'Amie';
+  const displayName = friendName || profileUser.display_name || profileUser.full_name || userEmail?.split('@')[0] || 'Amie';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -122,10 +137,18 @@ export default function UserProfile() {
       <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-20">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-end mb-8">
           <div className="w-40 h-40 rounded-full overflow-hidden shadow-2xl border-4 border-white bg-white">
-            <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
-                 style={{ backgroundColor: accentColor }}>
-              {displayName[0]?.toUpperCase() || 'A'}
-            </div>
+            {profileUser.profile_picture ? (
+              <img 
+                src={profileUser.profile_picture} 
+                alt={displayName} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-white"
+                   style={{ backgroundColor: accentColor }}>
+                {displayName[0]?.toUpperCase() || 'A'}
+              </div>
+            )}
           </div>
 
           <div className="flex-1">
@@ -203,6 +226,14 @@ export default function UserProfile() {
               Fan Art
             </TabsTrigger>
             <TabsTrigger 
+              value="nailinspo" 
+              className="rounded-lg font-bold"
+              style={activeTab === "nailinspo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              Ongles
+            </TabsTrigger>
+            <TabsTrigger 
               value="characters" 
               className="rounded-lg font-bold"
               style={activeTab === "characters" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
@@ -216,6 +247,8 @@ export default function UserProfile() {
             <div className="grid md:grid-cols-4 gap-4">
               {userBooks.map(ub => {
                 const book = allBooks.find(b => b.id === ub.book_id);
+                const shelf = ub.custom_shelf ? userCustomShelves.find(s => s.name === ub.custom_shelf) : null;
+                
                 if (!book) return null;
                 return (
                   <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
@@ -229,11 +262,18 @@ export default function UserProfile() {
                         </div>
                       )}
                       <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-white text-xs font-bold line-clamp-2">{book.title}</p>
-                        <span className="text-xs px-2 py-1 rounded-full mt-1 inline-block"
-                              style={{ backgroundColor: accentColor, color: 'white' }}>
-                          {ub.status}
-                        </span>
+                        <p className="text-white text-xs font-bold line-clamp-2 mb-1">{book.title}</p>
+                        <div className="flex gap-1 flex-wrap">
+                          <span className="text-xs px-2 py-1 rounded-full"
+                                style={{ backgroundColor: accentColor, color: 'white' }}>
+                            {ub.status}
+                          </span>
+                          {shelf && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-white/90 text-gray-800">
+                              {shelf.icon} {shelf.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -286,6 +326,48 @@ export default function UserProfile() {
               <div className="text-center py-12">
                 <Image className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <p style={{ color: 'var(--warm-pink)' }}>Aucun fan art</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="nailinspo">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {userNailInspos.map((inspo) => {
+                const book = inspo.book_id ? allBooks.find(b => b.id === inspo.book_id) : null;
+                
+                return (
+                  <div key={inspo.id} className="group relative rounded-xl overflow-hidden shadow-lg 
+                                         transition-all hover:shadow-2xl hover:-translate-y-1">
+                    <div className="aspect-square relative">
+                      <img 
+                        src={inspo.image_url} 
+                        alt={inspo.title || "Nail inspo"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
+                                   opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                        {inspo.title && (
+                          <p className="font-medium text-sm mb-1">{inspo.title}</p>
+                        )}
+                        {inspo.colors && (
+                          <p className="text-xs mb-1">🎨 {inspo.colors}</p>
+                        )}
+                        {book && (
+                          <p className="text-xs">📚 {book.title}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {userNailInspos.length === 0 && (
+              <div className="text-center py-12">
+                <Palette className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucune inspiration ongles</p>
               </div>
             )}
           </TabsContent>
