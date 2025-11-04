@@ -136,11 +136,11 @@ export default function Dashboard() {
 
           <div className="space-y-6">
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
-              <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--warm-brown), var(--gold))' }} />
+              <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--gold))' }} />
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
                   <Music className="w-5 h-5" />
-                  Ma Playlist Littéraire
+                  Ma Playlist Littéraire 🎵
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -149,21 +149,39 @@ export default function Dashboard() {
                     {myBooks.filter(b => b.music).slice(0, 3).map((userBook) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       return (
-                        <div key={userBook.id} className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                          <p className="font-medium text-sm mb-1" style={{ color: 'var(--deep-brown)' }}>
-                            {book?.title}
-                          </p>
-                          <p className="text-xs flex items-center gap-1" style={{ color: 'var(--warm-brown)' }}>
-                            🎵 {userBook.music} - {userBook.music_artist}
-                          </p>
+                        <div key={userBook.id} 
+                             className="group relative p-4 rounded-xl transition-all hover:shadow-md"
+                             style={{ 
+                               background: 'linear-gradient(135deg, var(--soft-pink), var(--beige))',
+                             }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-md animate-pulse"
+                                 style={{ backgroundColor: 'var(--deep-pink)' }}>
+                              <Music className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm mb-1 line-clamp-1" style={{ color: 'var(--deep-brown)' }}>
+                                🎵 {userBook.music}
+                              </p>
+                              <p className="text-xs font-medium mb-1" style={{ color: 'var(--warm-pink)' }}>
+                                par {userBook.music_artist}
+                              </p>
+                              <p className="text-xs line-clamp-1" style={{ color: 'var(--deep-brown)' }}>
+                                📚 {book?.title}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-sm text-center py-4" style={{ color: 'var(--warm-brown)' }}>
-                    Associez des musiques à vos livres pour créer votre playlist
-                  </p>
+                  <div className="text-center py-8">
+                    <Music className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+                      Associez des musiques à vos livres pour créer votre playlist
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

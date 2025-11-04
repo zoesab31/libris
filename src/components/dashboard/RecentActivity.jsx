@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, AlertTriangle } from "lucide-react";
+import { MessageSquare, AlertTriangle, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -26,17 +26,24 @@ export default function RecentActivity({ comments, allBooks }) {
                        backgroundColor: 'var(--cream)',
                        borderColor: 'var(--beige)'
                      }}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{comment.mood || '📖'}</span>
-                      <div>
-                        <p className="font-semibold text-sm" style={{ color: 'var(--deep-brown)' }}>
-                          {book?.title || 'Livre inconnu'}
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="text-3xl">{comment.mood || '📖'}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                        <p className="font-semibold text-sm" style={{ color: 'var(--deep-pink)' }}>
+                          {comment.created_by?.split('@')[0] || 'Une lectrice'}
                         </p>
-                        <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                          Page {comment.page_number || '?'}
-                        </p>
+                        <span className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                          a réagi
+                        </span>
                       </div>
+                      <p className="font-semibold text-sm" style={{ color: 'var(--deep-brown)' }}>
+                        {book?.title || 'Livre inconnu'}
+                      </p>
+                      <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
+                        {comment.chapter ? `${comment.chapter}` : `Page ${comment.page_number || '?'}`}
+                      </p>
                     </div>
                     {comment.is_spoiler && (
                       <span className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
@@ -46,10 +53,10 @@ export default function RecentActivity({ comments, allBooks }) {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm mb-2" style={{ color: 'var(--deep-brown)' }}>
+                  <p className="text-sm mb-2 pl-11" style={{ color: 'var(--deep-brown)' }}>
                     {comment.comment}
                   </p>
-                  <p className="text-xs" style={{ color: 'var(--soft-brown)' }}>
+                  <p className="text-xs pl-11" style={{ color: 'var(--soft-brown)' }}>
                     {formatDistanceToNow(new Date(comment.created_date), { addSuffix: true, locale: fr })}
                   </p>
                 </div>

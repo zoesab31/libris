@@ -46,14 +46,24 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
   });
 
-  // Function to search books using AI
+  // Function to search books using AI with better cover URL fetching
   const searchBooks = async () => {
     if (!searchQuery.trim()) return;
     
     setIsSearching(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Recherche: "${searchQuery}". Donne 6 suggestions de livres avec titre, auteur, résumé, genre, année et URL de couverture.`,
+        prompt: `Tu es un assistant bibliothécaire expert. Recherche: "${searchQuery}".
+
+Donne 6-8 suggestions de livres. Pour chaque livre:
+- Titre exact
+- Auteur complet
+- Résumé bref (2-3 lignes)
+- Genre
+- Année de publication
+- Pour la couverture: utilise le format "https://covers.openlibrary.org/b/isbn/[ISBN]-L.jpg" si tu connais l'ISBN, sinon cherche une URL publique valide de Google Books. Si tu ne trouves pas d'image valide, retourne une chaîne vide.
+
+IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publiquement.`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -68,9 +78,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   synopsis: { type: "string" },
                   genre: { type: "string" },
                   publication_year: { type: "number" },
-                  cover_url: { type: "string" }
+                  cover_url: { type: "string" },
+                  isbn: { type: "string" }
                 },
-                required: ["title", "author", "synopsis", "genre", "cover_url"]
+                required: ["title", "author", "synopsis", "genre"]
               }
             }
           },
@@ -146,6 +157,13 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
 
+  // Function to handle image error
+  const handleImageError = (idx) => {
+    const updated = [...aiResults];
+    updated[idx].cover_url = ""; // Clear broken URL
+    setAiResults(updated);
+  };
+
   // Function to update cover URL for AI results inline
   const updateCoverUrl = (index, newUrl) => {
     const updated = [...aiResults];
@@ -210,7 +228,12 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                       <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md"
                            style={{ backgroundColor: 'var(--beige)' }}>
                         {book.cover_url ? (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          <img 
+                            src={book.cover_url} 
+                            alt={book.title} 
+                            className="w-full h-full object-cover"
+                            onError={() => handleImageError(idx)}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <BookOpen className="w-8 h-8" style={{ color: 'var(--deep-pink)' }} />
@@ -226,7 +249,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                         <Edit className="w-3 h-3" />
                       </Button>
                       {editingCover === idx && (
-                        <div className="absolute inset-0 bg-black/90 p-1 flex flex-col gap-1 rounded-lg">
+                        <div className="absolute inset-0 bg-black/90 p-1 flex flex-col gap-1 rounded-lg z-10">
                           <Input
                             placeholder="URL couverture"
                             defaultValue={book.cover_url}
@@ -237,7 +260,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                             }}
                             className="text-xs h-6 bg-white text-black"
                           />
-                          <Button size="sm" className="h-5 text-xs bg-white text-black hover:bg-gray-100" onClick={() => updateCoverUrl(idx, document.querySelector(`input[defaultValue='${book.cover_url}']`).value)}>OK</Button>
+                          <Button size="sm" className="h-5 text-xs bg-white text-black hover:bg-gray-100" onClick={() => updateCoverUrl(idx, document.querySelector(`input[placeholder='URL couverture']`).value)}>OK</Button>
                         </div>
                       )}
                     </div>
