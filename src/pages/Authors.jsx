@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"; // Added import for Button
+import { Button } from "@/components/ui/button";
 import { BookUser, Search, BookOpen, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthorDetailsDialog from "../components/authors/AuthorDetailsDialog";
@@ -107,14 +107,14 @@ export default function Authors() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, var(--soft-brown), var(--rose-gold))' }}>
+               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <BookUser className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
               Abécédaire
             </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               {viewMode === "authors" 
                 ? `${authorsData.length} auteur${authorsData.length > 1 ? 's' : ''}`
                 : `${myBooks.length} livre${myBooks.length > 1 ? 's' : ''}`
@@ -129,15 +129,15 @@ export default function Authors() {
               variant={viewMode === "authors" ? "default" : "outline"}
               onClick={() => {
                 setViewMode("authors");
-                setSearchQuery(""); // Clear search when switching view
+                setSearchQuery("");
               }}
               className="rounded-xl"
               style={viewMode === "authors" ? {
-                background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))',
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: 'white'
               } : {
                 backgroundColor: 'white',
-                color: 'var(--deep-brown)',
+                color: 'var(--dark-text)',
                 borderColor: 'var(--beige)'
               }}
             >
@@ -147,15 +147,15 @@ export default function Authors() {
               variant={viewMode === "books" ? "default" : "outline"}
               onClick={() => {
                 setViewMode("books");
-                setSearchQuery(""); // Clear search when switching view
+                setSearchQuery("");
               }}
               className="rounded-xl"
               style={viewMode === "books" ? {
-                background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))',
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: 'white'
               } : {
                 backgroundColor: 'white',
-                color: 'var(--deep-brown)',
+                color: 'var(--dark-text)',
                 borderColor: 'var(--beige)'
               }}
             >
@@ -165,7 +165,7 @@ export default function Authors() {
 
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
-                    style={{ color: 'var(--warm-brown)' }} />
+                    style={{ color: 'var(--warm-pink)' }} />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -195,41 +195,41 @@ export default function Authors() {
                   onClick={() => setSelectedAuthor(author)}
                   className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 
                            hover:-translate-y-1 text-left border-2 border-transparent hover:border-opacity-50"
-                  style={{ '--hover-border-color': 'var(--soft-brown)' }}
+                  style={{ '--hover-border-color': 'var(--warm-pink)' }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                         style={{ background: 'linear-gradient(135deg, var(--soft-brown), var(--rose-gold))' }}>
+                         style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                       {author.name[0].toUpperCase()}
                     </div>
                     {author.averageRating > 0 && (
                       <div className="flex items-center gap-1 px-2 py-1 rounded-full"
                            style={{ backgroundColor: 'var(--cream)' }}>
                         <Star className="w-4 h-4 fill-current" style={{ color: 'var(--gold)' }} />
-                        <span className="text-sm font-bold" style={{ color: 'var(--deep-brown)' }}>
+                        <span className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
                           {author.averageRating.toFixed(1)}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <h3 className="font-bold text-lg mb-3 line-clamp-2" style={{ color: 'var(--deep-brown)' }}>
+                  <h3 className="font-bold text-lg mb-3 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                     {author.name}
                   </h3>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: 'var(--warm-brown)' }}>Livres lus</span>
+                      <span style={{ color: 'var(--warm-pink)' }}>Livres lus</span>
                       <span className="font-bold px-2 py-1 rounded-lg" 
-                            style={{ backgroundColor: 'var(--cream)', color: 'var(--deep-brown)' }}>
+                            style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
                         {author.readBooks.length}
                       </span>
                     </div>
                     {author.unreadBooks.length > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span style={{ color: 'var(--warm-brown)' }}>À lire</span>
+                        <span style={{ color: 'var(--warm-pink)' }}>À lire</span>
                         <span className="font-bold px-2 py-1 rounded-lg" 
-                              style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-brown)' }}>
+                              style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
                           {author.unreadBooks.length}
                         </span>
                       </div>
@@ -245,14 +245,14 @@ export default function Authors() {
                           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-brown)' }} />
+                            <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
                           </div>
                         )}
                       </div>
                     ))}
                     {author.readBooks.length > 3 && (
                       <div className="w-10 h-14 rounded-md shadow-md border-2 border-white flex items-center justify-center text-xs font-bold"
-                           style={{ backgroundColor: 'var(--soft-brown)', color: 'white' }}>
+                           style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
                         +{author.readBooks.length - 3}
                       </div>
                     )}
@@ -262,11 +262,11 @@ export default function Authors() {
             </div>
           ) : (
             <div className="text-center py-20">
-              <BookUser className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+              <BookUser className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                 {searchQuery ? "Aucun auteur trouvé" : "Aucun auteur dans votre bibliothèque"}
               </h3>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {searchQuery ? "Essayez une autre recherche" : "Ajoutez des livres pour voir vos auteurs"}
               </p>
             </div>
@@ -299,7 +299,7 @@ export default function Authors() {
                     <div key={letter}>
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-md"
-                             style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                           {letter}
                         </div>
                         <div className="flex-1 h-px" style={{ backgroundColor: 'var(--beige)' }} />
@@ -314,21 +314,21 @@ export default function Authors() {
                                 <img src={item.book.cover_url} alt={item.book.title} className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-brown)' }} />
+                                  <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--deep-brown)' }}>
+                              <h3 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                                 {item.book.title}
                               </h3>
-                              <p className="text-xs mb-2" style={{ color: 'var(--warm-brown)' }}>
+                              <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
                                 {item.book.author}
                               </p>
                               <span className="text-xs px-2 py-1 rounded-full" 
                                     style={{ 
                                       backgroundColor: item.status === "Lu" ? 'var(--cream)' : 'var(--beige)',
-                                      color: 'var(--deep-brown)'
+                                      color: 'var(--dark-text)'
                                     }}>
                                 {item.status === "Lu" ? "Lu" : item.status === "À lire" ? "À lire" : "En cours"}
                               </span>
@@ -341,11 +341,11 @@ export default function Authors() {
                 })
             ) : (
                 <div className="text-center py-20">
-                  <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-                  <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+                  <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                  <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                     {searchQuery ? "Aucun livre trouvé" : "Aucun livre dans votre bibliothèque"}
                   </h3>
-                  <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+                  <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                     {searchQuery ? "Essayez une autre recherche" : "Ajoutez des livres pour voir votre abécédaire"}
                   </p>
                 </div>

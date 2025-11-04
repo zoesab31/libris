@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -37,14 +38,14 @@ export default function SharedReadings() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <Users className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Lectures Communes
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {sharedReadings.length} lecture{sharedReadings.length > 1 ? 's' : ''} partagée{sharedReadings.length > 1 ? 's' : ''}
               </p>
             </div>
@@ -52,7 +53,7 @@ export default function SharedReadings() {
           <Button 
             onClick={() => setShowAddDialog(true)}
             className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Plus className="w-5 h-5 mr-2" />
             Nouvelle lecture commune
           </Button>
@@ -60,7 +61,7 @@ export default function SharedReadings() {
 
         {ongoingReadings.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
               <BookOpen className="w-5 h-5" />
               En cours ({ongoingReadings.length})
             </h2>
@@ -82,7 +83,7 @@ export default function SharedReadings() {
 
         {upcomingReadings.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--deep-brown)' }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
               À venir ({upcomingReadings.length})
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -103,7 +104,7 @@ export default function SharedReadings() {
 
         {completedReadings.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--deep-brown)' }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
               Terminées ({completedReadings.length})
             </h2>
             <div className="grid md:grid-cols-2 gap-4">
@@ -124,11 +125,11 @@ export default function SharedReadings() {
 
         {sharedReadings.length === 0 && (
           <div className="text-center py-20">
-            <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               Aucune lecture commune
             </h3>
-            <p className="text-lg mb-6" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
               Créez votre première lecture commune avec vos amies
             </p>
           </div>

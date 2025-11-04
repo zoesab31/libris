@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Trash2, ExternalLink, Image as ImageIcon } from "lucide-react";
@@ -30,11 +31,11 @@ export default function FanArtGallery({ fanArts, isLoading }) {
   if (fanArts.length === 0) {
     return (
       <div className="text-center py-20">
-        <ImageIcon className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+        <ImageIcon className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
           Aucun fan art
         </h3>
-        <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+        <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
           Ajoutez vos fan arts préférés pour les organiser ici
         </p>
       </div>

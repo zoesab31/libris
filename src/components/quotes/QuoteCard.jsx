@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ export default function QuoteCard({ quote }) {
     <Card className="shadow-lg border-0 transition-all hover:shadow-xl" style={{ backgroundColor: 'white' }}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <Quote className="w-8 h-8 opacity-20" style={{ color: 'var(--warm-brown)' }} />
+          <Quote className="w-8 h-8 opacity-20" style={{ color: 'var(--warm-pink)' }} />
           <Button
             variant="ghost"
             size="icon"
@@ -32,19 +33,19 @@ export default function QuoteCard({ quote }) {
           </Button>
         </div>
         
-        <p className="text-lg italic mb-4 leading-relaxed" style={{ color: 'var(--deep-brown)' }}>
+        <p className="text-lg italic mb-4 leading-relaxed" style={{ color: 'var(--dark-text)' }}>
           "{quote.quote_text}"
         </p>
         
         {quote.page_number && (
-          <p className="text-sm mb-2" style={{ color: 'var(--warm-brown)' }}>
+          <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
             Page {quote.page_number}
           </p>
         )}
         
         {quote.note && (
           <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
-            <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
               {quote.note}
             </p>
           </div>

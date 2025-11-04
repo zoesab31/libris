@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,14 +19,14 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
         <DialogHeader>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-                 style={{ background: 'linear-gradient(135deg, var(--soft-brown), var(--rose-gold))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--rose-gold))' }}>
               {author.name[0].toUpperCase()}
             </div>
             <div>
-              <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
+              <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
                 {author.name}
               </DialogTitle>
-              <p style={{ color: 'var(--warm-brown)' }}>
+              <p style={{ color: 'var(--warm-pink)' }}>
                 {author.readBooks.length} livre{author.readBooks.length > 1 ? 's' : ''} lu
                 {author.readBooks.length > 1 ? 's' : ''}
                 {author.averageRating > 0 && (

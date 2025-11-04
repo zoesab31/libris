@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, BookOpen, Users } from "lucide-react";
@@ -7,7 +8,7 @@ import { fr } from "date-fns/locale";
 export default function SharedReadingCard({ reading, book, onClick }) {
   const statusColors = {
     "En cours": "var(--gold)",
-    "À venir": "var(--soft-brown)",
+    "À venir": "var(--soft-pink)",
     "Terminée": "var(--beige)"
   };
 
@@ -26,25 +27,25 @@ export default function SharedReadingCard({ reading, book, onClick }) {
               <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-brown)' }} />
+                <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
               </div>
             )}
           </div>
 
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--dark-text)' }}>
               {reading.title}
             </h3>
             
             {book && (
-              <p className="text-sm mb-3" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
                 {book.title} - {book.author}
               </p>
             )}
 
             <div className="space-y-2 text-sm">
               {reading.start_date && (
-                <div className="flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
+                <div className="flex items-center gap-2" style={{ color: 'var(--warm-pink)' }}>
                   <Calendar className="w-4 h-4" />
                   <span>
                     {format(new Date(reading.start_date), 'dd MMM', { locale: fr })}
@@ -54,7 +55,7 @@ export default function SharedReadingCard({ reading, book, onClick }) {
               )}
 
               {reading.chapters_per_day && (
-                <div className="flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
+                <div className="flex items-center gap-2" style={{ color: 'var(--warm-pink)' }}>
                   <BookOpen className="w-4 h-4" />
                   <span>{reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} / jour</span>
                 </div>

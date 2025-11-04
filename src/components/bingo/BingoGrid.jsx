@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Check, BookOpen } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,16 +56,16 @@ export default function BingoGrid({ challenges, books, onChallengeClick, isLoadi
                 <div className="text-4xl mb-2">✨</div>
               ) : (
                 <BookOpen className="w-8 h-8 mb-2 mx-auto" 
-                         style={{ color: challenge.is_completed ? 'var(--gold)' : 'var(--warm-brown)' }} />
+                         style={{ color: challenge.is_completed ? 'var(--gold)' : 'var(--warm-pink)' }} />
               )}
               <p className={`text-xs font-medium leading-tight line-clamp-4
                             ${challenge.is_completed ? 'font-bold' : ''}`}
-                 style={{ color: 'var(--deep-brown)' }}>
+                 style={{ color: 'var(--dark-text)' }}>
                 {challenge.title}
               </p>
               {book && (
                 <p className="text-xs mt-2 font-semibold line-clamp-1" 
-                   style={{ color: 'var(--warm-brown)' }}>
+                   style={{ color: 'var(--warm-pink)' }}>
                   {book.title}
                 </p>
               )}

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ export default function Bingo() {
 
   const completedCount = challenges.filter(c => c.is_completed).length;
   const totalCount = challenges.length;
-  const hasBingo = totalCount === 25;
+  const hasBingo = totalCount === 25 && completedCount === 25; // Bingo is complete only if all 25 challenges are completed
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -77,14 +78,14 @@ export default function Bingo() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
               <Trophy className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Bingo Lecture 2025
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {completedCount} / {totalCount} défis complétés
               </p>
             </div>
@@ -95,7 +96,7 @@ export default function Bingo() {
                 variant="outline"
                 onClick={() => resetMutation.mutate()}
                 disabled={resetMutation.isPending}
-                style={{ borderColor: 'var(--beige)' }}
+                style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Recommencer
@@ -105,7 +106,7 @@ export default function Bingo() {
               <Button 
                 onClick={() => setShowCreate(true)}
                 className="shadow-lg text-white font-medium px-6 rounded-xl"
-                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}>
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
                 <Sparkles className="w-5 h-5 mr-2" />
                 {challenges.length === 0 ? "Créer mon Bingo" : "Modifier"}
               </Button>
@@ -116,16 +117,16 @@ export default function Bingo() {
         {challenges.length === 0 ? (
           <div className="text-center py-20">
             <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--gold)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               Créez votre Bingo de lecture !
             </h3>
-            <p className="text-lg mb-6" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
               Relevez 25 défis littéraires cette année
             </p>
             <Button 
               onClick={() => setShowCreate(true)}
               className="shadow-lg text-white font-medium px-8 py-6 text-lg rounded-xl"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}>
+              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
               <Sparkles className="w-6 h-6 mr-2" />
               Commencer
             </Button>
@@ -134,7 +135,7 @@ export default function Bingo() {
           <>
             {completedCount === totalCount && (
               <div className="mb-8 p-6 rounded-2xl text-center shadow-lg animate-pulse"
-                   style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}>
+                   style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
                 <h2 className="text-2xl font-bold text-white mb-2">
                   🎉 BINGO COMPLÉTÉ ! 🎉
                 </h2>

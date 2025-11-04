@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Trash2, Check, Palette } from "lucide-react";
@@ -37,11 +38,11 @@ export default function NailInspoGallery({ nailInspos, allBooks, isLoading }) {
   if (nailInspos.length === 0) {
     return (
       <div className="text-center py-20">
-        <Palette className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+        <Palette className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
           Aucune inspiration
         </h3>
-        <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+        <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
           Ajoutez vos inspirations nail art préférées
         </p>
       </div>

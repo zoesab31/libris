@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BookOpen, Star, Music, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,11 +26,11 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
   if (userBooks.length === 0) {
     return (
       <div className="text-center py-20">
-        <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+        <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
           Aucun livre ici
         </h3>
-        <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+        <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
           Ajoutez votre premier livre pour commencer votre collection
         </p>
       </div>

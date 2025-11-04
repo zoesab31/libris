@@ -46,14 +46,14 @@ export default function Maps() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <Map className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Mes Lieux de Lecture 📍
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {locations.length} lieu{locations.length > 1 ? 'x' : ''} enregistré{locations.length > 1 ? 's' : ''}
               </p>
             </div>
@@ -61,7 +61,7 @@ export default function Maps() {
           <Button 
             onClick={() => setShowAddDialog(true)}
             className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Plus className="w-5 h-5 mr-2" />
             Ajouter un lieu
           </Button>
@@ -73,8 +73,8 @@ export default function Maps() {
             <div key={cat} 
                  className="p-4 rounded-xl text-center shadow-md cursor-pointer transition-all hover:shadow-lg"
                  style={{ 
-                   backgroundColor: filterCategory === cat ? 'var(--soft-brown)' : 'white',
-                   color: filterCategory === cat ? 'white' : 'var(--deep-brown)'
+                   backgroundColor: filterCategory === cat ? 'var(--soft-pink)' : 'white',
+                   color: filterCategory === cat ? 'white' : 'var(--dark-text)'
                  }}
                  onClick={() => setFilterCategory(filterCategory === cat ? "all" : cat)}>
               <p className="text-2xl font-bold mb-1">{statsByCategory[cat] || 0}</p>
@@ -95,11 +95,11 @@ export default function Maps() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <MapPin className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <MapPin className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {filterCategory === "all" ? "Aucun lieu enregistré" : `Aucun lieu "${filterCategory}"`}
             </h3>
-            <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               Commencez à enregistrer vos endroits préférés pour lire
             </p>
           </div>

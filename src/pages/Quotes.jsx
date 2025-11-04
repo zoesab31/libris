@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,14 +59,14 @@ export default function Quotes() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <QuoteIcon className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Mes Citations
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {quotes.length} citation{quotes.length > 1 ? 's' : ''} sauvegardée{quotes.length > 1 ? 's' : ''}
               </p>
             </div>
@@ -73,7 +74,7 @@ export default function Quotes() {
           <Button 
             onClick={() => setShowAddDialog(true)}
             className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Plus className="w-5 h-5 mr-2" />
             Ajouter une citation
           </Button>
@@ -82,7 +83,7 @@ export default function Quotes() {
         <div className="mb-6 flex gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
-                    style={{ color: 'var(--warm-brown)' }} />
+                    style={{ color: 'var(--warm-pink)' }} />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -103,15 +104,15 @@ export default function Quotes() {
                       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <QuoteIcon className="w-6 h-6" style={{ color: 'var(--warm-brown)' }} />
+                        <QuoteIcon className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+                    <h2 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
                       {book.title}
                     </h2>
-                    <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
                       {book.author} • {quotes.length} citation{quotes.length > 1 ? 's' : ''}
                     </p>
                   </div>
@@ -126,11 +127,11 @@ export default function Quotes() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <QuoteIcon className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <QuoteIcon className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {searchQuery ? "Aucune citation trouvée" : "Aucune citation enregistrée"}
             </h3>
-            <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               {searchQuery ? "Essayez une autre recherche" : "Commencez à sauvegarder vos citations préférées"}
             </p>
           </div>

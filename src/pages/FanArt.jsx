@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,14 +46,14 @@ export default function FanArt() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <ImageIcon className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--deep-brown)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Mes Fan Arts
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {fanArts.length} fan art{fanArts.length > 1 ? 's' : ''} • {folders.length} dossier{folders.length > 1 ? 's' : ''}
               </p>
             </div>
@@ -60,7 +61,7 @@ export default function FanArt() {
           <Button 
             onClick={() => setShowAddDialog(true)}
             className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Plus className="w-5 h-5 mr-2" />
             Ajouter un fan art
           </Button>
@@ -73,9 +74,12 @@ export default function FanArt() {
             onClick={() => setSelectedFolder("all")}
             className="rounded-xl"
             style={selectedFolder === "all" ? {
-              background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))',
+              background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
               color: 'white'
-            } : {}}
+            } : {
+              borderColor: 'var(--beige)',
+              color: 'var(--deep-pink)'
+            }}
           >
             Tous ({fanArts.length})
           </Button>
@@ -86,9 +90,12 @@ export default function FanArt() {
               onClick={() => setSelectedFolder(folder)}
               className="rounded-xl whitespace-nowrap"
               style={selectedFolder === folder ? {
-                background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))',
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: 'white'
-              } : {}}
+              } : {
+                borderColor: 'var(--beige)',
+                color: 'var(--deep-pink)'
+              }}
             >
               {folder} ({fanArtsByFolder[folder].length})
             </Button>
