@@ -153,7 +153,7 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               </p>
               <Button
                 onClick={() => setShowDialog(true)}
-                className="text-black font-babypink"
+                className="text-black font-medium"
                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
               >
                 <Target className="w-4 h-4 mr-2" />
