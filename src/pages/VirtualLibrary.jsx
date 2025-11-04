@@ -1,21 +1,63 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Store, BookOpen, Palette } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Store } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
+
+// 24-color palette with names and hex codes
+const SPINE_COLORS = [
+  // Warm hues (6)
+  { name: "Rose vif", hex: "#F58BA5", var: "--spine-rose" },
+  { name: "Corail", hex: "#FF7F7F", var: "--spine-coral" },
+  { name: "Pêche", hex: "#FFAB91", var: "--spine-peach" },
+  { name: "Orange", hex: "#FFB347", var: "--spine-orange" },
+  { name: "Rouge cerise", hex: "#DC143C", var: "--spine-cherry" },
+  { name: "Saumon", hex: "#FA8072", var: "--spine-salmon" },
+  
+  // Cool hues (6)
+  { name: "Turquoise", hex: "#59C3C3", var: "--spine-teal" },
+  { name: "Bleu ciel", hex: "#87CEEB", var: "--spine-sky" },
+  { name: "Lavande", hex: "#B19CD9", var: "--spine-lavender" },
+  { name: "Violet", hex: "#9B59B6", var: "--spine-violet" },
+  { name: "Pervenche", hex: "#CCCCFF", var: "--spine-periwinkle" },
+  { name: "Cyan", hex: "#00CED1", var: "--spine-cyan" },
+  
+  // Naturals (6)
+  { name: "Beige", hex: "#EBDCCB", var: "--spine-beige" },
+  { name: "Crème", hex: "#FFFACD", var: "--spine-cream" },
+  { name: "Taupe", hex: "#B38B6D", var: "--spine-taupe" },
+  { name: "Gris clair", hex: "#D3D3D3", var: "--spine-light-gray" },
+  { name: "Lin", hex: "#E9DCC9", var: "--spine-linen" },
+  { name: "Sable", hex: "#C2B280", var: "--spine-sand" },
+  
+  // Deep tones (6)
+  { name: "Marine", hex: "#1C2E4A", var: "--spine-navy" },
+  { name: "Forêt", hex: "#2C5F2D", var: "--spine-forest" },
+  { name: "Bordeaux", hex: "#800020", var: "--spine-wine" },
+  { name: "Chocolat", hex: "#4E342E", var: "--spine-chocolate" },
+  { name: "Anthracite", hex: "#36454F", var: "--spine-charcoal" },
+  { name: "Noir", hex: "#1A1A1A", var: "--spine-black" },
+];
+
+// Helper to determine if text should be white or black based on background
+const getContrastColor = (hexColor) => {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#222222' : '#FFFFFF';
+};
 
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
   const [draggedBookId, setDraggedBookId] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [shelfColor, setShelfColor] = useState("#8B4513");
+  const [openColorPicker, setOpenColorPicker] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -37,6 +79,7 @@ export default function VirtualLibrary() {
     mutationFn: ({ bookId, color }) => base44.entities.UserBook.update(bookId, { book_color: color }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
+      toast.success("Couleur mise à jour !");
     },
   });
 
@@ -46,16 +89,6 @@ export default function VirtualLibrary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
-    },
-  });
-
-  const updateGenresMutation = useMutation({
-    mutationFn: async ({ bookId, genres }) => {
-      await base44.entities.Book.update(bookId, { custom_genres: genres });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-      toast.success("Genres mis à jour !");
     },
   });
 
@@ -100,15 +133,10 @@ export default function VirtualLibrary() {
     setDragOverIndex(null);
   };
 
-  const handleColorChange = (userBookId, color) => {
+  const handleColorChange = (userBookId, colorHex) => {
     requestAnimationFrame(() => {
-      updateBookColorMutation.mutate({ bookId: userBookId, color });
-    });
-  };
-
-  const handleShelfColorChange = (color) => {
-    requestAnimationFrame(() => {
-      setShelfColor(color);
+      updateBookColorMutation.mutate({ bookId: userBookId, color: colorHex });
+      setOpenColorPicker(null);
     });
   };
 
@@ -130,41 +158,6 @@ export default function VirtualLibrary() {
               </p>
             </div>
           </div>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="icon"
-                className="shadow-lg w-9 h-9"
-                style={{ backgroundColor: shelfColor, color: 'white', zIndex: 100 }}
-                title="Changer la couleur des étagères"
-              >
-                <Palette className="w-5 h-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="space-y-3">
-                <Label className="text-sm font-bold">Couleur des étagères</Label>
-                <input
-                  type="color"
-                  value={shelfColor}
-                  onChange={(e) => handleShelfColorChange(e.target.value)}
-                  className="w-full h-12 rounded-lg cursor-pointer border-2"
-                  style={{ borderColor: 'var(--beige)' }}
-                />
-                <div className="grid grid-cols-4 gap-2">
-                  {['#8B4513', '#654321', '#A0522D', '#D2691E', '#8B7355', '#6B4423', '#3D2817', '#704214'].map(color => (
-                    <button
-                      key={color}
-                      onClick={() => handleShelfColorChange(color)}
-                      className="w-full h-8 rounded-lg border-2 hover:scale-110 transition-transform"
-                      style={{ backgroundColor: color, borderColor: shelfColor === color ? 'var(--deep-pink)' : 'transparent' }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
 
         <div className="relative rounded-2xl p-8 shadow-xl" 
@@ -176,56 +169,89 @@ export default function VirtualLibrary() {
             {Array(shelves).fill(0).map((_, shelfNum) => (
               <div key={shelfNum} className="relative">
                 <div className="min-h-[200px] rounded-lg shadow-lg flex items-end p-4 gap-2 overflow-x-auto"
-                     style={{ backgroundColor: shelfColor }}>
+                     style={{ backgroundColor: '#8B4513' }}>
                   {readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).map((userBook, idx) => {
                     const book = allBooks.find(b => b.id === userBook.book_id);
                     const bookColor = userBook.book_color || "#FFB3D9";
+                    const textColor = getContrastColor(bookColor);
                     const globalIndex = shelfNum * 12 + idx;
+                    const isColorPickerOpen = openColorPicker === userBook.id;
                     
                     return (
-                      <div 
-                        key={userBook.id || idx}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, userBook.id)}
-                        onDragOver={(e) => handleDragOver(e, globalIndex)}
-                        onDrop={(e) => handleDrop(e, globalIndex)}
-                        className={`w-16 h-[180px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
-                          dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
-                        }`}
-                        style={{ 
-                          backgroundColor: bookColor,
-                          opacity: draggedBookId === userBook.id ? 0.5 : 1,
-                          zIndex: 10
-                        }}
+                      <Popover 
+                        key={userBook.id || idx} 
+                        open={isColorPickerOpen} 
+                        onOpenChange={(open) => setOpenColorPicker(open ? userBook.id : null)}
                       >
-                        <div className="absolute inset-0 flex items-center justify-center p-2">
-                          <div className="transform -rotate-90 whitespace-nowrap">
-                            <p className="text-sm font-bold text-white leading-tight mb-1 max-w-[160px] truncate"
-                               title={book?.title || 'Livre'}>
-                              {book?.title || 'Livre'}
-                            </p>
-                            <p className="text-xs text-white opacity-90 text-center">
-                              {book?.author || ''}
-                            </p>
+                        <PopoverTrigger asChild>
+                          <div 
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, userBook.id)}
+                            onDragOver={(e) => handleDragOver(e, globalIndex)}
+                            onDrop={(e) => handleDrop(e, globalIndex)}
+                            className={`w-16 h-[180px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-pointer relative ${
+                              dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
+                            }`}
+                            style={{ 
+                              backgroundColor: bookColor,
+                              opacity: draggedBookId === userBook.id ? 0.5 : 1,
+                              zIndex: isColorPickerOpen ? 50 : 10
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenColorPicker(userBook.id);
+                            }}
+                          >
+                            <div className="absolute inset-0 flex items-center justify-center p-2 pointer-events-none">
+                              <div className="transform -rotate-90 whitespace-nowrap">
+                                <p className="text-sm font-bold leading-tight mb-1 max-w-[160px] truncate"
+                                   style={{ color: textColor }}
+                                   title={book?.title || 'Livre'}>
+                                  {book?.title || 'Livre'}
+                                </p>
+                                <p className="text-xs opacity-90 text-center"
+                                   style={{ color: textColor }}>
+                                  {book?.author || ''}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        </PopoverTrigger>
                         
-                        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                          <div className="bg-white p-3 rounded-xl shadow-2xl border-2 min-w-[200px]" 
-                               style={{ borderColor: 'var(--soft-pink)' }}>
-                            <p className="text-xs font-bold mb-2" style={{ color: 'var(--deep-pink)' }}>
-                              🎨 Couleur
+                        <PopoverContent 
+                          className="w-64 p-3" 
+                          align="start"
+                          side="bottom"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                              🎨 Choisir une couleur
                             </p>
-                            <input 
-                              type="color" 
-                              value={bookColor}
-                              onChange={(e) => handleColorChange(userBook.id, e.target.value)}
-                              className="w-full h-10 rounded-lg cursor-pointer border-2"
-                              style={{ borderColor: 'var(--soft-pink)' }}
-                            />
+                            <div className="grid grid-cols-6 gap-1.5">
+                              {SPINE_COLORS.map((color) => (
+                                <button
+                                  key={color.hex}
+                                  onClick={() => handleColorChange(userBook.id, color.hex)}
+                                  className="w-8 h-8 rounded-md hover:scale-110 transition-transform focus:ring-2 focus:ring-offset-1"
+                                  style={{ 
+                                    backgroundColor: color.hex,
+                                    outline: bookColor === color.hex ? '2px solid var(--deep-pink)' : 'none',
+                                    outlineOffset: '2px'
+                                  }}
+                                  title={`${color.name} (${color.hex})`}
+                                  aria-label={color.name}
+                                />
+                              ))}
+                            </div>
+                            <div className="pt-2 border-t" style={{ borderColor: 'var(--beige)' }}>
+                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                Cliquez sur une couleur pour l'appliquer
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        </PopoverContent>
+                      </Popover>
                     );
                   })}
                 </div>
@@ -239,7 +265,7 @@ export default function VirtualLibrary() {
             📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
             <br />
             <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-              Utilisez le bouton palette pour changer la couleur des étagères
+              Cliquez sur un livre pour changer sa couleur
             </span>
           </p>
         </div>

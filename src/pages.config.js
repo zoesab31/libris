@@ -13,6 +13,7 @@ import BookTournament from './pages/BookTournament';
 import VirtualLibrary from './pages/VirtualLibrary';
 import AccountSettings from './pages/AccountSettings';
 import Friends from './pages/Friends';
+import ShelfView from './pages/ShelfView';
 import Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "VirtualLibrary": VirtualLibrary,
     "AccountSettings": AccountSettings,
     "Friends": Friends,
+    "ShelfView": ShelfView,
 }
 
 export const pagesConfig = {

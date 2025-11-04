@@ -8,8 +8,10 @@ import { Plus, Library } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
+import { useNavigate } from "react-router-dom";
 
 export default function MyLibrary() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
@@ -38,12 +40,11 @@ export default function MyLibrary() {
     enabled: !!user,
   });
 
-  const filteredBooks = activeTab === "tous" 
-    ? myBooks 
-    : myBooks.filter(b => {
-        if (activeTab === "custom") return b.custom_shelf;
-        return b.status === activeTab;
-      });
+  const filteredBooks = activeTab === "tous"
+    ? myBooks
+    : activeTab === "custom"
+    ? [] // Don't show individual books in custom tab, only folders
+    : myBooks.filter(b => b.status === activeTab);
 
   const getBookDetails = (userBook) => {
     return allBooks.find(b => b.id === userBook.book_id);
@@ -70,7 +71,7 @@ export default function MyLibrary() {
           <div className="flex gap-3">
             {!selectionMode ? (
               <>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setShowShelves(true)}
                   className="font-medium"
@@ -78,7 +79,7 @@ export default function MyLibrary() {
                 >
                   Gérer mes étagères
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setSelectionMode(true)}
                   className="font-medium"
@@ -86,7 +87,7 @@ export default function MyLibrary() {
                 >
                   Sélectionner
                 </Button>
-                <Button 
+                <Button
                   onClick={() => setShowAddBook(true)}
                   className="shadow-lg text-white font-medium px-6 rounded-xl"
                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
@@ -96,7 +97,7 @@ export default function MyLibrary() {
               </>
             ) : (
               <>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     setSelectionMode(false);
@@ -106,7 +107,7 @@ export default function MyLibrary() {
                   Annuler
                 </Button>
                 {selectedBooks.length > 0 && (
-                  <Button 
+                  <Button
                     className="shadow-lg text-white font-medium"
                     style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
                     onClick={() => {
@@ -126,51 +127,51 @@ export default function MyLibrary() {
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
-              <TabsTrigger 
-                value="tous" 
+              <TabsTrigger
+                value="tous"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "tous" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 Tous
               </TabsTrigger>
-              <TabsTrigger 
-                value="En cours" 
+              <TabsTrigger
+                value="En cours"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "En cours" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 En cours
               </TabsTrigger>
-              <TabsTrigger 
-                value="Lu" 
+              <TabsTrigger
+                value="Lu"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "Lu" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 Lus
               </TabsTrigger>
-              <TabsTrigger 
-                value="À lire" 
+              <TabsTrigger
+                value="À lire"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "À lire" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 À lire
               </TabsTrigger>
-              <TabsTrigger 
-                value="Mes envies" 
+              <TabsTrigger
+                value="Mes envies"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "Mes envies" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 Mes envies
               </TabsTrigger>
-              <TabsTrigger 
-                value="Abandonné" 
+              <TabsTrigger
+                value="Abandonné"
                 className="rounded-lg font-medium data-[state=active]:text-white"
                 style={activeTab === "Abandonné" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
               >
                 Abandonnés
               </TabsTrigger>
               {customShelves.length > 0 && (
-                <TabsTrigger 
-                  value="custom" 
+                <TabsTrigger
+                  value="custom"
                   className="rounded-lg font-medium data-[state=active]:text-white"
                   style={activeTab === "custom" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
                 >
@@ -181,27 +182,118 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        <BookGrid 
-          userBooks={filteredBooks}
-          allBooks={allBooks}
-          customShelves={customShelves}
-          isLoading={isLoading}
-          selectionMode={selectionMode}
-          selectedBooks={selectedBooks}
-          onSelectionChange={setSelectedBooks}
-          onExitSelectionMode={() => {
-            setSelectionMode(false);
-            setSelectedBooks([]);
-          }}
-        />
+        {/* Custom Shelves as Folders */}
+        {activeTab === "custom" ? (
+          <div>
+            {customShelves.length === 0 ? (
+              <div className="text-center py-20">
+                <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune étagère personnalisée
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Créez votre première étagère pour organiser vos livres
+                </p>
+                <Button
+                  onClick={() => setShowShelves(true)}
+                  className="text-white font-medium"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                >
+                  Créer une étagère
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {customShelves.map((shelf) => {
+                  const shelfBooks = myBooks.filter(b => b.custom_shelf === shelf.name);
+                  const previewBooks = shelfBooks.slice(0, 3);
 
-        <AddBookDialog 
+                  return (
+                    <div
+                      key={shelf.id}
+                      onClick={() => navigate(`/shelves/${shelf.id}`)}
+                      className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                      style={{
+                        backgroundColor: 'white',
+                        border: '2px solid var(--beige)'
+                      }}
+                    >
+                      {/* Folder Icon and Preview */}
+                      <div className="mb-4 flex items-center justify-center gap-1 h-32">
+                        {previewBooks.length > 0 ? (
+                          <div className="flex gap-1 items-end">
+                            {previewBooks.map((userBook, idx) => {
+                              const book = allBooks.find(b => b.id === userBook.book_id);
+                              return (
+                                <div
+                                  key={userBook.id}
+                                  className="w-8 h-20 rounded-sm shadow-md"
+                                  style={{
+                                    backgroundColor: userBook.book_color || '#FFB3D9',
+                                    transform: `translateY(${idx * 2}px)`
+                                  }}
+                                >
+                                  {book?.cover_url && (
+                                    <img
+                                      src={book.cover_url}
+                                      alt={book.title}
+                                      className="w-full h-full object-cover rounded-sm opacity-40"
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-6xl opacity-20">{shelf.icon}</div>
+                        )}
+                      </div>
+
+                      {/* Shelf Name and Count */}
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold mb-1 flex items-center justify-center gap-2"
+                            style={{ color: 'var(--dark-text)' }}>
+                          <span className="text-2xl">{shelf.icon}</span>
+                          {shelf.name}
+                        </h3>
+                        <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                          {shelfBooks.length} livre{shelfBooks.length > 1 ? 's' : ''}
+                        </p>
+                        {shelf.description && (
+                          <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                            {shelf.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <BookGrid
+            userBooks={filteredBooks}
+            allBooks={allBooks}
+            customShelves={customShelves}
+            isLoading={isLoading}
+            selectionMode={selectionMode}
+            selectedBooks={selectedBooks}
+            onSelectionChange={setSelectedBooks}
+            onExitSelectionMode={() => {
+              setSelectionMode(false);
+              setSelectedBooks([]);
+            }}
+          />
+        )}
+
+        <AddBookDialog
           open={showAddBook}
           onOpenChange={setShowAddBook}
           user={user}
         />
 
-        <CustomShelvesManager 
+        <CustomShelvesManager
           open={showShelves}
           onOpenChange={setShowShelves}
           shelves={customShelves}

@@ -90,21 +90,56 @@ export default function Dashboard() {
     enabled: myFriends.length > 0,
   });
 
+  const { data: allSharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadings'],
+    queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
+  // Year-scoped: Books read in selected year (based on end_date)
   const booksReadThisYear = readBooks.filter(b => {
     if (!b.end_date) return false;
     const endYear = new Date(b.end_date).getFullYear();
     return endYear === selectedYear;
   }).length;
 
-  const totalPages = readBooks.reduce((sum, userBook) => {
-    const book = allBooks.find(b => b.id === userBook.book_id);
-    return sum + (book?.page_count || 0);
-  }, 0);
-  const sharedReadings = myBooks.filter(b => b.is_shared_reading);
-  
+  // Year-scoped: Total pages read in selected year
+  const totalPagesThisYear = readBooks
+    .filter(b => {
+      if (!b.end_date) return false;
+      const endYear = new Date(b.end_date).getFullYear();
+      return endYear === selectedYear;
+    })
+    .reduce((sum, userBook) => {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      return sum + (book?.page_count || 0);
+    }, 0);
+
+  // Year-scoped: Shared readings active in selected year
+  const sharedReadingsThisYear = allSharedReadings.filter(sr => {
+    if (!sr.start_date) return false;
+    const startYear = new Date(sr.start_date).getFullYear();
+    const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : startYear;
+    return startYear <= selectedYear && selectedYear <= endYear;
+  }).length;
+
+  // Year-scoped: Books "À lire" added in selected year (fallback to global if no created_date)
+  const toReadThisYear = myBooks.filter(b => {
+    if (b.status !== "À lire") return false;
+    
+    // If we have created_date, filter by year
+    if (b.created_date) {
+      const createdYear = new Date(b.created_date).getFullYear();
+      return createdYear === selectedYear;
+    }
+    
+    // Fallback: show all "À lire" if no date available or no specific created_date
+    return true;
+  }).length;
+
   // Calculate average rating: filter for books that have a rating (not null/undefined)
   // then sum their ratings and divide by the count of such books.
   const ratedBooks = readBooks.filter(b => b.rating !== undefined && b.rating !== null);
@@ -146,25 +181,25 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard 
             title="Livres lus" 
-            value={readBooks.length}
+            value={booksReadThisYear}
             icon={BookOpen}
             gradient="linear-gradient(135deg, #FF8FAB, #FFB6C8)"
           />
           <StatsCard 
             title="Pages lues" 
-            value={totalPages.toLocaleString()}
+            value={totalPagesThisYear.toLocaleString()}
             icon={TrendingUp}
             gradient="linear-gradient(135deg, #FFB6C8, #F4C2C2)"
           />
           <StatsCard 
             title="Lectures communes" 
-            value={sharedReadings.length}
+            value={sharedReadingsThisYear}
             icon={Users}
             gradient="linear-gradient(135deg, #F4C2C2, #FFD700)"
           />
           <StatsCard 
-            title="Note moyenne" 
-            value={avgRating}
+            title="À lire" 
+            value={toReadThisYear}
             icon={Star}
             gradient="linear-gradient(135deg, #FFD700, #FFB6C8)"
           />
