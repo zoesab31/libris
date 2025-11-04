@@ -39,16 +39,27 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
 
   // Sort books
   const sortedBooks = [...userBooks].sort((a, b) => {
-    // Always put "En cours" books first
+    // Get book details for tag checking and title sorting
+    const bookA = allBooks.find(book => book.id === a.book_id);
+    const bookB = allBooks.find(book => book.id === b.book_id);
+    
+    // Always put "En cours" books first (highest priority)
     if (a.status === "En cours" && b.status !== "En cours") return -1;
     if (b.status === "En cours" && a.status !== "En cours") return 1;
+
+    // If both are "À lire" (and not "En cours" due to previous check),
+    // then prioritize "Service Press" within this group.
+    if (a.status === "À lire" && b.status === "À lire") {
+      const aIsServicePress = bookA?.tags?.includes("Service Press");
+      const bIsServicePress = bookB?.tags?.includes("Service Press");
+      if (aIsServicePress && !bIsServicePress) return -1; // a comes before b
+      if (!aIsServicePress && bIsServicePress) return 1;  // b comes before a
+    }
     
     // Then apply the selected sort
     if (sortBy === "rating") {
       return (b.rating || 0) - (a.rating || 0);
     } else if (sortBy === "title") {
-      const bookA = allBooks.find(book => book.id === a.book_id);
-      const bookB = allBooks.find(book => book.id === b.book_id);
       return (bookA?.title || "").localeCompare(bookB?.title || "");
     }
     // Default: recent (updated_date)
@@ -77,6 +88,7 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
           
           const shelf = customShelves.find(s => s.name === userBook.custom_shelf);
           const isCurrentlyReading = userBook.status === "En cours";
+          const isServicePress = book.tags?.includes("Service Press");
 
           return (
             <div 
@@ -88,6 +100,13 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                 {isCurrentlyReading && (
                   <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
                     En cours
+                  </div>
+                )}
+                
+                {isServicePress && userBook.status === "À lire" && !isCurrentlyReading && (
+                  <div className="absolute -top-2 -left-2 z-10 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
+                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                    📬 Service Press
                   </div>
                 )}
                 

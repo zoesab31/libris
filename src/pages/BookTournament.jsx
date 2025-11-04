@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Crown, Calendar, ThumbsDown, BookOpen, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Added CardHeader, CardTitle
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import MonthlyVoteDialog from "../components/tournament/MonthlyVoteDialog";
 import TournamentBracket from "../components/tournament/TournamentBracket";
@@ -21,6 +21,7 @@ const MONTHS = [
 export default function BookTournament() {
   const [user, setUser] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
+  const [tournamentType, setTournamentType] = useState("best"); // "best" or "worst"
   const [showWorstDialog, setShowWorstDialog] = useState(false);
   const [worstBookId, setWorstBookId] = useState("");
   const [worstReason, setWorstReason] = useState("");
@@ -34,10 +35,24 @@ export default function BookTournament() {
 
   const { data: monthlyVotes = [] } = useQuery({
     queryKey: ['monthlyVotes', currentYear],
-    queryFn: () => base44.entities.MonthlyBookVote.filter({ 
+    queryFn: () => base44.entities.MonthlyBookVote.filter({
       created_by: user?.email,
-      year: currentYear 
+      year: currentYear
     }, 'month'),
+    enabled: !!user,
+  });
+
+  const { data: monthlyWorstVotes = [] } = useQuery({
+    queryKey: ['monthlyWorstVotes', currentYear],
+    queryFn: async () => {
+      const allVotes = await base44.entities.BookOfTheYear.filter({
+        created_by: user?.email,
+        year: currentYear,
+        is_worst: true
+      });
+      // Filter for monthly worst votes (those with month property)
+      return allVotes.filter(v => v.month !== undefined);
+    },
     enabled: !!user,
   });
 
@@ -48,7 +63,7 @@ export default function BookTournament() {
 
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
-    queryFn: () => base44.entities.UserBook.filter({ 
+    queryFn: () => base44.entities.UserBook.filter({
       created_by: user?.email,
       status: "Lu"
     }),
@@ -61,7 +76,8 @@ export default function BookTournament() {
       const result = await base44.entities.BookOfTheYear.filter({
         created_by: user?.email,
         year: currentYear,
-        is_worst: true
+        is_worst: true,
+        month: null // Filter for the yearly worst, not monthly
       });
       return result[0] || null;
     },
@@ -74,6 +90,7 @@ export default function BookTournament() {
         await base44.entities.BookOfTheYear.update(worstBook.id, {
           book_id: worstBookId || null,
           reason: worstReason,
+          month: null, // Ensure it remains a yearly selection
         });
       } else {
         await base44.entities.BookOfTheYear.create({
@@ -81,6 +98,7 @@ export default function BookTournament() {
           book_id: worstBookId || null,
           reason: worstReason,
           is_worst: true,
+          month: null, // Ensure it's created as a yearly selection
         });
       }
     },
@@ -88,6 +106,22 @@ export default function BookTournament() {
       queryClient.invalidateQueries({ queryKey: ['worstBook'] });
       setShowWorstDialog(false);
       toast.success("Pire lecture enregistrée !");
+    },
+  });
+
+  const deleteVoteMutation = useMutation({
+    mutationFn: (voteId) => base44.entities.MonthlyBookVote.delete(voteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monthlyVotes'] });
+      toast.success("Vote modifié ou supprimé !");
+    },
+  });
+
+  const deleteWorstVoteMutation = useMutation({
+    mutationFn: (voteId) => base44.entities.BookOfTheYear.delete(voteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monthlyWorstVotes'] });
+      toast.success("Vote modifié ou supprimé !");
     },
   });
 
@@ -114,6 +148,7 @@ export default function BookTournament() {
   }, [myBooks, allBooks, currentYear]);
 
   const canStartTournament = monthlyVotes.length >= 4;
+  const canStartWorstTournament = monthlyWorstVotes.length >= 4;
 
   const openWorstDialog = () => {
     setWorstBookId(worstBook?.book_id || "");
@@ -136,197 +171,243 @@ export default function BookTournament() {
               Tournoi du Livre 🏆
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              Meilleur et pire livre de l'année {currentYear}
+              Élisez vos meilleures et pires lectures de {currentYear}
             </p>
           </div>
         </div>
 
         <Tabs defaultValue="monthly" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="monthly">Votes mensuels</TabsTrigger>
-            <TabsTrigger value="tournament">Tournoi</TabsTrigger>
-            <TabsTrigger value="worst">Pire lecture</TabsTrigger>
+            <TabsTrigger value="tournament">Tournois</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monthly">
-            <div>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                📅 Votes mensuels ({monthlyVotes.length}/12)
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {MONTHS.map((monthName, idx) => {
-                  const monthNum = idx + 1;
-                  const vote = monthlyVotes.find(v => v.month === monthNum);
-                  const book = vote ? allBooks.find(b => b.id === vote.book_id) : null;
-                  const canVote = monthNum <= currentMonth;
-                  const hasBooks = booksReadByMonth[monthNum]?.length > 0;
+            <Tabs value={tournamentType} onValueChange={setTournamentType}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="best">👑 Meilleure lecture</TabsTrigger>
+                <TabsTrigger value="worst">👎 Pire lecture</TabsTrigger>
+              </TabsList>
 
-                  return (
-                    <Card 
-                      key={monthNum}
-                      className="shadow-md border-0 overflow-hidden transition-all hover:shadow-lg cursor-pointer"
-                      style={{ backgroundColor: 'white' }}
-                      onClick={() => canVote && hasBooks && setSelectedMonth(monthNum)}
-                    >
-                      <div className="h-2" style={{ 
-                        backgroundColor: vote ? 'var(--gold)' : canVote && hasBooks ? 'var(--soft-pink)' : 'var(--beige)' 
-                      }} />
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                            {monthName}
-                          </h3>
-                          {vote ? (
-                            <Crown className="w-5 h-5" style={{ color: 'var(--gold)' }} />
-                          ) : (
-                            <Calendar className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
-                          )}
-                        </div>
-                        
-                        {vote && book ? (
-                          <div>
-                            <div className="w-full h-32 rounded-lg overflow-hidden mb-2 shadow-sm"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book.cover_url && (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+              <TabsContent value="best">
+                <div>
+                  <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                    📅 Meilleurs livres par mois ({monthlyVotes.length}/12)
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {MONTHS.map((monthName, idx) => {
+                      const monthNum = idx + 1;
+                      const vote = monthlyVotes.find(v => v.month === monthNum);
+                      const book = vote ? allBooks.find(b => b.id === vote.book_id) : null;
+                      const canVote = monthNum <= currentMonth;
+                      const hasBooks = booksReadByMonth[monthNum]?.length > 0;
+
+                      return (
+                        <Card
+                          key={monthNum}
+                          className="shadow-md border-0 overflow-hidden transition-all hover:shadow-lg"
+                          style={{ backgroundColor: 'white' }}
+                        >
+                          <div className="h-2" style={{
+                            backgroundColor: vote ? 'var(--gold)' : canVote && hasBooks ? 'var(--soft-pink)' : 'var(--beige)'
+                          }} />
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                                {monthName}
+                              </h3>
+                              {vote ? (
+                                <Crown className="w-5 h-5" style={{ color: 'var(--gold)' }} />
+                              ) : (
+                                <Calendar className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
                               )}
                             </div>
-                            <p className="text-xs font-medium line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </p>
-                          </div>
-                        ) : canVote && hasBooks ? (
-                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                            {booksReadByMonth[monthNum].length} livre{booksReadByMonth[monthNum].length > 1 ? 's' : ''} lu{booksReadByMonth[monthNum].length > 1 ? 's' : ''}
-                            <br />
-                            <span className="font-semibold">Cliquez pour voter</span>
-                          </p>
-                        ) : (
-                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                            {!canVote ? "Pas encore disponible" : "Aucun livre lu"}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
+
+                            {vote && book ? (
+                              <div>
+                                <div className="w-full h-32 rounded-lg overflow-hidden mb-2 shadow-sm cursor-pointer"
+                                     style={{ backgroundColor: 'var(--beige)' }}
+                                     onClick={() => setSelectedMonth(monthNum)}>
+                                  {book.cover_url && (
+                                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                  )}
+                                </div>
+                                <p className="text-xs font-medium line-clamp-2 mb-2" style={{ color: 'var(--dark-text)' }}>
+                                  {book.title}
+                                </p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteVoteMutation.mutate(vote.id)}
+                                  className="w-full text-xs"
+                                  style={{ color: 'var(--warm-pink)' }}
+                                >
+                                  <X className="w-3 h-3 mr-1" />
+                                  Modifier
+                                </Button>
+                              </div>
+                            ) : canVote && hasBooks ? (
+                              <div onClick={() => setSelectedMonth(monthNum)} className="cursor-pointer">
+                                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                  {booksReadByMonth[monthNum].length} livre{booksReadByMonth[monthNum].length > 1 ? 's' : ''} lu{booksReadByMonth[monthNum].length > 1 ? 's' : ''}
+                                  <br />
+                                  <span className="font-semibold">Cliquez pour voter</span>
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                {!canVote ? "Pas encore disponible" : "Aucun livre lu"}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="worst">
+                <div>
+                  <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                    📅 Pires livres par mois ({monthlyWorstVotes.length}/12)
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {MONTHS.map((monthName, idx) => {
+                      const monthNum = idx + 1;
+                      const vote = monthlyWorstVotes.find(v => v.month === monthNum);
+                      const book = vote?.book_id ? allBooks.find(b => b.id === vote.book_id) : null;
+                      const canVote = monthNum <= currentMonth;
+                      const hasBooks = booksReadByMonth[monthNum]?.length > 0;
+
+                      return (
+                        <Card
+                          key={monthNum}
+                          className="shadow-md border-0 overflow-hidden transition-all hover:shadow-lg"
+                          style={{ backgroundColor: 'white' }}
+                        >
+                          <div className="h-2" style={{
+                            backgroundColor: vote ? '#EF4444' : canVote && hasBooks ? 'var(--soft-pink)' : 'var(--beige)'
+                          }} />
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                                {monthName}
+                              </h3>
+                              {vote ? (
+                                <ThumbsDown className="w-5 h-5 text-red-500" />
+                              ) : (
+                                <Calendar className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
+                              )}
+                            </div>
+
+                            {vote ? (
+                              <div>
+                                {vote.book_id && book ? (
+                                  <>
+                                    <div className="w-full h-32 rounded-lg overflow-hidden mb-2 shadow-sm cursor-pointer"
+                                         style={{ backgroundColor: 'var(--beige)' }}
+                                         onClick={() => setSelectedMonth(monthNum)}>
+                                      {book.cover_url && (
+                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                      )}
+                                    </div>
+                                    <p className="text-xs font-medium line-clamp-2 mb-2" style={{ color: 'var(--dark-text)' }}>
+                                      {book.title}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="text-sm mb-2 cursor-pointer" style={{ color: 'var(--warm-pink)' }} onClick={() => setSelectedMonth(monthNum)}>
+                                    Aucun livre sélectionné
+                                  </p>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteWorstVoteMutation.mutate(vote.id)}
+                                  className="w-full text-xs"
+                                  style={{ color: 'var(--warm-pink)' }}
+                                >
+                                  <X className="w-3 h-3 mr-1" />
+                                  Modifier
+                                </Button>
+                              </div>
+                            ) : canVote && hasBooks ? (
+                              <div onClick={() => setSelectedMonth(monthNum)} className="cursor-pointer">
+                                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                  {booksReadByMonth[monthNum].length} livre{booksReadByMonth[monthNum].length > 1 ? 's' : ''} lu{booksReadByMonth[monthNum].length > 1 ? 's' : ''}
+                                  <br />
+                                  <span className="font-semibold">Cliquez pour voter</span>
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                {!canVote ? "Pas encore disponible" : "Aucun livre lu"}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="tournament">
-            {canStartTournament ? (
-              <TournamentBracket 
-                monthlyVotes={monthlyVotes}
-                allBooks={allBooks}
-                year={currentYear}
-              />
-            ) : (
-              <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: 'white' }}>
-                <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                  Tournoi pas encore disponible
-                </h3>
-                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                  Votez pour au moins 4 mois pour démarrer le tournoi
-                  <br />
-                  ({monthlyVotes.length}/4 votes)
-                </p>
-              </div>
-            )}
-          </TabsContent>
+            <Tabs value={tournamentType} onValueChange={setTournamentType}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="best">👑 Meilleur livre</TabsTrigger>
+                <TabsTrigger value="worst">👎 Pire livre</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="worst">
-            <div className="max-w-4xl mx-auto">
-              {worstBook ? (
-                <Card className="shadow-xl border-0 overflow-hidden">
-                  <div className="h-3 animate-pulse" style={{ background: 'linear-gradient(90deg, #EF4444, #DC2626, #EF4444)' }} />
-                  <CardHeader className="text-center pb-4">
-                    <CardTitle className="text-3xl font-bold flex items-center justify-center gap-3" 
-                               style={{ color: 'var(--dark-text)' }}>
-                      <ThumbsDown className="w-10 h-10 text-red-500" />
-                      Pire Lecture {currentYear}
-                      <ThumbsDown className="w-10 h-10 text-red-500" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center pb-8">
-                    {worstBook.book_id ? (
-                      <>
-                        {selectedWorstBook && (
-                          <>
-                            <div className="w-48 h-72 rounded-xl overflow-hidden shadow-2xl mb-6"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {selectedWorstBook.cover_url ? (
-                                <img src={selectedWorstBook.cover_url} alt={selectedWorstBook.title} 
-                                     className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="w-20 h-20" style={{ color: 'var(--warm-pink)' }} />
-                                </div>
-                              )}
-                            </div>
-                            <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: 'var(--dark-text)' }}>
-                              {selectedWorstBook.title}
-                            </h2>
-                            <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
-                              par {selectedWorstBook.author}
-                            </p>
-                            {worstBook.reason && (
-                              <div className="w-full max-w-lg p-6 rounded-xl mb-6" style={{ backgroundColor: 'var(--cream)' }}>
-                                <p className="text-sm font-semibold mb-2 text-center" style={{ color: 'var(--dark-text)' }}>
-                                  Pourquoi cette déception :
-                                </p>
-                                <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
-                                  {worstBook.reason}
-                                </p>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center py-12">
-                        <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <X className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                        <p className="text-xl font-semibold mb-2" style={{ color: 'var(--dark-text)' }}>
-                          Aucun livre sélectionné
-                        </p>
-                        <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-                          Vous avez choisi de ne pas désigner de pire lecture cette année
-                        </p>
-                      </div>
-                    )}
-                    <Button
-                      onClick={openWorstDialog}
-                      variant="outline"
-                      style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
-                    >
-                      Modifier la sélection
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="text-center py-12">
-                  <ThumbsDown className="w-20 h-20 mx-auto mb-6" style={{ color: 'var(--warm-pink)', opacity: 0.3 }} />
-                  <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                    Pire Lecture {currentYear}
-                  </h2>
-                  <p className="text-lg mb-8" style={{ color: 'var(--warm-pink)' }}>
-                    Sélectionnez le livre qui vous a le plus déçu cette année
-                  </p>
-                  <Button
-                    onClick={openWorstDialog}
-                    size="lg"
-                    className="text-white font-medium px-8 py-6 text-lg"
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  >
-                    Sélectionner ma pire lecture
-                  </Button>
-                </div>
-              )}
-            </div>
+              <TabsContent value="best">
+                {canStartTournament ? (
+                  <TournamentBracket
+                    monthlyVotes={monthlyVotes}
+                    allBooks={allBooks}
+                    year={currentYear}
+                    isWorst={false}
+                  />
+                ) : (
+                  <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: 'white' }}>
+                    <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--gold)' }} />
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      Tournoi pas encore disponible
+                    </h3>
+                    <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                      Votez pour au moins 4 mois pour démarrer le tournoi
+                      <br />
+                      ({monthlyVotes.length}/4 votes)
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="worst">
+                {canStartWorstTournament ? (
+                  <TournamentBracket
+                    monthlyVotes={monthlyWorstVotes}
+                    allBooks={allBooks}
+                    year={currentYear}
+                    isWorst={true}
+                  />
+                ) : (
+                  <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: 'white' }}>
+                    <ThumbsDown className="w-20 h-20 mx-auto mb-6 opacity-20 text-red-500" />
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      Tournoi pas encore disponible
+                    </h3>
+                    <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                      Votez pour au moins 4 mois pour démarrer le tournoi
+                      <br />
+                      ({monthlyWorstVotes.length}/4 votes)
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
 
@@ -337,13 +418,18 @@ export default function BookTournament() {
             monthName={MONTHS[selectedMonth - 1]}
             year={currentYear}
             books={booksReadByMonth[selectedMonth]}
-            currentVote={monthlyVotes.find(v => v.month === selectedMonth)}
+            currentVote={tournamentType === "best"
+              ? monthlyVotes.find(v => v.month === selectedMonth)
+              : monthlyWorstVotes.find(v => v.month === selectedMonth)
+            }
+            isWorst={tournamentType === "worst"}
             open={!!selectedMonth}
             onOpenChange={(open) => !open && setSelectedMonth(null)}
           />
         )}
 
-        {/* Worst Book Dialog */}
+        {/* Worst Book Dialog - This dialog is maintained as per the outline's explicit inclusion of its state and functions,
+            even though the top-level "worst" tab is removed. */}
         <Dialog open={showWorstDialog} onOpenChange={setShowWorstDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -364,7 +450,7 @@ export default function BookTournament() {
                     className={`p-4 rounded-xl text-center transition-all ${
                       worstBookId === "" ? 'shadow-xl scale-105' : 'shadow-md hover:shadow-lg'
                     }`}
-                    style={{ 
+                    style={{
                       backgroundColor: 'white',
                       borderWidth: '3px',
                       borderStyle: 'solid',
@@ -388,7 +474,7 @@ export default function BookTournament() {
                       className={`p-4 rounded-xl text-left transition-all ${
                         worstBookId === book.id ? 'shadow-xl scale-105' : 'shadow-md hover:shadow-lg'
                       }`}
-                      style={{ 
+                      style={{
                         backgroundColor: 'white',
                         borderWidth: '3px',
                         borderStyle: 'solid',

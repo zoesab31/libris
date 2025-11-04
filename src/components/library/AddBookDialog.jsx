@@ -13,7 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Edit } from "lucide-react";
 import { toast } from "sonner";
 
-const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain", 
+const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain",
                 "Historique", "Young Adult", "New Adult", "Dystopie", "Paranormal", "Autre"];
 
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
@@ -34,6 +34,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     genre: "",
     page_count: "",
     synopsis: "",
+    tags: [], // Added tags
   });
   const [userBookData, setUserBookData] = useState({
     status: "À lire",
@@ -46,24 +47,44 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
   });
 
-  // Function to search books using AI with better cover URL fetching
+  // Function to search books using AI with MUCH better cover URL fetching
   const searchBooks = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Tu es un assistant bibliothécaire expert. Recherche: "${searchQuery}".
+        prompt: `Tu es un expert en recherche de livres et couvertures. Recherche: "${searchQuery}".
 
-Donne 6-8 suggestions de livres. Pour chaque livre:
+IMPÉRATIF - Pour chaque livre, tu DOIS trouver une URL de couverture VALIDE et ACCESSIBLE :
+
+1. PRIORITÉ 1 - OpenLibrary (le plus fiable) :
+   Format: https://covers.openlibrary.org/b/isbn/[ISBN]-L.jpg
+   OU: https://covers.openlibrary.org/b/olid/[OLID]-L.jpg
+
+2. PRIORITÉ 2 - Google Books API :
+   Cherche l'image via l'API Google Books et retourne l'URL HTTPS complète
+
+3. PRIORITÉ 3 - Autres sources fiables :
+   - Amazon Images (format HTTPS)
+   - Goodreads covers
+   - Babelio covers
+
+RÈGLES STRICTES :
+- TOUJOURS privilégier une vraie URL plutôt que de laisser vide
+- Vérifier que l'URL commence par "https://"
+- Utiliser "-L.jpg" pour OpenLibrary (grande taille)
+- Si tu as un ISBN, TOUJOURS l'utiliser
+- Retourne 6-8 suggestions pertinentes
+
+Pour chaque livre, fournis :
 - Titre exact
 - Auteur complet
+- ISBN (si connu)
 - Résumé bref (2-3 lignes)
-- Genre
+- Genre précis
 - Année de publication
-- Pour la couverture: utilise le format "https://covers.openlibrary.org/b/isbn/[ISBN]-L.jpg" si tu connais l'ISBN, sinon cherche une URL publique valide de Google Books. Si tu ne trouves pas d'image valide, retourne une chaîne vide.
-
-IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publiquement.`,
+- cover_url (URL VALIDE ET ACCESSIBLE - ne JAMAIS laisser vide si le livre existe)`,
         add_context_from_internet: true,
         response_json_schema: {
           type: "object",
@@ -81,14 +102,14 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                   cover_url: { type: "string" },
                   isbn: { type: "string" }
                 },
-                required: ["title", "author", "synopsis", "genre"]
+                required: ["title", "author", "synopsis", "genre", "cover_url"]
               }
             }
           },
           required: ["books"]
         }
       });
-      
+
       setAiResults(result.books || []);
     } catch (error) {
       console.error("Error searching books with AI:", error);
@@ -113,7 +134,7 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
         book_id: createdBook.id,
         status: "À lire",
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("Livre ajouté à votre bibliothèque !");
@@ -127,7 +148,11 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const book = await base44.entities.Book.create(bookData);
+      const book = await base44.entities.Book.create({
+        ...bookData,
+        // page_count might be string, convert to number if needed for backend schema
+        page_count: bookData.page_count ? parseInt(bookData.page_count, 10) : undefined,
+      });
       await base44.entities.UserBook.create({
         ...userBookData,
         book_id: book.id,
@@ -153,7 +178,7 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
     setSearchQuery("");
     setAiResults([]);
     setEditingCover(null);
-    setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "" });
+    setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "", tags: [] });
     setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
   };
 
@@ -210,7 +235,7 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                 className="flex-1 border-2"
                 style={{ borderColor: 'var(--soft-pink)' }}
               />
-              <Button 
+              <Button
                 onClick={searchBooks}
                 disabled={isSearching}
                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}>
@@ -228,9 +253,9 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                       <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md"
                            style={{ backgroundColor: 'var(--beige)' }}>
                         {book.cover_url ? (
-                          <img 
-                            src={book.cover_url} 
-                            alt={book.title} 
+                          <img
+                            src={book.cover_url}
+                            alt={book.title}
                             className="w-full h-full object-cover"
                             onError={() => handleImageError(idx)}
                           />
@@ -354,6 +379,28 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                 </div>
 
                 <div>
+                  <Label htmlFor="tags">Tags (optionnel)</Label>
+                  <Select
+                    value={bookData.tags?.[0] || ""}
+                    onValueChange={(value) => setBookData({...bookData, tags: value ? [value] : []})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>Aucun</SelectItem>
+                      <SelectItem value="Service Press">📬 Service Press</SelectItem>
+                      <SelectItem value="Audio">🎧 Audio</SelectItem>
+                      <SelectItem value="Numérique">📱 Numérique</SelectItem>
+                      <SelectItem value="Broché">📕 Broché</SelectItem>
+                      <SelectItem value="Relié">📘 Relié</SelectItem>
+                      <SelectItem value="Poche">📙 Poche</SelectItem>
+                      <SelectItem value="Wattpad">🌟 Wattpad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="cover">URL de la couverture</Label>
                   <Input
                     id="cover"
@@ -374,7 +421,7 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                   />
                 </div>
 
-                <Button 
+                <Button
                   onClick={() => setStep(2)}
                   disabled={!bookData.title || !bookData.author}
                   className="w-full text-white font-medium"
@@ -474,7 +521,7 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg" 
+                <div className="flex items-center justify-between p-4 rounded-lg"
                      style={{ backgroundColor: 'var(--cream)' }}>
                   <Label htmlFor="shared" className="cursor-pointer">
                     Lecture commune
@@ -487,14 +534,14 @@ IMPORTANT: Les URLs de couverture doivent être des vraies URLs accessibles publ
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => setStep(1)}
                     className="flex-1"
                   >
                     Retour
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => createMutation.mutate()}
                     disabled={createMutation.isPending || !bookData.title || !bookData.author}
                     className="flex-1 text-white font-medium"
