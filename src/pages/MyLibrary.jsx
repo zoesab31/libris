@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,23 +8,10 @@ import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
 import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function MyLibrary() {
   const navigate = useNavigate();
-
-  // Helper function to create page URLs
-  // This function maps a logical page name to its corresponding URL path.
-  // For ShelfView, it returns "/shelves", which will then be appended with the ID as a query parameter.
-  const createPageUrl = (pageName) => {
-    switch (pageName) {
-      case "ShelfView":
-        return "/shelves";
-      // Add other page names and their paths here as needed
-      default:
-        return "/"; // Fallback for unknown page names
-    }
-  };
-
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
@@ -225,7 +211,11 @@ export default function MyLibrary() {
                   return (
                     <div
                       key={shelf.id}
-                      onClick={() => navigate(createPageUrl("ShelfView") + "?id=" + shelf.id)}
+                      onClick={() => {
+                        // Store shelf info in sessionStorage for ShelfView page
+                        sessionStorage.setItem('currentShelf', JSON.stringify(shelf));
+                        navigate(createPageUrl("ShelfView"));
+                      }}
                       className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
                       style={{
                         backgroundColor: 'white',

@@ -1,39 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tantml:query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ChevronLeft, Library, Search } from "lucide-react";
+import { ChevronLeft, Library, Search, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import BookGrid from "../components/library/BookGrid";
 
 export default function ShelfView() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Get shelf ID from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const shelfId = urlParams.get('id');
+  const [shelf, setShelf] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+    
+    // Get shelf from sessionStorage
+    const storedShelf = sessionStorage.getItem('currentShelf');
+    if (storedShelf) {
+      try {
+        setShelf(JSON.parse(storedShelf));
+      } catch (e) {
+        console.error("Error parsing shelf data:", e);
+      }
+    }
   }, []);
-
-  const { data: shelf, isLoading: loadingShelf } = useQuery({
-    queryKey: ['shelf', shelfId],
-    queryFn: async () => {
-      if (!user) return null;
-      const shelves = await base44.entities.CustomShelf.filter({ 
-        created_by: user.email 
-      });
-      return shelves.find(s => s.id === shelfId);
-    },
-    enabled: !!user && !!shelfId,
-  });
 
   const { data: myBooks = [], isLoading: loadingBooks } = useQuery({
     queryKey: ['myBooks'],
@@ -46,14 +40,22 @@ export default function ShelfView() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const { data: customShelves = [] } = useQuery({
-    queryKey: ['customShelves'],
-    queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+  if (!user || !shelf) {
+    return (
+      <div className="p-4 md:p-8 min-h-screen flex items-center justify-center" 
+           style={{ backgroundColor: 'var(--cream)' }}>
+        <div className="text-center">
+          <Library className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+          <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
+            Chargement de l'étagère...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Filter books for this shelf
-  let shelfBooks = myBooks.filter(b => b.custom_shelf === shelf?.name);
+  let shelfBooks = myBooks.filter(b => b.custom_shelf === shelf.name);
 
   // Apply search
   if (searchQuery) {
@@ -85,54 +87,13 @@ export default function ShelfView() {
       break;
   }
 
-  // Loading state
-  if (loadingShelf || !user) {
-    return (
-      <div className="p-4 md:p-8 min-h-screen flex items-center justify-center" 
-           style={{ backgroundColor: 'var(--cream)' }}>
-        <div className="text-center">
-          <Library className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-          <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
-            Chargement de l'étagère...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // 404 - Shelf not found
-  if (!shelf) {
-    return (
-      <div className="p-4 md:p-8 min-h-screen flex items-center justify-center" 
-           style={{ backgroundColor: 'var(--cream)' }}>
-        <div className="text-center max-w-md">
-          <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-          <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-            Étagère introuvable
-          </h2>
-          <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-            Cette étagère n'existe pas ou vous n'y avez pas accès.
-          </p>
-          <Link to={createPageUrl("MyLibrary")}>
-            <Button
-              className="text-white font-medium"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-            >
-              Retour à la bibliothèque
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <Link 
-            to={createPageUrl("MyLibrary") + "?tab=custom"}
+            to={createPageUrl("MyLibrary")}
             className="hover:underline transition-all"
             style={{ color: 'var(--warm-pink)' }}
           >
@@ -150,7 +111,7 @@ export default function ShelfView() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(createPageUrl("MyLibrary") + "?tab=custom")}
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
               className="shadow-md"
               style={{ backgroundColor: 'white' }}
             >
@@ -204,16 +165,47 @@ export default function ShelfView() {
 
         {/* Books Grid */}
         {shelfBooks.length > 0 ? (
-          <BookGrid 
-            userBooks={shelfBooks}
-            allBooks={allBooks}
-            customShelves={customShelves}
-            isLoading={loadingBooks}
-            selectionMode={false}
-            selectedBooks={[]}
-            onSelectionChange={() => {}}
-            onExitSelectionMode={() => {}}
-          />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {shelfBooks.map((userBook) => {
+              const book = allBooks.find(b => b.id === userBook.book_id);
+              if (!book) return null;
+
+              return (
+                <div key={userBook.id} className="group cursor-pointer">
+                  <div className="relative mb-3">
+                    <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
+                                  transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {book.cover_url ? (
+                        <img 
+                          src={book.cover_url} 
+                          alt={book.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <h3 className="font-bold text-sm mb-1 line-clamp-2 group-hover:underline" 
+                      style={{ color: 'var(--dark-text)' }}>
+                    {book.title}
+                  </h3>
+                  <p className="text-xs line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                    {book.author}
+                  </p>
+                  {userBook.rating && (
+                    <p className="text-xs mt-1 font-bold" style={{ color: 'var(--gold)' }}>
+                      ⭐ {userBook.rating}/5
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: 'white' }}>
             <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
