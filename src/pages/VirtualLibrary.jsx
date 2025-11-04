@@ -1,14 +1,18 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Store, BookOpen } from "lucide-react";
+import { Store, BookOpen, Plus, Settings } from "lucide-react";
 import { toast } from "sonner";
+import DecorationShop from "../components/decorations/DecorationShop";
+import { Button } from "@/components/ui/button"; // Assuming Button component from a UI library
 
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
   const [draggedBookId, setDraggedBookId] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const queryClient = useQueryClient();
+  const [showDecorationShop, setShowDecorationShop] = useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -93,7 +97,7 @@ export default function VirtualLibrary() {
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
@@ -107,6 +111,16 @@ export default function VirtualLibrary() {
                 {readBooks.length} livres lus • {shelves} étagère{shelves > 1 ? 's' : ''}
               </p>
             </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setShowDecorationShop(true)}
+              className="shadow-lg text-white font-medium px-6 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              Boutique
+            </Button>
           </div>
         </div>
 
@@ -190,6 +204,12 @@ export default function VirtualLibrary() {
             </span>
           </p>
         </div>
+
+        <DecorationShop 
+          open={showDecorationShop}
+          onOpenChange={setShowDecorationShop}
+          user={user}
+        />
       </div>
     </div>
   );

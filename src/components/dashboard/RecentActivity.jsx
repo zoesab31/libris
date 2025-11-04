@@ -56,6 +56,21 @@ export default function RecentActivity({ comments, allBooks, myFriends = [] }) {
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   )}
+
+                  {/* Photos */}
+                  {comment.photos && comment.photos.length > 0 && (
+                    <div className="flex gap-2 mb-3 flex-wrap">
+                      {comment.photos.map((photo, idx) => (
+                        <img
+                          key={idx}
+                          src={photo}
+                          alt={`Photo ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg shadow-md cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => window.open(photo, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-3xl">{comment.mood || '📖'}</span>
