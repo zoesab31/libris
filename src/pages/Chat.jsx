@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Send, ArrowLeft, Users, Search, Image, Smile } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2 } from "lucide-react"; // Added Trash2
+import { formatDistanceToNow, format } from "date-fns"; // Added format
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -75,6 +75,26 @@ export default function Chat() {
     },
   });
 
+  const deleteChatMutation = useMutation({
+    mutationFn: async (chatRoomId) => {
+      // Delete all messages first
+      const messagesToDelete = await base44.entities.ChatMessage.filter({ chat_room_id: chatRoomId });
+      await Promise.all(messagesToDelete.map(msg => base44.entities.ChatMessage.delete(msg.id)));
+      
+      // Then delete the chat room
+      await base44.entities.ChatRoom.delete(chatRoomId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      setSelectedChat(null);
+      toast.success("Conversation supprimée");
+    },
+    onError: (error) => {
+      console.error("Error deleting chat:", error);
+      toast.error("Erreur lors de la suppression");
+    }
+  });
+
   const createChatMutation = useMutation({
     mutationFn: async (friendEmail) => {
       // Check if chat already exists
@@ -113,6 +133,12 @@ export default function Chat() {
     e.preventDefault();
     if (!messageInput.trim()) return;
     sendMessageMutation.mutate(messageInput);
+  };
+
+  const handleDeleteChat = (chatId) => {
+    if (window.confirm("Êtes-vous sûre de vouloir supprimer cette conversation ?")) {
+      deleteChatMutation.mutate(chatId);
+    }
   };
 
   const getChatName = (room) => {
@@ -205,33 +231,45 @@ export default function Chat() {
             </div>
           ) : (
             chatRooms.map((room) => (
-              <button
-                key={room.id}
-                onClick={() => setSelectedChat(room)}
-                className={`w-full p-4 flex items-start gap-3 hover:bg-neutral-50 transition-colors ${
-                  selectedChat?.id === room.id ? 'bg-neutral-100' : ''
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                     style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--warm-pink))' }}>
-                  {getChatAvatar(room)}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="font-medium truncate" style={{ color: 'var(--dark-text)' }}>
-                      {getChatName(room)}
-                    </p>
-                    {room.last_message_at && (
-                      <span className="text-xs text-neutral-400 flex-shrink-0 ml-2">
-                        {formatDistanceToNow(new Date(room.last_message_at), { addSuffix: true, locale: fr })}
-                      </span>
-                    )}
+              <div key={room.id} className="group relative">
+                <button
+                  onClick={() => setSelectedChat(room)}
+                  className={`w-full p-4 flex items-start gap-3 hover:bg-neutral-50 transition-colors ${
+                    selectedChat?.id === room.id ? 'bg-neutral-100' : ''
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                       style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--warm-pink))' }}>
+                    {getChatAvatar(room)}
                   </div>
-                  <p className="text-sm text-neutral-500 truncate">
-                    {room.type === "PRIVATE" ? "Chat privé" : "Groupe"}
-                  </p>
-                </div>
-              </button>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-medium truncate" style={{ color: 'var(--dark-text)' }}>
+                        {getChatName(room)}
+                      </p>
+                      {room.last_message_at && (
+                        <span className="text-xs text-neutral-400 flex-shrink-0 ml-2">
+                          {formatDistanceToNow(new Date(room.last_message_at), { addSuffix: true, locale: fr })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-neutral-500 truncate">
+                      {room.type === "PRIVATE" ? "Chat privé" : "Groupe"}
+                    </p>
+                  </div>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteChat(room.id);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
             ))
           )}
         </div>
@@ -257,12 +295,21 @@ export default function Chat() {
                   </p>
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDeleteChat(selectedChat.id)}
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => {
                 const isMe = message.sender_email === user?.email;
+                const messageDate = new Date(message.created_date);
+                
                 return (
                   <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] ${
@@ -277,7 +324,7 @@ export default function Chat() {
                       )}
                       <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                       <p className={`text-xs mt-1 ${isMe ? 'text-white/70' : 'text-neutral-400'}`}>
-                        {formatDistanceToNow(new Date(message.created_date), { addSuffix: true, locale: fr })}
+                        {format(messageDate, 'HH:mm', { locale: fr })}
                       </p>
                     </div>
                   </div>

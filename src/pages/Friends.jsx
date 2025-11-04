@@ -78,6 +78,16 @@ export default function Friends() {
         friend_name: friendUser.full_name,
         status: "En attente"
       });
+      
+      // Create notification for the friend
+      await base44.entities.Notification.create({
+        type: "friend_request",
+        title: "Nouvelle demande d'amitié",
+        message: `${user.display_name || user.full_name || user.email} souhaite être votre amie`,
+        link_type: "profile",
+        created_by: friendUser.email,
+        from_user: user.email,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myFriends'] });

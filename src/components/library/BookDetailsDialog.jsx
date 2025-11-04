@@ -56,14 +56,36 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   const updateUserBookMutation = useMutation({
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("✅ Modifications enregistrées !");
 
       const oldStatus = userBook.status;
       const newStatus = variables.status;
+      
+      // Award points for Lu status
       if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
         awardPointsForLuStatusMutation.mutate();
+        
+        // Notify friends when book is finished
+        const friends = await base44.entities.Friendship.filter({ 
+          created_by: user.email, 
+          status: "Acceptée" 
+        });
+        
+        const notificationPromises = friends.map(friend =>
+          base44.entities.Notification.create({
+            type: "milestone",
+            title: "Livre terminé !",
+            message: `${user.display_name || user.full_name || 'Une amie'} a terminé "${book?.title}"`,
+            link_type: "book",
+            link_id: book.id,
+            created_by: friend.friend_email,
+            from_user: user.email,
+          })
+        );
+        
+        await Promise.all(notificationPromises);
       }
     },
     onError: (error) => {
@@ -146,12 +168,34 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         book_id: book.id,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
       toast.success("✅ Commentaire ajouté !");
       setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
       awardPointsForCommentMutation.mutate();
+      
+      // Notify friends about new comment
+      if (user) {
+        const friends = await base44.entities.Friendship.filter({ 
+          created_by: user.email, 
+          status: "Acceptée" 
+        });
+        
+        const notificationPromises = friends.map(friend =>
+          base44.entities.Notification.create({
+            type: "friend_comment",
+            title: "Nouveau commentaire",
+            message: `${user.display_name || user.full_name || 'Une amie'} a commenté "${book?.title}"`,
+            link_type: "book",
+            link_id: book.id,
+            created_by: friend.friend_email,
+            from_user: user.email,
+          })
+        );
+        
+        await Promise.all(notificationPromises);
+      }
     },
     onError: (error) => {
       console.error("Error adding comment:", error);
