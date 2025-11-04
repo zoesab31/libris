@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, Bo
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useConfetti } from "@/utils/useConfetti";
 
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 
@@ -34,7 +34,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const saveButtonRef = useRef(null);
-  const triggerConfetti = useConfetti();
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -59,7 +58,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      triggerConfetti(saveButtonRef.current);
       toast.success("✅ Modifications enregistrées !");
 
       const oldStatus = userBook.status;
