@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatsCard from "../components/dashboard/StatsCard";
@@ -339,6 +339,12 @@ export default function Dashboard() {
                   <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                     <Heart className="w-4 h-4 mr-2" />
                     Mes Personnages Préférés
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("Chat")}>
+                  <Button variant="outline" className="w-full justify-start font-medium" style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Chat entre amies
                   </Button>
                 </Link>
               </CardContent>
