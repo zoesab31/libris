@@ -9,6 +9,7 @@ import Discover from './pages/Discover';
 import Maps from './pages/Maps';
 import Profile from './pages/Profile';
 import SharedReadings from './pages/SharedReadings';
+import BookTournament from './pages/BookTournament';
 import Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Maps": Maps,
     "Profile": Profile,
     "SharedReadings": SharedReadings,
+    "BookTournament": BookTournament,
 }
 
 export const pagesConfig = {

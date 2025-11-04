@@ -71,16 +71,16 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               Bonjour {user?.full_name?.split(' ')[0] || 'Lectrice'} 📚
             </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               Bienvenue dans votre univers littéraire
             </p>
           </div>
           <Link to={createPageUrl("MyLibrary")}>
             <Button className="shadow-lg text-white font-medium px-6 py-6 rounded-xl transition-all hover:shadow-xl"
-                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}>
               <Plus className="w-5 h-5 mr-2" />
               Ajouter un livre
             </Button>
@@ -92,25 +92,25 @@ export default function Dashboard() {
             title="Livres lus" 
             value={readBooks.length}
             icon={BookOpen}
-            gradient="linear-gradient(135deg, #8B6F47, #C4A484)"
+            gradient="linear-gradient(135deg, #FF8FAB, #FFB6C8)"
           />
           <StatsCard 
             title="Pages lues" 
             value={totalPages.toLocaleString()}
             icon={TrendingUp}
-            gradient="linear-gradient(135deg, #C4A484, #E6C7B8)"
+            gradient="linear-gradient(135deg, #FFB6C8, #F4C2C2)"
           />
           <StatsCard 
             title="Lectures communes" 
             value={sharedReadings.length}
             icon={Users}
-            gradient="linear-gradient(135deg, #E6C7B8, #D4AF37)"
+            gradient="linear-gradient(135deg, #F4C2C2, #FFD700)"
           />
           <StatsCard 
             title="Note moyenne" 
             value={avgRating}
             icon={Star}
-            gradient="linear-gradient(135deg, #D4AF37, #C4A484)"
+            gradient="linear-gradient(135deg, #FFD700, #FFB6C8)"
           />
         </div>
 
