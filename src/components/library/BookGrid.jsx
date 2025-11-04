@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BookOpen, Star, Music, Users, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +52,21 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
     }
   };
 
+  // Handle delete when selection mode and books selected - MUST BE BEFORE ANY RETURN
+  React.useEffect(() => {
+    if (selectionMode && selectedBooks.length > 0) {
+      const handleKeyPress = (e) => {
+        if (e.key === 'Delete' && selectedBooks.length > 0) {
+          if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+            deleteMultipleMutation.mutate(selectedBooks);
+          }
+        }
+      };
+      window.addEventListener('keydown', handleKeyPress);
+      return () => window.removeEventListener('keydown', handleKeyPress);
+    }
+  }, [selectionMode, selectedBooks, deleteMultipleMutation]);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -83,48 +97,26 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
 
   // Sort books
   const sortedBooks = [...userBooks].sort((a, b) => {
-    // Get book details for tag checking and title sorting
     const bookA = allBooks.find(book => book.id === a.book_id);
     const bookB = allBooks.find(book => book.id === b.book_id);
     
-    // Always put "En cours" books first (highest priority)
     if (a.status === "En cours" && b.status !== "En cours") return -1;
     if (b.status === "En cours" && a.status !== "En cours") return 1;
 
-    // If both are "À lire" (and not "En cours" due to previous check),
-    // then prioritize "Service Press" within this group.
     if (a.status === "À lire" && b.status === "À lire") {
       const aIsServicePress = bookA?.tags?.includes("Service Press");
       const bIsServicePress = bookB?.tags?.includes("Service Press");
-      if (aIsServicePress && !bIsServicePress) return -1; // a comes before b
-      if (!aIsServicePress && bIsServicePress) return 1;  // b comes before a
+      if (aIsServicePress && !bIsServicePress) return -1;
+      if (!aIsServicePress && bIsServicePress) return 1;
     }
     
-    // Then apply the selected sort
     if (sortBy === "rating") {
       return (b.rating || 0) - (a.rating || 0);
     } else if (sortBy === "title") {
       return (bookA?.title || "").localeCompare(bookB?.title || "");
     }
-    // Default: recent (updated_date)
     return new Date(b.updated_date) - new Date(a.updated_date);
   });
-
-  // Handle delete when selection mode and books selected
-  React.useEffect(() => {
-    if (selectionMode && selectedBooks.length > 0) {
-      // Listen for delete confirmation (triggered by parent component)
-      const handleKeyPress = (e) => {
-        if (e.key === 'Delete' && selectedBooks.length > 0) {
-          if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-            deleteMultipleMutation.mutate(selectedBooks);
-          }
-        }
-      };
-      window.addEventListener('keydown', handleKeyPress);
-      return () => window.removeEventListener('keydown', handleKeyPress);
-    }
-  }, [selectionMode, selectedBooks, deleteMultipleMutation]);
 
   return (
     <>
