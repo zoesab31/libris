@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, AlertTriangle, User, Trash2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,9 +56,17 @@ export default function RecentActivity({ comments, allBooks, myFriends = [] }) {
                     </Button>
                   )}
 
-                  {comment.photos && comment.photos.length > 0 && (
+                  {(comment.photo_url || (comment.photos && comment.photos.length > 0)) && (
                     <div className="flex gap-2 mb-3 flex-wrap">
-                      {comment.photos.map((photo, idx) => (
+                      {comment.photo_url && (
+                        <img
+                          src={comment.photo_url}
+                          alt="Photo"
+                          className="w-20 h-20 object-cover rounded-lg shadow-md cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => window.open(comment.photo_url, '_blank')}
+                        />
+                      )}
+                      {comment.photos && comment.photos.map((photo, idx) => (
                         <img
                           key={idx}
                           src={photo}
@@ -107,7 +115,7 @@ export default function RecentActivity({ comments, allBooks, myFriends = [] }) {
                     {comment.comment}
                   </p>
                   <p className="text-xs pl-11" style={{ color: 'var(--warm-pink)' }}>
-                    {formatDistanceToNow(new Date(comment.created_date), { addSuffix: true, locale: fr })}
+                    {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}
                   </p>
                 </div>
               );

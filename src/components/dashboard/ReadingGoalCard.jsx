@@ -211,8 +211,11 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               <Button
                 onClick={() => createOrUpdateMutation.mutate(goalCount)}
                 disabled={createOrUpdateMutation.isPending || !goalCount}
-                className="w-full text-black font-medium py-6"
-                style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                className="w-full font-medium py-6"
+                style={{ 
+                  background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))',
+                  color: '#000000'
+                }}
               >
                 {createOrUpdateMutation.isPending ? "Enregistrement..." : "Enregistrer l'objectif"}
               </Button>

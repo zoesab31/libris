@@ -266,12 +266,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               </DialogTitle>
               <p className="text-sm text-neutral-500 mt-1">par {book.author}</p>
             </div>
-            <button 
-              onClick={() => onOpenChange(false)}
-              className="rounded-lg p-2 hover:bg-neutral-100 transition-colors"
-            >
-              <X className="w-5 h-5 text-neutral-500" />
-            </button>
           </div>
         </DialogHeader>
 
