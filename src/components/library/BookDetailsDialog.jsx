@@ -251,24 +251,30 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-2"
+                     style={{ borderColor: '#e5e7eb' }}>
+        <DialogHeader className="border-b pb-4" style={{ borderColor: '#e5e7eb' }}>
+          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
             {book.title}
           </DialogTitle>
-          <p style={{ color: 'var(--warm-brown)' }}>par {book.author}</p>
+          <p style={{ color: 'var(--warm-pink)' }}>par {book.author}</p>
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="details">Détails</TabsTrigger>
-            <TabsTrigger value="synopsis">Synopsis</TabsTrigger>
-            <TabsTrigger value="comments">
+          <TabsList className="grid w-full grid-cols-3 bg-white border-2" 
+                    style={{ borderColor: 'var(--beige)' }}>
+            <TabsTrigger value="details" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
+              Détails
+            </TabsTrigger>
+            <TabsTrigger value="synopsis" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
+              Synopsis
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-400 data-[state=active]:to-pink-500 data-[state=active]:text-white">
               Commentaires ({comments.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="space-y-4 py-4">
+          <TabsContent value="details" className="space-y-4 py-4 bg-white">
             {userBook.status === "À lire" && (
               <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
                    style={{ 
@@ -516,7 +522,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
             </div>
           </TabsContent>
 
-          <TabsContent value="synopsis" className="space-y-4 py-4">
+          <TabsContent value="synopsis" className="space-y-4 py-4 bg-white">
             <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
               {book.synopsis ? (
                 <div>
@@ -598,7 +604,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
             )}
           </TabsContent>
 
-          <TabsContent value="comments" className="space-y-4 py-4">
+          <TabsContent value="comments" className="space-y-4 py-4 bg-white">
             <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
               <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
                 Ajouter un commentaire
