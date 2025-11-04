@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Image as ImageIcon, Upload, X, Eye, EyeOff } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Eye, EyeOff } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -33,10 +33,34 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   const [photoPreview, setPhotoPreview] = useState([]);
   const [uploadedPhotos, setUploadedPhotos] = useState([]);
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Autosave on unmount or when leaving
+  useEffect(() => {
+    return () => {
+      if (comment.comment.trim()) {
+        handleAutoSave();
+      }
+    };
+  }, [comment]);
+
+  const handleAutoSave = async () => {
+    if (!comment.comment.trim() || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      await createCommentMutation.mutateAsync();
+      toast.success("💾 Sauvegardé automatiquement");
+    } catch (error) {
+      toast.error("Erreur de sauvegarde, réessai...");
+      setTimeout(() => handleAutoSave(), 2000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const createCommentMutation = useMutation({
     mutationFn: async (data) => {
-      // Upload photos if any
       let photoUrls = [];
       if (uploadedPhotos.length > 0) {
         for (const photo of uploadedPhotos) {
@@ -56,11 +80,11 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
       queryClient.invalidateQueries({ queryKey: ['bookComments', bookId] });
-      toast.success("Commentaire ajouté !");
+      toast.success("✅ Commentaire ajouté !");
       setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, photos: [] });
       setPhotoPreview([]);
       setUploadedPhotos([]);
-    }
+    },
   });
 
   const handleFileUpload = (e) => {
@@ -69,7 +93,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
 
     setUploadedPhotos(prev => [...prev, ...files]);
 
-    // Create previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -77,41 +100,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
       };
       reader.readAsDataURL(file);
     });
-  };
-
-  const handleCameraCapture = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      
-      // Create video element
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
-
-      // Wait for video to be ready
-      await new Promise(resolve => video.onloadedmetadata = resolve);
-
-      // Create canvas and capture frame
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-
-      // Stop stream
-      stream.getTracks().forEach(track => track.stop());
-
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setUploadedPhotos(prev => [...prev, file]);
-        setPhotoPreview(prev => [...prev, canvas.toDataURL()]);
-      }, 'image/jpeg');
-
-    } catch (error) {
-      console.error('Camera error:', error);
-      toast.error("Impossible d'accéder à la caméra");
-    }
   };
 
   const removePhoto = (index) => {
@@ -133,8 +121,9 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
 
   return (
     <div className="space-y-6">
-      {/* New Comment Form */}
-      <div className="p-6 rounded-xl" style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}>
+      {/* New Comment Form - IMPROVED CONTRAST */}
+      <div className="p-6 rounded-xl border-2 shadow-md" 
+           style={{ backgroundColor: 'white', borderColor: 'var(--beige)' }}>
         <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
           💭 Ajouter un commentaire
         </h3>
@@ -142,51 +131,67 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="chapter" className="text-sm">Chapitre</Label>
+              <Label htmlFor="chapter" className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                Chapitre
+              </Label>
               <Input
                 id="chapter"
                 value={comment.chapter}
                 onChange={(e) => setComment({...comment, chapter: e.target.value})}
+                onBlur={handleAutoSave}
                 placeholder="Chapitre 5"
+                className="border-2"
+                style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
               />
             </div>
             <div>
-              <Label htmlFor="page" className="text-sm">Page</Label>
+              <Label htmlFor="page" className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                Page
+              </Label>
               <Input
                 id="page"
                 type="number"
                 value={comment.page_number}
                 onChange={(e) => setComment({...comment, page_number: e.target.value})}
+                onBlur={handleAutoSave}
                 placeholder="42"
+                className="border-2"
+                style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="comment" className="text-sm">Votre commentaire</Label>
+            <Label htmlFor="comment" className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+              Votre commentaire
+            </Label>
             <Textarea
               id="comment"
               value={comment.comment}
               onChange={(e) => setComment({...comment, comment: e.target.value})}
+              onBlur={handleAutoSave}
               placeholder="Vos impressions, théories, émotions..."
               rows={4}
-              className="resize-none"
+              className="resize-none border-2"
+              style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
             />
           </div>
 
           <div>
-            <Label className="text-sm mb-2 block">Humeur</Label>
+            <Label className="text-sm mb-2 block font-medium" style={{ color: 'var(--dark-text)' }}>
+              Humeur
+            </Label>
             <div className="flex gap-2 flex-wrap">
               {MOODS.map(({ emoji, label }) => (
                 <button
                   key={emoji}
+                  type="button"
                   onClick={() => setComment({...comment, mood: emoji})}
-                  className={`px-4 py-2 rounded-lg text-2xl transition-all ${
-                    comment.mood === emoji ? 'scale-110 shadow-md' : 'hover:scale-105'
+                  className={`px-4 py-2 rounded-lg text-2xl transition-all border-2 ${
+                    comment.mood === emoji ? 'scale-110 shadow-lg' : 'hover:scale-105'
                   }`}
                   style={{
-                    backgroundColor: comment.mood === emoji ? 'var(--soft-pink)' : 'var(--cream)',
-                    border: '2px solid',
+                    backgroundColor: comment.mood === emoji ? 'var(--soft-pink)' : 'white',
                     borderColor: comment.mood === emoji ? 'var(--deep-pink)' : 'var(--beige)'
                   }}
                   title={label}
@@ -197,11 +202,13 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             </div>
           </div>
 
-          {/* Photo upload */}
+          {/* Photo upload - FIXED */}
           <div>
-            <Label className="text-sm mb-2 block">Photos</Label>
+            <Label className="text-sm mb-2 block font-medium" style={{ color: 'var(--dark-text)' }}>
+              Photos
+            </Label>
             <div className="flex gap-2">
-              <label className="flex-1">
+              <label className="flex-1 cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -209,23 +216,27 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-all hover:shadow-md"
-                     style={{ backgroundColor: 'var(--cream)', border: '2px dashed var(--beige)', color: 'var(--dark-text)' }}>
+                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-2"
+                     style={{ backgroundColor: 'white', borderColor: 'var(--beige)', color: 'var(--dark-text)' }}>
                   <ImageIcon className="w-5 h-5" />
                   <span className="text-sm font-medium">Galerie</span>
                 </div>
               </label>
               
-              <Button
-                type="button"
-                onClick={handleCameraCapture}
-                className="flex-1"
-                variant="outline"
-                style={{ borderColor: 'var(--beige)', color: 'var(--dark-text)' }}
-              >
-                <Camera className="w-5 h-5 mr-2" />
-                Photo
-              </Button>
+              <label className="flex-1 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-2"
+                     style={{ backgroundColor: 'white', borderColor: 'var(--beige)', color: 'var(--dark-text)' }}>
+                  <Camera className="w-5 h-5" />
+                  <span className="text-sm font-medium">Photo</span>
+                </div>
+              </label>
             </div>
 
             {/* Photo previews */}
@@ -239,6 +250,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                       className="w-20 h-20 object-cover rounded-lg shadow-md"
                     />
                     <button
+                      type="button"
                       onClick={() => removePhoto(idx)}
                       className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
                       style={{ backgroundColor: 'var(--deep-pink)' }}
@@ -251,14 +263,14 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
+          <div className="flex items-center justify-between pt-4 border-t-2" style={{ borderColor: 'var(--beige)' }}>
             <div className="flex items-center gap-2">
               <Switch
                 id="spoiler"
                 checked={comment.is_spoiler}
                 onCheckedChange={(checked) => setComment({...comment, is_spoiler: checked})}
               />
-              <Label htmlFor="spoiler" className="text-sm cursor-pointer">
+              <Label htmlFor="spoiler" className="text-sm cursor-pointer font-medium" style={{ color: 'var(--dark-text)' }}>
                 Contient des spoilers
               </Label>
             </div>
@@ -266,7 +278,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             <Button
               onClick={() => createCommentMutation.mutate(comment)}
               disabled={!comment.comment || createCommentMutation.isPending}
-              className="text-white font-medium"
+              className="text-white font-medium shadow-md"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
               {createCommentMutation.isPending ? "Ajout..." : "Publier"}
@@ -288,8 +300,8 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             return (
               <div
                 key={c.id}
-                className="p-4 rounded-xl"
-                style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                className="p-4 rounded-xl border-2 shadow-md"
+                style={{ backgroundColor: 'white', borderColor: 'var(--beige)' }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -312,7 +324,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                       size="sm"
                       variant="ghost"
                       onClick={() => toggleSpoiler(c.id)}
-                      className="text-xs"
+                      className="text-xs font-medium"
                       style={{ color: 'var(--deep-pink)' }}
                     >
                       {isSpoilerRevealed ? (
@@ -331,7 +343,8 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                 </div>
 
                 {c.is_spoiler && !isSpoilerRevealed ? (
-                  <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="p-4 rounded-lg text-center border-2" 
+                       style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--beige)' }}>
                     <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                       ⚠️ Contenu masqué (spoiler)
                     </p>

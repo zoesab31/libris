@@ -1,18 +1,22 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Store, BookOpen, Plus, Settings } from "lucide-react";
+import { Store, BookOpen, Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import DecorationShop from "../components/decorations/DecorationShop";
-import { Button } from "@/components/ui/button"; // Assuming Button component from a UI library
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
   const [draggedBookId, setDraggedBookId] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [shelfColor, setShelfColor] = useState("#8B4513");
   const queryClient = useQueryClient();
-  const [showDecorationShop, setShowDecorationShop] = useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -33,7 +37,6 @@ export default function VirtualLibrary() {
     mutationFn: ({ bookId, color }) => base44.entities.UserBook.update(bookId, { book_color: color }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
-      toast.success("Couleur enregistrée !");
     },
   });
 
@@ -46,9 +49,18 @@ export default function VirtualLibrary() {
     },
   });
 
+  const updateGenresMutation = useMutation({
+    mutationFn: async ({ bookId, genres }) => {
+      await base44.entities.Book.update(bookId, { custom_genres: genres });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      toast.success("Genres mis à jour !");
+    },
+  });
+
   const readBooks = myBooks.filter(b => b.status === "Lu");
-  // Calculate number of shelves needed (15 books per shelf, minimum 3 shelves)
-  const shelves = Math.max(Math.ceil(readBooks.length / 15), 3);
+  const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
 
   const handleDragStart = (e, userBookId) => {
     setDraggedBookId(userBookId);
@@ -73,12 +85,10 @@ export default function VirtualLibrary() {
       return;
     }
 
-    // Reorder books
     const newBooks = [...readBooks];
     const [removed] = newBooks.splice(draggedIndex, 1);
     newBooks.splice(dropIndex, 0, removed);
 
-    // Update positions
     for (let i = 0; i < newBooks.length; i++) {
       await reorderBooksMutation.mutateAsync({ 
         bookId: newBooks[i].id, 
@@ -91,7 +101,15 @@ export default function VirtualLibrary() {
   };
 
   const handleColorChange = (userBookId, color) => {
-    updateBookColorMutation.mutate({ bookId: userBookId, color });
+    requestAnimationFrame(() => {
+      updateBookColorMutation.mutate({ bookId: userBookId, color });
+    });
+  };
+
+  const handleShelfColorChange = (color) => {
+    requestAnimationFrame(() => {
+      setShelfColor(color);
+    });
   };
 
   return (
@@ -113,32 +131,56 @@ export default function VirtualLibrary() {
             </div>
           </div>
           
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => setShowDecorationShop(true)}
-              className="shadow-lg text-white font-medium px-6 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-              <Plus className="w-5 h-5 mr-2" />
-              Boutique
-            </Button>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                className="shadow-lg w-9 h-9"
+                style={{ backgroundColor: shelfColor, color: 'white', zIndex: 100 }}
+                title="Changer la couleur des étagères"
+              >
+                <Palette className="w-5 h-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="space-y-3">
+                <Label className="text-sm font-bold">Couleur des étagères</Label>
+                <input
+                  type="color"
+                  value={shelfColor}
+                  onChange={(e) => handleShelfColorChange(e.target.value)}
+                  className="w-full h-12 rounded-lg cursor-pointer border-2"
+                  style={{ borderColor: 'var(--beige)' }}
+                />
+                <div className="grid grid-cols-4 gap-2">
+                  {['#8B4513', '#654321', '#A0522D', '#D2691E', '#8B7355', '#6B4423', '#3D2817', '#704214'].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => handleShelfColorChange(color)}
+                      className="w-full h-8 rounded-lg border-2 hover:scale-110 transition-transform"
+                      style={{ backgroundColor: color, borderColor: shelfColor === color ? 'var(--deep-pink)' : 'transparent' }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="relative rounded-2xl p-8 shadow-xl" 
              style={{ 
-               background: 'linear-gradient(to bottom, #FFE4E1, #FFF0F5)',
+               background: 'linear-gradient(to bottom, #FFF5F0, #FFF8F5)',
                minHeight: '600px'
              }}>
           <div className="space-y-8">
             {Array(shelves).fill(0).map((_, shelfNum) => (
               <div key={shelfNum} className="relative">
-                <div className="min-h-[220px] rounded-lg shadow-lg flex items-end p-4 gap-3 overflow-x-auto"
-                     style={{ backgroundColor: '#8B4513' }}>
-                  {/* Books */}
-                  {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
+                <div className="min-h-[200px] rounded-lg shadow-lg flex items-end p-4 gap-2 overflow-x-auto"
+                     style={{ backgroundColor: shelfColor }}>
+                  {readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).map((userBook, idx) => {
                     const book = allBooks.find(b => b.id === userBook.book_id);
                     const bookColor = userBook.book_color || "#FFB3D9";
-                    const globalIndex = shelfNum * 15 + idx;
+                    const globalIndex = shelfNum * 12 + idx;
                     
                     return (
                       <div 
@@ -147,7 +189,7 @@ export default function VirtualLibrary() {
                         onDragStart={(e) => handleDragStart(e, userBook.id)}
                         onDragOver={(e) => handleDragOver(e, globalIndex)}
                         onDrop={(e) => handleDrop(e, globalIndex)}
-                        className={`w-20 h-48 rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
+                        className={`w-16 h-[180px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center p-2 flex-shrink-0 cursor-move relative group ${
                           dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
                         }`}
                         style={{ 
@@ -156,34 +198,31 @@ export default function VirtualLibrary() {
                           zIndex: 10
                         }}
                       >
-                        {/* Vertical text on book spine */}
                         <div className="absolute inset-0 flex items-center justify-center p-2">
                           <div className="transform -rotate-90 whitespace-nowrap">
-                            <p className="text-xs font-bold text-white leading-tight mb-1 max-w-[180px] truncate">
+                            <p className="text-sm font-bold text-white leading-tight mb-1 max-w-[160px] truncate"
+                               title={book?.title || 'Livre'}>
                               {book?.title || 'Livre'}
                             </p>
-                            <p className="text-[10px] text-white opacity-90 text-center">
+                            <p className="text-xs text-white opacity-90 text-center">
                               {book?.author || ''}
                             </p>
                           </div>
                         </div>
                         
-                        {/* Color picker - BELOW the book */}
-                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                          <div className="bg-white p-2 rounded-xl shadow-2xl border-2" 
+                        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                          <div className="bg-white p-3 rounded-xl shadow-2xl border-2 min-w-[200px]" 
                                style={{ borderColor: 'var(--soft-pink)' }}>
-                            <label className="flex flex-col items-center gap-1 cursor-pointer">
-                              <span className="text-xs font-bold whitespace-nowrap" style={{ color: 'var(--deep-pink)' }}>
-                                🎨
-                              </span>
-                              <input 
-                                type="color" 
-                                value={bookColor}
-                                onChange={(e) => handleColorChange(userBook.id, e.target.value)}
-                                className="w-12 h-12 rounded-lg cursor-pointer border-2"
-                                style={{ borderColor: 'var(--soft-pink)' }}
-                              />
-                            </label>
+                            <p className="text-xs font-bold mb-2" style={{ color: 'var(--deep-pink)' }}>
+                              🎨 Couleur
+                            </p>
+                            <input 
+                              type="color" 
+                              value={bookColor}
+                              onChange={(e) => handleColorChange(userBook.id, e.target.value)}
+                              className="w-full h-10 rounded-lg cursor-pointer border-2"
+                              style={{ borderColor: 'var(--soft-pink)' }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -200,16 +239,10 @@ export default function VirtualLibrary() {
             📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
             <br />
             <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-              Les étagères s'ajoutent automatiquement quand vous avez plus de 15 livres par étagère
+              Utilisez le bouton palette pour changer la couleur des étagères
             </span>
           </p>
         </div>
-
-        <DecorationShop 
-          open={showDecorationShop}
-          onOpenChange={setShowDecorationShop}
-          user={user}
-        />
       </div>
     </div>
   );
