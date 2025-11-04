@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X } from "lucide-react"; // Added X icon
+import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -19,7 +19,7 @@ const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState(userBook);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false); // This state is for cover upload
   const [editingCover, setEditingCover] = useState(false);
   const [newCoverUrl, setNewCoverUrl] = useState("");
   const [activeTab, setActiveTab] = useState("details"); // New state for active tab
@@ -31,6 +31,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     is_spoiler: false,
     photo_url: "",
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false); // This state is for comment photo upload
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -217,7 +218,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    setUploadingPhoto(true);
     try {
       const result = await base44.integrations.Core.UploadFile({ file });
       setNewComment({ ...newComment, photo_url: result.file_url });
@@ -226,8 +227,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       console.error("Error uploading file:", error);
       toast.error("Erreur lors de l'upload de l'image.");
     } finally {
-      setUploading(false);
+      setUploadingPhoto(false);
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setNewComment({ ...newComment, photo_url: "" });
   };
 
   const toggleServicePress = () => {
@@ -630,19 +635,20 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
             {activeTab === "comments" && (
               <div className="space-y-4 py-4 bg-white"> {/* Original className from TabsContent */}
-                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-                  <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
-                    Ajouter un commentaire
+                <div className="p-4 rounded-xl space-y-4" style={{ backgroundColor: 'var(--cream)' }}>
+                  <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
+                    ✍️ Ajouter un commentaire
                   </h3>
+                  
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor="page">Page / %</Label>
                       <Input
                         id="page"
-                        type="number"
+                        type="text"
                         value={newComment.page_number}
                         onChange={(e) => setNewComment({...newComment, page_number: e.target.value})}
-                        placeholder="Ex: 150"
+                        placeholder="Ex: 150 ou 50%"
                       />
                     </div>
                     <div>
@@ -664,73 +670,116 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {["😊", "😍", "😢", "😱", "🤔", "😡", "🥰"].map(m => (
+                          {["😊", "😍", "😢", "😱", "🤔", "😡", "🥰", "📖", "💔", "🔥"].map(m => (
                             <SelectItem key={m} value={m}>{m}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+
                   <div>
                     <Label htmlFor="comment">Votre commentaire, théorie, impression...</Label>
                     <Textarea
                       id="comment"
                       value={newComment.comment}
                       onChange={(e) => setNewComment({...newComment, comment: e.target.value})}
-                      placeholder="Partagez vos pensées..."
-                      rows={3}
+                      placeholder="Partagez vos pensées, vos théories, vos émotions..."
+                      rows={4}
+                      className="resize-none"
                     />
                   </div>
 
                   <div>
                     <Label>Photo du moment</Label>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Input
                         value={newComment.photo_url}
                         onChange={(e) => setNewComment({...newComment, photo_url: e.target.value})}
-                        placeholder="URL de la photo ou..."
+                        placeholder="URL de la photo..."
+                        className="flex-1"
                       />
-                      <label className="cursor-pointer flex items-center">
+                      <label className="cursor-pointer">
                         <input
                           type="file"
                           accept="image/*"
+                          capture="environment"
                           onChange={handlePhotoUpload}
                           className="hidden"
-                          disabled={uploading}
+                          disabled={uploadingPhoto}
                         />
-                        <Button type="button" variant="outline" disabled={uploading}>
-                          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          disabled={uploadingPhoto}
+                          className="w-24"
+                          asChild
+                        >
+                          <span>
+                            {uploadingPhoto ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Upload
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Photo
+                              </>
+                            )}
+                          </span>
                         </Button>
                       </label>
                     </div>
                   </div>
 
                   {newComment.photo_url && (
-                    <div className="rounded-xl overflow-hidden">
-                      <img src={newComment.photo_url} alt="Preview" className="w-full h-48 object-cover" />
+                    <div className="relative rounded-xl overflow-hidden">
+                      <img 
+                        src={newComment.photo_url} 
+                        alt="Preview" 
+                        className="w-full h-64 object-cover" 
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemovePhoto}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
                       <Switch
                         id="spoiler"
                         checked={newComment.is_spoiler}
                         onCheckedChange={(checked) => setNewComment({...newComment, is_spoiler: checked})}
                       />
-                      <Label htmlFor="spoiler" className="text-sm cursor-pointer">
+                      <Label htmlFor="spoiler" className="text-sm cursor-pointer flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
                         Contient des spoilers
                       </Label>
                     </div>
                     <Button
                       onClick={() => addCommentMutation.mutate(newComment)}
-                      disabled={!newComment.comment || addCommentMutation.isPending}
-                      size="sm"
-                      className="text-white"
-                      style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                      disabled={(!newComment.comment.trim() && !newComment.photo_url) || addCommentMutation.isPending}
+                      className="text-white font-medium"
+                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Ajouter
+                      {addCommentMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Envoi...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Ajouter
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -740,26 +789,31 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     comments.map((comment) => (
                       <div
                         key={comment.id}
-                        className="p-4 rounded-xl border"
+                        className="p-4 rounded-xl border transition-all hover:shadow-md"
                         style={{ 
                           backgroundColor: 'white',
                           borderColor: 'var(--beige)'
                         }}
                       >
                         {comment.photo_url && (
-                          <div className="mb-3 rounded-lg overflow-hidden">
-                            <img src={comment.photo_url} alt="Moment de lecture" className="w-full h-48 object-cover" />
+                          <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
+                               onClick={() => window.open(comment.photo_url, '_blank')}>
+                            <img 
+                              src={comment.photo_url} 
+                              alt="Moment de lecture" 
+                              className="w-full h-48 object-cover hover:scale-105 transition-transform" 
+                            />
                           </div>
                         )}
                         
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl">{comment.mood}</span>
+                            <span className="text-3xl">{comment.mood || '📖'}</span>
                             <div>
-                              <p className="text-sm font-medium" style={{ color: 'var(--deep-brown)' }}>
-                                {comment.chapter ? comment.chapter : `Page ${comment.page_number || '?'}`}
+                              <p className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                {comment.chapter ? comment.chapter : comment.page_number ? `Page ${comment.page_number}` : 'Commentaire'}
                               </p>
-                              <p className="text-xs" style={{ color: 'var(--soft-brown)' }}>
+                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
                                 {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}
                               </p>
                             </div>
@@ -767,7 +821,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                           <div className="flex items-center gap-2">
                             {comment.is_spoiler && (
                               <span className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                                    style={{ backgroundColor: 'var(--rose-gold)', color: 'var(--deep-brown)' }}>
+                                    style={{ backgroundColor: 'var(--rose-gold)', color: 'var(--dark-text)' }}>
                                 <AlertTriangle className="w-3 h-3" />
                                 Spoiler
                               </span>
@@ -776,20 +830,26 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                               variant="ghost"
                               size="icon"
                               onClick={() => deleteCommentMutation.mutate(comment.id)}
+                              className="hover:bg-red-50"
                             >
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </div>
                         </div>
-                        <p className="text-sm" style={{ color: 'var(--deep-brown)' }}>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--dark-text)' }}>
                           {comment.comment}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8" style={{ color: 'var(--warm-brown)' }}>
-                      <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" /> {/* MessageSquare import needed */}
-                      Aucun commentaire pour ce livre
+                    <div className="text-center py-12 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                      <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                      <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
+                        Aucun commentaire pour ce livre
+                      </p>
+                      <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                        Partagez vos impressions, théories et émotions !
+                      </p>
                     </div>
                   )}
                 </div>
