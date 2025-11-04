@@ -35,16 +35,6 @@ const navigationItems = [
     icon: Store,
   },
   {
-    title: "Mes Amies",
-    url: createPageUrl("Friends"),
-    icon: Users,
-  },
-  {
-    title: "Abécédaire",
-    url: createPageUrl("Authors"),
-    icon: BookUser,
-  },
-  {
     title: "Citations",
     url: createPageUrl("Quotes"),
     icon: Quote,
@@ -60,9 +50,24 @@ const navigationItems = [
     icon: Trophy,
   },
   {
+    title: "Abécédaire",
+    url: createPageUrl("Authors"),
+    icon: BookUser,
+  },
+  {
+    title: "Lectures Communes",
+    url: createPageUrl("SharedReadings"),
+    icon: Users,
+  },
+  {
     title: "Fan Art",
     url: createPageUrl("FanArt"),
     icon: Image,
+  },
+  {
+    title: "Mes Persos Préférés",
+    url: createPageUrl("Profile"),
+    icon: Heart,
   },
   {
     title: "Inspi Ongles",
@@ -78,16 +83,6 @@ const navigationItems = [
     title: "Découvrir",
     url: createPageUrl("Discover"),
     icon: Sparkles,
-  },
-  {
-    title: "Lectures Communes",
-    url: createPageUrl("SharedReadings"),
-    icon: Users,
-  },
-  {
-    title: "Mes Persos Préférés",
-    url: createPageUrl("Profile"),
-    icon: Heart,
   },
 ];
 

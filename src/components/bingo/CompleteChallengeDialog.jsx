@@ -36,7 +36,7 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             total_points: (existingPoints[0].total_points || 0) + 20
           });
         } else {
-          await base44.entities.ReadingPoints.create({ total_points: 20, points_spent: 0, created_by: user.email });
+          await base44.entities.ReadingPoints.create({ total_points: 20, points_spent: 0 });
         }
       }
     },

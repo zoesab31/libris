@@ -99,6 +99,29 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       if (!user) {
         throw new Error("User not loaded, cannot delete associated data.");
       }
+      
+      // Get all bingo challenges that reference this book
+      const relatedChallenges = await base44.entities.BingoChallenge.filter({ book_id: book.id, created_by: user.email });
+      
+      // Uncomplete challenges that used this book and remove points
+      for (const challenge of relatedChallenges) {
+        if (challenge.is_completed) {
+          // Remove 20 points for each completed challenge
+          const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+          if (existingPoints.length > 0) {
+            await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+              total_points: Math.max(0, (existingPoints[0].total_points || 0) - 20)
+            });
+          }
+        }
+        // Uncomplete the challenge
+        await base44.entities.BingoChallenge.update(challenge.id, {
+          is_completed: false,
+          book_id: undefined,
+          completed_date: undefined
+        });
+      }
+      
       // Delete user book
       await base44.entities.UserBook.delete(userBook.id);
       
@@ -128,19 +151,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
+      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       queryClient.invalidateQueries({ queryKey: ['bookBoyfriends'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
       queryClient.invalidateQueries({ queryKey: ['nailInspos'] });
       queryClient.invalidateQueries({ queryKey: ['readingLocations'] });
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] }); // Invalidate comments specific to this userBook
-      toast.success("Livre et données associées supprimés");
+      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
+      toast.success("Livre supprimé et défis bingo réinitialisés");
       onOpenChange(false);
     },
     onError: (error) => {
       console.error("Error deleting book and associated data:", error);
-      toast.error("Erreur lors de la suppression du livre et des données associées.");
+      toast.error("Erreur lors de la suppression du livre.");
     }
   });
 

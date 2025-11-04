@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -47,25 +48,14 @@ export default function VirtualLibrary() {
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    base44.auth.me().then(async (u) => {
-      setUser(u);
-      
-      // Give 20000 points if user doesn't have any
-      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: u.email });
-      if (existingPoints.length === 0) {
-        await base44.entities.ReadingPoints.create({ 
-          total_points: 20000, 
-          points_spent: 0 
-        });
-      }
-    }).catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const { data: points, refetch: refetchPoints } = useQuery({
     queryKey: ['readingPoints'],
     queryFn: async () => {
       const result = await base44.entities.ReadingPoints.filter({ created_by: user?.email });
-      return result[0] || { total_points: 20000, points_spent: 0 };
+      return result[0] || { total_points: 0, points_spent: 0 };
     },
     enabled: !!user,
   });
