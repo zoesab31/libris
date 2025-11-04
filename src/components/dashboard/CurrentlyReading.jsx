@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Calendar } from "lucide-react";
@@ -5,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-export default function CurrentlyReading({ books, allBooks, isLoading }) {
+export default function CurrentlyReading({ books, allBooks, isLoading, user, friendsBooks = [], myFriends = [] }) {
   if (isLoading) {
     return (
       <Card className="shadow-lg border-0" style={{ backgroundColor: 'white' }}>
@@ -19,45 +20,58 @@ export default function CurrentlyReading({ books, allBooks, isLoading }) {
     );
   }
 
+  const allCurrentlyReading = [
+    ...books.map(b => ({ ...b, reader: user?.full_name?.split(' ')[0] || 'Vous', isYou: true })),
+    ...friendsBooks.map(fb => {
+      const friend = myFriends.find(f => f.friend_email === fb.created_by);
+      return { ...fb, reader: friend?.friend_name?.split(' ')[0] || 'Ami(e)', isYou: false };
+    })
+  ];
+
   return (
     <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
-      <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--warm-brown), var(--soft-brown))' }} />
+      <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--warm-pink), var(--soft-pink))' }} />
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl" style={{ color: 'var(--deep-brown)' }}>
+        <CardTitle className="flex items-center gap-2 text-xl" style={{ color: 'var(--dark-text)' }}>
           <BookOpen className="w-6 h-6" />
           En cours de lecture
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {books.length > 0 ? (
+        {allCurrentlyReading.length > 0 ? (
           <div className="grid md:grid-cols-2 gap-4">
-            {books.map((userBook) => {
+            {allCurrentlyReading.map((userBook) => {
               const book = allBooks.find(b => b.id === userBook.book_id);
               if (!book) return null;
               
               return (
                 <div key={userBook.id} 
-                     className="flex gap-4 p-4 rounded-xl transition-all hover:shadow-md"
+                     className="flex gap-4 p-4 rounded-xl transition-all hover:shadow-md relative"
                      style={{ backgroundColor: 'var(--cream)' }}>
-                  <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-md"
+                  <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-md relative"
                        style={{ backgroundColor: 'var(--beige)' }}>
                     {book.cover_url ? (
                       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-brown)' }} />
+                        <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
+                    {/* Reader tag */}
+                    <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full text-xs font-bold text-white shadow-md"
+                         style={{ backgroundColor: userBook.isYou ? 'var(--deep-pink)' : 'var(--soft-pink)' }}>
+                      {userBook.reader} 📖
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold mb-1 line-clamp-2" style={{ color: 'var(--deep-brown)' }}>
+                    <h3 className="font-bold mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                       {book.title}
                     </h3>
-                    <p className="text-sm mb-2" style={{ color: 'var(--warm-brown)' }}>
+                    <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
                       {book.author}
                     </p>
                     {userBook.start_date && (
-                      <p className="text-xs flex items-center gap-1" style={{ color: 'var(--soft-brown)' }}>
+                      <p className="text-xs flex items-center gap-1" style={{ color: 'var(--dark-text)' }}>
                         <Calendar className="w-3 h-3" />
                         Début : {format(new Date(userBook.start_date), 'dd MMM yyyy', { locale: fr })}
                       </p>
@@ -69,11 +83,11 @@ export default function CurrentlyReading({ books, allBooks, isLoading }) {
           </div>
         ) : (
           <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-brown)' }} />
-            <p className="text-lg" style={{ color: 'var(--warm-brown)' }}>
+            <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
               Aucune lecture en cours
             </p>
-            <p className="text-sm mt-2" style={{ color: 'var(--soft-brown)' }}>
+            <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
               Commencez un nouveau livre pour le voir ici
             </p>
           </div>

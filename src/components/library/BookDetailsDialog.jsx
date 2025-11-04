@@ -30,12 +30,18 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     photo_url: "",
   });
 
+  const { data: user } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
     queryFn: async () => {
-      const user = await base44.auth.me();
+      if (!user) return []; // Ensure user is loaded
       return base44.entities.CustomShelf.filter({ created_by: user.email });
     },
+    enabled: !!user, // Only run query if user is available
   });
 
   const { data: comments = [] } = useQuery({
@@ -53,12 +59,53 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.UserBook.delete(userBook.id),
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error("User not loaded, cannot delete associated data.");
+      }
+      // Delete user book
+      await base44.entities.UserBook.delete(userBook.id);
+      
+      // Delete all comments related to this user book
+      const relatedComments = await base44.entities.ReadingComment.filter({ user_book_id: userBook.id });
+      await Promise.all(relatedComments.map(c => base44.entities.ReadingComment.delete(c.id)));
+      
+      // Delete book boyfriends related to this book (and created by the user)
+      const relatedBFs = await base44.entities.BookBoyfriend.filter({ book_id: book.id, created_by: user.email });
+      await Promise.all(relatedBFs.map(bf => base44.entities.BookBoyfriend.delete(bf.id)));
+      
+      // Delete quotes related to this book (and created by the user)
+      const relatedQuotes = await base44.entities.Quote.filter({ book_id: book.id, created_by: user.email });
+      await Promise.all(relatedQuotes.map(q => base44.entities.Quote.delete(q.id)));
+      
+      // Delete fan arts related to this book (and created by the user)
+      const relatedFanArts = await base44.entities.FanArt.filter({ book_id: book.id, created_by: user.email });
+      await Promise.all(relatedFanArts.map(fa => base44.entities.FanArt.delete(fa.id)));
+      
+      // Delete nail inspo related to this book (and created by the user)
+      const relatedNailInspo = await base44.entities.NailInspo.filter({ book_id: book.id, created_by: user.email });
+      await Promise.all(relatedNailInspo.map(ni => base44.entities.NailInspo.delete(ni.id)));
+      
+      // Delete reading locations related to this book (and created by the user)
+      const relatedLocations = await base44.entities.ReadingLocation.filter({ book_id: book.id, created_by: user.email });
+      await Promise.all(relatedLocations.map(loc => base44.entities.ReadingLocation.delete(loc.id)));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      toast.success("Livre supprimé de votre bibliothèque");
+      queryClient.invalidateQueries({ queryKey: ['bookBoyfriends'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['fanArts'] });
+      queryClient.invalidateQueries({ queryKey: ['nailInspos'] });
+      queryClient.invalidateQueries({ queryKey: ['readingLocations'] });
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] }); // Invalidate comments specific to this userBook
+      toast.success("Livre et données associées supprimés");
       onOpenChange(false);
     },
+    onError: (error) => {
+      console.error("Error deleting book and associated data:", error);
+      toast.error("Erreur lors de la suppression du livre et des données associées.");
+    }
   });
 
   const addCommentMutation = useMutation({
@@ -282,7 +329,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (confirm("Êtes-vous sûre de vouloir supprimer ce livre de votre bibliothèque ?")) {
+                  if (confirm("Êtes-vous sûre de vouloir supprimer ce livre de votre bibliothèque et toutes les données associées (commentaires, personnages favoris, citations, etc.) ?")) {
                     deleteMutation.mutate();
                   }
                 }}

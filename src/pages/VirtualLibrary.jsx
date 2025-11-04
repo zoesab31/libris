@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,9 @@ const DECOR_ITEMS = [
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [newBookColor, setNewBookColor] = useState("#FFB3D9");
+  const [bookColors, setBookColors] = useState({});
+  const [draggedBook, setDraggedBook] = useState(null);
+  const [draggedDecor, setDraggedDecor] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -138,6 +141,23 @@ export default function VirtualLibrary() {
     ? DECOR_ITEMS 
     : DECOR_ITEMS.filter(item => item.category === selectedCategory);
 
+  const handleDragStart = (e, item, type = 'book') => {
+    if (type === 'book') {
+      setDraggedBook(item);
+      setDraggedDecor(null); // Ensure only one is dragged
+    } else {
+      setDraggedDecor(item);
+      setDraggedBook(null); // Ensure only one is dragged
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    // Logic for positioning will be added
+    setDraggedBook(null);
+    setDraggedDecor(null);
+  };
+
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
@@ -181,27 +201,15 @@ export default function VirtualLibrary() {
                 <Plus className="w-4 h-4 mr-2" />
                 Ajouter une étagère (200 pts)
               </Button>
-              <Select value={newBookColor} onValueChange={setNewBookColor}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Couleur des livres" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="#FFB3D9">Rose</SelectItem>
-                  <SelectItem value="#B19CD9">Violet</SelectItem>
-                  <SelectItem value="#77DD77">Vert</SelectItem>
-                  <SelectItem value="#AEC6CF">Bleu</SelectItem>
-                  <SelectItem value="#FFD700">Or</SelectItem>
-                  <SelectItem value="#FF6961">Rouge</SelectItem>
-                  <SelectItem value="#836953">Marron</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="relative rounded-2xl p-8 shadow-xl" 
                  style={{ 
                    background: 'linear-gradient(to bottom, #FFE4E1, #FFF0F5)',
                    minHeight: '600px'
-                 }}>
+                 }}
+                 onDrop={handleDrop}
+                 onDragOver={(e) => e.preventDefault()}>
               <div className="space-y-6">
                 {Array(shelves).fill(0).map((_, shelfNum) => (
                   <div key={shelfNum} className="relative">
@@ -209,15 +217,34 @@ export default function VirtualLibrary() {
                          style={{ backgroundColor: '#8B4513' }}>
                       {readBooks.slice(shelfNum * 15, (shelfNum + 1) * 15).map((userBook, idx) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
+                        const bookColor = bookColors[userBook.id] || "#FFB3D9";
+                        
                         return (
-                          <div key={idx} 
-                               className="w-12 h-32 rounded-sm shadow-md transform hover:scale-105 transition-transform flex flex-col items-center justify-between p-1 flex-shrink-0"
-                               style={{ backgroundColor: newBookColor }}>
-                            <div className="text-[8px] font-bold text-center text-white leading-tight line-clamp-3 writing-mode-vertical transform rotate-180">
-                              {book?.title || 'Livre'}
+                          <div key={userBook.id || idx} 
+                               draggable
+                               onDragStart={(e) => handleDragStart(e, userBook, 'book')}
+                               className="w-12 h-32 rounded-sm shadow-md transform hover:scale-105 transition-transform flex flex-col items-center justify-center p-1 flex-shrink-0 cursor-move relative group"
+                               style={{ backgroundColor: bookColor }}>
+                            {/* Vertical text on book spine */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="transform -rotate-90 whitespace-nowrap">
+                                <p className="text-[8px] font-bold text-white leading-tight line-clamp-1">
+                                  {book?.title || 'Livre'}
+                                </p>
+                                <p className="text-[6px] text-white opacity-80 text-center">
+                                  {book?.author || ''}
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-[6px] text-center text-white opacity-80 writing-mode-vertical transform rotate-180">
-                              {book?.author || ''}
+                            
+                            {/* Color picker on hover */}
+                            <div className="absolute -top-8 left-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <input 
+                                type="color" 
+                                value={bookColor}
+                                onChange={(e) => setBookColors({...bookColors, [userBook.id]: e.target.value})}
+                                className="w-8 h-8 rounded cursor-pointer"
+                              />
                             </div>
                           </div>
                         );
@@ -231,11 +258,13 @@ export default function VirtualLibrary() {
                 {decorations.map((decor, idx) => {
                   const item = DECOR_ITEMS.find(i => i.id === decor.decor_id);
                   return (
-                    <div key={idx}
-                         className="absolute text-5xl"
+                    <div key={decor.id || idx}
+                         draggable
+                         onDragStart={(e) => handleDragStart(e, decor, 'decor')}
+                         className="absolute text-5xl cursor-move pointer-events-auto"
                          style={{
-                           left: `${(idx * 18 + 5) % 85}%`,
-                           top: `${(idx * 25 + 5) % 80}%`,
+                           left: decor.position_x ? `${decor.position_x}%` : `${(idx * 18 + 5) % 85}%`,
+                           top: decor.position_y ? `${decor.position_y}%` : `${(idx * 25 + 5) % 80}%`,
                          }}>
                       {item?.emoji}
                     </div>

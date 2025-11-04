@@ -47,7 +47,7 @@ const navigationItems = [
   {
     title: "Bingo Lecture",
     url: createPageUrl("Bingo"),
-    icon: Trophy,
+    icon: Sparkles, // Updated from Trophy to Sparkles
   },
   {
     title: "Tournoi du Livre",
@@ -104,9 +104,9 @@ export default function Layout({ children, currentPageName }) {
         :root {
           --cream: #FFF0F5;
           --beige: #FFD6E8;
-          --soft-pink: #FFB3D9;
-          --warm-pink: #FF69B4;
-          --deep-pink: #FF1493;
+          --soft-pink: #FF69B4; /* Updated value */
+          --warm-pink: #FF1493; /* Updated value */
+          --deep-pink: #C71585; /* Updated value */
           --gold: #FFD700;
           --rose-gold: #F4C2C2;
           --dark-text: #8B0052;

@@ -48,6 +48,29 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: myFriends = [] } = useQuery({
+    queryKey: ['myFriends'],
+    queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
+    enabled: !!user,
+  });
+
+  const { data: friendsBooks = [] } = useQuery({
+    queryKey: ['friendsBooks'],
+    queryFn: async () => {
+      const friendsEmails = myFriends.map(f => f.friend_email);
+      if (friendsEmails.length === 0) return [];
+      
+      const allFriendsBooks = await Promise.all(
+        friendsEmails.map(email => 
+          base44.entities.UserBook.filter({ created_by: email, status: "En cours" })
+        )
+      );
+      
+      return allFriendsBooks.flat();
+    },
+    enabled: myFriends.length > 0,
+  });
+
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
@@ -127,6 +150,9 @@ export default function Dashboard() {
               books={currentlyReading} 
               allBooks={allBooks}
               isLoading={loadingBooks}
+              user={user}
+              friendsBooks={friendsBooks}
+              myFriends={myFriends}
             />
             <RecentActivity 
               comments={comments}
@@ -138,7 +164,7 @@ export default function Dashboard() {
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
               <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--gold))' }} />
               <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                   <Music className="w-5 h-5" />
                   Ma Playlist Littéraire 🎵
                 </CardTitle>
@@ -148,6 +174,14 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     {myBooks.filter(b => b.music).slice(0, 3).map((userBook) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
+                      
+                      // Extract video ID from YouTube link if present
+                      let youtubeId = null;
+                      if (userBook.music_link) {
+                        const match = userBook.music_link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+                        if (match) youtubeId = match[1];
+                      }
+                      
                       return (
                         <div key={userBook.id} 
                              className="group relative p-4 rounded-xl transition-all hover:shadow-md"
@@ -160,17 +194,41 @@ export default function Dashboard() {
                               <Music className="w-7 h-7 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm mb-1 line-clamp-1" style={{ color: 'var(--deep-brown)' }}>
+                              <p className="font-bold text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                                 🎵 {userBook.music}
                               </p>
                               <p className="text-xs font-medium mb-1" style={{ color: 'var(--warm-pink)' }}>
                                 par {userBook.music_artist}
                               </p>
-                              <p className="text-xs line-clamp-1" style={{ color: 'var(--deep-brown)' }}>
+                              <p className="text-xs line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                                 📚 {book?.title}
                               </p>
+                              {userBook.music_link && (
+                                <a 
+                                  href={userBook.music_link} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-xs underline mt-1 block"
+                                  style={{ color: 'var(--deep-pink)' }}
+                                >
+                                  🔗 Écouter
+                                </a>
+                              )}
                             </div>
                           </div>
+                          
+                          {youtubeId && (
+                            <div className="mt-3 rounded-lg overflow-hidden">
+                              <iframe 
+                                width="100%" 
+                                height="120" 
+                                src={`https://www.youtube.com/embed/${youtubeId}`}
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -178,7 +236,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="text-center py-8">
                     <Music className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+                    <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
                       Associez des musiques à vos livres pour créer votre playlist
                     </p>
                   </div>
