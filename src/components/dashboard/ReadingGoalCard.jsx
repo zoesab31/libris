@@ -76,9 +76,9 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               variant="ghost" 
               size="icon"
               onClick={() => setShowDialog(true)}
-              className="bg-rose-100 hover:bg-rose-200 transition-colors duration-200 rounded-full"
+              className="hover:bg-opacity-50"
             >
-              <Edit className=w-4 h-4 text-rose-600" style={{ color: 'var(--warm-brown)' }} />
+              <Edit className="w-4 h-4" style={{ color: 'var(--warm-brown)' }} />
             </Button>
           </div>
         </CardHeader>
