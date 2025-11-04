@@ -102,14 +102,16 @@ export default function Layout({ children, currentPageName }) {
     <SidebarProvider>
       <style>{`
         :root {
-          --cream: #FFF0F5;
-          --beige: #FFD6E8;
-          --soft-pink: #FF1493; /* Updated value */
-          --warm-pink: #C71585; /* Updated value */
-          --deep-pink: #8B008B; /* Updated value */
+          --cream: #FFF5F9;
+          --beige: #FFE1F0;
+          --soft-pink: #FF69B4;
+          --warm-pink: #FF1493;
+          --deep-pink: #FF0080;
           --gold: #FFD700;
-          --rose-gold: #F4C2C2;
-          --dark-text: #4B0082; /* Updated value */
+          --rose-gold: #FFC0CB;
+          --dark-text: #D81B60;
+          --lavender: #E6B3E8;
+          --peach: #FFCCCB;
         }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
