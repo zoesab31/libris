@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export default function Friends() {
   const [friendCode, setFriendCode] = useState("");
   const queryClient = useQueryClient();
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
       // Generate friend code if doesn't exist

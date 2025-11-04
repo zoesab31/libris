@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export default function MyLibrary() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 

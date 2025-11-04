@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle } from "lucide-react";
@@ -90,9 +90,9 @@ const navigationItems = [
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  const [user, setUser] = React.useState(null);
+  const [user, setUser] = useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 

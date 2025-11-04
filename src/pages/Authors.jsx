@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ export default function Authors() {
   const [selectedAuthor, setSelectedAuthor] = useState(null);
   const [viewMode, setViewMode] = useState("authors"); // "authors" or "books"
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
