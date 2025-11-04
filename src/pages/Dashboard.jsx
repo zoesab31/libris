@@ -11,10 +11,11 @@ import StatsCard from "../components/dashboard/StatsCard";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import CurrentlyReading from "../components/dashboard/CurrentlyReading";
 import ReadingGoalCard from "../components/dashboard/ReadingGoalCard";
+import YearSelector from "../components/dashboard/YearSelector";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
-  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -37,11 +38,11 @@ export default function Dashboard() {
   });
 
   const { data: readingGoal } = useQuery({
-    queryKey: ['readingGoal', currentYear],
+    queryKey: ['readingGoal', selectedYear],
     queryFn: async () => {
       const goals = await base44.entities.ReadingGoal.filter({ 
         created_by: user?.email,
-        year: currentYear 
+        year: selectedYear 
       });
       return goals[0] || null;
     },
@@ -95,7 +96,7 @@ export default function Dashboard() {
   const booksReadThisYear = readBooks.filter(b => {
     if (!b.end_date) return false;
     const endYear = new Date(b.end_date).getFullYear();
-    return endYear === currentYear;
+    return endYear === selectedYear;
   }).length;
 
   const totalPages = readBooks.reduce((sum, userBook) => {
@@ -104,7 +105,7 @@ export default function Dashboard() {
   }, 0);
   const sharedReadings = myBooks.filter(b => b.is_shared_reading);
   const avgRating = readBooks.length > 0 
-    ? (readBooks.reduce((sum, b) => sum + (b.rating || 0), 0) / readBooks.filter(b => b.rating).length).toFixed(1)
+    ? (readBooks.reduce((sum, b => sum + (b.rating || 0), 0) / readBooks.filter(b => b.rating).length).toFixed(1)
     : 0;
 
   // Combine my comments and friends comments
@@ -131,6 +132,11 @@ export default function Dashboard() {
               Ajouter un livre
             </Button>
           </Link>
+        </div>
+
+        {/* Year Selector */}
+        <div className="mb-8">
+          <YearSelector currentYear={selectedYear} onYearChange={setSelectedYear} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -165,7 +171,7 @@ export default function Dashboard() {
             <ReadingGoalCard 
               currentGoal={readingGoal}
               booksReadThisYear={booksReadThisYear}
-              year={currentYear}
+              year={selectedYear}
               user={user}
             />
             

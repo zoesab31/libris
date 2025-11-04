@@ -17,6 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navigationItems = [
   {
@@ -202,13 +203,15 @@ export default function Layout({ children, currentPageName }) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b px-6 py-4 md:hidden" style={{ borderColor: 'var(--beige)' }}>
-            <div className="flex items-center gap-4">
+          <header className="bg-white border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: 'var(--beige)' }}>
+            <div className="flex items-center gap-4 md:hidden">
               <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors" />
               <h1 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Nos Livres
               </h1>
             </div>
+            <div className="hidden md:block" /> {/* This div acts as a spacer for larger screens */}
+            {user && <NotificationBell user={user} />}
           </header>
 
           <div className="flex-1 overflow-auto">
