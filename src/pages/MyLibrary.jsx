@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -129,51 +130,72 @@ export default function MyLibrary() {
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
               <TabsTrigger
                 value="tous"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "tous" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "tous" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 Tous
               </TabsTrigger>
               <TabsTrigger
                 value="En cours"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "En cours" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "En cours" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 En cours
               </TabsTrigger>
               <TabsTrigger
                 value="Lu"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "Lu" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "Lu" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 Lus
               </TabsTrigger>
               <TabsTrigger
                 value="À lire"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "À lire" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "À lire" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 À lire
               </TabsTrigger>
               <TabsTrigger
                 value="Mes envies"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "Mes envies" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "Mes envies" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 Mes envies
               </TabsTrigger>
               <TabsTrigger
                 value="Abandonné"
-                className="rounded-lg font-medium data-[state=active]:text-white"
-                style={activeTab === "Abandonné" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "Abandonné" ? { 
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
               >
                 Abandonnés
               </TabsTrigger>
               {customShelves.length > 0 && (
                 <TabsTrigger
                   value="custom"
-                  className="rounded-lg font-medium data-[state=active]:text-white"
-                  style={activeTab === "custom" ? { background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' } : {}}
+                  className="rounded-lg font-bold data-[state=active]:text-white"
+                  style={activeTab === "custom" ? { 
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: '#FFFFFF'
+                  } : { color: '#000000' }}
                 >
                   Étagères perso
                 </TabsTrigger>

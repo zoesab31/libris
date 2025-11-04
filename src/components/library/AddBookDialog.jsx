@@ -239,7 +239,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      toast.success("Livre ajouté à votre bibliothèque !");
+      toast.success("✅ Livre ajouté à votre bibliothèque !");
       onOpenChange(false);
       resetForm();
     },

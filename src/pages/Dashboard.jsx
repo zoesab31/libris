@@ -158,7 +158,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Bonjour {user?.full_name?.split(' ')[0] || 'Lectrice'} 📚
+              Bonjour {user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice'} 📚
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               Bienvenue dans votre univers littéraire

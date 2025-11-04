@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Upload, Loader2, ArrowLeft } from "lucide-react";
+import { User, Upload, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -13,8 +12,10 @@ import { toast } from "sonner";
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
+    display_name: "",
     profile_picture: "",
   });
   const queryClient = useQueryClient();
@@ -24,6 +25,7 @@ export default function AccountSettings() {
       setUser(u);
       setProfileData({
         full_name: u.full_name || "",
+        display_name: u.display_name || "",
         profile_picture: u.profile_picture || "",
       });
     }).catch(() => {});
@@ -49,11 +51,15 @@ export default function AccountSettings() {
     mutationFn: () => base44.auth.updateMe(profileData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      toast.success("Profil mis à jour !");
+      setShowSuccess(true);
+      toast.success("✅ Profil mis à jour !");
+      setTimeout(() => setShowSuccess(false), 2000);
     },
   });
 
   if (!user) return null;
+
+  const previewName = profileData.display_name || profileData.full_name?.split(' ')[0] || 'Lectrice';
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -112,6 +118,20 @@ export default function AccountSettings() {
             </div>
 
             <div>
+              <Label htmlFor="display_name">Nom d'affichage (Dashboard)</Label>
+              <Input
+                id="display_name"
+                value={profileData.display_name}
+                onChange={(e) => setProfileData({...profileData, display_name: e.target.value})}
+                placeholder="Ex: Zoé, Clara, Marie..."
+                className="text-lg"
+              />
+              <p className="text-xs mt-2 p-2 rounded-lg" style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
+                👀 Aperçu : "Bonjour <strong>{previewName}</strong> 📚"
+              </p>
+            </div>
+
+            <div>
               <Label htmlFor="name">Nom complet</Label>
               <Input
                 id="name"
@@ -137,10 +157,15 @@ export default function AccountSettings() {
             <Button
               onClick={() => updateMutation.mutate()}
               disabled={updateMutation.isPending}
-              className="w-full text-white font-medium py-6"
+              className="w-full text-white font-medium py-6 relative"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
-              {updateMutation.isPending ? (
+              {showSuccess ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5 mr-2 animate-pulse" />
+                  Enregistré !
+                </>
+              ) : updateMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Enregistrement...

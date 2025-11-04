@@ -52,39 +52,64 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     queryFn: () => base44.entities.ReadingComment.filter({ user_book_id: userBook.id }, '-created_date'),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data) => {
+  // New mutation to update only UserBook fields
+  const updateUserBookMutation = useMutation({
+    mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
+    onSuccess: (data, variables) => { // 'variables' here contains the data passed to mutationFn
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("✅ Modifications enregistrées !");
+
+      // Check for status change and award points
       const oldStatus = userBook.status;
-      const newStatus = data.status;
-      
-      // Update the UserBook
-      await base44.entities.UserBook.update(userBook.id, data);
-      
-      // Also update the Book entity tags if they changed
-      if (data.tags !== undefined) {
-        await base44.entities.Book.update(book.id, { tags: data.tags });
-      }
-      
-      // Award points when marking as "Lu"
+      const newStatus = variables.status;
       if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
-        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-        if (existingPoints.length > 0) {
-          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-            total_points: (existingPoints[0].total_points || 0) + 50
-          });
-        } else {
-          await base44.entities.ReadingPoints.create({ total_points: 50, points_spent: 0, created_by: user.email });
-        }
-        toast.success("Livre marqué comme lu ! +50 points 🌟");
+        awardPointsForLuStatusMutation.mutate();
+      }
+    },
+    onError: (error) => {
+      console.error("Error updating user book:", error);
+      toast.error("Erreur lors de la mise à jour du livre.");
+    }
+  });
+
+  // New mutation to update Book tags (extracted from original updateMutation)
+  const updateBookTagsMutation = useMutation({
+    mutationFn: async (tags) => {
+      return base44.entities.Book.update(book.id, { tags });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks as it might display book details
+      toast.success("Tags du livre mis à jour !");
+    },
+    onError: (error) => {
+      console.error("Error updating book tags:", error);
+      toast.error("Erreur lors de la mise à jour des tags.");
+    }
+  });
+
+  // New mutation to award points for marking a book as "Lu" (extracted from original updateMutation)
+  const awardPointsForLuStatusMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("User not loaded, cannot award points.");
+      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+      if (existingPoints.length > 0) {
+        await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+          total_points: (existingPoints[0].total_points || 0) + 50
+        });
+      } else {
+        await base44.entities.ReadingPoints.create({ total_points: 50, points_spent: 0, created_by: user.email });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      toast.success("Livre mis à jour !");
+      toast.success("Livre marqué comme lu ! +50 points 🌟");
     },
+    onError: (error) => {
+      console.error("Error awarding points for 'Lu' status:", error);
+      toast.error("Erreur lors de l'attribution des points.");
+    }
   });
 
   const updateBookCoverMutation = useMutation({
@@ -102,116 +127,76 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) {
-        throw new Error("User not loaded, cannot delete associated data.");
-      }
-      
-      // Get all bingo challenges that reference this book
-      const relatedChallenges = await base44.entities.BingoChallenge.filter({ book_id: book.id, created_by: user.email });
-      
-      // Uncomplete challenges that used this book and remove points
-      for (const challenge of relatedChallenges) {
-        if (challenge.is_completed) {
-          // Remove 20 points for each completed challenge
-          const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-          if (existingPoints.length > 0) {
-            await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-              total_points: Math.max(0, (existingPoints[0].total_points || 0) - 20)
-            });
-          }
-        }
-        // Uncomplete the challenge
-        await base44.entities.BingoChallenge.update(challenge.id, {
-          is_completed: false,
-          book_id: undefined,
-          completed_date: undefined
-        });
-      }
-      
-      // Delete user book
-      await base44.entities.UserBook.delete(userBook.id);
-      
-      // Delete all comments related to this user book
-      const relatedComments = await base44.entities.ReadingComment.filter({ user_book_id: userBook.id });
-      await Promise.all(relatedComments.map(c => base44.entities.ReadingComment.delete(c.id)));
-      
-      // Delete book boyfriends related to this book (and created by the user)
-      const relatedBFs = await base44.entities.BookBoyfriend.filter({ book_id: book.id, created_by: user.email });
-      await Promise.all(relatedBFs.map(bf => base44.entities.BookBoyfriend.delete(bf.id)));
-      
-      // Delete quotes related to this book (and created by the user)
-      const relatedQuotes = await base44.entities.Quote.filter({ book_id: book.id, created_by: user.email });
-      await Promise.all(relatedQuotes.map(q => base44.entities.Quote.delete(q.id)));
-      
-      // Delete fan arts related to this book (and created by the user)
-      const relatedFanArts = await base44.entities.FanArt.filter({ book_id: book.id, created_by: user.email });
-      await Promise.all(relatedFanArts.map(fa => base44.entities.FanArt.delete(fa.id)));
-      
-      // Delete nail inspo related to this book (and created by the user)
-      const relatedNailInspo = await base44.entities.NailInspo.filter({ book_id: book.id, created_by: user.email });
-      await Promise.all(relatedNailInspo.map(ni => base44.entities.NailInspo.delete(ni.id)));
-      
-      // Delete reading locations related to this book (and created by the user)
-      const relatedLocations = await base44.entities.ReadingLocation.filter({ book_id: book.id, created_by: user.email });
-      await Promise.all(relatedLocations.map(loc => base44.entities.ReadingLocation.delete(loc.id)));
-    },
+  // New mutation to delete only the UserBook (as per outline, original was more complex)
+  const deleteUserBookMutation = useMutation({
+    mutationFn: () => base44.entities.UserBook.delete(userBook.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      queryClient.invalidateQueries({ queryKey: ['bookBoyfriends'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-      queryClient.invalidateQueries({ queryKey: ['nailInspos'] });
-      queryClient.invalidateQueries({ queryKey: ['readingLocations'] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
-      toast.success("Livre supprimé et défis bingo réinitialisés");
+      toast.success("✅ Livre supprimé !");
       onOpenChange(false);
     },
     onError: (error) => {
-      console.error("Error deleting book and associated data:", error);
+      console.error("Error deleting user book:", error);
       toast.error("Erreur lors de la suppression du livre.");
     }
   });
 
-  const addCommentMutation = useMutation({
-    mutationFn: async (data) => {
-      await base44.entities.ReadingComment.create({
-        ...data,
+  // New mutation for creating a comment (as per outline)
+  const createCommentMutation = useMutation({
+    mutationFn: async (commentData) => {
+      return base44.entities.ReadingComment.create({
+        ...commentData,
         user_book_id: userBook.id,
         book_id: book.id,
       });
-      
-      // Award 5 points for adding a comment
-      if (user) {
-        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-        if (existingPoints.length > 0) {
-          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-            total_points: (existingPoints[0].total_points || 0) + 5
-          });
-        } else {
-          await base44.entities.ReadingPoints.create({ total_points: 5, points_spent: 0, created_by: user.email });
-        }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] }); // Keep specific invalidation key
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] }); // Invalidate recent comments
+      toast.success("✅ Commentaire ajouté !");
+      setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
+      awardPointsForCommentMutation.mutate(); // Trigger points award after comment creation
+    },
+    onError: (error) => {
+      console.error("Error adding comment:", error);
+      toast.error("Erreur lors de l'ajout du commentaire.");
+    }
+  });
+
+  // New mutation to award points for adding a comment (extracted from original addCommentMutation)
+  const awardPointsForCommentMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("User not loaded, cannot award points.");
+      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
+      if (existingPoints.length > 0) {
+        await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+          total_points: (existingPoints[0].total_points || 0) + 5
+        });
+      } else {
+        await base44.entities.ReadingPoints.create({ total_points: 5, points_spent: 0, created_by: user.email });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
       queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
-      toast.success("Commentaire ajouté ! +5 points 🌟");
+      toast.success("+5 points 🌟");
     },
+    onError: (error) => {
+      console.error("Error awarding points for comment:", error);
+      toast.error("Erreur lors de l'attribution des points de commentaire.");
+    }
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (id) => base44.entities.ReadingComment.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
       toast.success("Commentaire supprimé");
     },
+    onError: (error) => {
+      console.error("Error deleting comment:", error);
+      toast.error("Erreur lors de la suppression du commentaire.");
+    }
   });
 
   const handlePhotoUpload = async (e) => {
@@ -243,11 +228,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       ? currentTags.filter(t => t !== "Service Press")
       : [...currentTags, "Service Press"];
     
-    updateMutation.mutate({
-      ...editedData,
-      tags: newTags,
-      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
-    });
+    // Use the new updateBookTagsMutation for book tags
+    updateBookTagsMutation.mutate(newTags);
   };
 
   if (!book) return null;
@@ -407,7 +389,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                               <SelectValue placeholder="Aucune" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value={null}>Aucune</SelectItem> {/* Changed to empty string for consistent UI with placeholder */}
+                              <SelectItem value={null}>Aucune</SelectItem> {/* Changed to null for consistent UI with placeholder */}
                               {customShelves.map(s => (
                                 <SelectItem key={s.id} value={s.name}>
                                   {s.icon} {s.name}
@@ -520,8 +502,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
                     variant="outline"
-                    onClick={() => deleteMutation.mutate()}
-                    disabled={deleteMutation.isPending}
+                    onClick={() => deleteUserBookMutation.mutate()} // Use new deleteUserBookMutation
+                    disabled={deleteUserBookMutation.isPending}
                     className="text-white font-medium border-0"
                     style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
                   >
@@ -529,11 +511,11 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     Supprimer
                   </Button>
                   <Button
-                    onClick={() => updateMutation.mutate({
+                    onClick={() => updateUserBookMutation.mutate({ // Use new updateUserBookMutation
                       ...editedData,
                       rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
                     })}
-                    disabled={updateMutation.isPending}
+                    disabled={updateUserBookMutation.isPending}
                     className="text-white font-medium"
                     style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                   >
@@ -758,12 +740,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       </Label>
                     </div>
                     <Button
-                      onClick={() => addCommentMutation.mutate(newComment)}
-                      disabled={(!newComment.comment.trim() && !newComment.photo_url) || addCommentMutation.isPending}
+                      onClick={() => createCommentMutation.mutate(newComment)} // Use new createCommentMutation
+                      disabled={(!newComment.comment.trim() && !newComment.photo_url) || createCommentMutation.isPending}
                       className="text-white font-medium"
                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                     >
-                      {addCommentMutation.isPending ? (
+                      {createCommentMutation.isPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Envoi...

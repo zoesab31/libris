@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,20 +28,20 @@ export default function CustomShelvesManager({ open, onOpenChange, shelves }) {
     icon: "📚",
   });
 
-  const createMutation = useMutation({
+  const createShelfMutation = useMutation({
     mutationFn: (data) => base44.entities.CustomShelf.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customShelves'] });
-      toast.success("Étagère créée !");
+      toast.success("✅ Étagère créée !");
       setNewShelf({ name: "", description: "", color: "rose", icon: "📚" });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CustomShelf.delete(id),
+  const deleteShelfMutation = useMutation({
+    mutationFn: (shelfId) => base44.entities.CustomShelf.delete(shelfId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customShelves'] });
-      toast.success("Étagère supprimée");
+      toast.success("✅ Étagère supprimée !");
     },
   });
 
@@ -111,8 +112,8 @@ export default function CustomShelvesManager({ open, onOpenChange, shelves }) {
               </div>
 
               <Button
-                onClick={() => createMutation.mutate(newShelf)}
-                disabled={!newShelf.name || createMutation.isPending}
+                onClick={() => createShelfMutation.mutate(newShelf)}
+                disabled={!newShelf.name || createShelfMutation.isPending}
                 className="w-full text-white font-medium"
                 style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
               >
@@ -155,8 +156,8 @@ export default function CustomShelvesManager({ open, onOpenChange, shelves }) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMutation.mutate(shelf.id)}
-                        disabled={deleteMutation.isPending}
+                        onClick={() => deleteShelfMutation.mutate(shelf.id)}
+                        disabled={deleteShelfMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
