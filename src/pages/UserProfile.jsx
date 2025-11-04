@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Palette, Heart } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Palette, Heart, AlertCircle } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function UserProfile() {
@@ -21,14 +21,21 @@ export default function UserProfile() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  const { data: profileUser } = useQuery({
-    queryKey: ['profileUser', userEmail],
+  // Redirect to own profile if no email provided or if it's current user's email
+  useEffect(() => {
+    if (!userEmail || (currentUser && userEmail === currentUser.email)) {
+      navigate(createPageUrl("Profile"));
+    }
+  }, [userEmail, currentUser, navigate]);
+
+  const { data: allUsers = [], isLoading: loadingUser } = useQuery({
+    queryKey: ['allUsers'],
     queryFn: async () => {
-      const users = await base44.entities.User.filter({ email: userEmail });
-      return users[0] || null;
+      return base44.entities.User.list();
     },
-    enabled: !!userEmail,
   });
+
+  const profileUser = allUsers.find(u => u.email === userEmail);
 
   const { data: userBooks = [] } = useQuery({
     queryKey: ['userBooks', userEmail],
@@ -82,10 +89,40 @@ export default function UserProfile() {
     navigate(createPageUrl("Chat"));
   };
 
+  if (loadingUser) {
+    return (
+      <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <div className="w-16 h-16 rounded-full border-4 border-t-pink-500 animate-spin" 
+               style={{ borderColor: 'var(--beige)', borderTopColor: 'var(--deep-pink)' }} />
+          <p className="text-lg font-medium" style={{ color: 'var(--warm-pink)' }}>
+            Chargement du profil...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!profileUser) {
     return (
       <div className="p-8 text-center" style={{ backgroundColor: 'var(--cream)', minHeight: '100vh' }}>
-        <p style={{ color: 'var(--warm-pink)' }}>Chargement du profil...</p>
+        <div className="max-w-md mx-auto py-20">
+          <AlertCircle className="w-20 h-20 mx-auto mb-6" style={{ color: 'var(--warm-pink)' }} />
+          <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+            Profil introuvable
+          </h2>
+          <p className="mb-6" style={{ color: 'var(--warm-pink)' }}>
+            Cet utilisateur n'existe pas ou n'est pas accessible
+          </p>
+          <Button
+            onClick={() => navigate(createPageUrl("Friends"))}
+            className="text-white font-medium"
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour à mes amies
+          </Button>
+        </div>
       </div>
     );
   }
