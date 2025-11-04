@@ -60,10 +60,28 @@ export default function Profile() {
 
         <Tabs value={selectedGender} onValueChange={setSelectedGender}>
           <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8">
-            <TabsTrigger value="male" className="data-[state=active]:text-white rounded-lg">
+            <TabsTrigger 
+              value="male" 
+              className="rounded-lg font-bold data-[state=active]:text-white"
+              style={selectedGender === "male" ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
               Personnages masculins ({maleCharacters.length})
             </TabsTrigger>
-            <TabsTrigger value="female" className="data-[state=active]:text-white rounded-lg">
+            <TabsTrigger 
+              value="female" 
+              className="rounded-lg font-bold data-[state=active]:text-white"
+              style={selectedGender === "female" ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
               Personnages féminins ({femaleCharacters.length})
             </TabsTrigger>
           </TabsList>

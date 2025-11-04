@@ -64,13 +64,40 @@ export default function NailInspo() {
         <div className="mb-6">
           <Tabs value={filter} onValueChange={setFilter}>
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
-              <TabsTrigger value="all" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="all" 
+                className="rounded-lg font-bold"
+                style={filter === "all" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : {
+                  color: 'var(--dark-text)'
+                }}
+              >
                 Tous ({nailInspos.length})
               </TabsTrigger>
-              <TabsTrigger value="todo" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="todo" 
+                className="rounded-lg font-bold"
+                style={filter === "todo" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : {
+                  color: 'var(--dark-text)'
+                }}
+              >
                 À faire ({nailInspos.filter(i => !i.is_done).length})
               </TabsTrigger>
-              <TabsTrigger value="done" className="data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="done" 
+                className="rounded-lg font-bold"
+                style={filter === "done" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : {
+                  color: 'var(--dark-text)'
+                }}
+              >
                 <Check className="w-4 h-4 mr-1" />
                 Fait ({nailInspos.filter(i => i.is_done).length})
               </TabsTrigger>

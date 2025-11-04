@@ -179,8 +179,8 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
           <Button
             onClick={() => createMutation.mutate(fanArtData)}
             disabled={!fanArtData.folder_name || !fanArtData.image_url || createMutation.isPending}
-            className="w-full text-white font-medium py-6"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+            className="w-full font-medium py-6"
+            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
           >
             {createMutation.isPending ? (
               <>

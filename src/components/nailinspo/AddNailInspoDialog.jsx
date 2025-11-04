@@ -156,8 +156,8 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
           <Button
             onClick={() => createMutation.mutate(inspoData)}
             disabled={!inspoData.image_url || createMutation.isPending}
-            className="w-full text-white font-medium py-6"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+            className="w-full font-medium py-6"
+            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
           >
             {createMutation.isPending ? (
               <>

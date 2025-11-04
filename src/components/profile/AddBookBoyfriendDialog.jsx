@@ -192,8 +192,8 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
           <Button
             onClick={() => createMutation.mutate(characterData)}
             disabled={!characterData.character_name || !characterData.book_id || createMutation.isPending}
-            className="w-full text-white font-medium py-6"
-            style={{ background: 'linear-gradient(135deg, var(--rose-gold), var(--gold))' }}
+            className="w-full font-medium py-6"
+            style={{ background: 'linear-gradient(135deg, var(--rose-gold), var(--gold))', color: '#000000' }}
           >
             {createMutation.isPending ? (
               <>

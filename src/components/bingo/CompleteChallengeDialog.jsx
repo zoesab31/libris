@@ -153,11 +153,12 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             <Button
               onClick={handleComplete}
               disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
-              className="flex-1 text-white font-medium"
+              className="flex-1 font-medium"
               style={{ 
                 background: challenge.is_completed 
                   ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
-                  : 'linear-gradient(135deg, var(--gold), var(--warm-brown))' 
+                  : 'linear-gradient(135deg, var(--gold), var(--warm-brown))',
+                color: '#000000'
               }}
             >
               {challenge.is_completed ? (
