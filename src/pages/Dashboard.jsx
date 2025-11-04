@@ -71,6 +71,24 @@ export default function Dashboard() {
     enabled: myFriends.length > 0,
   });
 
+  const { data: friendsComments = [] } = useQuery({
+    queryKey: ['friendsComments'],
+    queryFn: async () => {
+      const friendsEmails = myFriends.map(f => f.friend_email);
+      if (friendsEmails.length === 0) return [];
+      
+      const allCommentsPromises = friendsEmails.map(email =>
+        base44.entities.ReadingComment.filter({ created_by: email }, '-created_date', 3)
+      );
+      
+      const allComments = await Promise.all(allCommentsPromises);
+      return allComments.flat().sort((a, b) => 
+        new Date(b.created_date) - new Date(a.created_date)
+      ).slice(0, 5);
+    },
+    enabled: myFriends.length > 0,
+  });
+
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
@@ -88,6 +106,11 @@ export default function Dashboard() {
   const avgRating = readBooks.length > 0 
     ? (readBooks.reduce((sum, b) => sum + (b.rating || 0), 0) / readBooks.filter(b => b.rating).length).toFixed(1)
     : 0;
+
+  // Combine my comments and friends comments
+  const allRecentComments = [...comments, ...friendsComments]
+    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+    .slice(0, 8);
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -154,9 +177,11 @@ export default function Dashboard() {
               friendsBooks={friendsBooks}
               myFriends={myFriends}
             />
+            
             <RecentActivity 
-              comments={comments}
+              comments={allRecentComments}
               allBooks={allBooks}
+              myFriends={myFriends}
             />
           </div>
 

@@ -1,19 +1,29 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Plus, Check, X, Mail } from "lucide-react";
+import { Users, Plus, Check, X, Mail, Copy, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export default function Friends() {
   const [user, setUser] = useState(null);
-  const [newFriendEmail, setNewFriendEmail] = useState("");
+  const [friendCode, setFriendCode] = useState("");
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(async (u) => {
+      setUser(u);
+      // Generate friend code if doesn't exist
+      if (!u.friend_code) {
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        await base44.auth.updateMe({ friend_code: code });
+        u.friend_code = code;
+        setUser(u); // Update user state with the new friend_code
+      }
+    }).catch(() => {});
   }, []);
 
   const { data: myFriends = [] } = useQuery({
@@ -29,22 +39,46 @@ export default function Friends() {
   });
 
   const addFriendMutation = useMutation({
-    mutationFn: async (email) => {
-      // Check if user exists
-      const users = await base44.entities.User.filter({ email });
+    mutationFn: async (code) => {
+      // Find user by friend code
+      const users = await base44.entities.User.filter({ friend_code: code });
       if (users.length === 0) {
-        throw new Error("Utilisateur introuvable");
+        throw new Error("Code ami invalide");
       }
       
+      const friendUser = users[0];
+      
+      if (friendUser.email === user.email) {
+        throw new Error("Vous ne pouvez pas vous ajouter vous-même");
+      }
+      
+      // Check if already friends or if a request is pending
+      const existingFriendship = myFriends.find(f => 
+        (f.friend_email === friendUser.email && f.status !== "Rejetée") || // Already friends or pending outgoing
+        (f.created_by === friendUser.email && f.status !== "Rejetée")      // Pending incoming
+      );
+
+      const existingPendingRequest = pendingRequests.find(r => r.created_by === friendUser.email);
+
+      if (existingFriendship || existingPendingRequest) {
+        if (existingFriendship?.status === "Acceptée") {
+          throw new Error("Cette personne est déjà dans vos amis");
+        } else if (existingFriendship?.status === "En attente") {
+          throw new Error("Une demande d'ami est déjà en attente avec cette personne.");
+        } else if (existingPendingRequest) {
+          throw new Error("Vous avez déjà une demande d'ami en attente de cette personne.");
+        }
+      }
+
       await base44.entities.Friendship.create({
-        friend_email: email,
-        friend_name: users[0].full_name,
+        friend_email: friendUser.email,
+        friend_name: friendUser.full_name,
         status: "En attente"
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myFriends'] });
-      setNewFriendEmail("");
+      setFriendCode("");
       toast.success("Invitation envoyée !");
     },
     onError: (error) => {
@@ -56,7 +90,11 @@ export default function Friends() {
     mutationFn: (friendshipId) => base44.entities.Friendship.update(friendshipId, { status: "Acceptée" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingFriendRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['myFriends'] }); // Invalidate myFriends as well to update accepted list
       toast.success("Amie acceptée !");
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -67,7 +105,30 @@ export default function Friends() {
       queryClient.invalidateQueries({ queryKey: ['myFriends'] });
       toast.success("Invitation refusée");
     },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
+
+  const regenerateCodeMutation = useMutation({
+    mutationFn: async () => {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      await base44.auth.updateMe({ friend_code: code });
+      return code;
+    },
+    onSuccess: (newCode) => {
+      setUser((prevUser) => ({ ...prevUser, friend_code: newCode }));
+      toast.success("Nouveau code généré !");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(user?.friend_code || "");
+    toast.success("Code copié !");
+  };
 
   const acceptedFriends = myFriends.filter(f => f.status === "Acceptée");
   const sentRequests = myFriends.filter(f => f.status === "En attente");
@@ -90,6 +151,44 @@ export default function Friends() {
           </div>
         </div>
 
+        {/* My friend code */}
+        <Card className="shadow-lg border-0 mb-8" style={{ backgroundColor: 'white' }}>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+              💌 Mon code ami
+            </h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--deep-pink)' }}>
+              Partagez ce code avec vos amies pour qu'elles puissent vous ajouter
+            </p>
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Input
+                  value={user?.friend_code || ""}
+                  readOnly
+                  className="text-2xl font-bold text-center tracking-wider py-6"
+                  style={{ backgroundColor: 'var(--cream)', color: 'var(--deep-pink)' }}
+                />
+              </div>
+              <Button
+                onClick={copyCode}
+                variant="outline"
+                className="px-6"
+                style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
+              >
+                <Copy className="w-5 h-5" />
+              </Button>
+              <Button
+                onClick={() => regenerateCodeMutation.mutate()}
+                variant="outline"
+                disabled={regenerateCodeMutation.isPending}
+                style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
+              >
+                <RefreshCw className="w-5 h-5" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Add friend */}
         <Card className="shadow-lg border-0 mb-8" style={{ backgroundColor: 'white' }}>
           <CardContent className="p-6">
@@ -98,20 +197,20 @@ export default function Friends() {
             </h2>
             <div className="flex gap-3">
               <Input
-                type="email"
-                value={newFriendEmail}
-                onChange={(e) => setNewFriendEmail(e.target.value)}
-                placeholder="Email de votre amie"
-                className="flex-1"
+                value={friendCode}
+                onChange={(e) => setFriendCode(e.target.value.toUpperCase())}
+                placeholder="Entrez le code ami"
+                className="flex-1 text-lg font-bold tracking-wider"
+                maxLength={6}
               />
               <Button
-                onClick={() => addFriendMutation.mutate(newFriendEmail)}
-                disabled={!newFriendEmail || addFriendMutation.isPending}
-                className="text-white font-medium"
+                onClick={() => addFriendMutation.mutate(friendCode)}
+                disabled={!friendCode || friendCode.length !== 6 || addFriendMutation.isPending}
+                className="text-white font-medium px-8"
                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Inviter
+                Ajouter
               </Button>
             </div>
           </CardContent>
@@ -235,7 +334,7 @@ export default function Friends() {
                         </div>
                         <div>
                           <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                            {request.friend_email}
+                            {request.friend_name || request.friend_email}
                           </p>
                           <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
                             En attente de réponse

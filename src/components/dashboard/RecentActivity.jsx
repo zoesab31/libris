@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function RecentActivity({ comments, allBooks }) {
+export default function RecentActivity({ comments, allBooks, myFriends = [] }) {
   const queryClient = useQueryClient();
 
   const deleteCommentMutation = useMutation({
@@ -33,6 +34,11 @@ export default function RecentActivity({ comments, allBooks }) {
           <div className="space-y-4">
             {comments.map((comment) => {
               const book = allBooks.find(b => b.id === comment.book_id);
+              const friend = myFriends.find(f => f.friend_email === comment.created_by);
+              const displayName = friend 
+                ? friend.friend_name?.split(' ')[0] 
+                : comment.created_by?.split('@')[0] || 'Une lectrice';
+              
               return (
                 <div key={comment.id} 
                      className="p-4 rounded-xl border transition-all hover:shadow-md relative group"
@@ -40,14 +46,16 @@ export default function RecentActivity({ comments, allBooks }) {
                        backgroundColor: 'var(--cream)',
                        borderColor: 'var(--beige)'
                      }}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteCommentMutation.mutate(comment.id)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+                  {!friend && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteCommentMutation.mutate(comment.id)}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  )}
                   
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-3xl">{comment.mood || '📖'}</span>
@@ -55,11 +63,17 @@ export default function RecentActivity({ comments, allBooks }) {
                       <div className="flex items-center gap-2 mb-1">
                         <User className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
                         <p className="font-semibold text-sm" style={{ color: 'var(--deep-pink)' }}>
-                          {comment.created_by?.split('@')[0] || 'Une lectrice'}
+                          {displayName}
                         </p>
                         <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
                           a réagi
                         </span>
+                        {friend && (
+                          <span className="text-xs px-2 py-0.5 rounded-full" 
+                                style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
+                            amie
+                          </span>
+                        )}
                       </div>
                       <p className="font-semibold text-sm" style={{ color: 'var(--dark-text)' }}>
                         {book?.title || 'Livre inconnu'}
