@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, Bo
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useConfetti } from "@/utils/useConfetti";
 
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 
@@ -32,6 +33,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     photo_url: "",
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const saveButtonRef = useRef(null);
+  const triggerConfetti = useConfetti();
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -56,6 +59,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      triggerConfetti(saveButtonRef.current);
       toast.success("✅ Modifications enregistrées !");
 
       const oldStatus = userBook.status;
@@ -66,7 +70,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     },
     onError: (error) => {
       console.error("Error updating user book:", error);
-      toast.error("Erreur lors de la mise à jour du livre.");
+      toast.error("Échec de l'enregistrement");
     }
   });
 
@@ -77,7 +81,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      toast.success("Tags du livre mis à jour !");
+      toast.success("✅ Tags du livre mis à jour !");
     },
     onError: (error) => {
       console.error("Error updating book tags:", error);
@@ -115,7 +119,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       setEditingCover(false);
       setNewCoverUrl("");
-      toast.success("Couverture mise à jour !");
+      toast.success("✅ Couverture mise à jour !");
     },
     onError: (error) => {
         console.error("Error updating book cover:", error);
@@ -230,7 +234,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border border-neutral-200 rounded-2xl shadow-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white text-neutral-900 border border-neutral-200 rounded-2xl shadow-2xl">
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -243,10 +247,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex-shrink-0 bg-neutral-100 p-1 grid grid-cols-3">
-            <TabsTrigger value="details" style={{ color: '#000000' }}>Détails</TabsTrigger>
-            <TabsTrigger value="synopsis" style={{ color: '#000000' }}>Synopsis</TabsTrigger>
-            <TabsTrigger value="comments" style={{ color: '#000000' }}>Commentaires ({comments.length})</TabsTrigger>
+          <TabsList className="flex-shrink-0 bg-neutral-50 p-1 grid grid-cols-3 border-b border-neutral-200">
+            <TabsTrigger value="details" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
+              Détails
+            </TabsTrigger>
+            <TabsTrigger value="synopsis" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
+              Synopsis
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
+              Commentaires ({comments.length})
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto bg-white">
@@ -254,7 +264,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <TabsContent value="details">
                 <div className="space-y-4 py-4 bg-white">
                   {userBook.status === "À lire" && (
-                    <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md"
+                    <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white"
                          style={{ 
                            backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
                            borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
@@ -306,7 +316,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </div>
 
                     {editingCover && (
-                      <div className="flex-1 space-y-3 p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                      <div className="flex-1 space-y-3 p-4 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
                         <Label>Nouvelle URL de couverture</Label>
                         <Input
                           value={newCoverUrl}
@@ -400,7 +410,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between p-3 rounded-lg" 
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-white" 
                              style={{ backgroundColor: 'var(--cream)' }}>
                           <Label htmlFor="shared">Lecture commune</Label>
                           <Switch
@@ -443,7 +453,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="p-4 rounded-xl space-y-3 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
                     <Label className="text-sm font-medium flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       Dates de lecture (pour le défi annuel)
@@ -487,15 +497,23 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       Supprimer
                     </Button>
                     <Button
+                      ref={saveButtonRef}
                       onClick={() => updateUserBookMutation.mutate({
                         ...editedData,
                         rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
                       })}
                       disabled={updateUserBookMutation.isPending}
-                      className="text-white font-medium"
+                      className="text-white font-medium relative"
                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                     >
-                      Enregistrer
+                      {updateUserBookMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        "Enregistrer"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -503,7 +521,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
               <TabsContent value="synopsis">
                 <div className="space-y-4 py-4 bg-white">
-                  <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="p-6 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
                     {book.synopsis ? (
                       <div>
                         <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
@@ -587,7 +605,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
               <TabsContent value="comments">
                 <div className="space-y-4 py-4 bg-white">
-                  <div className="p-4 rounded-xl space-y-4" style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="p-4 rounded-xl space-y-4 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
                     <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
                       ✍️ Ajouter un commentaire
                     </h3>
@@ -741,9 +759,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       comments.map((comment) => (
                         <div
                           key={comment.id}
-                          className="p-4 rounded-xl border transition-all hover:shadow-md"
+                          className="p-4 rounded-xl border transition-all hover:shadow-md bg-white"
                           style={{ 
-                            backgroundColor: 'white',
                             borderColor: 'var(--beige)'
                           }}
                         >
@@ -794,7 +811,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-12 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                      <div className="text-center py-12 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
                         <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                         <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
                           Aucun commentaire pour ce livre
