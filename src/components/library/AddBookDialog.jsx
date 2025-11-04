@@ -264,25 +264,20 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-neutral-200 rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
-            📚 Ajouter un livre
+          <DialogTitle className="text-2xl font-bold text-neutral-900">
+            Ajouter un livre
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => {
-          setActiveTab(value);
-          if (value === "manual") setStep(1);
-        }}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="search" className="font-medium">
-              <Search className="w-4 h-4 mr-2" />
-              Recherche en ligne
+            <TabsTrigger value="search" style={{ color: '#000000' }}>
+              Rechercher
             </TabsTrigger>
-            <TabsTrigger value="manual" className="font-medium">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Ajout manuel
+            <TabsTrigger value="manual" style={{ color: '#000000' }}>
+              Manuel
             </TabsTrigger>
           </TabsList>
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail } from "lucide-react";
+import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -21,8 +22,11 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     chapter: "",
     is_spoiler: false,
   });
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteEmail, setInviteEmail] = useState(""); // This state is no longer directly used for inviting friends, but keeping it for now if other parts rely on it.
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFriends, setSelectedFriends] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -35,6 +39,12 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       shared_reading_id: reading.id 
     }, '-created_date'),
     enabled: !!reading.id,
+  });
+
+  const { data: myFriends = [] } = useQuery({
+    queryKey: ['myFriends'],
+    queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
+    enabled: !!user && open,
   });
 
   // Calculate number of days for the reading
@@ -63,30 +73,40 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     },
   });
 
-  const inviteFriendMutation = useMutation({
-    mutationFn: async (email) => {
-      const currentInvitations = reading.pending_invitations || [];
+  // Replaced the old inviteFriendMutation with this one for inviting multiple friends
+  const inviteFriendsMutation = useMutation({
+    mutationFn: async (friendsToInvite) => {
+      const currentParticipants = reading.participants || []; // Assuming `reading.participants` might be null or undefined
+      const newParticipants = [...new Set([...currentParticipants, ...friendsToInvite])]; // Ensure unique participants
+      
       await base44.entities.SharedReading.update(reading.id, {
-        pending_invitations: [...currentInvitations, email]
+        participants: newParticipants
       });
       
-      // Create notification for the friend
-      await base44.entities.Notification.create({
-        type: "shared_reading_update",
-        title: "Invitation à une lecture commune",
-        message: `${user?.full_name || 'Une amie'} vous invite à lire "${book?.title}"`,
-        link_type: "shared_reading",
-        link_id: reading.id,
-        created_by: email
-      });
+      // Create notifications
+      const notificationPromises = friendsToInvite.map(friendEmail =>
+        base44.entities.Notification.create({
+          type: "shared_reading_update",
+          title: "Invitation à une lecture commune",
+          message: `${user?.display_name || user?.full_name || 'Une amie'} vous a invitée à lire "${book?.title}"`,
+          link_type: "shared_reading",
+          link_id: reading.id,
+          created_by: friendEmail,
+          from_user: user?.email,
+        })
+      );
+
+      await Promise.all(notificationPromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
-      setInviteEmail("");
-      toast.success("Invitation envoyée !");
+      setSelectedFriends([]);
+      setSearchQuery("");
+      toast.success("✅ Invitations envoyées !");
     },
-    onError: () => {
-      toast.error("Erreur lors de l'envoi de l'invitation");
+    onError: (error) => {
+      console.error("Error inviting friends:", error);
+      toast.error("Erreur lors de l'envoi des invitations");
     }
   });
 
@@ -101,6 +121,25 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       return newSet;
     });
   };
+
+  const toggleFriend = (friendEmail) => {
+    setSelectedFriends(prev =>
+      prev.includes(friendEmail)
+        ? prev.filter(email => email !== friendEmail)
+        : [...prev, friendEmail]
+    );
+  };
+
+  // Filter friends to only show those not already in participants or pending invitations
+  const availableFriends = myFriends.filter(f => 
+    !(reading.participants || []).includes(f.friend_email) &&
+    !(reading.pending_invitations || []).includes(f.friend_email)
+  );
+
+  const filteredFriends = availableFriends.filter(f =>
+    (f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.friend_email?.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const messagesForDay = messages.filter(m => m.day_number === selectedDay);
 
@@ -118,9 +157,9 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
         <Tabs defaultValue="discussion" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="discussion">Discussion</TabsTrigger>
-            <TabsTrigger value="program">Programme</TabsTrigger>
-            <TabsTrigger value="participants">Participants</TabsTrigger>
+            <TabsTrigger value="discussion" style={{ color: '#000000' }}>Discussion</TabsTrigger>
+            <TabsTrigger value="program" style={{ color: '#000000' }}>Programme</TabsTrigger>
+            <TabsTrigger value="participants" style={{ color: '#000000' }}>Participants</TabsTrigger>
           </TabsList>
 
           <TabsContent value="discussion" className="space-y-4 py-4">
@@ -353,28 +392,72 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
           <TabsContent value="participants" className="py-4">
             <div className="space-y-4">
-              {/* Invite friends */}
+              {/* Invite friends with selection UI */}
               <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
                 <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
                   <UserPlus className="w-5 h-5" />
-                  Inviter une amie
+                  Inviter des amies
                 </h3>
-                <div className="flex gap-2">
-                  <Input
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="Email de votre amie..."
-                    type="email"
-                  />
-                  <Button
-                    onClick={() => inviteFriendMutation.mutate(inviteEmail)}
-                    disabled={!inviteEmail || inviteFriendMutation.isPending}
-                    style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Inviter
-                  </Button>
-                </div>
+
+                {availableFriends.length > 0 ? (
+                  <>
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                              style={{ color: 'var(--warm-pink)' }} />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Rechercher une amie..."
+                        className="pl-10 bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto mb-3">
+                      {filteredFriends.map((friend) => (
+                        <div
+                          key={friend.id}
+                          onClick={() => toggleFriend(friend.friend_email)}
+                          className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                          style={{
+                            backgroundColor: selectedFriends.includes(friend.friend_email) ? 'var(--soft-pink)' : 'white',
+                            border: '2px solid',
+                            borderColor: selectedFriends.includes(friend.friend_email) ? 'var(--deep-pink)' : 'var(--beige)',
+                          }}
+                        >
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                               style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
+                            {friend.friend_name?.[0]?.toUpperCase() || friend.friend_email?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm"
+                               style={{ color: selectedFriends.includes(friend.friend_email) ? 'white' : 'var(--dark-text)' }}>
+                              {friend.friend_name || friend.friend_email}
+                            </p>
+                          </div>
+                          {selectedFriends.includes(friend.friend_email) && (
+                            <Check className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedFriends.length > 0 && (
+                      <Button
+                        onClick={() => inviteFriendsMutation.mutate(selectedFriends)}
+                        disabled={inviteFriendsMutation.isPending}
+                        className="w-full text-white"
+                        style={{ backgroundColor: 'var(--deep-pink)' }}
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Inviter {selectedFriends.length} amie{selectedFriends.length > 1 ? 's' : ''}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                    Toutes vos amies sont déjà invitées ou participent
+                  </p>
+                )}
               </div>
 
               {/* Current participants */}

@@ -1,285 +1,255 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Info } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Send, Users, Search, Check } from "lucide-react";
 import { toast } from "sonner";
-import { differenceInDays, addDays, format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
-  const [user, setUser] = React.useState(null);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [readingData, setReadingData] = useState({
-    note: "",
+  const [user, setUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [formData, setFormData] = useState({
+    title: "",
+    book_id: "",
     start_date: "",
     end_date: "",
-    total_chapters: "",
-    chapters_per_day: "",
+    chapters_per_day: 0,
     status: "À venir",
   });
-  const [generatedPlan, setGeneratedPlan] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooksForSharedReading'],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
+  const { data: myFriends = [] } = useQuery({
+    queryKey: ['myFriends'],
+    queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
+    enabled: !!user && open,
   });
-
-  const availableBooks = books.filter(book => 
-    myBooks.some(ub => ub.book_id === book.id)
-  );
-
-  // Generate reading plan
-  const generatePlan = () => {
-    if (!readingData.start_date || !readingData.end_date || !readingData.total_chapters) {
-      return;
-    }
-
-    const totalChapters = parseInt(readingData.total_chapters);
-    const startDate = new Date(readingData.start_date);
-    const endDate = new Date(readingData.end_date);
-    const days = differenceInDays(endDate, startDate) + 1;
-
-    if (days <= 0 || totalChapters <= 0) {
-      toast.error("Vérifiez les dates et le nombre de chapitres");
-      return;
-    }
-
-    const baseChaptersPerDay = Math.floor(totalChapters / days);
-    const remainder = totalChapters % days;
-
-    const plan = [];
-    let currentChapter = 1;
-
-    for (let i = 0; i < days; i++) {
-      const chaptersToday = baseChaptersPerDay + (i < remainder ? 1 : 0);
-      const dayDate = addDays(startDate, i);
-      
-      plan.push({
-        day: i + 1,
-        date: format(dayDate, 'dd MMM yyyy', { locale: fr }),
-        chapters: `Ch. ${currentChapter}-${currentChapter + chaptersToday - 1}`,
-        count: chaptersToday
-      });
-
-      currentChapter += chaptersToday;
-    }
-
-    setGeneratedPlan(plan);
-    setReadingData({...readingData, chapters_per_day: baseChaptersPerDay});
-    toast.success(`✅ Planning généré : ${days} jours`);
-  };
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      // Auto-generate title from selected book
-      const title = selectedBook ? 
-        `${selectedBook.title}${data.note ? ` - ${data.note}` : ''}` : 
-        data.note || 'Lecture commune';
-
-      await base44.entities.SharedReading.create({
-        title,
-        book_id: data.book_id,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        chapters_per_day: parseInt(data.chapters_per_day) || 1,
-        status: data.status,
-        participants: [user?.email],
+      const reading = await base44.entities.SharedReading.create({
+        ...data,
+        participants: [user.email, ...selectedFriends],
       });
 
-      // Create daily chat rooms
-      for (const day of generatedPlan) {
-        await base44.entities.SharedReadingMessage.create({
-          shared_reading_id: data.shared_reading_id || "temp",
-          day_number: day.day,
-          message: `📅 Jour ${day.day} • ${day.chapters}`,
-          chapter: day.chapters,
-          is_spoiler: false
-        });
-      }
+      // Create notifications for invited friends
+      const notificationPromises = selectedFriends.map(friendEmail =>
+        base44.entities.Notification.create({
+          type: "shared_reading_update",
+          title: "Nouvelle lecture commune",
+          message: `${user?.display_name || user?.full_name || 'Une amie'} vous a invitée à lire "${books.find(b => b.id === data.book_id)?.title}"`,
+          link_type: "shared_reading",
+          link_id: reading.id,
+          created_by: friendEmail,
+          from_user: user.email,
+        })
+      );
+
+      await Promise.all(notificationPromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
-      toast.success("Lecture commune créée avec planning !");
+      toast.success("✅ Lecture commune créée !");
       onOpenChange(false);
-      setReadingData({
-        note: "",
+      setFormData({
+        title: "",
+        book_id: "",
         start_date: "",
         end_date: "",
-        total_chapters: "",
-        chapters_per_day: "",
+        chapters_per_day: 0,
         status: "À venir",
       });
-      setGeneratedPlan([]);
-      setSelectedBook(null);
+      setSelectedFriends([]);
+      setSearchQuery("");
     },
-    onError: (error) => {
-      toast.error("Échec de la création: " + error.message);
-    }
   });
+
+  const toggleFriend = (friendEmail) => {
+    setSelectedFriends(prev =>
+      prev.includes(friendEmail)
+        ? prev.filter(email => email !== friendEmail)
+        : [...prev, friendEmail]
+    );
+  };
+
+  const filteredFriends = myFriends.filter(f =>
+    f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.friend_email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const selectedBook = books.find(b => b.id === formData.book_id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
-            👭 Créer une lecture commune
+          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
+            Nouvelle lecture commune
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
+          {/* Book selection */}
           <div>
             <Label htmlFor="book">Livre *</Label>
-            <Select 
-              value={readingData.book_id} 
-              onValueChange={(value) => {
-                setReadingData({...readingData, book_id: value});
-                setSelectedBook(availableBooks.find(b => b.id === value));
-              }}
+            <select
+              id="book"
+              value={formData.book_id}
+              onChange={(e) => setFormData({ ...formData, book_id: e.target.value })}
+              className="w-full p-3 rounded-lg border"
+              style={{ borderColor: 'var(--beige)' }}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un livre" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBooks.map((book) => (
-                  <SelectItem key={book.id} value={book.id}>
-                    {book.title} - {book.author}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedBook && (
-              <p className="text-xs mt-2 font-medium" style={{ color: 'var(--warm-pink)' }}>
-                Titre auto : {selectedBook.title}
-              </p>
-            )}
+              <option value="">Sélectionnez un livre</option>
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  {book.title} - {book.author}
+                </option>
+              ))}
+            </select>
           </div>
 
+          {/* Title */}
           <div>
-            <Label htmlFor="note">Note (optionnel)</Label>
+            <Label htmlFor="title">Titre de la lecture commune</Label>
             <Input
-              id="note"
-              value={readingData.note}
-              onChange={(e) => setReadingData({...readingData, note: e.target.value})}
-              placeholder="ex: avec Sarah"
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder={selectedBook ? `Lecture de "${selectedBook.title}"` : "Ex: Lecture d'été 2025"}
             />
           </div>
 
-          <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-            <div className="flex items-start gap-2 mb-3">
-              <Info className="w-5 h-5 mt-0.5" style={{ color: 'var(--deep-pink)' }} />
-              <div>
-                <p className="text-sm font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                  Planning automatique
-                </p>
-                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                  Renseignez les dates et le nombre total de chapitres pour générer un planning équilibré
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <Label htmlFor="start">Date de début</Label>
-                <Input
-                  id="start"
-                  type="date"
-                  value={readingData.start_date}
-                  onChange={(e) => setReadingData({...readingData, start_date: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="end">Date de fin</Label>
-                <Input
-                  id="end"
-                  type="date"
-                  value={readingData.end_date}
-                  onChange={(e) => setReadingData({...readingData, end_date: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <Label htmlFor="chapters">Nombre total de chapitres</Label>
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="start_date">Date de début</Label>
               <Input
-                id="chapters"
-                type="number"
-                min="1"
-                value={readingData.total_chapters}
-                onChange={(e) => setReadingData({...readingData, total_chapters: e.target.value})}
-                placeholder="Ex: 40"
+                id="start_date"
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
               />
             </div>
-
-            <Button
-              onClick={generatePlan}
-              disabled={!readingData.start_date || !readingData.end_date || !readingData.total_chapters}
-              className="w-full"
-              style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}
-            >
-              Générer le planning
-            </Button>
-          </div>
-
-          {generatedPlan.length > 0 && (
-            <div className="p-4 rounded-xl border-2" style={{ backgroundColor: 'white', borderColor: 'var(--beige)' }}>
-              <h3 className="font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
-                📅 Planning généré ({generatedPlan.length} jours)
-              </h3>
-              <div className="max-h-[200px] overflow-y-auto space-y-2">
-                {generatedPlan.map((day) => (
-                  <div key={day.day} className="flex justify-between text-sm p-2 rounded-lg"
-                       style={{ backgroundColor: 'var(--cream)' }}>
-                    <span className="font-medium" style={{ color: 'var(--dark-text)' }}>
-                      Jour {day.day} • {day.date}
-                    </span>
-                    <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
-                      {day.chapters} ({day.count} ch.)
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div>
+              <Label htmlFor="end_date">Date de fin</Label>
+              <Input
+                id="end_date"
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+              />
             </div>
-          )}
-
-          <div>
-            <Label htmlFor="status">Statut</Label>
-            <Select value={readingData.status} onValueChange={(value) => setReadingData({...readingData, status: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="À venir">À venir</SelectItem>
-                <SelectItem value="En cours">En cours</SelectItem>
-                <SelectItem value="Terminée">Terminée</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
-          <Button
-            onClick={() => createMutation.mutate(readingData)}
-            disabled={!readingData.book_id || !selectedBook || generatedPlan.length === 0 || createMutation.isPending}
-            className="w-full text-white font-medium py-6"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
-          >
-            {createMutation.isPending ? (
+          {/* Chapters per day */}
+          <div>
+            <Label htmlFor="chapters">Chapitres par jour (optionnel)</Label>
+            <Input
+              id="chapters"
+              type="number"
+              min="0"
+              value={formData.chapters_per_day}
+              onChange={(e) => setFormData({ ...formData, chapters_per_day: parseInt(e.target.value) || 0 })}
+              placeholder="Ex: 3"
+            />
+          </div>
+
+          {/* Friends selection */}
+          <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+              <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                Inviter des amies
+              </h3>
+              <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                ({selectedFriends.length} sélectionnée{selectedFriends.length > 1 ? 's' : ''})
+              </span>
+            </div>
+
+            {myFriends.length > 0 ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Création en cours...
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                          style={{ color: 'var(--warm-pink)' }} />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Rechercher une amie..."
+                    className="pl-10 bg-white"
+                  />
+                </div>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {filteredFriends.map((friend) => (
+                    <div
+                      key={friend.id}
+                      onClick={() => toggleFriend(friend.friend_email)}
+                      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                      style={{
+                        backgroundColor: selectedFriends.includes(friend.friend_email) ? 'var(--soft-pink)' : 'white',
+                        border: '2px solid',
+                        borderColor: selectedFriends.includes(friend.friend_email) ? 'var(--deep-pink)' : 'var(--beige)',
+                      }}
+                    >
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                           style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
+                        {friend.friend_name?.[0]?.toUpperCase() || friend.friend_email?.[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm"
+                           style={{ color: selectedFriends.includes(friend.friend_email) ? 'white' : 'var(--dark-text)' }}>
+                          {friend.friend_name}
+                        </p>
+                        <p className="text-xs"
+                           style={{ color: selectedFriends.includes(friend.friend_email) ? 'rgba(255,255,255,0.8)' : 'var(--warm-pink)' }}>
+                          {friend.friend_email}
+                        </p>
+                      </div>
+                      {selectedFriends.includes(friend.friend_email) && (
+                        <Check className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                  ))}
+
+                  {filteredFriends.length === 0 && (
+                    <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                      Aucune amie trouvée
+                    </p>
+                  )}
+                </div>
               </>
             ) : (
-              "Créer la lecture commune"
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  Ajoutez des amies pour créer des lectures communes
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Submit */}
+          <Button
+            onClick={() => createMutation.mutate(formData)}
+            disabled={!formData.book_id || createMutation.isPending}
+            className="w-full text-white font-medium py-6"
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+          >
+            {createMutation.isPending ? (
+              "Création..."
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Créer la lecture commune
+              </>
             )}
           </Button>
         </div>
