@@ -131,7 +131,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="tous"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "tous" ? { 
+                style={activeTab === "tous" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -141,7 +141,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="En cours"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "En cours" ? { 
+                style={activeTab === "En cours" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -151,7 +151,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="Lu"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "Lu" ? { 
+                style={activeTab === "Lu" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -161,7 +161,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="À lire"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "À lire" ? { 
+                style={activeTab === "À lire" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -171,7 +171,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="Mes envies"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "Mes envies" ? { 
+                style={activeTab === "Mes envies" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -181,7 +181,7 @@ export default function MyLibrary() {
               <TabsTrigger
                 value="Abandonné"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "Abandonné" ? { 
+                style={activeTab === "Abandonné" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
@@ -192,7 +192,7 @@ export default function MyLibrary() {
                 <TabsTrigger
                   value="custom"
                   className="rounded-lg font-bold data-[state=active]:text-white"
-                  style={activeTab === "custom" ? { 
+                  style={activeTab === "custom" ? {
                     background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                     color: '#FFFFFF'
                   } : { color: '#000000' }}
@@ -218,8 +218,11 @@ export default function MyLibrary() {
                 </p>
                 <Button
                   onClick={() => setShowShelves(true)}
-                  className="text-white font-medium"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  className="font-medium"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: 'white' // Changed from '#000000' to 'white'
+                  }}
                 >
                   Créer une étagère
                 </Button>
