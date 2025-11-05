@@ -26,8 +26,8 @@ export default function Dashboard() {
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 0, // Always refetch when invalidated
+    refetchOnMount: true,
   });
 
   const { data: allBooks = [] } = useQuery({
