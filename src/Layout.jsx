@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle, Languages } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -96,7 +95,6 @@ const navigationItems = [
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -110,17 +108,6 @@ export default function Layout({ children, currentPageName }) {
       document.documentElement.classList.remove('dark-theme');
     }
   }, [user?.theme]);
-
-  const handleLanguageChange = async (lang) => {
-    try {
-      await base44.auth.updateMe({ language: lang });
-      setUser({ ...user, language: lang });
-      setShowLanguageMenu(false);
-      window.location.reload(); // Reload to apply language changes
-    } catch (error) {
-      console.error("Error updating language:", error);
-    }
-  };
 
   const handleLogout = () => {
     base44.auth.logout();
@@ -313,72 +300,6 @@ export default function Layout({ children, currentPageName }) {
             </div>
             {user && (
               <div className="flex items-center gap-2 md:gap-3">
-                {/* Language Selector */}
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                    className="relative w-8 h-8 md:w-10 md:h-10"
-                    title="Changer la langue"
-                  >
-                    <Languages className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
-                  </Button>
-                  
-                  {showLanguageMenu && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowLanguageMenu(false)}
-                      />
-                      <div 
-                        className="absolute right-0 top-12 z-50 w-48 rounded-xl shadow-xl border-2 overflow-hidden"
-                        style={{ 
-                          backgroundColor: isDark ? '#0f1419' : 'white',
-                          borderColor: isDark ? '#2d3748' : 'var(--beige)'
-                        }}
-                      >
-                        <button
-                          onClick={() => handleLanguageChange('fr')}
-                          className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors hover:bg-opacity-10"
-                          style={{ 
-                            backgroundColor: user.language === 'fr' ? (isDark ? 'var(--beige)' : 'var(--cream)') : 'transparent',
-                            color: isDark ? '#cbd5e0' : 'var(--dark-text)'
-                          }}
-                        >
-                          <span className="text-2xl">🇫🇷</span>
-                          <div className="flex-1">
-                            <p className="font-medium">Français</p>
-                            {user.language === 'fr' && (
-                              <p className="text-xs" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
-                                Langue actuelle
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => handleLanguageChange('en')}
-                          className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors hover:bg-opacity-10"
-                          style={{ 
-                            backgroundColor: user.language === 'en' ? (isDark ? 'var(--beige)' : 'var(--cream)') : 'transparent',
-                            color: isDark ? '#cbd5e0' : 'var(--dark-text)'
-                          }}
-                        >
-                          <span className="text-2xl">🇬🇧</span>
-                          <div className="flex-1">
-                            <p className="font-medium">English</p>
-                            {user.language === 'en' && (
-                              <p className="text-xs" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
-                                Current language
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-
                 <Link to={createPageUrl("Chat")}>
                   <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
                     <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
