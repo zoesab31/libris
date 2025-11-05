@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,17 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
     queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
     enabled: !!user && open,
   });
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooksForSharedReadings'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  // Filter to only show books that user has in their library
+  const availableBooks = books.filter(book => 
+    myBooks.some(ub => ub.book_id === book.id)
+  );
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
@@ -85,7 +97,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
     f.friend_email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedBook = books.find(b => b.id === formData.book_id);
+  const selectedBook = availableBooks.find(b => b.id === formData.book_id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,13 +119,18 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
               className="w-full p-3 rounded-lg border"
               style={{ borderColor: 'var(--beige)' }}
             >
-              <option value="">Sélectionnez un livre</option>
-              {books.map((book) => (
+              <option value="">Sélectionnez un livre de votre bibliothèque</option>
+              {availableBooks.map((book) => (
                 <option key={book.id} value={book.id}>
                   {book.title} - {book.author}
                 </option>
               ))}
             </select>
+            {myBooks.length === 0 && (
+              <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                💡 Ajoutez d'abord des livres à votre bibliothèque
+              </p>
+            )}
           </div>
 
           {/* Title */}
