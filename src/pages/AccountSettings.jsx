@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle, Download } from "lucide-react";
+import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle, Download, Smartphone, Monitor, Share, MoreVertical } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export default function AccountSettings() {
   const [showCropper, setShowCropper] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState({ browser: '', os: '' });
   const [profileData, setProfileData] = useState({
     full_name: "",
     display_name: "",
@@ -47,6 +49,35 @@ export default function AccountSettings() {
         theme: u.theme || "light",
       });
     }).catch(() => {});
+
+    // Detect browser and OS
+    const ua = navigator.userAgent;
+    let browser = 'unknown';
+    let os = 'unknown';
+
+    // Detect OS
+    if (/android/i.test(ua)) {
+      os = 'android';
+    } else if (/iPad|iPhone|iPod/.test(ua)) {
+      os = 'ios';
+    } else if (/Mac/.test(ua)) {
+      os = 'mac';
+    } else if (/Win/.test(ua)) {
+      os = 'windows';
+    }
+
+    // Detect browser
+    if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) {
+      browser = 'safari';
+    } else if (/Chrome/i.test(ua)) {
+      browser = 'chrome';
+    } else if (/Firefox/i.test(ua)) {
+      browser = 'firefox';
+    } else if (/Edge/i.test(ua)) {
+      browser = 'edge';
+    }
+
+    setBrowserInfo({ browser, os });
 
     // Check if app is installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -68,7 +99,7 @@ export default function AccountSettings() {
 
   const handleInstallApp = async () => {
     if (!deferredPrompt) {
-      toast.info("L'installation n'est pas disponible sur ce navigateur");
+      toast.info("Suivez les instructions ci-dessous pour installer l'app");
       return;
     }
 
@@ -172,6 +203,62 @@ export default function AccountSettings() {
 
   const previewName = profileData.display_name || profileData.full_name?.split(' ')[0] || 'Lectrice';
 
+  // Determine installation instructions based on browser/OS
+  const getInstallInstructions = () => {
+    const { browser, os } = browserInfo;
+
+    if (os === 'ios') {
+      return {
+        icon: <Smartphone className="w-7 h-7 text-white" />,
+        title: "📱 Installer sur iPhone/iPad",
+        steps: [
+          { icon: <Share className="w-5 h-5" />, text: "Appuyez sur le bouton Partager en bas de Safari" },
+          { icon: <Download className="w-5 h-5" />, text: "Sélectionnez 'Sur l'écran d'accueil'" },
+          { icon: <CheckCircle2 className="w-5 h-5" />, text: "Appuyez sur 'Ajouter'" }
+        ],
+        note: "⚠️ L'installation ne fonctionne que sur Safari (pas Chrome/Firefox sur iOS)"
+      };
+    }
+
+    if (os === 'android' && browser === 'chrome') {
+      return {
+        icon: <Smartphone className="w-7 h-7 text-white" />,
+        title: "📱 Installer sur Android",
+        steps: [
+          { icon: <MoreVertical className="w-5 h-5" />, text: "Appuyez sur les 3 points en haut à droite" },
+          { icon: <Download className="w-5 h-5" />, text: "Sélectionnez 'Installer l'application' ou 'Ajouter à l'écran d'accueil'" },
+          { icon: <CheckCircle2 className="w-5 h-5" />, text: "Confirmez l'installation" }
+        ],
+        note: null
+      };
+    }
+
+    if (browser === 'chrome' || browser === 'edge') {
+      return {
+        icon: <Monitor className="w-7 h-7 text-white" />,
+        title: "💻 Installer sur ordinateur",
+        steps: [
+          { icon: <Download className="w-5 h-5" />, text: "Cliquez sur l'icône d'installation dans la barre d'adresse (à droite)" },
+          { text: "OU appuyez sur les 3 points → 'Installer Nos Livres'" },
+          { icon: <CheckCircle2 className="w-5 h-5" />, text: "Confirmez l'installation" }
+        ],
+        note: null
+      };
+    }
+
+    return {
+      icon: <Monitor className="w-7 h-7 text-white" />,
+      title: "📱 Installer l'application",
+      steps: [
+        { text: "Utilisez Chrome, Edge ou Safari pour installer l'app" },
+        { text: "Une fois installée, l'app apparaîtra sur votre écran d'accueil" }
+      ],
+      note: "Pour la meilleure expérience, utilisez Chrome (Android/PC) ou Safari (iPhone/iPad)"
+    };
+  };
+
+  const installInstructions = getInstallInstructions();
+
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-2xl mx-auto">
@@ -197,21 +284,23 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        {!isInstalled && deferredPrompt && (
+        {/* Installation Card - Always visible unless already installed */}
+        {!isInstalled && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2"
                style={{ borderColor: 'var(--soft-pink)' }}>
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                <Download className="w-7 h-7 text-white" />
+                {installInstructions.icon}
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                  📱 Installer l'application
+                  {installInstructions.title}
                 </h3>
                 <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                  Installez Nos Livres sur votre téléphone ou ordinateur pour un accès rapide et une expérience optimale !
+                  Installez Nos Livres sur votre appareil pour un accès rapide et une expérience optimale !
                 </p>
+                
                 <div className="space-y-2 text-xs mb-4" style={{ color: 'var(--dark-text)' }}>
                   <div className="flex items-center gap-2">
                     <span className="text-lg">✨</span>
@@ -230,14 +319,49 @@ export default function AccountSettings() {
                     <span>Plus rapide et plus fluide</span>
                   </div>
                 </div>
-                <Button
-                  onClick={handleInstallApp}
-                  className="w-full text-white font-medium py-6"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Installer l'application
-                </Button>
+
+                {/* Auto-install button if available */}
+                {deferredPrompt && (
+                  <Button
+                    onClick={handleInstallApp}
+                    className="w-full text-white font-medium py-6 mb-4"
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Installer automatiquement
+                  </Button>
+                )}
+
+                {/* Manual installation instructions */}
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 mb-3">
+                  <p className="text-sm font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
+                    📋 Instructions d'installation :
+                  </p>
+                  <div className="space-y-2">
+                    {installInstructions.steps.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xs"
+                             style={{ backgroundColor: 'var(--deep-pink)' }}>
+                          {idx + 1}
+                        </div>
+                        <div className="flex items-center gap-2 flex-1">
+                          {step.icon && <span style={{ color: 'var(--deep-pink)' }}>{step.icon}</span>}
+                          <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
+                            {step.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {installInstructions.note && (
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                    <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                      {installInstructions.note}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
