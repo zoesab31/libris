@@ -66,7 +66,7 @@ export default function VirtualLibrary() {
   }, []);
 
   const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooksForDisplay'],
+    queryKey: ['myBooks'], // Changed from 'myBooksForDisplay'
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }, 'shelf_position'),
     enabled: !!user,
   });
@@ -76,25 +76,84 @@ export default function VirtualLibrary() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const updateBookColorMutation = useMutation({
-    mutationFn: ({ bookId, color }) => base44.entities.UserBook.update(bookId, { book_color: color }),
+  const updateColorMutation = useMutation({
+    mutationFn: async ({ bookId, color }) => {
+      await base44.entities.UserBook.update(bookId, { book_color: color });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Changed from 'myBooksForDisplay'
       toast.success("Couleur mise à jour !");
+      setOpenColorPicker(null);
     },
   });
 
-  const reorderBooksMutation = useMutation({
-    mutationFn: async ({ bookId, newPosition }) => {
+  const reorderBookMutation = useMutation({ // Renamed from reorderBooksMutation
+    mutationFn: async ({ bookId, newPosition }) => { // Kept 'newPosition' to match handleDrop
       await base44.entities.UserBook.update(bookId, { shelf_position: newPosition });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooksForDisplay'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Changed from 'myBooksForDisplay'
     },
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
   const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
+
+  // Auto-extract color when book is added to virtual library
+  const autoExtractColor = async (userBook, book) => {
+    if (!book?.cover_url || userBook.book_color) return; // Already has a color
+    
+    try {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = book.cover_url;
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        let r = 0, g = 0, b = 0;
+        const pixelCount = data.length / 4;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+        
+        r = Math.floor(r / pixelCount);
+        g = Math.floor(g / pixelCount);
+        b = Math.floor(b / pixelCount);
+        
+        const extractedColor = `rgb(${r}, ${g}, ${b})`;
+        
+        // Update the book color automatically
+        updateColorMutation.mutate({ bookId: userBook.id, color: extractedColor });
+      };
+    } catch (error) {
+      console.log("Could not auto-extract color");
+    }
+  };
+
+  // Check for books without colors when component loads
+  React.useEffect(() => {
+    if (readBooks.length > 0 && allBooks.length > 0) {
+      readBooks.forEach(userBook => {
+        if (!userBook.book_color) {
+          const book = allBooks.find(b => b.id === userBook.book_id);
+          if (book) {
+            autoExtractColor(userBook, book);
+          }
+        }
+      });
+    }
+  }, [readBooks.length, allBooks.length]); // Dependencies to re-run when book lists change
 
   const handleDragStart = (e, userBookId) => {
     setDraggedBookId(userBookId);
@@ -124,7 +183,7 @@ export default function VirtualLibrary() {
     newBooks.splice(dropIndex, 0, removed);
 
     for (let i = 0; i < newBooks.length; i++) {
-      await reorderBooksMutation.mutateAsync({ 
+      await reorderBookMutation.mutateAsync({ // Changed to reorderBookMutation
         bookId: newBooks[i].id, 
         newPosition: i 
       });
@@ -136,8 +195,7 @@ export default function VirtualLibrary() {
 
   const handleColorChange = (userBookId, colorHex) => {
     requestAnimationFrame(() => {
-      updateBookColorMutation.mutate({ bookId: userBookId, color: colorHex });
-      setOpenColorPicker(null);
+      updateColorMutation.mutate({ bookId: userBookId, color: colorHex }); // Changed to updateColorMutation
     });
   };
 

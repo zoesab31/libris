@@ -14,6 +14,54 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, Link as LinkIcon, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
+// Helper function to extract dominant color from image
+const getDominantColor = (imageUrl) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; // Required for loading images from other origins onto canvas
+    img.src = imageUrl;
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      // Scale down image for faster processing
+      const scaleFactor = 0.1;
+      canvas.width = img.width * scaleFactor;
+      canvas.height = img.height * scaleFactor;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        let r = 0, g = 0, b = 0;
+        const pixelCount = data.length / 4;
+
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+
+        r = Math.floor(r / pixelCount);
+        g = Math.floor(g / pixelCount);
+        b = Math.floor(b / pixelCount);
+
+        resolve(`rgb(${r}, ${g}, ${b})`);
+      } catch (e) {
+        // Handle security error for cross-origin images without CORS headers
+        console.error("Error getting image data (likely CORS):", e);
+        resolve('#FFB3D9'); // Fallback color
+      }
+    };
+
+    img.onerror = () => {
+      console.log("Image failed to load, using fallback color");
+      resolve('#FFB3D9'); // Fallback color
+    };
+  });
+};
+
 const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain",
                 "Historique", "Young Adult", "New Adult", "Dystopie", "Paranormal", "Autre"];
 
@@ -41,6 +89,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     page_count: "",
     synopsis: "",
     tags: [],
+    isbn: "", // Added based on outline's potential future state
+    publication_year: "" // Added based on outline's potential future state
   });
   const [userBookData, setUserBookData] = useState({
     status: "À lire",
@@ -51,9 +101,13 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     is_shared_reading: false,
     start_date: "",
     end_date: "",
-    abandon_page: "", // Added
-    abandon_percentage: "", // Added
+    abandon_page: "",
+    abandon_percentage: "",
+    music_link: "", // Added based on outline's potential future state
+    favorite_character: "" // Added based on outline's potential future state
   });
+
+  const [uploadingCover, setUploadingCover] = useState(false); // New state for manual cover upload
 
   // Debounced search with Google Books API - IMPROVED IMAGE QUALITY
   useEffect(() => {
@@ -128,7 +182,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Handle file upload for custom cover
+  // Handle file upload for custom cover (for search tab)
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -141,7 +195,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     }
   };
 
-  // Get final cover URL for preview
+  // Get final cover URL for preview (for search tab)
   const getFinalCoverUrl = (book) => {
     if (selectedBooks.length === 1 && selectedBooks[0].id === book.id) {
       if (uploadedCoverPreview) return uploadedCoverPreview;
@@ -150,7 +204,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     return book.coverUrl;
   };
 
-  // Toggle book selection (for multi-select)
+  // Toggle book selection (for multi-select in search tab)
   const toggleBookSelection = (book) => {
     setSelectedBooks(prev => {
       const isSelected = prev.some(b => b.id === book.id);
@@ -178,6 +232,15 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
           finalCoverUrl = file_url;
         } else if (selectedBooks.length === 1 && customCoverUrl) {
           finalCoverUrl = customCoverUrl;
+        }
+        
+        let coverColor = '#FFB3D9'; // Default color
+        if (finalCoverUrl) {
+          try {
+            coverColor = await getDominantColor(finalCoverUrl);
+          } catch (error) {
+            console.log("Could not extract color for search result, using default", error);
+          }
         }
 
         // Map categories to genre
@@ -209,6 +272,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         await base44.entities.UserBook.create({
           book_id: createdBook.id,
           status: "À lire",
+          book_color: coverColor, // Add the extracted color
         });
 
         successCount++;
@@ -226,14 +290,41 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     }
   };
 
+  // Placeholder mutation for awarding points
+  const awardPointsForLuStatusMutation = useMutation({
+    mutationFn: async () => {
+      // This is a placeholder. A real implementation would interact with your backend
+      // to award points to the user.
+      console.log("Awarding points for 'Lu' status (placeholder)");
+      // Example: await base44.entities.User.awardPoints({ userId: user.id, points: 10 });
+    },
+    onError: (error) => {
+      console.error("Error awarding points:", error);
+      toast.error("Erreur lors de l'attribution des points.");
+    }
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      const book = await base44.entities.Book.create({
+      let coverColor = '#FFB3D9'; // Default color
+      
+      // Extract dominant color from cover if available
+      if (bookData.cover_url) {
+        try {
+          coverColor = await getDominantColor(bookData.cover_url);
+        } catch (error) {
+          console.log("Could not extract color, using default", error);
+        }
+      }
+      
+      const createdBook = await base44.entities.Book.create({
         ...bookData,
         page_count: bookData.page_count ? parseInt(bookData.page_count, 10) : undefined,
+        publication_year: bookData.publication_year ? parseInt(bookData.publication_year, 10) : undefined, // Ensure year is parsed
       });
+
       await base44.entities.UserBook.create({
-        book_id: book.id,
+        book_id: createdBook.id,
         status: userBookData.status,
         rating: userBookData.rating ? parseFloat(userBookData.rating) : undefined,
         review: userBookData.review,
@@ -242,13 +333,22 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         is_shared_reading: userBookData.is_shared_reading,
         start_date: userBookData.start_date || undefined,
         end_date: userBookData.end_date || undefined,
-        abandon_page: userBookData.abandon_page ? parseInt(userBookData.abandon_page, 10) : undefined, // Added
-        abandon_percentage: userBookData.abandon_percentage ? parseInt(userBookData.abandon_percentage, 10) : undefined, // Added
+        abandon_page: userBookData.abandon_page ? parseInt(userBookData.abandon_page, 10) : undefined,
+        abandon_percentage: userBookData.abandon_percentage ? parseInt(userBookData.abandon_percentage, 10) : undefined,
+        book_color: coverColor, // Set the extracted color
+        music_link: userBookData.music_link || undefined, // Include new field
+        favorite_character: userBookData.favorite_character || undefined, // Include new field
       });
+      return createdBook; // Return the created book
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] });
+    onSuccess: async () => { // Changed to async to potentially await awardPoints mutation
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      
+      if (user && userBookData.status === "Lu") { // Using existing user and userBookData state
+        await awardPointsForLuStatusMutation.mutateAsync();
+      }
+      
       toast.success("✅ Livre ajouté à votre bibliothèque !");
       onOpenChange(false);
       resetForm();
@@ -264,23 +364,53 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     setActiveTab("search");
     setSearchQuery("");
     setSearchResults([]);
-    setSelectedBooks([]); // Updated
+    setSelectedBooks([]);
     setCustomCoverUrl("");
     setUploadedCoverFile(null);
     setUploadedCoverPreview(null);
-    setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "", tags: [] });
-    setUserBookData({ 
-      status: "À lire", 
-      rating: "", 
-      review: "", 
-      music: "", 
-      music_artist: "", 
-      is_shared_reading: false, 
-      start_date: "", 
-      end_date: "",
-      abandon_page: "", // Reset
-      abandon_percentage: "", // Reset
+    setBookData({
+      title: "",
+      author: "",
+      cover_url: "",
+      genre: "",
+      page_count: "",
+      synopsis: "",
+      tags: [],
+      isbn: "", // Reset new fields
+      publication_year: "" // Reset new fields
     });
+    setUserBookData({
+      status: "À lire",
+      rating: "",
+      review: "",
+      music: "",
+      music_artist: "",
+      is_shared_reading: false,
+      start_date: "",
+      end_date: "",
+      abandon_page: "",
+      abandon_percentage: "",
+      music_link: "", // Reset new fields
+      favorite_character: "", // Reset new fields
+    });
+    setUploadingCover(false); // Reset upload state
+  };
+
+  const handleManualCoverUpload = async (e) => { // Renamed to avoid clash with handleFileUpload for search tab
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      setBookData({ ...bookData, cover_url: result.file_url });
+      toast.success("Couverture uploadée !");
+    } catch (error) {
+      console.error("Error uploading cover:", error);
+      toast.error("Erreur lors de l'upload de la couverture");
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   return (
@@ -687,15 +817,50 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                     ))}
                   </div>
                 </div>
-
+                
                 <div>
-                  <Label htmlFor="cover">URL de la couverture</Label>
-                  <Input
-                    id="cover"
-                    value={bookData.cover_url}
-                    onChange={(e) => setBookData({...bookData, cover_url: e.target.value})}
-                    placeholder="https://..."
-                  />
+                  <Label htmlFor="cover">Couverture du livre</Label>
+                  <div className="flex gap-3 items-start">
+                    <div className="flex-1">
+                      <Input
+                        id="cover"
+                        value={bookData.cover_url}
+                        onChange={(e) => setBookData({...bookData, cover_url: e.target.value})}
+                        placeholder="URL de la couverture ou..."
+                      />
+                    </div>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleManualCoverUpload}
+                        className="hidden"
+                        disabled={uploadingCover}
+                      />
+                      <Button type="button" variant="outline" disabled={uploadingCover}>
+                        {uploadingCover ? <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#000000' }} /> : <Upload className="w-4 h-4" style={{ color: '#000000' }} />}
+                      </Button>
+                    </label>
+                  </div>
+                  {bookData.cover_url && (
+                    <div className="mt-3 relative w-32">
+                      <img 
+                        src={bookData.cover_url} 
+                        alt="Aperçu" 
+                        className="w-32 h-48 object-cover rounded-lg shadow-md"
+                        onError={(e) => {
+                          e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?'; // Fallback if image fails
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setBookData({...bookData, cover_url: ""})}
+                        className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -15,6 +15,45 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Helper function to extract dominant color from image
+const getDominantColor = (imageUrl) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = imageUrl;
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      let r = 0, g = 0, b = 0;
+      const pixelCount = data.length / 4;
+      
+      // Calculate sum of R, G, B components
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+      }
+      
+      // Calculate average R, G, B
+      r = Math.floor(r / pixelCount);
+      g = Math.floor(g / pixelCount);
+      b = Math.floor(b / pixelCount);
+      
+      resolve(`rgb(${r}, ${g}, ${b})`);
+    };
+    
+    img.onerror = () => resolve(null);
+  });
+};
+
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
@@ -38,6 +77,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   // New state variables for author editing
   const [isEditingAuthor, setIsEditingAuthor] = useState(false);
   const [newAuthor, setNewAuthor] = useState("");
+  // New state variable for cover upload
+  const [uploadingCover, setUploadingCover] = useState(false);
+
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -143,13 +185,25 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
 
   const updateBookCoverMutation = useMutation({
-    mutationFn: (coverUrl) => base44.entities.Book.update(book.id, { cover_url: coverUrl }),
+    mutationFn: async (newCoverUrl) => {
+      await base44.entities.Book.update(book.id, { cover_url: newCoverUrl });
+      
+      // Extract and update color for virtual library
+      try {
+        const color = await getDominantColor(newCoverUrl);
+        if (color) {
+          await base44.entities.UserBook.update(userBook.id, { book_color: color });
+        }
+      } catch (error) {
+        console.log("Could not extract color:", error);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("✅ Couverture mise à jour !");
       setEditingCover(false);
       setNewCoverUrl("");
-      toast.success("✅ Couverture mise à jour !");
     },
     onError: (error) => {
         console.error("Error updating book cover:", error);
@@ -301,6 +355,22 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     setIsEditingAuthor(true);
   };
 
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      setNewCoverUrl(result.file_url);
+      toast.success("Image uploadée !");
+    } catch (error) {
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   if (!book) return null;
 
   const isServicePress = book.tags?.includes("Service Press");
@@ -308,8 +378,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-white">
-        {/* Removed the <style> block that targeted .book-modal-panel as the class name has changed */}
-
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -403,169 +471,217 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </div>
                   )}
 
-                  <div className="flex gap-6">
-                    <div className="relative">
-                      <div className="w-40 h-60 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book.cover_url ? (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Star className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Cover section */}
+                    <div className="md:w-64 flex-shrink-0">
+                      {editingCover ? (
+                        <div className="space-y-3">
+                          <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
+                               style={{ backgroundColor: 'var(--beige)' }}>
+                            {newCoverUrl ? (
+                              <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
+                            ) : book?.cover_url ? (
+                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute bottom-2 left-1/2 -translate-x-1/2"
-                        onClick={() => setEditingCover(!editingCover)}
-                      >
-                        Changer la couverture
-                      </Button>
+
+                          <div className="space-y-2">
+                            <Input
+                              value={newCoverUrl}
+                              onChange={(e) => setNewCoverUrl(e.target.value)}
+                              placeholder="URL de la nouvelle couverture"
+                            />
+                            
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleCoverUpload}
+                                className="hidden"
+                                disabled={uploadingCover}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                className="w-full" 
+                                disabled={uploadingCover}
+                                asChild
+                              >
+                                <span>
+                                  {uploadingCover ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Upload en cours...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Uploader une image
+                                    </>
+                                  )}
+                                </span>
+                              </Button>
+                            </label>
+
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
+                                disabled={!newCoverUrl || updateBookCoverMutation.isPending}
+                                className="flex-1"
+                                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                              >
+                                Enregistrer
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingCover(false);
+                                  setNewCoverUrl("");
+                                }}
+                              >
+                                Annuler
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="relative group">
+                            <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              {book?.cover_url ? (
+                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setEditingCover(true)}
+                              className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
+                                       transition-opacity flex items-center justify-center rounded-xl"
+                            >
+                              <Edit className="w-8 h-8 text-white" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {editingCover && (
-                      <div className="flex-1 space-y-3 p-4 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                        <Label>Nouvelle URL de couverture</Label>
-                        <Input
-                          value={newCoverUrl}
-                          onChange={(e) => setNewCoverUrl(e.target.value)}
-                          placeholder="https://..."
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setEditingCover(false);
-                              setNewCoverUrl("");
-                            }}
-                          >
-                            Annuler
-                          </Button>
-                          <Button
-                            onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
-                            disabled={!newCoverUrl || updateBookCoverMutation.isPending}
-                            className="text-white"
-                            style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--soft-pink))' }}
-                          >
-                            Enregistrer
-                          </Button>
-                        </div>
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <Label htmlFor="status">Statut</Label>
+                        <Select 
+                          value={editedData.status} 
+                          onValueChange={(value) => setEditedData({...editedData, status: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUSES.map(s => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
 
-                    {!editingCover && (
-                      <div className="flex-1 space-y-4">
+                      {editedData.status === "Abandonné" && (
+                        <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                          <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
+                            📖 Où avez-vous abandonné ?
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="abandon-page" className="text-xs">Page d'abandon</Label>
+                              <Input
+                                id="abandon-page"
+                                type="number"
+                                value={editedData.abandon_page || ''}
+                                onChange={(e) => setEditedData({...editedData, abandon_page: parseInt(e.target.value) || undefined})}
+                                placeholder="150"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="abandon-percentage" className="text-xs">% d'avancement</Label>
+                              <Input
+                                id="abandon-percentage"
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={editedData.abandon_percentage || ''}
+                                onChange={(e) => setEditedData({...editedData, abandon_percentage: parseInt(e.target.value) || undefined})}
+                                placeholder="50"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                            💡 Si vous avez abandonné après 50%, le livre comptera dans votre objectif annuel
+                          </p>
+                        </div>
+                      )}
+
+                      {customShelves.length > 0 && (
                         <div>
-                          <Label htmlFor="status">Statut</Label>
+                          <Label htmlFor="shelf">Étagère personnalisée</Label>
                           <Select 
-                            value={editedData.status} 
-                            onValueChange={(value) => setEditedData({...editedData, status: value})}
+                            value={editedData.custom_shelf || ""} 
+                            onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
                           >
                             <SelectTrigger>
-                              <SelectValue />
+                              <SelectValue placeholder="Aucune" />
                             </SelectTrigger>
                             <SelectContent>
-                              {STATUSES.map(s => (
-                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                              <SelectItem value={null}>Aucune</SelectItem>
+                              {customShelves.map(s => (
+                                <SelectItem key={s.id} value={s.name}>
+                                  {s.icon} {s.name}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
+                      )}
 
-                        {editedData.status === "Abandonné" && (
-                          <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-                            <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
-                              📖 Où avez-vous abandonné ?
-                            </Label>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label htmlFor="abandon-page" className="text-xs">Page d'abandon</Label>
-                                <Input
-                                  id="abandon-page"
-                                  type="number"
-                                  value={editedData.abandon_page || ''}
-                                  onChange={(e) => setEditedData({...editedData, abandon_page: parseInt(e.target.value) || undefined})}
-                                  placeholder="150"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="abandon-percentage" className="text-xs">% d'avancement</Label>
-                                <Input
-                                  id="abandon-percentage"
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={editedData.abandon_percentage || ''}
-                                  onChange={(e) => setEditedData({...editedData, abandon_percentage: parseInt(e.target.value) || undefined})}
-                                  placeholder="50"
-                                />
-                              </div>
-                            </div>
-                            <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                              💡 Si vous avez abandonné après 50%, le livre comptera dans votre objectif annuel
-                            </p>
-                          </div>
-                        )}
-
-                        {customShelves.length > 0 && (
-                          <div>
-                            <Label htmlFor="shelf">Étagère personnalisée</Label>
-                            <Select 
-                              value={editedData.custom_shelf || ""} 
-                              onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Aucune" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={null}>Aucune</SelectItem>
-                                {customShelves.map(s => (
-                                  <SelectItem key={s.id} value={s.name}>
-                                    {s.icon} {s.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="rating">Note (sur 5)</Label>
-                            <Input
-                              id="rating"
-                              type="number"
-                              min="0"
-                              max="5"
-                              step="0.5"
-                              value={editedData.rating || ""}
-                              onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="character">Personnage préféré</Label>
-                            <Input
-                              id="character"
-                              value={editedData.favorite_character || ""}
-                              onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                              placeholder="Book boyfriend..."
-                            />
-                          </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="rating">Note (sur 5)</Label>
+                          <Input
+                            id="rating"
+                            type="number"
+                            min="0"
+                            max="5"
+                            step="0.5"
+                            value={editedData.rating || ""}
+                            onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                          />
                         </div>
-
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-white" 
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <Label htmlFor="shared">Lecture commune</Label>
-                          <Switch
-                            id="shared"
-                            checked={editedData.is_shared_reading}
-                            onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                        <div>
+                          <Label htmlFor="character">Personnage préféré</Label>
+                          <Input
+                            id="character"
+                            value={editedData.favorite_character || ""}
+                            onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                            placeholder="Book boyfriend..."
                           />
                         </div>
                       </div>
-                    )}
+
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white" 
+                           style={{ backgroundColor: 'var(--cream)' }}>
+                        <Label htmlFor="shared">Lecture commune</Label>
+                        <Switch
+                          id="shared"
+                          checked={editedData.is_shared_reading}
+                          onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -751,7 +867,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <TabsContent value="comments">
                 <div className="space-y-4 py-4 bg-white">
                   <div className="p-4 rounded-xl space-y-4 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                    <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
+                    <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)'不斷改動'deep-brown)' }}>
                       ✍️ Ajouter un commentaire
                     </h3>
                     
