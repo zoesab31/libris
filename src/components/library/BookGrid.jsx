@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users, Check, FolderPlus } from "lucide-react";
+import { BookOpen, Star, Music, Users, Check, FolderPlus, X } from "lucide-react"; // Added X
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
@@ -16,11 +17,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-export default function BookGrid({ userBooks, allBooks, customShelves, isLoading, selectionMode, selectedBooks, onSelectionChange, onExitSelectionMode }) {
+export default function BookGrid({ 
+  userBooks, 
+  allBooks, 
+  customShelves, 
+  isLoading, 
+  selectionMode, 
+  selectedBooks, 
+  onSelectionChange, 
+  onExitSelectionMode,
+  showPALSelector = false, // New prop
+  readingLists = [],      // New prop
+  palMode = null,         // New prop
+  onRemoveFromPAL = null  // New prop
+}) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
   const [showShelfDialog, setShowShelfDialog] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState("");
+  const [showPALDialog, setShowPALDialog] = useState(false); // New state
+  const [bookToAddToPAL, setBookToAddToPAL] = useState(null); // New state
   const queryClient = useQueryClient();
 
   const deleteMultipleMutation = useMutation({
@@ -75,6 +91,27 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
     onError: (error) => {
       console.error("Error adding to shelf:", error);
       toast.error("Erreur lors de l'ajout à l'étagère");
+    }
+  });
+
+  // New mutation for adding to PAL
+  const addToPALMutation = useMutation({
+    mutationFn: async ({ palId, bookId }) => {
+      const pal = readingLists.find(p => p.id === palId);
+      if (!pal) return;
+      
+      const updatedBookIds = [...(pal.book_ids || []), bookId];
+      await base44.entities.ReadingList.update(palId, { book_ids: updatedBookIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingLists'] });
+      toast.success("✅ Livre ajouté à la PAL !");
+      setShowPALDialog(false);
+      setBookToAddToPAL(null);
+    },
+    onError: (error) => {
+      console.error("Error adding to PAL:", error);
+      toast.error("Erreur lors de l'ajout à la PAL.");
     }
   });
 
@@ -213,8 +250,8 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {sortedBooks.map((userBook) => {
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"> {/* Updated gap */}
+        {sortedBooks.map((userBook) => { // Changed to sortedBooks.map
           const book = allBooks.find(b => b.id === userBook.book_id);
           if (!book) return null;
           
@@ -226,30 +263,50 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
           return (
             <div 
               key={userBook.id}
-              onClick={() => {
-                if (selectionMode) {
-                  toggleBookSelection(userBook.id);
-                } else {
-                  setSelectedUserBook(userBook);
-                }
-              }}
               className={`group cursor-pointer relative ${
                 selectionMode && isSelected ? 'ring-4 ring-pink-500' : ''
               }`}
             >
               {selectionMode && (
-                <div className="absolute -top-2 -right-2 z-20">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                    isSelected 
-                      ? 'bg-gradient-to-br from-pink-500 to-pink-600 scale-110' 
-                      : 'bg-white border-2 border-gray-300'
-                  }`}>
-                    {isSelected && <Check className="w-5 h-5 text-white" />}
-                  </div>
+                <div
+                  onClick={(e) => { // Added stopPropagation
+                    e.stopPropagation();
+                    toggleBookSelection(userBook.id);
+                  }}
+                  className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center z-20 bg-white"
+                  style={{
+                    borderColor: isSelected ? 'var(--deep-pink)' : 'var(--beige)',
+                    backgroundColor: isSelected ? 'var(--deep-pink)' : 'white'
+                  }}
+                >
+                  {isSelected && <Check className="w-4 h-4 text-white" />}
                 </div>
               )}
 
-              <div className="relative mb-3">
+              {palMode && onRemoveFromPAL && ( // New PAL remove button
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveFromPAL(userBook.book_id);
+                  }}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              <div 
+                // Click handler for opening BookDetailsDialog
+                onClick={() => {
+                  // Only open details if not in selection mode or PAL mode
+                  if (!selectionMode && !palMode && !showPALSelector) {
+                    setSelectedUserBook(userBook);
+                  }
+                }}
+                className="relative mb-3 w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
+                              transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
+                style={{ backgroundColor: 'var(--beige)' }}
+              >
                 {isCurrentlyReading && (
                   <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
                     En cours
@@ -263,9 +320,7 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                   </div>
                 )}
                 
-                <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
-                              transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
-                     style={{ backgroundColor: 'var(--beige)' }}>
+                <div className="w-full h-full"> {/* Inner div for cover */}
                   {book.cover_url ? (
                     <img 
                       src={book.cover_url} 
@@ -274,7 +329,7 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-brown)' }} />
+                      <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} /> {/* Changed color */}
                     </div>
                   )}
                 </div>
@@ -311,11 +366,11 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                 )}
               </div>
 
-              <h3 className="font-bold text-sm mb-1 line-clamp-2 group-hover:underline" 
-                  style={{ color: 'var(--deep-brown)' }}>
+              <h3 className="font-bold text-sm mt-2 mb-1 line-clamp-2 group-hover:underline" // Added mt-2
+                  style={{ color: 'var(--dark-text)' }}> {/* Changed color */}
                 {book.title}
               </h3>
-              <p className="text-xs line-clamp-1" style={{ color: 'var(--warm-brown)' }}>
+              <p className="text-xs line-clamp-1 mb-1" style={{ color: 'var(--warm-pink)' }}> {/* Changed color, added mb-1 */}
                 {book.author}
               </p>
               {book.genre && (
@@ -323,12 +378,28 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                   {book.genre}
                 </p>
               )}
+
+              {showPALSelector && !palMode && ( // New "Add to PAL" button
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBookToAddToPAL(userBook.id);
+                    setShowPALDialog(true);
+                  }}
+                  className="w-full mt-2 text-xs"
+                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                >
+                  Ajouter à une PAL
+                </Button>
+              )}
             </div>
           );
         })}
       </div>
 
-      {selectedUserBook && !selectionMode && (
+      {selectedUserBook && !selectionMode && ( // Added !selectionMode condition
         <BookDetailsDialog
           userBook={selectedUserBook}
           book={allBooks.find(b => b.id === selectedUserBook.book_id)}
@@ -359,7 +430,7 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
                   <SelectValue placeholder="Choisir une étagère..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Aucune étagère</SelectItem>
+                  <SelectItem value={null}>Aucune étagère</SelectItem> {/* Use empty string for consistency */}
                   {customShelves.map(shelf => (
                     <SelectItem key={shelf.id} value={shelf.name}>
                       {shelf.icon} {shelf.name}
@@ -399,6 +470,44 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
               ) : (
                 <>Confirmer</>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PAL Selection Dialog */}
+      <Dialog open={showPALDialog} onOpenChange={setShowPALDialog}>
+        <DialogContent className="bg-white border border-neutral-200 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900">
+              Ajouter à une PAL
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {readingLists.length > 0 ? (
+              readingLists.map((pal) => (
+                <Button
+                  key={pal.id}
+                  variant="outline"
+                  className="w-full justify-start text-neutral-700 hover:bg-neutral-100"
+                  onClick={() => addToPALMutation.mutate({ palId: pal.id, bookId: bookToAddToPAL })}
+                  disabled={pal.book_ids?.includes(bookToAddToPAL) || addToPALMutation.isPending}
+                >
+                  <span className="flex items-center gap-2">
+                    {pal.icon} {pal.name}
+                  </span>
+                  {pal.book_ids?.includes(bookToAddToPAL) && " (déjà ajouté)"}
+                </Button>
+              ))
+            ) : (
+              <p className="text-center py-4" style={{ color: 'var(--warm-brown)' }}>
+                Aucune PAL créée. Créez-en une d'abord !
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPALDialog(false)}>
+              Annuler
             </Button>
           </DialogFooter>
         </DialogContent>

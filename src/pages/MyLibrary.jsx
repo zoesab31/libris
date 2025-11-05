@@ -4,19 +4,24 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Library, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
+import PALManager from "../components/library/PALManager"; // New import
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { toast } from 'sonner'; // New import for notifications
 
 export default function MyLibrary() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // Initialize queryClient
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
   const [showShelves, setShowShelves] = useState(false);
+  const [showPALs, setShowPALs] = useState(false); // New state
+  const [selectedPAL, setSelectedPAL] = useState(null); // New state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
@@ -39,6 +44,13 @@ export default function MyLibrary() {
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
     queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // New query for Reading Lists (PALs)
+  const { data: readingLists = [] } = useQuery({
+    queryKey: ['readingLists'],
+    queryFn: () => base44.entities.ReadingList.filter({ created_by: user?.email }, '-year,-month'),
     enabled: !!user,
   });
 
@@ -84,6 +96,8 @@ export default function MyLibrary() {
     ? [] // Don't show individual books in custom tab, only folders
     : activeTab === "historique"
     ? [] // No books shown directly in history tab, only organized view
+    : activeTab === "pal"
+    ? [] // No books shown directly in PAL tab, only PALs or books within a selected PAL
     : myBooks.filter(b => b.status === activeTab);
 
   const getBookDetails = (userBook) => {
@@ -126,6 +140,14 @@ export default function MyLibrary() {
                   style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
                 >
                   Gérer mes étagères
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPALs(true)} // New button
+                  className="font-medium"
+                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                >
+                  Gérer mes PAL
                 </Button>
                 <Button
                   variant="outline"
@@ -236,6 +258,16 @@ export default function MyLibrary() {
                 Abandonnés
               </TabsTrigger>
               <TabsTrigger
+                value="pal" // New Tab Trigger
+                className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
+                style={activeTab === "pal" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
+              >
+                📚 Mes PAL
+              </TabsTrigger>
+              <TabsTrigger
                 value="historique"
                 className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
                 style={activeTab === "historique" ? {
@@ -262,8 +294,158 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        {/* Historique View */}
-        {activeTab === "historique" ? (
+        {/* PAL View */}
+        {activeTab === "pal" ? (
+          <div>
+            {readingLists.length === 0 ? (
+              <div className="text-center py-20">
+                <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune PAL créée
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Créez votre première PAL pour organiser vos futures lectures par mois
+                </p>
+                <Button
+                  onClick={() => setShowPALs(true)}
+                  className="font-medium"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: 'white'
+                  }}
+                >
+                  Créer une PAL
+                </Button>
+              </div>
+            ) : selectedPAL ? (
+              <div>
+                <div className="flex items-center gap-4 mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedPAL(null)}
+                    className="p-2"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                      {selectedPAL.icon} {selectedPAL.name}
+                    </h2>
+                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                      {(selectedPAL.book_ids?.length || 0)} livre{(selectedPAL.book_ids?.length || 0) > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                
+                <BookGrid
+                  // Filter userBooks to show only books that are "À lire" and whose book_id is in selectedPAL.book_ids
+                  userBooks={myBooks.filter(userBook => 
+                    selectedPAL.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+                  )}
+                  allBooks={allBooks}
+                  customShelves={customShelves}
+                  isLoading={isLoading}
+                  selectionMode={false}
+                  selectedBooks={[]}
+                  onSelectionChange={() => {}}
+                  onExitSelectionMode={() => {}}
+                  palMode={selectedPAL} // Pass the selected PAL for context
+                  onRemoveFromPAL={(bookIdToRemove) => { // bookIdToRemove is the Book entity's ID
+                    const updatedBookIds = (selectedPAL.book_ids || []).filter(id => id !== bookIdToRemove);
+                    base44.entities.ReadingList.update(selectedPAL.id, { book_ids: updatedBookIds })
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['readingLists'] });
+                        // Update the local state for selectedPAL to reflect the change immediately
+                        setSelectedPAL({ ...selectedPAL, book_ids: updatedBookIds });
+                        toast.success("Livre retiré de la PAL");
+                      })
+                      .catch(error => {
+                        console.error("Failed to remove book from PAL:", error);
+                        toast.error("Échec de la suppression du livre de la PAL.");
+                      });
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {readingLists.map((pal) => {
+                  // Filter myBooks to only show "À lire" books that are part of this PAL
+                  const palBooks = myBooks.filter(userBook => 
+                    pal.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+                  );
+                  const previewBooks = palBooks.slice(0, 3);
+                  const monthName = pal.month ? monthNames[pal.month - 1] : "";
+
+                  return (
+                    <div
+                      key={pal.id}
+                      onClick={() => setSelectedPAL(pal)}
+                      className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                      style={{
+                        backgroundColor: 'white',
+                        border: '2px solid var(--beige)'
+                      }}
+                    >
+                      <div className="mb-4 flex items-center justify-center gap-1 h-32">
+                        {previewBooks.length > 0 ? (
+                          <div className="flex gap-1 items-end">
+                            {previewBooks.map((userBook, idx) => {
+                              const book = allBooks.find(b => b.id === userBook.book_id);
+                              return (
+                                <div
+                                  key={userBook.id}
+                                  className="w-8 h-20 rounded-sm shadow-md overflow-hidden"
+                                  style={{
+                                    transform: `translateY(${idx * 2}px)`
+                                  }}
+                                >
+                                  {book?.cover_url ? (
+                                    <img
+                                      src={book.cover_url}
+                                      alt={book.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-pink-200 flex items-center justify-center text-xs text-center text-gray-500">
+                                      No Cover
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-6xl opacity-20">{pal.icon}</div>
+                        )}
+                      </div>
+
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold mb-1"
+                            style={{ color: 'var(--dark-text)' }}>
+                          {pal.icon} {pal.name}
+                        </h3>
+                        {monthName && pal.year && (
+                          <p className="text-xs mb-2 flex items-center justify-center gap-1" style={{ color: 'var(--warm-brown)' }}>
+                            <Calendar className="w-3 h-3" />
+                            {monthName} {pal.year}
+                          </p>
+                        )}
+                        <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                          {palBooks.length} livre{palBooks.length > 1 ? 's' : ''}
+                        </p>
+                        {pal.description && (
+                          <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                            {pal.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "historique" ? (
           <div className="space-y-6">
             {years.length === 0 ? (
               <div className="text-center py-20">
@@ -345,7 +527,8 @@ export default function MyLibrary() {
                                       key={userBook.id}
                                       className="group cursor-pointer"
                                       onClick={() => {
-                                        setActiveTab("Lu"); // Navigate to "Lu" tab when a book from history is clicked
+                                        // When a book from history is clicked, navigate to its detail page
+                                        navigate(createPageUrl("BookDetails", { bookId: book.id }));
                                       }}
                                     >
                                       <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
@@ -507,6 +690,8 @@ export default function MyLibrary() {
               setSelectionMode(false);
               setSelectedBooks([]);
             }}
+            showPALSelector={activeTab === "À lire"} // New prop
+            readingLists={readingLists} // New prop
           />
         )}
 
@@ -520,6 +705,12 @@ export default function MyLibrary() {
           open={showShelves}
           onOpenChange={setShowShelves}
           shelves={customShelves}
+        />
+
+        <PALManager // New component
+          open={showPALs}
+          onOpenChange={setShowPALs}
+          pals={readingLists}
         />
       </div>
     </div>
