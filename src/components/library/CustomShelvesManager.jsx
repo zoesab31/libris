@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -140,8 +141,8 @@ export default function CustomShelvesManager({ open, onOpenChange, shelves }) {
                 <Button
                   onClick={() => createShelfMutation.mutate(newShelf)}
                   disabled={!newShelf.name || createShelfMutation.isPending}
-                  className="w-full text-white font-medium"
-                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                  className="w-full font-medium"
+                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Créer l'étagère
@@ -215,8 +216,8 @@ export default function CustomShelvesManager({ open, onOpenChange, shelves }) {
                   <Button
                     onClick={handleSaveEdit}
                     disabled={!editingShelf.name || updateShelfMutation.isPending}
-                    className="flex-1 text-white font-medium"
-                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                    className="flex-1 font-medium"
+                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
                   >
                     Enregistrer
                   </Button>
