@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 export default function Series() {
@@ -123,7 +122,6 @@ export default function Series() {
                   className="group cursor-pointer bg-white rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-2"
                   onClick={() => setSelectedSeries(series)}
                 >
-                  {/* Cover */}
                   <div className="w-full h-48 overflow-hidden relative"
                        style={{ backgroundColor: 'var(--beige)' }}>
                     {series.cover_url ? (
@@ -137,7 +135,6 @@ export default function Series() {
                         <BookOpen className="w-16 h-16 opacity-30" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
-                    {/* Progress overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-4"
                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
                       <div className="flex items-center justify-between text-white text-sm font-bold mb-2">
@@ -156,7 +153,6 @@ export default function Series() {
                     </div>
                   </div>
 
-                  {/* Info */}
                   <div className="p-6">
                     <h3 className="text-xl font-bold mb-2 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
                       {series.series_name}
@@ -165,7 +161,6 @@ export default function Series() {
                       {series.author}
                     </p>
 
-                    {/* Stats */}
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
                         <Check className="w-4 h-4 mx-auto mb-1" style={{ color: 'var(--deep-pink)' }} />
@@ -194,7 +189,6 @@ export default function Series() {
           </div>
         )}
 
-        {/* Add Series Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="max-w-lg">
             <DialogHeader>

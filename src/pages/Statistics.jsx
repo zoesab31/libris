@@ -3,8 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, BookOpen, Calendar, TrendingUp, Palette, FileText } from "lucide-react";
-import { Bar, Pie } from 'recharts';
-import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
@@ -27,7 +26,6 @@ export default function Statistics() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  // Filter books by year
   const booksThisYear = useMemo(() => {
     return myBooks.filter(b => {
       if (!b.end_date || b.status !== "Lu") return false;
@@ -36,14 +34,12 @@ export default function Statistics() {
     });
   }, [myBooks, selectedYear]);
 
-  // Genre statistics
   const genreStats = useMemo(() => {
     const stats = {};
     booksThisYear.forEach(userBook => {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book) return;
       
-      // Use custom_genres if available, otherwise fallback to genre
       const genres = book.custom_genres && book.custom_genres.length > 0 
         ? book.custom_genres 
         : (book.genre ? [book.genre] : ['Non classé']);
@@ -58,7 +54,6 @@ export default function Statistics() {
       .sort((a, b) => b.value - a.value);
   }, [booksThisYear, allBooks]);
 
-  // Format statistics (tags)
   const formatStats = useMemo(() => {
     const stats = {};
     booksThisYear.forEach(userBook => {
@@ -75,7 +70,6 @@ export default function Statistics() {
       .sort((a, b) => b.value - a.value);
   }, [booksThisYear, allBooks]);
 
-  // Pages read
   const totalPages = useMemo(() => {
     return booksThisYear.reduce((sum, userBook) => {
       const book = allBooks.find(b => b.id === userBook.book_id);
@@ -83,7 +77,6 @@ export default function Statistics() {
     }, 0);
   }, [booksThisYear, allBooks]);
 
-  // Average rating
   const avgRating = useMemo(() => {
     const rated = booksThisYear.filter(b => b.rating);
     if (rated.length === 0) return 0;
@@ -91,7 +84,6 @@ export default function Statistics() {
     return (sum / rated.length).toFixed(1);
   }, [booksThisYear]);
 
-  // Books per month
   const booksPerMonth = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({
       name: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'][i],
@@ -125,7 +117,6 @@ export default function Statistics() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-0 shadow-lg">
             <CardHeader className="pb-3">
@@ -184,9 +175,7 @@ export default function Statistics() {
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Books per month */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle style={{ color: 'var(--dark-text)' }}>Livres par mois</CardTitle>
@@ -203,7 +192,6 @@ export default function Statistics() {
             </CardContent>
           </Card>
 
-          {/* Genres */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle style={{ color: 'var(--dark-text)' }}>Répartition par genre</CardTitle>
@@ -232,7 +220,6 @@ export default function Statistics() {
           </Card>
         </div>
 
-        {/* Format Stats */}
         {formatStats.length > 0 && (
           <Card className="border-0 shadow-lg mb-8">
             <CardHeader>
