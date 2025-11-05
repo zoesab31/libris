@@ -30,6 +30,7 @@ export default function AccountSettings() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [browserInfo, setBrowserInfo] = useState({ browser: '', os: '' });
+  const [isMobile, setIsMobile] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
     display_name: "",
@@ -54,12 +55,15 @@ export default function AccountSettings() {
     const ua = navigator.userAgent;
     let browser = 'unknown';
     let os = 'unknown';
+    let mobile = false;
 
     // Detect OS
     if (/android/i.test(ua)) {
       os = 'android';
+      mobile = true;
     } else if (/iPad|iPhone|iPod/.test(ua)) {
       os = 'ios';
+      mobile = true;
     } else if (/Mac/.test(ua)) {
       os = 'mac';
     } else if (/Win/.test(ua)) {
@@ -78,6 +82,7 @@ export default function AccountSettings() {
     }
 
     setBrowserInfo({ browser, os });
+    setIsMobile(mobile);
 
     // Check if app is installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -284,8 +289,8 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        {/* Installation Card - Always visible unless already installed */}
-        {!isInstalled && (
+        {/* Installation Card - Only show on mobile devices and if not already installed */}
+        {!isInstalled && isMobile && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2"
                style={{ borderColor: 'var(--soft-pink)' }}>
             <div className="flex items-start gap-4">
