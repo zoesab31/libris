@@ -67,11 +67,17 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       const oldStatus = userBook.status;
       const newStatus = variables.status;
       
-      // Award points for Lu status
-      if (oldStatus !== "Lu" && newStatus === "Lu" && user) {
+      // Award points for Lu status OR Abandonné >50%
+      const shouldAwardPoints = 
+        (oldStatus !== "Lu" && newStatus === "Lu") || 
+        (oldStatus !== "Abandonné" && newStatus === "Abandonné" && 
+         (variables.abandon_percentage >= 50 || 
+          (variables.abandon_page && book?.page_count && variables.abandon_page >= book.page_count / 2)));
+
+      if (shouldAwardPoints && user) {
         awardPointsForLuStatusMutation.mutate();
         
-        // Notify friends when book is finished
+        // Notify friends when book is finished or abandoned >50%
         const friends = await base44.entities.Friendship.filter({ 
           created_by: user.email, 
           status: "Acceptée" 
@@ -80,8 +86,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         const notificationPromises = friends.map(friend =>
           base44.entities.Notification.create({
             type: "milestone",
-            title: "Livre terminé !",
-            message: `${user.display_name || user.full_name || 'Une amie'} a terminé "${book?.title}"`,
+            title: newStatus === "Lu" ? "Livre terminé !" : "Livre abandonné",
+            message: `${user.display_name || user.full_name || 'Une amie'} ${newStatus === "Lu" ? 'a terminé' : 'a abandonné'} "${book?.title}"`,
             link_type: "book",
             link_id: book.id,
             created_by: friend.friend_email,
@@ -467,6 +473,41 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {editedData.status === "Abandonné" && (
+                          <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                            <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
+                              📖 Où avez-vous abandonné ?
+                            </Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label htmlFor="abandon-page" className="text-xs">Page d'abandon</Label>
+                                <Input
+                                  id="abandon-page"
+                                  type="number"
+                                  value={editedData.abandon_page || ''}
+                                  onChange={(e) => setEditedData({...editedData, abandon_page: parseInt(e.target.value) || undefined})}
+                                  placeholder="150"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="abandon-percentage" className="text-xs">% d'avancement</Label>
+                                <Input
+                                  id="abandon-percentage"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={editedData.abandon_percentage || ''}
+                                  onChange={(e) => setEditedData({...editedData, abandon_percentage: parseInt(e.target.value) || undefined})}
+                                  placeholder="50"
+                                />
+                              </div>
+                            </div>
+                            <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                              💡 Si vous avez abandonné après 50%, le livre comptera dans votre objectif annuel
+                            </p>
+                          </div>
+                        )}
 
                         {customShelves.length > 0 && (
                           <div>

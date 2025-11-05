@@ -24,7 +24,16 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
 
   const { data: allUserBooks = [] } = useQuery({
     queryKey: ['myBooks'],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email, status: "Lu" }),
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email, status: "Lu" }), // This query only fetches "Lu" books.
+    enabled: !!user,
+  });
+  
+  // Re-fetching all books is necessary if we want to count "Abandonné" books based on their status and percentage.
+  // The existing `allUserBooks` query specifically filters for `status: "Lu"`.
+  // To evaluate "Abandonné" books, we need books with that status.
+  const { data: allUserBooksForGoalCalculation = [] } = useQuery({
+    queryKey: ['allUserBooksForGoalCalculation'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }), // Fetch all user books
     enabled: !!user,
   });
 
@@ -39,16 +48,40 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       queryClient.invalidateQueries({ queryKey: ['allReadingGoals'] });
+      // Invalidate the full book list to ensure calculations are up-to-date if needed elsewhere
+      queryClient.invalidateQueries({ queryKey: ['allUserBooksForGoalCalculation'] }); 
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate the "Lu" specific query too
       toast.success("Objectif mis à jour !");
       setShowDialog(false);
     },
   });
 
   const getBooksReadForYear = (targetYear) => {
-    return allUserBooks.filter(b => {
+    return allUserBooksForGoalCalculation.filter(b => {
       if (!b.end_date) return false;
       const endYear = new Date(b.end_date).getFullYear();
-      return endYear === targetYear;
+      if (endYear !== targetYear) return false;
+      
+      // Count "Lu" books
+      if (b.status === "Lu") return true;
+      
+      // Count "Abandonné" books if >50%
+      if (b.status === "Abandonné") {
+        // Check percentage
+        if (b.abandon_percentage >= 50) return true;
+        
+        // Check page count - need to find the book
+        // If we were to implement page count, we'd need to fetch the actual book details
+        // (e.g., total_pages) and compare b.abandon_page against total_pages.
+        // For simplicity, as per the outline, we'll stick to percentage for now.
+        // if (b.abandon_page && b.book_id) {
+        //   // This would require a separate query or pre-fetched data for the book's total_pages
+        //   // const bookDetails = allBooks.find(book => book.id === b.book_id);
+        //   // if (bookDetails && b.abandon_page / bookDetails.total_pages >= 0.5) return true;
+        // }
+      }
+      
+      return false;
     }).length;
   };
 
@@ -225,6 +258,7 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
               {allGoals.length > 0 ? (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {allGoals.map((goal) => {
+                    // Use allUserBooksForGoalCalculation for accurate counts here too
                     const booksRead = getBooksReadForYear(goal.year);
                     const achieved = booksRead >= goal.goal_count;
                     const progressPct = (booksRead / goal.goal_count) * 100;

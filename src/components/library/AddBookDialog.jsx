@@ -51,6 +51,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     is_shared_reading: false,
     start_date: "",
     end_date: "",
+    abandon_page: "", // Added
+    abandon_percentage: "", // Added
   });
 
   // Debounced search with Google Books API - IMPROVED IMAGE QUALITY
@@ -231,9 +233,17 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         page_count: bookData.page_count ? parseInt(bookData.page_count, 10) : undefined,
       });
       await base44.entities.UserBook.create({
-        ...userBookData,
         book_id: book.id,
+        status: userBookData.status,
         rating: userBookData.rating ? parseFloat(userBookData.rating) : undefined,
+        review: userBookData.review,
+        music: userBookData.music,
+        music_artist: userBookData.music_artist,
+        is_shared_reading: userBookData.is_shared_reading,
+        start_date: userBookData.start_date || undefined,
+        end_date: userBookData.end_date || undefined,
+        abandon_page: userBookData.abandon_page ? parseInt(userBookData.abandon_page, 10) : undefined, // Added
+        abandon_percentage: userBookData.abandon_percentage ? parseInt(userBookData.abandon_percentage, 10) : undefined, // Added
       });
     },
     onSuccess: () => {
@@ -259,7 +269,18 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     setUploadedCoverFile(null);
     setUploadedCoverPreview(null);
     setBookData({ title: "", author: "", cover_url: "", genre: "", page_count: "", synopsis: "", tags: [] });
-    setUserBookData({ status: "À lire", rating: "", review: "", music: "", music_artist: "", is_shared_reading: false, start_date: "", end_date: "" });
+    setUserBookData({ 
+      status: "À lire", 
+      rating: "", 
+      review: "", 
+      music: "", 
+      music_artist: "", 
+      is_shared_reading: false, 
+      start_date: "", 
+      end_date: "",
+      abandon_page: "", // Reset
+      abandon_percentage: "", // Reset
+    });
   };
 
   return (
@@ -691,8 +712,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 <Button
                   onClick={() => setStep(2)}
                   disabled={!bookData.title || !bookData.author}
-                  className="w-full text-white font-medium"
-                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                  className="w-full font-medium py-6"
+                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
                 >
                   Suivant
                 </Button>
@@ -712,6 +733,41 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {userBookData.status === "Abandonné" && (
+                  <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                    <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
+                      📖 Où avez-vous abandonné ?
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="abandon-page" className="text-xs">Page d'abandon</Label>
+                        <Input
+                          id="abandon-page"
+                          type="number"
+                          value={userBookData.abandon_page || ''}
+                          onChange={(e) => setUserBookData({...userBookData, abandon_page: e.target.value})}
+                          placeholder="150"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="abandon-percentage" className="text-xs">% d'avancement</Label>
+                        <Input
+                          id="abandon-percentage"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={userBookData.abandon_percentage || ''}
+                          onChange={(e) => setUserBookData({...userBookData, abandon_percentage: e.target.value})}
+                          placeholder="50"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                      💡 Si vous avez abandonné après 50%, le livre comptera dans votre objectif annuel
+                    </p>
+                  </div>
+                )}
 
                 <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
                   <Label className="text-sm font-medium">📅 Dates de lecture (important pour le défi annuel !)</Label>
@@ -811,8 +867,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   <Button
                     onClick={() => createMutation.mutate()}
                     disabled={createMutation.isPending || !bookData.title || !bookData.author}
-                    className="flex-1 text-white font-medium"
-                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))' }}
+                    className="flex-1 font-medium py-6"
+                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
                   >
                     {createMutation.isPending ? (
                       <>
