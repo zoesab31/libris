@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle, TrendingUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -36,6 +37,11 @@ const navigationItems = [
     icon: Store,
   },
   {
+    title: "Mes Séries",
+    url: createPageUrl("Series"),
+    icon: BookOpen,
+  },
+  {
     title: "Citations",
     url: createPageUrl("Quotes"),
     icon: Quote,
@@ -44,6 +50,11 @@ const navigationItems = [
     title: "Bingo Lecture",
     url: createPageUrl("Bingo"),
     icon: Sparkles,
+  },
+  {
+    title: "Statistiques",
+    url: createPageUrl("Statistics"),
+    icon: TrendingUp,
   },
   {
     title: "Tournoi du Livre",

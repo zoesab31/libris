@@ -16,6 +16,8 @@ import Friends from './pages/Friends';
 import ShelfView from './pages/ShelfView';
 import Chat from './pages/Chat';
 import UserProfile from './pages/UserProfile';
+import Series from './pages/Series';
+import Statistics from './pages/Statistics';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +40,8 @@ export const PAGES = {
     "ShelfView": ShelfView,
     "Chat": Chat,
     "UserProfile": UserProfile,
+    "Series": Series,
+    "Statistics": Statistics,
 }
 
 export const pagesConfig = {

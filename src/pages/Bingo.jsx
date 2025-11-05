@@ -40,6 +40,8 @@ export default function Bingo() {
   const [user, setUser] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedGridSize, setSelectedGridSize] = useState(25);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -47,8 +49,12 @@ export default function Bingo() {
   }, []);
 
   const { data: challenges = [], isLoading } = useQuery({
-    queryKey: ['bingoChallenges'],
-    queryFn: () => base44.entities.BingoChallenge.filter({ created_by: user?.email }),
+    queryKey: ['bingoChallenges', selectedYear, selectedGridSize],
+    queryFn: () => base44.entities.BingoChallenge.filter({ 
+      created_by: user?.email,
+      year: selectedYear,
+      grid_size: selectedGridSize
+    }),
     enabled: !!user,
   });
 
@@ -70,7 +76,9 @@ export default function Bingo() {
 
   const completedCount = challenges.filter(c => c.is_completed).length;
   const totalCount = challenges.length;
-  const hasBingo = totalCount === 25 && completedCount === 25; // Bingo is complete only if all 25 challenges are completed
+  const hasBingo = totalCount === selectedGridSize && completedCount === selectedGridSize;
+
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -83,14 +91,37 @@ export default function Bingo() {
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Bingo Lecture 2025
+                Bingo Lecture {selectedYear}
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {completedCount} / {totalCount} défis complétés
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            {/* Year Selector */}
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-4 py-2 rounded-lg border-2 font-medium"
+              style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+            >
+              {years.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+
+            {/* Grid Size Selector */}
+            <select
+              value={selectedGridSize}
+              onChange={(e) => setSelectedGridSize(parseInt(e.target.value))}
+              className="px-4 py-2 rounded-lg border-2 font-medium"
+              style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+            >
+              <option value={16}>4x4 (16 cases)</option>
+              <option value={25}>5x5 (25 cases)</option>
+            </select>
+
             {hasBingo && (
               <Button 
                 variant="outline"
@@ -118,10 +149,10 @@ export default function Bingo() {
           <div className="text-center py-20">
             <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--gold)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Créez votre Bingo de lecture !
+              Créez votre Bingo de lecture {selectedYear} !
             </h3>
             <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-              Relevez 25 défis littéraires cette année
+              Relevez {selectedGridSize} défis littéraires cette année
             </p>
             <Button 
               onClick={() => setShowCreate(true)}
@@ -140,7 +171,7 @@ export default function Bingo() {
                   🎉 BINGO COMPLÉTÉ ! 🎉
                 </h2>
                 <p className="text-white opacity-90">
-                  Félicitations ! Vous avez relevé tous les défis !
+                  Félicitations ! Vous avez relevé tous les défis {selectedYear} !
                 </p>
               </div>
             )}
@@ -150,6 +181,7 @@ export default function Bingo() {
               books={books}
               onChallengeClick={setSelectedChallenge}
               isLoading={isLoading}
+              gridSize={selectedGridSize}
             />
           </>
         )}
@@ -159,6 +191,8 @@ export default function Bingo() {
           onOpenChange={setShowCreate}
           existingChallenges={challenges}
           defaultChallenges={DEFAULT_CHALLENGES}
+          year={selectedYear}
+          gridSize={selectedGridSize}
         />
 
         {selectedChallenge && (

@@ -14,6 +14,7 @@ import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, Bo
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import GenreTagInput from "./GenreTagInput";
 
 // Helper function to extract dominant color from image
 const getDominantColor = (imageUrl) => {
@@ -154,6 +155,19 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     onError: (error) => {
       console.error("Error updating book tags:", error);
       toast.error("Erreur lors de la mise à jour des tags.");
+    }
+  });
+  
+  const updateBookMutation = useMutation({
+    mutationFn: (data) => base44.entities.Book.update(book.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("✅ Livre mis à jour !");
+    },
+    onError: (error) => {
+      console.error("Error updating book:", error);
+      toast.error("Échec de la mise à jour du livre.");
     }
   });
 
@@ -570,6 +584,56 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </div>
 
                     <div className="flex-1 space-y-4">
+                      {/* Genres personnalisés */}
+                      <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                        <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                          🏷️ Genres
+                        </Label>
+                        <GenreTagInput
+                          value={book.custom_genres || []}
+                          onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
+                        />
+                      </div>
+
+                      {/* Format du livre (tags) */}
+                      <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                        <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                          📚 Format
+                        </Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                const currentTags = book.tags || [];
+                                const newTags = currentTags.includes(tag)
+                                  ? currentTags.filter(t => t !== tag)
+                                  : [...currentTags, tag];
+                                updateBookMutation.mutate({ tags: newTags });
+                              }}
+                              className={`p-2 rounded-lg text-sm font-medium transition-all ${
+                                (book.tags || []).includes(tag) ? 'shadow-md scale-105' : 'hover:shadow-md'
+                              }`}
+                              style={{
+                                backgroundColor: (book.tags || []).includes(tag) ? 'var(--soft-pink)' : 'white',
+                                color: (book.tags || []).includes(tag) ? 'white' : 'var(--dark-text)',
+                                border: '2px solid',
+                                borderColor: (book.tags || []).includes(tag) ? 'var(--deep-pink)' : 'var(--beige)'
+                              }}
+                            >
+                              {tag === "Audio" && "🎧 "}
+                              {tag === "Numérique" && "📱 "}
+                              {tag === "Broché" && "📕 "}
+                              {tag === "Relié" && "📘 "}
+                              {tag === "Poche" && "📙 "}
+                              {tag === "Wattpad" && "🌟 "}
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div>
                         <Label htmlFor="status">Statut</Label>
                         <Select 

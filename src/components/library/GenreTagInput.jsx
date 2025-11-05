@@ -1,128 +1,129 @@
 import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 
-const SUGGESTED_GENRES = [
-  "Fantasy", "Romantasy", "Dark Romance", "Romance", "Thriller", 
-  "Science-Fiction", "Horreur", "Contemporain", "Historique", 
-  "Jeunesse", "Dystopie", "Aventure", "Comédie romantique",
-  "Fantasy urbaine", "Paranormal", "Steampunk", "High Fantasy"
+const PREDEFINED_GENRES = [
+  "Romantasy",
+  "Fantasy",
+  "Romance",
+  "Dark Romance",
+  "Contemporary Romance",
+  "Thriller",
+  "Horror",
+  "Science-Fiction",
+  "Dystopie",
+  "Young Adult",
+  "New Adult",
+  "Paranormal",
+  "Historique",
+  "Policier",
 ];
 
 export default function GenreTagInput({ value = [], onChange }) {
-  const [inputValue, setInputValue] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [customGenre, setCustomGenre] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    setInputValue(val);
-
-    // Filter suggestions based on input
-    if (val.length > 0) {
-      const filtered = SUGGESTED_GENRES.filter(genre =>
-        genre.toLowerCase().includes(val.toLowerCase()) && !value.includes(genre)
-      ).slice(0, 5);
-      setSuggestions(filtered);
+  const toggleGenre = (genre) => {
+    if (value.includes(genre)) {
+      onChange(value.filter(g => g !== genre));
     } else {
-      setSuggestions([]);
+      onChange([...value, genre]);
     }
   };
 
-  const addTag = (tag) => {
-    if (tag && !value.includes(tag)) {
-      onChange([...value, tag]);
-      setInputValue("");
-      setSuggestions([]);
+  const addCustomGenre = () => {
+    if (customGenre.trim() && !value.includes(customGenre.trim())) {
+      onChange([...value, customGenre.trim()]);
+      setCustomGenre("");
+      setShowCustomInput(false);
     }
   };
 
-  const removeTag = (tagToRemove) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      addTag(inputValue.trim());
-    }
+  const removeGenre = (genre) => {
+    onChange(value.filter(g => g !== genre));
   };
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Input
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Ajouter des tags/genres (Fantasy, Romantasy...)"
-          className="w-full"
-        />
-        
-        {/* Suggestions dropdown */}
-        {suggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border-2 max-h-48 overflow-y-auto"
-               style={{ borderColor: 'var(--beige)' }}>
-            {suggestions.map((genre) => (
-              <button
-                key={genre}
-                onClick={() => addTag(genre)}
-                className="w-full text-left px-4 py-2 hover:bg-opacity-50 transition-colors text-sm"
-                style={{ 
-                  backgroundColor: 'transparent',
-                  color: 'var(--dark-text)'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--cream)'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-              >
-                {genre}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Selected tags */}
+      {/* Selected genres */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {value.map((tag) => (
-            <Badge
-              key={tag}
-              className="px-3 py-1 text-sm font-medium flex items-center gap-2"
-              style={{ 
-                backgroundColor: 'var(--soft-pink)',
-                color: 'white'
-              }}
+          {value.map((genre) => (
+            <div
+              key={genre}
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+              style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}
             >
-              {tag}
-              <button
-                onClick={() => removeTag(tag)}
-                className="hover:opacity-70 transition-opacity"
-              >
+              <span>{genre}</span>
+              <button onClick={() => removeGenre(genre)} className="hover:opacity-70">
                 <X className="w-3 h-3" />
               </button>
-            </Badge>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Quick add popular genres */}
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTED_GENRES.filter(g => !value.includes(g)).slice(0, 8).map((genre) => (
+      {/* Predefined genres */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {PREDEFINED_GENRES.map((genre) => (
           <button
             key={genre}
-            onClick={() => addTag(genre)}
-            className="px-2 py-1 rounded-lg text-xs font-medium transition-all hover:shadow-md"
+            onClick={() => toggleGenre(genre)}
+            className={`p-2 rounded-lg text-sm font-medium transition-all ${
+              value.includes(genre) ? 'shadow-md scale-105' : 'hover:shadow-md'
+            }`}
             style={{
-              backgroundColor: 'var(--cream)',
-              color: 'var(--dark-text)',
-              border: '1px solid var(--beige)'
+              backgroundColor: value.includes(genre) ? 'var(--soft-pink)' : 'white',
+              color: value.includes(genre) ? 'white' : 'var(--dark-text)',
+              border: '2px solid',
+              borderColor: value.includes(genre) ? 'var(--deep-pink)' : 'var(--beige)'
             }}
           >
-            + {genre}
+            {genre}
           </button>
         ))}
       </div>
+
+      {/* Add custom genre */}
+      {!showCustomInput ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowCustomInput(true)}
+          className="w-full"
+          style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter un genre personnalisé
+        </Button>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            value={customGenre}
+            onChange={(e) => setCustomGenre(e.target.value)}
+            placeholder="Ex: Urban Fantasy"
+            onKeyPress={(e) => e.key === 'Enter' && addCustomGenre()}
+            className="flex-1"
+          />
+          <Button
+            onClick={addCustomGenre}
+            disabled={!customGenre.trim()}
+            style={{ background: 'var(--deep-pink)', color: 'white' }}
+          >
+            Ajouter
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowCustomInput(false);
+              setCustomGenre("");
+            }}
+          >
+            Annuler
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
