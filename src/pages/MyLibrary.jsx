@@ -12,6 +12,7 @@ import PALManager from "../components/library/PALManager"; // New import
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from 'sonner'; // New import for notifications
+import BookDetailsDialog from "../components/library/BookDetailsDialog"; // New import for BookDetailsDialog
 
 export default function MyLibrary() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function MyLibrary() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
+  const [selectedUserBook, setSelectedUserBook] = useState(null); // New state
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -54,12 +56,43 @@ export default function MyLibrary() {
     enabled: !!user,
   });
 
-  // Organize read books by year and month
+  // Helper function to check if abandoned book counts (>50%)
+  const abandonedBookCounts = (userBook) => {
+    if (userBook.status !== "Abandonné") return false;
+    
+    // Check percentage
+    if (userBook.abandon_percentage >= 50) return true;
+    
+    // Check page count
+    if (userBook.abandon_page) {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Organize read books + DNF >50% by year and month
   const readBooksByYearMonth = useMemo(() => {
-    const readBooks = myBooks.filter(b => b.status === "Lu" && b.end_date);
+    const booksToOrganize = myBooks.filter(b => {
+      if (!b.end_date) return false;
+      
+      // Include "Lu" books
+      if (b.status === "Lu") return true;
+      
+      // Include "Abandonné" books if >50%
+      if (b.status === "Abandonné") {
+        return abandonedBookCounts(b);
+      }
+      
+      return false;
+    });
+    
     const organized = {};
 
-    readBooks.forEach(userBook => {
+    booksToOrganize.forEach(userBook => {
       const endDate = new Date(userBook.end_date);
       const year = endDate.getFullYear();
       const month = endDate.getMonth() + 1; // 1-12
@@ -74,7 +107,7 @@ export default function MyLibrary() {
     });
 
     return organized;
-  }, [myBooks]);
+  }, [myBooks, allBooks]);
 
   const years = Object.keys(readBooksByYearMonth).sort((a, b) => b - a); // Most recent first
 
@@ -460,13 +493,12 @@ export default function MyLibrary() {
             ) : (
               years.map(year => {
                 const yearData = readBooksByYearMonth[year];
-                const months = Object.keys(yearData).sort((a, b) => b - a); // Most recent month first
+                const months = Object.keys(yearData).sort((a, b) => b - a);
                 const totalBooksYear = months.reduce((sum, month) => sum + yearData[month].length, 0);
                 const isExpanded = expandedYears[year];
 
                 return (
                   <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    {/* Year Header */}
                     <button
                       onClick={() => toggleYear(year)}
                       className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
@@ -482,7 +514,7 @@ export default function MyLibrary() {
                             {year}
                           </h2>
                           <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                            {totalBooksYear} livre{totalBooksYear > 1 ? 's' : ''} lu{totalBooksYear > 1 ? 's' : ''}
+                            {totalBooksYear} livre{totalBooksYear > 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
@@ -493,7 +525,6 @@ export default function MyLibrary() {
                       )}
                     </button>
 
-                    {/* Months */}
                     {isExpanded && (
                       <div className="p-6 space-y-8">
                         {months.map(month => {
@@ -517,20 +548,24 @@ export default function MyLibrary() {
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                              <div className="grid grid-cols-2 md::grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {monthBooks.map(userBook => {
                                   const book = allBooks.find(b => b.id === userBook.book_id);
                                   if (!book) return null;
+                                  
+                                  const isDNF = userBook.status === "Abandonné";
 
                                   return (
                                     <div
                                       key={userBook.id}
-                                      className="group cursor-pointer"
-                                      onClick={() => {
-                                        // When a book from history is clicked, navigate to its detail page
-                                        navigate(createPageUrl("BookDetails", { bookId: book.id }));
-                                      }}
+                                      className="group cursor-pointer relative"
+                                      onClick={() => setSelectedUserBook(userBook)}
                                     >
+                                      {isDNF && (
+                                        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-black flex items-center justify-center shadow-lg z-10">
+                                          <span className="text-lg">💀</span>
+                                        </div>
+                                      )}
                                       <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
                                                     transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
                                            style={{ backgroundColor: 'var(--beige)' }}>
@@ -559,6 +594,11 @@ export default function MyLibrary() {
                                             ⭐ {userBook.rating}/5
                                           </span>
                                         </div>
+                                      )}
+                                      {isDNF && (
+                                        <p className="text-xs mt-1 font-medium" style={{ color: '#666' }}>
+                                          DNF {userBook.abandon_percentage ? `${userBook.abandon_percentage}%` : ''}
+                                        </p>
                                       )}
                                     </div>
                                   );
@@ -712,6 +752,15 @@ export default function MyLibrary() {
           onOpenChange={setShowPALs}
           pals={readingLists}
         />
+
+        {selectedUserBook && (
+          <BookDetailsDialog
+            userBook={selectedUserBook}
+            book={allBooks.find(b => b.id === selectedUserBook.book_id)}
+            open={!!selectedUserBook}
+            onOpenChange={(open) => !open && setSelectedUserBook(null)}
+          />
+        )}
       </div>
     </div>
   );
