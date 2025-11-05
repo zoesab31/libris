@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +8,7 @@ import { ChevronLeft, Library, Search, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import BookDetailsDialog from "../components/library/BookDetailsDialog";
 
 export default function ShelfView() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function ShelfView() {
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
   const [shelf, setShelf] = useState(null);
+  const [selectedUserBook, setSelectedUserBook] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -171,7 +174,11 @@ export default function ShelfView() {
               if (!book) return null;
 
               return (
-                <div key={userBook.id} className="group cursor-pointer">
+                <div 
+                  key={userBook.id} 
+                  className="group cursor-pointer"
+                  onClick={() => setSelectedUserBook(userBook)}
+                >
                   <div className="relative mb-3">
                     <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
                                   transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
@@ -229,6 +236,16 @@ export default function ShelfView() {
           </div>
         )}
       </div>
+
+      {/* Book Details Dialog */}
+      {selectedUserBook && (
+        <BookDetailsDialog
+          userBook={selectedUserBook}
+          book={allBooks.find(b => b.id === selectedUserBook.book_id)}
+          open={!!selectedUserBook}
+          onOpenChange={(open) => !open && setSelectedUserBook(null)}
+        />
+      )}
     </div>
   );
 }
