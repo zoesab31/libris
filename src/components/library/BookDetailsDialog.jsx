@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X, MessageSquare } from "lucide-react";
+import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X, MessageSquare, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -34,6 +34,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const saveButtonRef = useRef(null);
+
+  // New state variables for author editing
+  const [isEditingAuthor, setIsEditingAuthor] = useState(false);
+  const [newAuthor, setNewAuthor] = useState("");
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -144,6 +148,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     onError: (error) => {
         console.error("Error updating book cover:", error);
         toast.error("Erreur lors de la mise à jour de la couverture.");
+    }
+  });
+
+  // New mutation for author editing
+  const updateBookAuthorMutation = useMutation({
+    mutationFn: (newAuthor) => base44.entities.Book.update(book.id, { author: newAuthor }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks to reflect author change on user books
+      toast.success("Auteur modifié !");
+      setIsEditingAuthor(false);
+    },
+    onError: (error) => {
+      console.error("Error updating book author:", error);
+      toast.error("Erreur lors de la modification de l'auteur.");
     }
   });
 
@@ -270,45 +289,63 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     updateBookTagsMutation.mutate(newTags);
   };
 
+  // New function to start author editing
+  const startEditingAuthor = () => {
+    setNewAuthor(book?.author || "");
+    setIsEditingAuthor(true);
+  };
+
   if (!book) return null;
 
   const isServicePress = book.tags?.includes("Service Press");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="book-modal-panel max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white text-neutral-900 border border-neutral-200 rounded-2xl shadow-2xl">
-        <style>{`
-          .book-modal-panel,
-          .book-modal-panel * {
-            background-color: unset;
-            color: inherit;
-          }
-          .book-modal-panel {
-            background-color: #fff !important;
-            color: #111827 !important;
-            border-color: #e5e7eb !important;
-          }
-          .book-modal-panel .tab-header,
-          .book-modal-panel .tab-body,
-          .book-modal-panel .section,
-          .book-modal-panel .card,
-          .book-modal-panel .form,
-          .book-modal-panel [role="tabpanel"] {
-            background: #fff !important;
-            border-color: #e5e7eb !important;
-          }
-          .book-modal-panel hr {
-            border-color: #eee !important;
-          }
-        `}</style>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-white">
+        {/* Removed the <style> block that targeted .book-modal-panel as the class name has changed */}
 
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold text-neutral-900">
-                {book.title}
+              <DialogTitle className="text-3xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                {book?.title}
               </DialogTitle>
-              <p className="text-sm text-neutral-500 mt-1">par {book.author}</p>
+              {isEditingAuthor ? (
+                <div className="flex items-center gap-2 mt-2">
+                  <Input
+                    value={newAuthor}
+                    onChange={(e) => setNewAuthor(e.target.value)}
+                    placeholder="Nom de l'auteur"
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => updateBookAuthorMutation.mutate(newAuthor)}
+                    disabled={!newAuthor || updateBookAuthorMutation.isPending}
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                  >
+                    Enregistrer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsEditingAuthor(false)}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-lg flex items-center gap-2 mt-2" style={{ color: 'var(--warm-pink)' }}>
+                  {book?.author}
+                  <button
+                    onClick={startEditingAuthor}
+                    className="p-1 hover:bg-gray-100 rounded"
+                    title="Modifier l'auteur"
+                  >
+                    <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                  </button>
+                </p>
+              )}
             </div>
           </div>
         </DialogHeader>

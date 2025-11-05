@@ -93,7 +93,7 @@ export default function VirtualLibrary() {
     },
   });
 
-  const readBooks = myBooks.filter(b => b.status === "Lu");
+  const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
   const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
 
   const handleDragStart = (e, userBookId) => {
@@ -169,7 +169,7 @@ export default function VirtualLibrary() {
           <div className="space-y-8">
             {Array(shelves).fill(0).map((_, shelfNum) => (
               <div key={shelfNum} className="relative">
-                <div className="min-h-[200px] rounded-lg shadow-lg flex items-end p-4 gap-2 overflow-x-auto"
+                <div className="min-h-[200px] rounded-lg shadow-lg flex items-end px-4 py-4 gap-2 overflow-x-auto"
                      style={{ backgroundColor: '#8B4513' }}>
                   {readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).map((userBook, idx) => {
                     const book = allBooks.find(b => b.id === userBook.book_id);
@@ -275,6 +275,10 @@ export default function VirtualLibrary() {
                       </Popover>
                     );
                   })}
+                  {/* Fill empty spaces to help with visual */}
+                  {Array(Math.max(0, 12 - (readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).length))).fill(0).map((_, emptyIdx) => (
+                    <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-16 h-[200px] flex-shrink-0" />
+                  ))}
                 </div>
               </div>
             ))}

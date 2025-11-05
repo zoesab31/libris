@@ -1,12 +1,49 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Star, Calendar, Music } from "lucide-react";
+import { BookOpen, Star, Calendar, Music, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner'; // Assuming 'sonner' for toast notifications, commonly used with shadcn/ui
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { base44 } from '@/lib/base44'; // Assuming base44 entity client is imported from this path
 
 export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
+  const [editingName, setEditingName] = useState(false);
+  const [newAuthorName, setNewAuthorName] = useState("");
+  const queryClient = useQueryClient();
+
+  const updateAuthorMutation = useMutation({
+    mutationFn: async (newName) => {
+      // Collect all books by this author (both read and unread)
+      const allBooks = [...author.readBooks, ...author.unreadBooks];
+
+      // Update the 'author' field for all associated books
+      const promises = allBooks.map(book => {
+        return base44.entities.Book.update(book.id, { author: newName });
+      });
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] }); // Invalidate general books query
+      queryClient.invalidateQueries({ queryKey: ['authors'] }); // Invalidate authors query to reflect name change
+      toast.success("Nom de l'auteur modifié !");
+      setEditingName(false);
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la modification du nom de l'auteur.");
+      console.error("Failed to update author name:", error);
+    }
+  });
+
+  const startEditing = () => {
+    setNewAuthorName(author.name);
+    setEditingName(true);
+  };
+
   const sortedReadBooks = [...author.readBooks].sort((a, b) => {
     const ratingA = a.userBook.rating || 0;
     const ratingB = b.userBook.rating || 0;
@@ -18,14 +55,59 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-4">
+            {/* Author Avatar - always visible */}
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
                  style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--rose-gold))' }}>
               {author.name[0].toUpperCase()}
             </div>
-            <div>
-              <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
-                {author.name}
-              </DialogTitle>
+
+            {/* Editable Author Name & Stats */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1"> {/* This div contains the name/input and edit/save buttons */}
+                {editingName ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={newAuthorName}
+                      onChange={(e) => setNewAuthorName(e.target.value)}
+                      className="flex-1"
+                      placeholder="Nom de l'auteur"
+                      disabled={updateAuthorMutation.isPending}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => updateAuthorMutation.mutate(newAuthorName)}
+                      disabled={!newAuthorName || newAuthorName === author.name || updateAuthorMutation.isPending}
+                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                    >
+                      {updateAuthorMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingName(false)}
+                      disabled={updateAuthorMutation.isPending}
+                    >
+                      Annuler
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
+                      {author.name}
+                    </DialogTitle>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={startEditing}
+                      style={{ color: 'var(--deep-pink)' }}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                  </>
+                )}
+              </div>
+              {/* Author Stats - always visible below the name */}
               <p style={{ color: 'var(--warm-pink)' }}>
                 {author.readBooks.length} livre{author.readBooks.length > 1 ? 's' : ''} lu
                 {author.readBooks.length > 1 ? 's' : ''}

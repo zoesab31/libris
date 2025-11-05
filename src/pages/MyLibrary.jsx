@@ -90,6 +90,14 @@ export default function MyLibrary() {
     return allBooks.find(b => b.id === userBook.book_id);
   };
 
+  // Calculate average rating for each shelf
+  const getShelfAverageRating = (shelfName) => {
+    const shelfBooks = myBooks.filter(b => b.custom_shelf === shelfName && b.rating);
+    if (shelfBooks.length === 0) return 0;
+    const sum = shelfBooks.reduce((acc, b) => acc + b.rating, 0);
+    return (sum / shelfBooks.length).toFixed(1);
+  };
+
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
@@ -410,6 +418,7 @@ export default function MyLibrary() {
                 {customShelves.map((shelf) => {
                   const shelfBooks = myBooks.filter(b => b.custom_shelf === shelf.name);
                   const previewBooks = shelfBooks.slice(0, 3);
+                  const avgRating = getShelfAverageRating(shelf.name);
 
                   return (
                     <div
@@ -463,6 +472,16 @@ export default function MyLibrary() {
                         <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                           {shelfBooks.length} livre{shelfBooks.length > 1 ? 's' : ''}
                         </p>
+                        {avgRating > 0 && (
+                          <div className="flex items-center justify-center gap-1 mt-2">
+                            <span className="text-lg font-bold" style={{ color: 'var(--gold)' }}>
+                              ⭐ {avgRating}
+                            </span>
+                            <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                              / 5
+                            </span>
+                          </div>
+                        )}
                         {shelf.description && (
                           <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                             {shelf.description}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, Crown, Calendar, ThumbsDown, BookOpen, X } from "lucide-react";
+import { Trophy, Star, Crown, Calendar, ThumbsDown, BookOpen, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import MonthlyVoteDialog from "../components/tournament/MonthlyVoteDialog";
@@ -25,6 +25,7 @@ export default function BookTournament() {
   const [showWorstDialog, setShowWorstDialog] = useState(false);
   const [worstBookId, setWorstBookId] = useState("");
   const [worstReason, setWorstReason] = useState("");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -34,20 +35,20 @@ export default function BookTournament() {
   }, []);
 
   const { data: monthlyVotes = [] } = useQuery({
-    queryKey: ['monthlyVotes', currentYear],
+    queryKey: ['monthlyVotes', selectedYear],
     queryFn: () => base44.entities.MonthlyBookVote.filter({
       created_by: user?.email,
-      year: currentYear
+      year: selectedYear
     }, 'month'),
     enabled: !!user,
   });
 
   const { data: monthlyWorstVotes = [] } = useQuery({
-    queryKey: ['monthlyWorstVotes', currentYear],
+    queryKey: ['monthlyWorstVotes', selectedYear],
     queryFn: async () => {
       const allVotes = await base44.entities.BookOfTheYear.filter({
         created_by: user?.email,
-        year: currentYear,
+        year: selectedYear,
         is_worst: true
       });
       // Filter for monthly worst votes (those with month property)
@@ -71,11 +72,11 @@ export default function BookTournament() {
   });
 
   const { data: worstBook } = useQuery({
-    queryKey: ['worstBook', currentYear],
+    queryKey: ['worstBook', selectedYear],
     queryFn: async () => {
       const result = await base44.entities.BookOfTheYear.filter({
         created_by: user?.email,
-        year: currentYear,
+        year: selectedYear,
         is_worst: true,
         month: null // Filter for the yearly worst, not monthly
       });
@@ -94,7 +95,7 @@ export default function BookTournament() {
         });
       } else {
         await base44.entities.BookOfTheYear.create({
-          year: currentYear,
+          year: selectedYear, // Use selectedYear here
           book_id: worstBookId || null,
           reason: worstReason,
           is_worst: true,
@@ -132,20 +133,20 @@ export default function BookTournament() {
       result[i] = myBooks.filter(ub => {
         if (!ub.end_date) return false;
         const endDate = new Date(ub.end_date);
-        return endDate.getFullYear() === currentYear && endDate.getMonth() + 1 === i;
+        return endDate.getFullYear() === selectedYear && endDate.getMonth() + 1 === i;
       }).map(ub => allBooks.find(b => b.id === ub.book_id)).filter(Boolean);
     }
     return result;
-  }, [myBooks, allBooks, currentYear]);
+  }, [myBooks, allBooks, selectedYear]);
 
   // Get all read books for worst selection
   const allReadBooksThisYear = useMemo(() => {
     return myBooks.filter(ub => {
       if (!ub.end_date) return false;
       const endYear = new Date(ub.end_date).getFullYear();
-      return endYear === currentYear;
+      return endYear === selectedYear;
     }).map(ub => allBooks.find(b => b.id === ub.book_id)).filter(Boolean);
-  }, [myBooks, allBooks, currentYear]);
+  }, [myBooks, allBooks, selectedYear]);
 
   const canStartTournament = monthlyVotes.length >= 4;
   const canStartWorstTournament = monthlyWorstVotes.length >= 4;
@@ -157,6 +158,12 @@ export default function BookTournament() {
   };
 
   const selectedWorstBook = worstBookId ? allBooks.find(b => b.id === worstBookId) : null;
+
+  // Generate available years (from 2020 to current year)
+  const availableYears = Array.from(
+    { length: currentYear - 2020 + 1 }, // +1 to include currentYear
+    (_, i) => 2020 + i
+  ).reverse(); // To show current year first
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -171,9 +178,53 @@ export default function BookTournament() {
               Tournoi du Livre 🏆
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              Élisez vos meilleures et pires lectures de {currentYear}
+              Élisez vos meilleures et pires lectures de {selectedYear}
             </p>
           </div>
+        </div>
+
+        {/* Year Selector */}
+        <div className="flex items-center justify-center gap-4 mb-8 p-4 rounded-xl shadow-md"
+             style={{ backgroundColor: 'white' }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedYear(selectedYear - 1)}
+            disabled={selectedYear <= Math.min(...availableYears)} // Disable if already at the earliest year
+            style={{ color: 'var(--deep-pink)' }}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+
+          <div className="flex gap-2 overflow-x-auto">
+            {availableYears.map((year) => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={`px-4 py-2 rounded-lg font-bold transition-all whitespace-nowrap ${
+                  selectedYear === year ? 'shadow-lg scale-105' : 'hover:scale-105'
+                }`}
+                style={{
+                  backgroundColor: selectedYear === year ? 'var(--soft-pink)' : 'var(--cream)',
+                  color: selectedYear === year ? 'white' : 'var(--dark-text)',
+                  border: '2px solid',
+                  borderColor: selectedYear === year ? 'var(--deep-pink)' : 'var(--beige)'
+                }}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedYear(selectedYear + 1)}
+            disabled={selectedYear >= currentYear}
+            style={{ color: 'var(--deep-pink)' }}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
         </div>
 
         <Tabs defaultValue="monthly" className="w-full">
@@ -199,7 +250,8 @@ export default function BookTournament() {
                       const monthNum = idx + 1;
                       const vote = monthlyVotes.find(v => v.month === monthNum);
                       const book = vote ? allBooks.find(b => b.id === vote.book_id) : null;
-                      const canVote = monthNum <= currentMonth;
+                      // Can vote if it's the selected year and the month is not in the future relative to the *current* date
+                      const canVote = selectedYear < currentYear || (selectedYear === currentYear && monthNum <= currentMonth);
                       const hasBooks = booksReadByMonth[monthNum]?.length > 0;
 
                       return (
@@ -277,7 +329,8 @@ export default function BookTournament() {
                       const monthNum = idx + 1;
                       const vote = monthlyWorstVotes.find(v => v.month === monthNum);
                       const book = vote?.book_id ? allBooks.find(b => b.id === vote.book_id) : null;
-                      const canVote = monthNum <= currentMonth;
+                      // Can vote if it's the selected year and the month is not in the future relative to the *current* date
+                      const canVote = selectedYear < currentYear || (selectedYear === currentYear && monthNum <= currentMonth);
                       const hasBooks = booksReadByMonth[monthNum]?.length > 0;
 
                       return (
@@ -367,7 +420,7 @@ export default function BookTournament() {
                   <TournamentBracket
                     monthlyVotes={monthlyVotes}
                     allBooks={allBooks}
-                    year={currentYear}
+                    year={selectedYear} // Use selectedYear
                     isWorst={false}
                   />
                 ) : (
@@ -390,7 +443,7 @@ export default function BookTournament() {
                   <TournamentBracket
                     monthlyVotes={monthlyWorstVotes}
                     allBooks={allBooks}
-                    year={currentYear}
+                    year={selectedYear} // Use selectedYear
                     isWorst={true}
                   />
                 ) : (
@@ -416,7 +469,7 @@ export default function BookTournament() {
           <MonthlyVoteDialog
             month={selectedMonth}
             monthName={MONTHS[selectedMonth - 1]}
-            year={currentYear}
+            year={selectedYear} // Use selectedYear
             books={booksReadByMonth[selectedMonth]}
             currentVote={tournamentType === "best"
               ? monthlyVotes.find(v => v.month === selectedMonth)
@@ -434,7 +487,7 @@ export default function BookTournament() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
-                Pire lecture {currentYear}
+                Pire lecture {selectedYear}
               </DialogTitle>
             </DialogHeader>
 
