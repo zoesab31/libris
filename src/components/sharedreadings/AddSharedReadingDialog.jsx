@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Users, Search, Check } from "lucide-react";
+import { Send, Users, Search, Check, Calendar, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { differenceInDays } from "date-fns";
 
 export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
@@ -20,6 +20,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
     book_id: "",
     start_date: "",
     end_date: "",
+    total_chapters: 0,
     chapters_per_day: 0,
     status: "À venir",
   });
@@ -27,6 +28,20 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Calculate chapters per day automatically
+  useEffect(() => {
+    if (formData.start_date && formData.end_date && formData.total_chapters > 0) {
+      const days = differenceInDays(new Date(formData.end_date), new Date(formData.start_date)) + 1;
+      if (days > 0) {
+        const chaptersPerDay = Math.ceil(formData.total_chapters / days);
+        setFormData(prev => ({
+          ...prev,
+          chapters_per_day: chaptersPerDay
+        }));
+      }
+    }
+  }, [formData.start_date, formData.end_date, formData.total_chapters]);
 
   const { data: myFriends = [] } = useQuery({
     queryKey: ['myFriends'],
@@ -76,6 +91,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
         book_id: "",
         start_date: "",
         end_date: "",
+        total_chapters: 0,
         chapters_per_day: 0,
         status: "À venir",
       });
@@ -98,6 +114,11 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   );
 
   const selectedBook = availableBooks.find(b => b.id === formData.book_id);
+
+  // Calculate program details
+  const numberOfDays = formData.start_date && formData.end_date 
+    ? differenceInDays(new Date(formData.end_date), new Date(formData.start_date)) + 1
+    : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,7 +168,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="start_date">Date de début</Label>
+              <Label htmlFor="start_date">Date de début *</Label>
               <Input
                 id="start_date"
                 type="date"
@@ -156,7 +177,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
               />
             </div>
             <div>
-              <Label htmlFor="end_date">Date de fin</Label>
+              <Label htmlFor="end_date">Date de fin *</Label>
               <Input
                 id="end_date"
                 type="date"
@@ -166,18 +187,67 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
             </div>
           </div>
 
-          {/* Chapters per day */}
+          {/* Total chapters */}
           <div>
-            <Label htmlFor="chapters">Chapitres par jour (optionnel)</Label>
+            <Label htmlFor="total_chapters">Nombre total de chapitres *</Label>
             <Input
-              id="chapters"
+              id="total_chapters"
               type="number"
-              min="0"
-              value={formData.chapters_per_day}
-              onChange={(e) => setFormData({ ...formData, chapters_per_day: parseInt(e.target.value) || 0 })}
-              placeholder="Ex: 3"
+              min="1"
+              value={formData.total_chapters || ''}
+              onChange={(e) => setFormData({ ...formData, total_chapters: parseInt(e.target.value) || 0 })}
+              placeholder="Ex: 45"
             />
           </div>
+
+          {/* Program summary */}
+          {numberOfDays > 0 && formData.total_chapters > 0 && (
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)', border: '2px solid var(--soft-pink)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                  📋 Programme généré automatiquement
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mb-3">
+                <div className="text-center p-3 rounded-lg bg-white">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {numberOfDays}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                    jour{numberOfDays > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-white">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {formData.total_chapters}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                    chapitre{formData.total_chapters > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-white">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {formData.chapters_per_day}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                    chap/jour
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-white">
+                <p className="text-sm text-center font-medium" style={{ color: 'var(--dark-text)' }}>
+                  📖 Vous lirez <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {formData.chapters_per_day} chapitre{formData.chapters_per_day > 1 ? 's' : ''}
+                  </span> par jour pendant <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {numberOfDays} jour{numberOfDays > 1 ? 's' : ''}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Friends selection */}
           <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
@@ -256,7 +326,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
           {/* Submit */}
           <Button
             onClick={() => createMutation.mutate(formData)}
-            disabled={!formData.book_id || createMutation.isPending}
+            disabled={!formData.book_id || !formData.start_date || !formData.end_date || !formData.total_chapters || createMutation.isPending}
             className="w-full text-white font-medium py-6"
             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
           >
