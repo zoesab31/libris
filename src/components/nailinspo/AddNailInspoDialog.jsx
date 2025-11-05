@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,17 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, FolderPlus, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddNailInspoDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showNewSubfolder, setShowNewSubfolder] = useState(false);
+  const [newSubfolderName, setNewSubfolderName] = useState("");
   const [inspoData, setInspoData] = useState({
     title: "",
     image_url: "",
     book_id: "",
+    folder_path: "",
     colors: "",
     note: "",
     is_done: false,
@@ -34,10 +36,23 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
     enabled: !!user,
   });
 
+  const { data: nailInspos = [] } = useQuery({
+    queryKey: ['nailInspos'],
+    queryFn: () => base44.entities.NailInspo.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   // Filter to only show books that user has in their library
   const availableBooks = books.filter(book => 
     myBooks.some(ub => ub.book_id === book.id)
   );
+
+  // Get existing subfolders for selected book
+  const selectedBookInspos = inspoData.book_id 
+    ? nailInspos.filter(ni => ni.book_id === inspoData.book_id && ni.folder_path)
+    : [];
+  
+  const existingSubfolders = [...new Set(selectedBookInspos.map(ni => ni.folder_path))];
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.NailInspo.create(data),
@@ -45,7 +60,9 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
       queryClient.invalidateQueries({ queryKey: ['nailInspos'] });
       toast.success("Inspiration ajoutée !");
       onOpenChange(false);
-      setInspoData({ title: "", image_url: "", book_id: "", colors: "", note: "", is_done: false });
+      setInspoData({ title: "", image_url: "", book_id: "", folder_path: "", colors: "", note: "", is_done: false });
+      setShowNewSubfolder(false);
+      setNewSubfolderName("");
     },
   });
 
@@ -65,9 +82,11 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
     }
   };
 
+  const selectedBook = availableBooks.find(b => b.id === inspoData.book_id);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
             💅 Ajouter une inspiration ongles
@@ -84,6 +103,103 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
               placeholder="Ex: Nail art galaxie"
             />
           </div>
+
+          <div>
+            <Label htmlFor="book">Livre associé (optionnel)</Label>
+            <Select value={inspoData.book_id} onValueChange={(value) => {
+              setInspoData({...inspoData, book_id: value, folder_path: ""});
+              setShowNewSubfolder(false);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Aucun livre" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Aucun livre</SelectItem>
+                {availableBooks.map((book) => (
+                  <SelectItem key={book.id} value={book.id}>
+                    {book.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {inspoData.book_id && (
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
+                  📚 {selectedBook?.title}
+                </span>
+                <ChevronRight className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                  Sous-dossier
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {existingSubfolders.length > 0 && (
+                  <div>
+                    <Label className="text-xs">Dossiers existants</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      {existingSubfolders.map((subfolder) => (
+                        <button
+                          key={subfolder}
+                          onClick={() => {
+                            setInspoData({...inspoData, folder_path: subfolder});
+                            setShowNewSubfolder(false);
+                          }}
+                          className="p-2 rounded-lg text-left text-sm font-medium transition-all hover:shadow-md"
+                          style={{
+                            backgroundColor: inspoData.folder_path === subfolder ? 'var(--soft-pink)' : 'white',
+                            color: inspoData.folder_path === subfolder ? 'white' : 'var(--dark-text)',
+                            border: '2px solid',
+                            borderColor: inspoData.folder_path === subfolder ? 'var(--deep-pink)' : 'var(--beige)'
+                          }}
+                        >
+                          📁 {subfolder}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowNewSubfolder(!showNewSubfolder)}
+                  className="w-full"
+                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                >
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  {showNewSubfolder ? "Annuler" : "Nouveau sous-dossier"}
+                </Button>
+
+                {showNewSubfolder && (
+                  <div className="space-y-2">
+                    <Input
+                      value={newSubfolderName}
+                      onChange={(e) => setNewSubfolderName(e.target.value)}
+                      placeholder="Ex: Feyre, Celaena, Automne..."
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        if (newSubfolderName.trim()) {
+                          setInspoData({...inspoData, folder_path: newSubfolderName.trim()});
+                          setShowNewSubfolder(false);
+                          setNewSubfolderName("");
+                        }
+                      }}
+                      className="w-full"
+                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                    >
+                      Créer "{newSubfolderName}"
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <Label>Image *</Label>
@@ -115,22 +231,6 @@ export default function AddNailInspoDialog({ open, onOpenChange, books }) {
               <img src={inspoData.image_url} alt="Preview" className="w-full h-64 object-cover" />
             </div>
           )}
-
-          <div>
-            <Label htmlFor="book">Livre associé</Label>
-            <Select value={inspoData.book_id} onValueChange={(value) => setInspoData({...inspoData, book_id: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Optionnel" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBooks.map((book) => (
-                  <SelectItem key={book.id} value={book.id}>
-                    {book.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div>
             <Label htmlFor="colors">Couleurs utilisées</Label>
