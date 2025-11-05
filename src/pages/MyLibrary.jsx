@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Library } from "lucide-react";
+import { Plus, Library, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
@@ -19,6 +19,7 @@ export default function MyLibrary() {
   const [showShelves, setShowShelves] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedBooks, setSelectedBooks] = useState([]);
+  const [expandedYears, setExpandedYears] = useState({});
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -41,10 +42,48 @@ export default function MyLibrary() {
     enabled: !!user,
   });
 
+  // Organize read books by year and month
+  const readBooksByYearMonth = useMemo(() => {
+    const readBooks = myBooks.filter(b => b.status === "Lu" && b.end_date);
+    const organized = {};
+
+    readBooks.forEach(userBook => {
+      const endDate = new Date(userBook.end_date);
+      const year = endDate.getFullYear();
+      const month = endDate.getMonth() + 1; // 1-12
+
+      if (!organized[year]) {
+        organized[year] = {};
+      }
+      if (!organized[year][month]) {
+        organized[year][month] = [];
+      }
+      organized[year][month].push(userBook);
+    });
+
+    return organized;
+  }, [myBooks]);
+
+  const years = Object.keys(readBooksByYearMonth).sort((a, b) => b - a); // Most recent first
+
+  const toggleYear = (year) => {
+    setExpandedYears(prev => ({
+      ...prev,
+      [year]: !prev[year]
+    }));
+  };
+
+  const monthNames = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ];
+
   const filteredBooks = activeTab === "tous"
     ? myBooks
     : activeTab === "custom"
     ? [] // Don't show individual books in custom tab, only folders
+    : activeTab === "historique"
+    ? [] // No books shown directly in history tab, only organized view
     : myBooks.filter(b => b.status === activeTab);
 
   const getBookDetails = (userBook) => {
@@ -127,7 +166,7 @@ export default function MyLibrary() {
 
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0">
+            <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 flex-wrap h-auto">
               <TabsTrigger
                 value="tous"
                 className="rounded-lg font-bold data-[state=active]:text-white"
@@ -188,6 +227,17 @@ export default function MyLibrary() {
               >
                 Abandonnés
               </TabsTrigger>
+              <TabsTrigger
+                value="historique"
+                className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
+                style={activeTab === "historique" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
+              >
+                <Calendar className="w-4 h-4" />
+                Historique
+              </TabsTrigger>
               {customShelves.length > 0 && (
                 <TabsTrigger
                   value="custom"
@@ -204,8 +254,136 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        {/* Custom Shelves as Folders */}
-        {activeTab === "custom" ? (
+        {/* Historique View */}
+        {activeTab === "historique" ? (
+          <div className="space-y-6">
+            {years.length === 0 ? (
+              <div className="text-center py-20">
+                <Calendar className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune lecture terminée
+                </h3>
+                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                  Vos livres lus apparaîtront ici organisés par année et mois
+                </p>
+              </div>
+            ) : (
+              years.map(year => {
+                const yearData = readBooksByYearMonth[year];
+                const months = Object.keys(yearData).sort((a, b) => b - a); // Most recent month first
+                const totalBooksYear = months.reduce((sum, month) => sum + yearData[month].length, 0);
+                const isExpanded = expandedYears[year];
+
+                return (
+                  <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    {/* Year Header */}
+                    <button
+                      onClick={() => toggleYear(year)}
+                      className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                      style={{ backgroundColor: 'var(--cream)' }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                          <span className="text-white font-bold text-lg">{year}</span>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-left" style={{ color: 'var(--dark-text)' }}>
+                            {year}
+                          </h2>
+                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                            {totalBooksYear} livre{totalBooksYear > 1 ? 's' : ''} lu{totalBooksYear > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                      ) : (
+                        <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                      )}
+                    </button>
+
+                    {/* Months */}
+                    {isExpanded && (
+                      <div className="p-6 space-y-8">
+                        {months.map(month => {
+                          const monthBooks = yearData[month];
+                          const monthName = monthNames[month - 1];
+
+                          return (
+                            <div key={month}>
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
+                                     style={{ backgroundColor: 'var(--soft-pink)' }}>
+                                  <span className="text-white font-bold text-sm">{month}</span>
+                                </div>
+                                <div>
+                                  <h3 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                                    {monthName}
+                                  </h3>
+                                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                    {monthBooks.length} livre{monthBooks.length > 1 ? 's' : ''}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                {monthBooks.map(userBook => {
+                                  const book = allBooks.find(b => b.id === userBook.book_id);
+                                  if (!book) return null;
+
+                                  return (
+                                    <div
+                                      key={userBook.id}
+                                      className="group cursor-pointer"
+                                      onClick={() => {
+                                        setActiveTab("Lu"); // Navigate to "Lu" tab when a book from history is clicked
+                                      }}
+                                    >
+                                      <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
+                                                    transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
+                                           style={{ backgroundColor: 'var(--beige)' }}>
+                                        {book.cover_url ? (
+                                          <img 
+                                            src={book.cover_url} 
+                                            alt={book.title}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center">
+                                            <Library className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <h4 className="font-bold text-sm mt-2 line-clamp-2 group-hover:underline" 
+                                          style={{ color: 'var(--dark-text)' }}>
+                                        {book.title}
+                                      </h4>
+                                      <p className="text-xs line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                                        {book.author}
+                                      </p>
+                                      {userBook.rating && (
+                                        <div className="flex items-center gap-1 mt-1">
+                                          <span className="text-xs font-bold" style={{ color: 'var(--gold)' }}>
+                                            ⭐ {userBook.rating}/5
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        ) : activeTab === "custom" ? (
           <div>
             {customShelves.length === 0 ? (
               <div className="text-center py-20">
@@ -221,7 +399,7 @@ export default function MyLibrary() {
                   className="font-medium"
                   style={{
                     background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                    color: 'white' // Changed from '#000000' to 'white'
+                    color: 'white'
                   }}
                 >
                   Créer une étagère
@@ -237,7 +415,6 @@ export default function MyLibrary() {
                     <div
                       key={shelf.id}
                       onClick={() => {
-                        // Store shelf info in sessionStorage for ShelfView page
                         sessionStorage.setItem('currentShelf', JSON.stringify(shelf));
                         navigate(createPageUrl("ShelfView"));
                       }}
@@ -247,7 +424,6 @@ export default function MyLibrary() {
                         border: '2px solid var(--beige)'
                       }}
                     >
-                      {/* Folder Icon and Preview */}
                       <div className="mb-4 flex items-center justify-center gap-1 h-32">
                         {previewBooks.length > 0 ? (
                           <div className="flex gap-1 items-end">
@@ -278,7 +454,6 @@ export default function MyLibrary() {
                         )}
                       </div>
 
-                      {/* Shelf Name and Count */}
                       <div className="text-center">
                         <h3 className="text-lg font-bold mb-1 flex items-center justify-center gap-2"
                             style={{ color: 'var(--dark-text)' }}>
