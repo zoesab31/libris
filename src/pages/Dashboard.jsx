@@ -164,19 +164,8 @@ export default function Dashboard() {
     return startYear <= selectedYear && selectedYear <= endYear;
   }).length;
 
-  // Year-scoped: Books "À lire" added in selected year (fallback to global if no created_date)
-  const toReadThisYear = myBooks.filter(b => {
-    if (b.status !== "À lire") return false;
-    
-    // If we have created_date, filter by year
-    if (b.created_date) {
-      const createdYear = new Date(b.created_date).getFullYear();
-      return createdYear === selectedYear;
-    }
-    
-    // Fallback: show all "À lire" if no date available or no specific created_date
-    return true;
-  }).length;
+  // "À lire" count: ALL books with status "À lire" (not year-scoped)
+  const toReadCount = myBooks.filter(b => b.status === "À lire").length;
 
   // Calculate average rating: filter for books that have a rating (not null/undefined)
   // then sum their ratings and divide by the count of such books.
@@ -237,7 +226,7 @@ export default function Dashboard() {
           />
           <StatsCard 
             title="À lire" 
-            value={toReadThisYear}
+            value={toReadCount}
             icon={Star}
             gradient="linear-gradient(135deg, #FFD700, #FFB6C8)"
           />
