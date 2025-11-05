@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,33 +9,25 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// 24-color palette with names and hex codes
 const SPINE_COLORS = [
-  // Warm hues (6)
   { name: "Rose vif", hex: "#F58BA5", var: "--spine-rose" },
   { name: "Corail", hex: "#FF7F7F", var: "--spine-coral" },
   { name: "Pêche", hex: "#FFAB91", var: "--spine-peach" },
   { name: "Orange", hex: "#FFB347", var: "--spine-orange" },
   { name: "Rouge cerise", hex: "#DC143C", var: "--spine-cherry" },
   { name: "Saumon", hex: "#FA8072", var: "--spine-salmon" },
-  
-  // Cool hues (6)
   { name: "Turquoise", hex: "#59C3C3", var: "--spine-teal" },
   { name: "Bleu ciel", hex: "#87CEEB", var: "--spine-sky" },
   { name: "Lavande", hex: "#B19CD9", var: "--spine-lavender" },
   { name: "Violet", hex: "#9B59B6", var: "--spine-violet" },
   { name: "Pervenche", hex: "#CCCCFF", var: "--spine-periwinkle" },
   { name: "Cyan", hex: "#00CED1", var: "--spine-cyan" },
-  
-  // Naturals (6)
   { name: "Beige", hex: "#EBDCCB", var: "--spine-beige" },
   { name: "Crème", hex: "#FFFACD", var: "--spine-cream" },
   { name: "Taupe", hex: "#B38B6D", var: "--spine-taupe" },
   { name: "Gris clair", hex: "#D3D3D3", var: "--spine-light-gray" },
   { name: "Lin", hex: "#E9DCC9", var: "--spine-linen" },
   { name: "Sable", hex: "#C2B280", var: "--spine-sand" },
-  
-  // Deep tones (6)
   { name: "Marine", hex: "#1C2E4A", var: "--spine-navy" },
   { name: "Forêt", hex: "#2C5F2D", var: "--spine-forest" },
   { name: "Bordeaux", hex: "#800020", var: "--spine-wine" },
@@ -45,12 +36,10 @@ const SPINE_COLORS = [
   { name: "Noir", hex: "#1A1A1A", var: "--spine-black" },
 ];
 
-// Helper to get random color from palette
 const getRandomSpineColor = () => {
   return SPINE_COLORS[Math.floor(Math.random() * SPINE_COLORS.length)].hex;
 };
 
-// Helper to determine if text should be white or black based on background
 const getContrastColor = (hexColor) => {
   const r = parseInt(hexColor.slice(1, 3), 16);
   const g = parseInt(hexColor.slice(3, 5), 16);
@@ -71,7 +60,7 @@ export default function VirtualLibrary() {
   }, []);
 
   const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooks'], // Changed from 'myBooksForDisplay'
+    queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }, 'shelf_position'),
     enabled: !!user,
   });
@@ -86,7 +75,7 @@ export default function VirtualLibrary() {
       await base44.entities.UserBook.update(bookId, { book_color: color });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Changed from 'myBooksForDisplay'
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("✨ Couleur mise à jour !", {
         duration: 2000,
         style: {
@@ -98,36 +87,28 @@ export default function VirtualLibrary() {
     },
   });
 
-  const reorderBookMutation = useMutation({ // Renamed from reorderBooksMutation
-    mutationFn: async ({ bookId, newPosition }) => { // Kept 'newPosition' to match handleDrop
+  const reorderBookMutation = useMutation({
+    mutationFn: async ({ bookId, newPosition }) => {
       await base44.entities.UserBook.update(bookId, { shelf_position: newPosition });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Changed from 'myBooksForDisplay'
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
     },
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
   const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
 
-  // Auto-assign random color when book is added to virtual library
-  const autoAssignColor = async (userBook) => {
-    if (userBook.book_color) return; // Already has a color
-    
-    const randomColor = getRandomSpineColor();
-    updateColorMutation.mutate({ bookId: userBook.id, color: randomColor });
-  };
-
-  // Check for books without colors when component loads
-  React.useEffect(() => {
-    if (readBooks.length > 0) {
+  useEffect(() => {
+    if (readBooks.length > 0 && user) {
       readBooks.forEach(userBook => {
         if (!userBook.book_color) {
-          autoAssignColor(userBook);
+          const randomColor = getRandomSpineColor();
+          updateColorMutation.mutate({ bookId: userBook.id, color: randomColor });
         }
       });
     }
-  }, [readBooks.length]); // Dependencies to re-run when book lists change
+  }, [readBooks.length, user]);
 
   const handleDragStart = (e, userBookId) => {
     setDraggedBookId(userBookId);
@@ -157,7 +138,7 @@ export default function VirtualLibrary() {
     newBooks.splice(dropIndex, 0, removed);
 
     for (let i = 0; i < newBooks.length; i++) {
-      await reorderBookMutation.mutateAsync({ // Changed to reorderBookMutation
+      await reorderBookMutation.mutateAsync({ 
         bookId: newBooks[i].id, 
         newPosition: i 
       });
@@ -169,7 +150,7 @@ export default function VirtualLibrary() {
 
   const handleColorChange = (userBookId, colorHex) => {
     requestAnimationFrame(() => {
-      updateColorMutation.mutate({ bookId: userBookId, color: colorHex }); // Changed to updateColorMutation
+      updateColorMutation.mutate({ bookId: userBookId, color: colorHex });
     });
   };
 
@@ -237,7 +218,6 @@ export default function VirtualLibrary() {
                             }}
                             title={`${book?.title || 'Livre'} - ${book?.author || ''}`}
                           >
-                            {/* Spine with vertical text using writing-mode */}
                             <div className="h-full flex items-center justify-center overflow-hidden"
                                  style={{
                                    writingMode: 'vertical-rl',
@@ -307,7 +287,6 @@ export default function VirtualLibrary() {
                       </Popover>
                     );
                   })}
-                  {/* Fill empty spaces to help with visual */}
                   {Array(Math.max(0, 12 - (readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).length))).fill(0).map((_, emptyIdx) => (
                     <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-16 h-[200px] flex-shrink-0" />
                   ))}
