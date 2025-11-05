@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,10 +5,10 @@ import { BookOpen, Star, Calendar, Music, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner'; // Assuming 'sonner' for toast notifications, commonly used with shadcn/ui
+import { toast } from 'sonner';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { base44 } from '@/lib/base44'; // Assuming base44 entity client is imported from this path
+import { base44 } from '@/api/base44Client';
 
 export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
   const [editingName, setEditingName] = useState(false);
@@ -18,25 +17,18 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
 
   const updateAuthorMutation = useMutation({
     mutationFn: async (newName) => {
-      // Collect all books by this author (both read and unread)
       const allBooks = [...author.readBooks, ...author.unreadBooks];
-
-      // Update the 'author' field for all associated books
-      const promises = allBooks.map(book => {
+      const promises = allBooks.map(item => {
+        const book = item.book || item;
         return base44.entities.Book.update(book.id, { author: newName });
       });
       await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] }); // Invalidate general books query
-      queryClient.invalidateQueries({ queryKey: ['authors'] }); // Invalidate authors query to reflect name change
+      queryClient.invalidateQueries({ queryKey: ['books'] });
       toast.success("Nom de l'auteur modifié !");
       setEditingName(false);
     },
-    onError: (error) => {
-      toast.error("Erreur lors de la modification du nom de l'auteur.");
-      console.error("Failed to update author name:", error);
-    }
   });
 
   const startEditing = () => {
@@ -55,15 +47,13 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            {/* Author Avatar - always visible */}
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
                  style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--rose-gold))' }}>
               {author.name[0].toUpperCase()}
             </div>
 
-            {/* Editable Author Name & Stats */}
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-1"> {/* This div contains the name/input and edit/save buttons */}
+              <div className="flex items-center justify-between mb-1">
                 {editingName ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
@@ -79,7 +69,7 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
                       disabled={!newAuthorName || newAuthorName === author.name || updateAuthorMutation.isPending}
                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
                     >
-                      {updateAuthorMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+                      {updateAuthorMutation.isPending ? "..." : "Enregistrer"}
                     </Button>
                     <Button
                       size="sm"
@@ -107,7 +97,6 @@ export default function AuthorDetailsDialog({ author, open, onOpenChange }) {
                   </>
                 )}
               </div>
-              {/* Author Stats - always visible below the name */}
               <p style={{ color: 'var(--warm-pink)' }}>
                 {author.readBooks.length} livre{author.readBooks.length > 1 ? 's' : ''} lu
                 {author.readBooks.length > 1 ? 's' : ''}
