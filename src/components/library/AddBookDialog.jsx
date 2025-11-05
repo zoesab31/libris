@@ -377,7 +377,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                             </div>
                           </div>
 
-                          {/* Book Cover - HIGH QUALITY, NO FOLD EFFECT */}
+                          {/* Book Cover */}
                           <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
                                style={{ backgroundColor: 'var(--beige)' }}>
                             {book.coverUrl ? (
@@ -387,7 +387,6 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                                 className="w-full h-full object-cover"
                                 loading="lazy"
                                 onError={(e) => {
-                                  // Fallback to placeholder if image fails to load
                                   e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?';
                                 }}
                               />
@@ -427,8 +426,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 )}
               </div>
 
-              {/* Right: Preview / Actions */}
-              <div className="lg:col-span-1">
+              {/* Right: Preview / Actions - Hidden on mobile, shown in sticky footer */}
+              <div className="hidden lg:block lg:col-span-1">
                 {selectedBooks.length > 0 ? (
                   <div className="sticky top-0 p-6 rounded-xl shadow-lg"
                        style={{ backgroundColor: 'white', borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--soft-pink)' }}>
@@ -557,6 +556,22 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 )}
               </div>
             </div>
+
+            {/* Mobile sticky footer with add button */}
+            {selectedBooks.length > 0 && (
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 shadow-lg z-50"
+                   style={{ borderColor: 'var(--soft-pink)' }}>
+                <Button
+                  onClick={createFromSearch}
+                  className="w-full text-white font-medium py-6"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  disabled={selectedBooks.length === 0}
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter {selectedBooks.length > 1 ? `les ${selectedBooks.length} livres` : 'ce livre'}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
