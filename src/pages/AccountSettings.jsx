@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle, Download } from "lucide-react"; // Added Download
+import { User, Upload, Loader2, ArrowLeft, CheckCircle2, Trash2, AlertTriangle, Download } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -27,14 +26,14 @@ export default function AccountSettings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
     display_name: "",
     profile_picture: "",
     theme: "light",
   });
-  const [deferredPrompt, setDeferredPrompt] = useState(null); // New state
-  const [isInstalled, setIsInstalled] = useState(false); // New state
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -67,6 +66,25 @@ export default function AccountSettings() {
     };
   }, []);
 
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      toast.info("L'installation n'est pas disponible sur ce navigateur");
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      toast.success("✅ Application installée avec succès !");
+      setIsInstalled(true);
+    } else {
+      toast.info("Installation annulée");
+    }
+
+    setDeferredPrompt(null);
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -96,26 +114,6 @@ export default function AccountSettings() {
     }
   };
 
-  // New function for PWA installation
-  const handleInstallApp = async () => {
-    if (!deferredPrompt) {
-      toast.info("L'installation n'est pas disponible sur ce navigateur");
-      return;
-    }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      toast.success("✅ Application installée avec succès !");
-      setIsInstalled(true);
-    } else {
-      toast.info("Installation annulée");
-    }
-
-    setDeferredPrompt(null);
-  };
-
   const updateMutation = useMutation({
     mutationFn: () => base44.auth.updateMe(profileData),
     onSuccess: () => {
@@ -128,7 +126,6 @@ export default function AccountSettings() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      // Delete all user data
       const myBooks = await base44.entities.UserBook.filter({ created_by: user.email });
       const myComments = await base44.entities.ReadingComment.filter({ created_by: user.email });
       const myShelves = await base44.entities.CustomShelf.filter({ created_by: user.email });
@@ -141,10 +138,8 @@ export default function AccountSettings() {
       const mySharedReadings = await base44.entities.SharedReading.filter({ created_by: user.email });
       const myFriendships = await base44.entities.Friendship.filter({ created_by: user.email });
       const myNotifications = await base44.entities.Notification.filter({ created_by: user.email });
-      const myPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
       const myBingos = await base44.entities.BingoChallenge.filter({ created_by: user.email });
       
-      // Delete all in parallel
       await Promise.all([
         ...myBooks.map(b => base44.entities.UserBook.delete(b.id)),
         ...myComments.map(c => base44.entities.ReadingComment.delete(c.id)),
@@ -158,11 +153,9 @@ export default function AccountSettings() {
         ...mySharedReadings.map(s => base44.entities.SharedReading.delete(s.id)),
         ...myFriendships.map(f => base44.entities.Friendship.delete(f.id)),
         ...myNotifications.map(n => base44.entities.Notification.delete(n.id)),
-        ...myPoints.map(p => base44.entities.ReadingPoints.delete(p.id)),
         ...myBingos.map(b => base44.entities.BingoChallenge.delete(b.id)),
       ]);
 
-      // Logout
       base44.auth.logout();
     },
     onSuccess: () => {
@@ -204,7 +197,6 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        {/* Install App Card */}
         {!isInstalled && deferredPrompt && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2"
                style={{ borderColor: 'var(--soft-pink)' }}>
@@ -339,7 +331,6 @@ export default function AccountSettings() {
               </p>
             </div>
 
-            {/* Theme selector */}
             <div>
               <Label htmlFor="theme">Thème de l'application</Label>
               <div className="grid grid-cols-2 gap-3 mt-2">
@@ -408,7 +399,6 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        {/* Danger Zone */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-red-200">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-6 h-6 text-red-500" />
@@ -428,7 +418,6 @@ export default function AccountSettings() {
         </div>
       </div>
 
-      {/* Image Cropper Dialog */}
       <Dialog open={showCropper} onOpenChange={setShowCropper}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -447,7 +436,6 @@ export default function AccountSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Account Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
