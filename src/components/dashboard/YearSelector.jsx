@@ -1,53 +1,52 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function YearSelector({ currentYear, onYearChange }) {
   const thisYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => thisYear - i);
+  const years = Array.from({ length: 15 }, (_, i) => thisYear - i + 2);
 
   return (
-    <div className="flex items-center justify-center gap-2 p-4 rounded-xl shadow-md"
-         style={{ backgroundColor: 'white' }}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onYearChange(currentYear - 1)}
-        disabled={currentYear <= thisYear - 9}
-        style={{ color: 'var(--deep-pink)' }}
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </Button>
-
-      <div className="flex gap-2">
-        {years.slice(0, 5).map((year) => (
-          <button
-            key={year}
-            onClick={() => onYearChange(year)}
-            className={`px-4 py-2 rounded-lg font-bold transition-all ${
-              currentYear === year ? 'shadow-lg scale-105' : 'hover:scale-105'
-            }`}
+    <div className="flex justify-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className="px-6 py-6 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all border-2"
             style={{
-              backgroundColor: currentYear === year ? 'var(--soft-pink)' : 'var(--cream)',
-              color: currentYear === year ? 'white' : 'var(--dark-text)',
-              border: '2px solid',
-              borderColor: currentYear === year ? 'var(--deep-pink)' : 'var(--beige)'
+              backgroundColor: 'white',
+              borderColor: 'var(--deep-pink)',
+              color: '#000000'
             }}
           >
-            {year}
-          </button>
-        ))}
-      </div>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onYearChange(currentYear + 1)}
-        disabled={currentYear >= thisYear}
-        style={{ color: 'var(--deep-pink)' }}
-      >
-        <ChevronRight className="w-5 h-5" />
-      </Button>
+            <Calendar className="w-5 h-5 mr-2" style={{ color: 'var(--deep-pink)' }} />
+            📅 {currentYear}
+            <ChevronDown className="w-5 h-5 ml-2" style={{ color: 'var(--deep-pink)' }} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="max-h-64 overflow-y-auto">
+          {years.map((year) => (
+            <DropdownMenuItem
+              key={year}
+              onClick={() => onYearChange(year)}
+              className={`cursor-pointer font-medium ${
+                currentYear === year ? 'bg-pink-100 font-bold' : ''
+              }`}
+              style={{
+                color: currentYear === year ? 'var(--deep-pink)' : '#000000'
+              }}
+            >
+              {currentYear === year && '✓ '}{year}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

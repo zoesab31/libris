@@ -15,6 +15,8 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
   const [showDialog, setShowDialog] = useState(false);
   const [goalCount, setGoalCount] = useState(currentGoal?.goal_count || 50);
   const queryClient = useQueryClient();
+  const currentYear = new Date().getFullYear();
+  const isYearEnded = year < currentYear;
 
   const { data: allGoals = [] } = useQuery({
     queryKey: ['allReadingGoals'],
@@ -37,6 +39,19 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
     enabled: !!user,
   });
 
+  const { data: sharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadingsForGoal', year],
+    queryFn: async () => {
+      const all = await base44.entities.SharedReading.filter({ created_by: user?.email });
+      return all.filter(sr => {
+        if (!sr.end_date) return false;
+        const endYear = new Date(sr.end_date).getFullYear();
+        return endYear === year && sr.status === "Terminée";
+      });
+    },
+    enabled: !!user,
+  });
+
   const createOrUpdateMutation = useMutation({
     mutationFn: async (count) => {
       if (currentGoal) {
@@ -48,10 +63,19 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
       queryClient.invalidateQueries({ queryKey: ['allReadingGoals'] });
-      // Invalidate the full book list to ensure calculations are up-to-date if needed elsewhere
       queryClient.invalidateQueries({ queryKey: ['allUserBooksForGoalCalculation'] }); 
       queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate the "Lu" specific query too
-      toast.success("Objectif mis à jour !");
+      
+      // Animation paillettes
+      toast.success("✨ Objectif enregistré avec succès !", {
+        duration: 3000,
+        style: {
+          background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
+      
       setShowDialog(false);
     },
   });
@@ -123,12 +147,24 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
                 <div className="text-4xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
                   {booksReadThisYear} / {currentGoal.goal_count}
                 </div>
-                <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
-                  {isComplete 
-                    ? "🎉 Objectif atteint ! Félicitations !" 
-                    : `Plus que ${currentGoal.goal_count - booksReadThisYear} livre${currentGoal.goal_count - booksReadThisYear > 1 ? 's' : ''}`
-                  }
-                </p>
+                {isYearEnded ? (
+                  isComplete ? (
+                    <p className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
+                      🎉 Félicitations ! Objectif atteint !
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-red-600">
+                      😢 Objectif non atteint
+                    </p>
+                  )
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+                    {isComplete 
+                      ? "🎉 Objectif atteint ! Félicitations !" 
+                      : `Plus que ${currentGoal.goal_count - booksReadThisYear} livre${currentGoal.goal_count - booksReadThisYear > 1 ? 's' : ''}`
+                    }
+                  </p>
+                )}
               </div>
 
               <div className="relative h-4 rounded-full overflow-hidden" 
@@ -152,6 +188,19 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
                 </div>
               </div>
 
+              {/* Shared Readings Counter */}
+              {sharedReadings.length > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg"
+                     style={{ backgroundColor: 'var(--cream)' }}>
+                  <span className="text-sm font-medium" style={{ color: 'var(--deep-brown)' }}>
+                    📚 Lectures communes
+                  </span>
+                  <span className="text-lg font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {sharedReadings.length}
+                  </span>
+                </div>
+              )}
+
               {pastGoals.length > 0 && (
                 <div className="pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
                   <p className="text-xs font-medium mb-2" style={{ color: 'var(--warm-brown)' }}>
@@ -161,14 +210,19 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
                     {pastGoals.slice(0, 3).map((goal) => {
                       const booksRead = getBooksReadForYear(goal.year);
                       const achieved = booksRead >= goal.goal_count;
+                      const goalYearEnded = goal.year < currentYear;
+                      
                       return (
                         <div key={goal.id} className="flex items-center justify-between text-xs p-2 rounded-lg"
-                             style={{ backgroundColor: 'var(--cream)' }}>
+                             style={{ 
+                               backgroundColor: 'var(--cream)',
+                               borderLeft: goalYearEnded && !achieved ? '3px solid #DC2626' : 'none'
+                             }}>
                           <span style={{ color: 'var(--deep-brown)' }}>
-                            {achieved ? '🏆' : '📚'} {goal.year}
+                            {achieved ? '🏆' : goalYearEnded ? '😢' : '📚'} {goal.year}
                           </span>
-                          <span className={`font-medium ${achieved ? 'text-green-600' : ''}`}
-                                style={{ color: achieved ? undefined : 'var(--warm-brown)' }}>
+                          <span className={`font-medium ${achieved ? 'text-green-600' : goalYearEnded && !achieved ? 'text-red-600' : ''}`}
+                                style={{ color: achieved ? undefined : (goalYearEnded && !achieved ? undefined : 'var(--warm-brown)') }}>
                             {booksRead} / {goal.goal_count}
                           </span>
                         </div>

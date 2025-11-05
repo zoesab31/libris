@@ -96,11 +96,6 @@ const navigationItems = [
     url: createPageUrl("Discover"),
     icon: Sparkles,
   },
-  {
-    title: "Mes Amies",
-    url: createPageUrl("Friends"),
-    icon: Users,
-  },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -288,7 +283,7 @@ export default function Layout({ children, currentPageName }) {
                     color: isDark ? '#ff6b9d' : 'var(--deep-pink)'
                   }}
                 >
-                  <LogOut className="w-3 h-3 md:w-4 md:h-4" />
+                  <LogOut className="w-3 h-3 md:w-4 h-4" />
                   Déconnexion
                 </button>
               </div>
@@ -329,3 +324,4 @@ export default function Layout({ children, currentPageName }) {
     </SidebarProvider>
   );
 }
+

@@ -17,14 +17,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-export default function BookGrid({ 
-  userBooks, 
-  allBooks, 
-  customShelves, 
-  isLoading, 
-  selectionMode, 
-  selectedBooks, 
-  onSelectionChange, 
+export default function BookGrid({
+  userBooks,
+  allBooks,
+  customShelves,
+  isLoading,
+  selectionMode,
+  selectedBooks,
+  onSelectionChange,
   onExitSelectionMode,
   showPALSelector = false, // New prop
   readingLists = [],      // New prop
@@ -38,6 +38,13 @@ export default function BookGrid({
   const [showPALDialog, setShowPALDialog] = useState(false); // New state
   const [bookToAddToPAL, setBookToAddToPAL] = useState(null); // New state
   const queryClient = useQueryClient();
+
+  // Helper to get first author only
+  const getFirstAuthor = (authorString) => {
+    if (!authorString) return "Auteur inconnu";
+    const authors = authorString.split(',');
+    return authors[0].trim();
+  };
 
   const deleteMultipleMutation = useMutation({
     mutationFn: async (bookIds) => {
@@ -73,9 +80,9 @@ export default function BookGrid({
 
   const addToShelfMutation = useMutation({
     mutationFn: async ({ bookIds, shelfName }) => {
-      const updatePromises = bookIds.map(bookId => 
-        base44.entities.UserBook.update(bookId, { 
-          custom_shelf: shelfName || undefined 
+      const updatePromises = bookIds.map(bookId =>
+        base44.entities.UserBook.update(bookId, {
+          custom_shelf: shelfName || undefined
         })
       );
       await Promise.all(updatePromises);
@@ -99,7 +106,7 @@ export default function BookGrid({
     mutationFn: async ({ palId, bookId }) => {
       const pal = readingLists.find(p => p.id === palId);
       if (!pal) return;
-      
+
       const updatedBookIds = [...(pal.book_ids || []), bookId];
       await base44.entities.ReadingList.update(palId, { book_ids: updatedBookIds });
     },
@@ -182,7 +189,7 @@ export default function BookGrid({
   const sortedBooks = [...userBooks].sort((a, b) => {
     const bookA = allBooks.find(book => book.id === a.book_id);
     const bookB = allBooks.find(book => book.id === b.book_id);
-    
+
     if (a.status === "En cours" && b.status !== "En cours") return -1;
     if (b.status === "En cours" && a.status !== "En cours") return 1;
 
@@ -192,7 +199,7 @@ export default function BookGrid({
       if (aIsServicePress && !bIsServicePress) return -1;
       if (!aIsServicePress && bIsServicePress) return 1;
     }
-    
+
     if (sortBy === "rating") {
       return (b.rating || 0) - (a.rating || 0);
     } else if (sortBy === "title") {
@@ -219,7 +226,7 @@ export default function BookGrid({
       )}
 
       {selectionMode && selectedBooks.length > 0 && (
-        <div className="mb-4 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3" 
+        <div className="mb-4 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3"
              style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
           <span className="font-bold">
             {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
@@ -250,18 +257,18 @@ export default function BookGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"> {/* Updated gap */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
         {sortedBooks.map((userBook) => { // Changed to sortedBooks.map
           const book = allBooks.find(b => b.id === userBook.book_id);
           if (!book) return null;
-          
+
           const shelf = customShelves.find(s => s.name === userBook.custom_shelf);
           const isCurrentlyReading = userBook.status === "En cours";
           const isServicePress = book.tags?.includes("Service Press");
           const isSelected = selectedBooks.includes(userBook.id);
 
           return (
-            <div 
+            <div
               key={userBook.id}
               className={`group cursor-pointer relative ${
                 selectionMode && isSelected ? 'ring-4 ring-pink-500' : ''
@@ -295,7 +302,7 @@ export default function BookGrid({
                 </button>
               )}
 
-              <div 
+              <div
                 // Click handler for opening BookDetailsDialog
                 onClick={() => {
                   // Only open details if not in selection mode or PAL mode
@@ -303,7 +310,7 @@ export default function BookGrid({
                     setSelectedUserBook(userBook);
                   }
                 }}
-                className="relative mb-3 w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
+                className="relative mb-3 w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg
                               transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
                 style={{ backgroundColor: 'var(--beige)' }}
               >
@@ -312,18 +319,18 @@ export default function BookGrid({
                     En cours
                   </div>
                 )}
-                
+
                 {isServicePress && userBook.status === "À lire" && !isCurrentlyReading && (
                   <div className="absolute -top-2 -left-2 z-10 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                     📬 Service Press
                   </div>
                 )}
-                
+
                 <div className="w-full h-full"> {/* Inner div for cover */}
                   {book.cover_url ? (
-                    <img 
-                      src={book.cover_url} 
+                    <img
+                      src={book.cover_url}
                       alt={book.title}
                       className="w-full h-full object-cover"
                     />
@@ -333,7 +340,7 @@ export default function BookGrid({
                     </div>
                   )}
                 </div>
-                
+
                 <div className="absolute top-2 right-2 flex flex-col gap-2">
                   {userBook.is_shared_reading && (
                     <div className="bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-md">
@@ -346,7 +353,7 @@ export default function BookGrid({
                     </div>
                   )}
                   {userBook.rating && (
-                    <div className="bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-md 
+                    <div className="bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-md
                                   flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" style={{ color: 'var(--gold)' }} />
                       <span className="text-xs font-bold" style={{ color: 'var(--deep-brown)' }}>
@@ -371,7 +378,7 @@ export default function BookGrid({
                 {book.title}
               </h3>
               <p className="text-xs line-clamp-1 mb-1" style={{ color: 'var(--warm-pink)' }}> {/* Changed color, added mb-1 */}
-                {book.author}
+                {getFirstAuthor(book.author)}
               </p>
               {book.genre && (
                 <p className="text-xs mt-1" style={{ color: 'var(--soft-brown)' }}>

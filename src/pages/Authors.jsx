@@ -76,7 +76,7 @@ export default function Authors() {
       .sort((a, b) => b.readBooks.length - a.readBooks.length);
   }, [allBooks, myBooks]);
 
-  // Group books by first letter
+  // Group books by first letter and sort alphabetically
   const booksByLetter = useMemo(() => {
     const myBooksWithDetails = myBooks.map(ub => ({
       ...ub,
@@ -85,7 +85,7 @@ export default function Authors() {
 
     const grouped = {};
     myBooksWithDetails.forEach(item => {
-      if (!item.book || !item.book.title) return; // Ensure book and title exist
+      if (!item.book || !item.book.title) return;
       const firstLetter = item.book.title[0].toUpperCase();
       if (!grouped[firstLetter]) {
         grouped[firstLetter] = [];
@@ -93,12 +93,19 @@ export default function Authors() {
       grouped[firstLetter].push(item);
     });
 
+    // Sort books within each letter group alphabetically
+    Object.keys(grouped).forEach(letter => {
+      grouped[letter].sort((a, b) => 
+        a.book.title.localeCompare(b.book.title, 'fr', { sensitivity: 'base' })
+      );
+    });
+
     return grouped;
   }, [myBooks, allBooks]);
 
   const filteredAuthors = authorsData.filter(author =>
     author.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })); // Sort authors alphabetically
 
   const isLoading = loadingMyBooks || loadingBooks;
 
@@ -364,3 +371,4 @@ export default function Authors() {
     </div>
   );
 }
+

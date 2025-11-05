@@ -45,6 +45,11 @@ const SPINE_COLORS = [
   { name: "Noir", hex: "#1A1A1A", var: "--spine-black" },
 ];
 
+// Helper to get random color from palette
+const getRandomSpineColor = () => {
+  return SPINE_COLORS[Math.floor(Math.random() * SPINE_COLORS.length)].hex;
+};
+
 // Helper to determine if text should be white or black based on background
 const getContrastColor = (hexColor) => {
   const r = parseInt(hexColor.slice(1, 3), 16);
@@ -82,7 +87,13 @@ export default function VirtualLibrary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Changed from 'myBooksForDisplay'
-      toast.success("Couleur mise à jour !");
+      toast.success("✨ Couleur mise à jour !", {
+        duration: 2000,
+        style: {
+          background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+          color: 'white'
+        }
+      });
       setOpenColorPicker(null);
     },
   });
@@ -99,61 +110,24 @@ export default function VirtualLibrary() {
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
   const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
 
-  // Auto-extract color when book is added to virtual library
-  const autoExtractColor = async (userBook, book) => {
-    if (!book?.cover_url || userBook.book_color) return; // Already has a color
+  // Auto-assign random color when book is added to virtual library
+  const autoAssignColor = async (userBook) => {
+    if (userBook.book_color) return; // Already has a color
     
-    try {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = book.cover_url;
-      
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        let r = 0, g = 0, b = 0;
-        const pixelCount = data.length / 4;
-        
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
-        }
-        
-        r = Math.floor(r / pixelCount);
-        g = Math.floor(g / pixelCount);
-        b = Math.floor(b / pixelCount);
-        
-        const extractedColor = `rgb(${r}, ${g}, ${b})`;
-        
-        // Update the book color automatically
-        updateColorMutation.mutate({ bookId: userBook.id, color: extractedColor });
-      };
-    } catch (error) {
-      console.log("Could not auto-extract color");
-    }
+    const randomColor = getRandomSpineColor();
+    updateColorMutation.mutate({ bookId: userBook.id, color: randomColor });
   };
 
   // Check for books without colors when component loads
   React.useEffect(() => {
-    if (readBooks.length > 0 && allBooks.length > 0) {
+    if (readBooks.length > 0) {
       readBooks.forEach(userBook => {
         if (!userBook.book_color) {
-          const book = allBooks.find(b => b.id === userBook.book_id);
-          if (book) {
-            autoExtractColor(userBook, book);
-          }
+          autoAssignColor(userBook);
         }
       });
     }
-  }, [readBooks.length, allBooks.length]); // Dependencies to re-run when book lists change
+  }, [readBooks.length]); // Dependencies to re-run when book lists change
 
   const handleDragStart = (e, userBookId) => {
     setDraggedBookId(userBookId);

@@ -75,10 +75,11 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedBooks, setSelectedBooks] = useState([]); // Changed to array for multi-selection
+  const [selectedBook, setSelectedBook] = useState(null); // Changed to singular for single selection
   const [customCoverUrl, setCustomCoverUrl] = useState("");
   const [uploadedCoverFile, setUploadedCoverFile] = useState(null);
   const [uploadedCoverPreview, setUploadedCoverPreview] = useState(null);
+  const [status, setStatus] = useState("À lire"); // New state for immediate status selection
 
   const [step, setStep] = useState(1);
   const [bookData, setBookData] = useState({
@@ -89,8 +90,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     page_count: "",
     synopsis: "",
     tags: [],
-    isbn: "", // Added based on outline's potential future state
-    publication_year: "" // Added based on outline's potential future state
+    isbn: "",
+    publication_year: ""
   });
   const [userBookData, setUserBookData] = useState({
     status: "À lire",
@@ -103,8 +104,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     end_date: "",
     abandon_page: "",
     abandon_percentage: "",
-    music_link: "", // Added based on outline's potential future state
-    favorite_character: "" // Added based on outline's potential future state
+    music_link: "",
+    favorite_character: ""
   });
 
   const [uploadingCover, setUploadingCover] = useState(false); // New state for manual cover upload
@@ -197,97 +198,19 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   // Get final cover URL for preview (for search tab)
   const getFinalCoverUrl = (book) => {
-    if (selectedBooks.length === 1 && selectedBooks[0].id === book.id) {
+    if (selectedBook && selectedBook.id === book.id) {
       if (uploadedCoverPreview) return uploadedCoverPreview;
       if (customCoverUrl) return customCoverUrl;
     }
     return book.coverUrl;
   };
 
-  // Toggle book selection (for multi-select in search tab)
+  // Toggle book selection (for single selection in search tab)
   const toggleBookSelection = (book) => {
-    setSelectedBooks(prev => {
-      const isSelected = prev.some(b => b.id === book.id);
-      if (isSelected) {
-        return prev.filter(b => b.id !== book.id);
-      } else {
-        return [...prev, book];
-      }
-    });
-  };
-
-  // Create books from search (supports multiple books)
-  const createFromSearch = async () => {
-    if (selectedBooks.length === 0) return;
-
-    try {
-      let successCount = 0;
-
-      for (const selectedBook of selectedBooks) {
-        let finalCoverUrl = selectedBook.coverUrl;
-
-        // Upload file if provided (only for single selection)
-        if (selectedBooks.length === 1 && uploadedCoverFile) {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadedCoverFile });
-          finalCoverUrl = file_url;
-        } else if (selectedBooks.length === 1 && customCoverUrl) {
-          finalCoverUrl = customCoverUrl;
-        }
-        
-        let coverColor = '#FFB3D9'; // Default color
-        if (finalCoverUrl) {
-          try {
-            coverColor = await getDominantColor(finalCoverUrl);
-          } catch (error) {
-            console.log("Could not extract color for search result, using default", error);
-          }
-        }
-
-        // Map categories to genre
-        let genre = "Autre";
-        if (selectedBook.categories.length > 0) {
-          const category = selectedBook.categories[0].toLowerCase();
-          if (category.includes("fiction") || category.includes("roman")) genre = "Romance";
-          else if (category.includes("fantasy") || category.includes("fantastique")) genre = "Fantasy";
-          else if (category.includes("thriller")) genre = "Thriller";
-          else if (category.includes("young adult") || category.includes("jeunesse")) genre = "Young Adult";
-          else if (category.includes("science fiction")) genre = "Science-Fiction";
-          else if (category.includes("historique")) genre = "Historique";
-        }
-        if (!GENRES.includes(genre)) {
-          genre = "Autre";
-        }
-
-        const createdBook = await base44.entities.Book.create({
-          title: selectedBook.title,
-          author: selectedBook.author,
-          cover_url: finalCoverUrl,
-          page_count: selectedBook.pageCount,
-          publication_year: selectedBook.year,
-          synopsis: selectedBook.description,
-          isbn: selectedBook.isbn,
-          genre: genre,
-        });
-
-        await base44.entities.UserBook.create({
-          book_id: createdBook.id,
-          status: "À lire",
-          book_color: coverColor, // Add the extracted color
-        });
-
-        successCount++;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-
-      toast.success(`✅ ${successCount} livre${successCount > 1 ? 's' : ''} ajouté${successCount > 1 ? 's' : ''} à votre bibliothèque !`);
-      resetForm();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Erreur lors de l'ajout des livres:", error);
-      toast.error("Erreur lors de l'ajout des livres");
-    }
+    setSelectedBook(prev => (prev && prev.id === book.id) ? null : book);
+    setCustomCoverUrl(""); // Reset custom cover options on new selection
+    setUploadedCoverFile(null);
+    setUploadedCoverPreview(null);
   };
 
   // Placeholder mutation for awarding points
@@ -296,13 +219,118 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       // This is a placeholder. A real implementation would interact with your backend
       // to award points to the user.
       console.log("Awarding points for 'Lu' status (placeholder)");
-      // Example: await base44.entities.User.awardPoints({ userId: user.id, points: 10 });
+      // Example: await base44.integrations.User.awardPoints({ userId: user.id, points: 10 });
     },
     onError: (error) => {
       console.error("Error awarding points:", error);
       toast.error("Erreur lors de l'attribution des points.");
     }
   });
+
+  // Mutation for adding a UserBook entry for an *existing* book_id
+  const addBookMutation = useMutation({
+    mutationFn: async ({ bookId, status, book_color }) => {
+      await base44.entities.UserBook.create({
+        book_id: bookId,
+        status: status,
+        book_color: book_color,
+      });
+    },
+    onSuccess: async (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+
+      if (user && variables.status === "Lu") {
+        await awardPointsForLuStatusMutation.mutateAsync();
+      }
+
+      toast.success("✨ Livre ajouté avec succès !", {
+        duration: 3000,
+        style: {
+          background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+          color: 'white',
+          fontWeight: 'bold'
+        }
+      });
+
+      setSelectedBook(null);
+      setSearchQuery("");
+      setStatus("À lire");
+      setCustomCoverUrl("");
+      setUploadedCoverFile(null);
+      setUploadedCoverPreview(null);
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error adding user book from search:", error);
+      toast.error("Erreur lors de l'ajout du livre à votre bibliothèque.");
+    }
+  });
+
+  // Function to handle adding the selected book from search results
+  const addSelectedBookToLibrary = async () => {
+    if (!selectedBook) return;
+
+    try {
+      let bookToProcess = { ...selectedBook };
+      let finalCoverUrl = bookToProcess.coverUrl;
+
+      // Handle custom cover (URL or file upload)
+      if (uploadedCoverFile) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadedCoverFile });
+        finalCoverUrl = file_url;
+      } else if (customCoverUrl) {
+        finalCoverUrl = customCoverUrl;
+      }
+
+      let coverColor = '#FFB3D9'; // Default color
+      if (finalCoverUrl) {
+        try {
+          coverColor = await getDominantColor(finalCoverUrl);
+        } catch (error) {
+          console.log("Could not extract color for search result, using default", error);
+        }
+      }
+
+      // Map categories to genre
+      let genre = "Autre";
+      if (bookToProcess.categories.length > 0) {
+        const category = bookToProcess.categories[0].toLowerCase();
+        if (category.includes("fiction") || category.includes("roman")) genre = "Romance";
+        else if (category.includes("fantasy") || category.includes("fantastique")) genre = "Fantasy";
+        else if (category.includes("thriller")) genre = "Thriller";
+        else if (category.includes("young adult") || category.includes("jeunesse")) genre = "Young Adult";
+        else if (category.includes("science fiction")) genre = "Science-Fiction";
+        else if (category.includes("historique")) genre = "Historique";
+      }
+      if (!GENRES.includes(genre)) {
+        genre = "Autre";
+      }
+
+      // First, ensure the Book entity exists in our database
+      // In a real application, you might query your backend by ISBN/title/author
+      // For this implementation, we'll create a new Book entity if found via Google Books search
+      // (similar to the previous multi-selection behavior, but for a single book).
+      const createdBook = await base44.entities.Book.create({
+        title: bookToProcess.title,
+        author: bookToProcess.author,
+        cover_url: finalCoverUrl,
+        page_count: bookToProcess.pageCount,
+        publication_year: bookToProcess.year,
+        synopsis: bookToProcess.description,
+        isbn: bookToProcess.isbn,
+        genre: genre,
+      });
+
+      // Then, add the UserBook entry using the addBookMutation
+      addBookMutation.mutate({ bookId: createdBook.id, status: status, book_color: coverColor });
+
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du livre depuis la recherche:", error);
+      toast.error("Erreur lors de l'ajout du livre depuis la recherche");
+    }
+  };
+
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -364,10 +392,11 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     setActiveTab("search");
     setSearchQuery("");
     setSearchResults([]);
-    setSelectedBooks([]);
+    setSelectedBook(null); // Updated for singular selection
     setCustomCoverUrl("");
     setUploadedCoverFile(null);
     setUploadedCoverPreview(null);
+    setStatus("À lire"); // Reset new status state
     setBookData({
       title: "",
       author: "",
@@ -376,8 +405,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       page_count: "",
       synopsis: "",
       tags: [],
-      isbn: "", // Reset new fields
-      publication_year: "" // Reset new fields
+      isbn: "",
+      publication_year: ""
     });
     setUserBookData({
       status: "À lire",
@@ -390,10 +419,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       end_date: "",
       abandon_page: "",
       abandon_percentage: "",
-      music_link: "", // Reset new fields
-      favorite_character: "", // Reset new fields
+      music_link: "",
+      favorite_character: "",
     });
-    setUploadingCover(false); // Reset upload state
+    setUploadingCover(false);
   };
 
   const handleManualCoverUpload = async (e) => { // Renamed to avoid clash with handleFileUpload for search tab
@@ -445,46 +474,6 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
               />
             </div>
 
-            {/* Selected books summary */}
-            {selectedBooks.length > 0 && (
-              <div className="p-4 rounded-xl border-2"
-                   style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--soft-pink)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                    📚 {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedBooks([])}
-                    className="text-xs"
-                    style={{ color: 'var(--warm-pink)' }}
-                  >
-                    <X className="w-3 h-3 mr-1" />
-                    Tout désélectionner
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedBooks.map((book) => (
-                    <div
-                      key={book.id}
-                      className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
-                      style={{ backgroundColor: 'white', color: 'var(--dark-text)', border: '1px solid var(--beige)' }}
-                    >
-                      <Check className="w-3 h-3" style={{ color: 'var(--deep-pink)' }} />
-                      <span className="max-w-[200px] truncate">{book.title}</span>
-                      <button
-                        onClick={() => toggleBookSelection(book)}
-                        className="hover:opacity-70"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Left: Search Results */}
               <div className="lg:col-span-2 space-y-3">
@@ -503,7 +492,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 {!isSearching && searchResults.length > 0 && (
                   <div className="max-h-[500px] overflow-y-auto space-y-3 pr-2">
                     {searchResults.map((book) => {
-                      const isSelected = selectedBooks.some(b => b.id === book.id);
+                      const isSelected = selectedBook && selectedBook.id === book.id;
 
                       return (
                         <button
@@ -519,12 +508,12 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                             borderColor: isSelected ? 'var(--deep-pink)' : 'transparent'
                           }}
                         >
-                          {/* Checkbox */}
+                          {/* Radio Button */}
                           <div className="flex-shrink-0 pt-1">
-                            <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${
                               isSelected ? 'bg-gradient-to-br from-pink-500 to-pink-600' : 'border-gray-300'
                             }`}>
-                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                              {isSelected && <div className="w-3 h-3 rounded-full bg-white" />}
                             </div>
                           </div>
 
@@ -561,15 +550,6 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                               {book.pageCount && <span>📄 {book.pageCount} pages</span>}
                             </div>
                           </div>
-
-                          {/* Selected Badge */}
-                          {isSelected && (
-                            <div className="absolute top-2 right-2">
-                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow-lg">
-                                <Check className="w-4 h-4 text-white" />
-                              </div>
-                            </div>
-                          )}
                         </button>
                       );
                     })}
@@ -577,123 +557,127 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 )}
               </div>
 
-              {/* Right: Preview / Actions - Hidden on mobile, shown in sticky footer */}
+              {/* Right: Preview / Actions */}
               <div className="hidden lg:block lg:col-span-1">
-                {selectedBooks.length > 0 ? (
+                {selectedBook ? (
                   <div className="sticky top-0 p-6 rounded-xl shadow-lg"
                        style={{ backgroundColor: 'white', borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--soft-pink)' }}>
                     <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      {selectedBooks.length === 1 ? '📖 Aperçu' : `📚 ${selectedBooks.length} livres`}
+                      📖 Aperçu
                     </h3>
 
-                    {selectedBooks.length === 1 ? (
-                      <>
-                        {/* Single book preview with customization */}
-                        <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {getFinalCoverUrl(selectedBooks[0]) ? (
-                            <img
-                              src={getFinalCoverUrl(selectedBooks[0])}
-                              alt={selectedBooks[0].title}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.src = 'https://placehold.co/300x450/FFE1F0/FF1493?text=?';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
-                            </div>
-                          )}
+                    {/* Single book preview with customization */}
+                    <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {getFinalCoverUrl(selectedBook) ? (
+                        <img
+                          src={getFinalCoverUrl(selectedBook)}
+                          alt={selectedBook.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/300x450/FFE1F0/FF1493?text=?';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
                         </div>
+                      )}
+                    </div>
 
-                        <h4 className="font-bold mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {selectedBooks[0].title}
-                        </h4>
-                        <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
-                          {selectedBooks[0].author}
-                        </p>
-                        <p className="text-xs mb-4" style={{ color: 'var(--dark-text)' }}>
-                          {selectedBooks[0].year && `${selectedBooks[0].year} • `}
-                          {selectedBooks[0].pageCount && `${selectedBooks[0].pageCount} pages`}
-                        </p>
+                    <h4 className="font-bold mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                      {selectedBook.title}
+                    </h4>
+                    <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
+                      {selectedBook.author}
+                    </p>
+                    <p className="text-xs mb-4" style={{ color: 'var(--dark-text)' }}>
+                      {selectedBook.year && `${selectedBook.year} • `}
+                      {selectedBook.pageCount && `${selectedBook.pageCount} pages`}
+                    </p>
 
-                        {/* Custom Cover Options */}
-                        <div className="space-y-3 mb-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
-                          <Label className="text-xs font-bold" style={{ color: 'var(--dark-text)' }}>
-                            🎨 Personnaliser la couverture
-                          </Label>
+                    {/* Custom Cover Options */}
+                    <div className="space-y-3 mb-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
+                      <Label className="text-xs font-bold" style={{ color: 'var(--dark-text)' }}>
+                        🎨 Personnaliser la couverture
+                      </Label>
 
-                          <div>
-                            <Label htmlFor="cover-url" className="text-xs flex items-center gap-1 mb-1">
-                              <LinkIcon className="w-3 h-3" />
-                              URL de la couverture
-                            </Label>
-                            <Input
-                              id="cover-url"
-                              value={customCoverUrl}
-                              onChange={(e) => {
-                                setCustomCoverUrl(e.target.value);
-                                setUploadedCoverFile(null);
-                                setUploadedCoverPreview(null);
-                              }}
-                              placeholder="https://..."
-                              className="text-xs"
-                            />
-                          </div>
+                      <div>
+                        <Label htmlFor="cover-url" className="text-xs flex items-center gap-1 mb-1">
+                          <LinkIcon className="w-3 h-3" />
+                          URL de la couverture
+                        </Label>
+                        <Input
+                          id="cover-url"
+                          value={customCoverUrl}
+                          onChange={(e) => {
+                            setCustomCoverUrl(e.target.value);
+                            setUploadedCoverFile(null);
+                            setUploadedCoverPreview(null);
+                          }}
+                          placeholder="https://..."
+                          className="text-xs"
+                        />
+                      </div>
 
-                          <div>
-                            <Label htmlFor="cover-upload" className="text-xs flex items-center gap-1 mb-1">
-                              <Upload className="w-3 h-3" />
-                              Importer une image
-                            </Label>
-                            <Input
-                              id="cover-upload"
-                              type="file"
-                              accept="image/png,image/jpeg,image/jpg"
-                              onChange={handleFileUpload}
-                              className="text-xs"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Multiple books preview */}
-                        <div className="grid grid-cols-3 gap-2 mb-4 max-h-[300px] overflow-y-auto">
-                          {selectedBooks.map((book) => (
-                            <div key={book.id} className="relative">
-                              <div className="w-full aspect-[2/3] rounded-lg overflow-hidden shadow-md"
-                                   style={{ backgroundColor: 'var(--beige)' }}>
-                                {book.coverUrl ? (
-                                  <img
-                                    src={book.coverUrl}
-                                    alt={book.title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?';
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
+                      <div>
+                        <Label htmlFor="cover-upload" className="text-xs flex items-center gap-1 mb-1">
+                          <Upload className="w-3 h-3" />
+                          Importer une image
+                        </Label>
+                        <Input
+                          id="cover-upload"
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg"
+                          onChange={handleFileUpload}
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Selection */}
+                    <div>
+                      <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                        Statut du livre
+                      </Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {["Lu", "À lire", "Mes envies"].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setStatus(s)}
+                            className={`p-3 rounded-lg text-sm font-medium transition-all ${
+                              status === s ? 'shadow-md scale-105' : 'hover:shadow-md'
+                            }`}
+                            style={{
+                              backgroundColor: status === s ? 'var(--soft-pink)' : 'white',
+                              color: status === s ? 'white' : '#000000',
+                              border: '2px solid',
+                              borderColor: status === s ? 'var(--deep-pink)' : 'var(--beige)'
+                            }}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
                     <Button
-                      onClick={createFromSearch}
-                      className="w-full text-white font-medium"
+                      onClick={addSelectedBookToLibrary}
+                      className="w-full text-white font-medium mt-4"
                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                      disabled={selectedBooks.length === 0}
+                      disabled={!selectedBook || addBookMutation.isPending}
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Ajouter {selectedBooks.length > 1 ? `les ${selectedBooks.length} livres` : 'ce livre'}
+                      {addBookMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Ajout en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Ajouter ce livre
+                        </>
+                      )}
                     </Button>
                   </div>
                 ) : (
@@ -701,7 +685,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                        style={{ backgroundColor: 'var(--cream)' }}>
                     <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: 'var(--warm-pink)' }} />
                     <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                      Sélectionnez un ou plusieurs livres pour continuer
+                      Sélectionnez un livre pour continuer
                     </p>
                   </div>
                 )}
@@ -709,17 +693,26 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
             </div>
 
             {/* Mobile sticky footer with add button */}
-            {selectedBooks.length > 0 && (
+            {selectedBook && (
               <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 shadow-lg z-50"
                    style={{ borderColor: 'var(--soft-pink)' }}>
                 <Button
-                  onClick={createFromSearch}
+                  onClick={addSelectedBookToLibrary}
                   className="w-full text-white font-medium py-6"
                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  disabled={selectedBooks.length === 0}
+                  disabled={!selectedBook || addBookMutation.isPending}
                 >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Ajouter {selectedBooks.length > 1 ? `les ${selectedBooks.length} livres` : 'ce livre'}
+                  {addBookMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Ajout en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5 mr-2" />
+                      Ajouter ce livre
+                    </>
+                  )}
                 </Button>
               </div>
             )}

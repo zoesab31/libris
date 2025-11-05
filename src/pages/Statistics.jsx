@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Added Button import
 import { BarChart, BookOpen, Calendar, TrendingUp, Palette, FileText } from "lucide-react";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 
@@ -10,6 +12,8 @@ const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'
 export default function Statistics() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [viewMode, setViewMode] = useState('single'); // 'single', 'all', 'compare'
+  const [selectedYears, setSelectedYears] = useState([new Date().getFullYear()]); // Initialize with current year
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -27,28 +31,38 @@ export default function Statistics() {
   });
 
   const booksThisYear = useMemo(() => {
-    return myBooks.filter(b => {
-      if (!b.end_date || b.status !== "Lu") return false;
-      const year = new Date(b.end_date).getFullYear();
-      return year === selectedYear;
-    });
-  }, [myBooks, selectedYear]);
+    if (viewMode === 'all') {
+      return myBooks.filter(b => b.end_date && b.status === "Lu");
+    } else if (viewMode === 'compare') {
+      return myBooks.filter(b => {
+        if (!b.end_date || b.status !== "Lu") return false;
+        const year = new Date(b.end_date).getFullYear();
+        return selectedYears.includes(year);
+      });
+    } else { // 'single' mode
+      return myBooks.filter(b => {
+        if (!b.end_date || b.status !== "Lu") return false;
+        const year = new Date(b.end_date).getFullYear();
+        return year === selectedYear;
+      });
+    }
+  }, [myBooks, selectedYear, viewMode, selectedYears]);
 
   const genreStats = useMemo(() => {
     const stats = {};
     booksThisYear.forEach(userBook => {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book) return;
-      
-      const genres = book.custom_genres && book.custom_genres.length > 0 
-        ? book.custom_genres 
+
+      const genres = book.custom_genres && book.custom_genres.length > 0
+        ? book.custom_genres
         : (book.genre ? [book.genre] : ['Non classé']);
-      
+
       genres.forEach(genre => {
         stats[genre] = (stats[genre] || 0) + 1;
       });
     });
-    
+
     return Object.entries(stats)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
@@ -59,12 +73,12 @@ export default function Statistics() {
     booksThisYear.forEach(userBook => {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book || !book.tags) return;
-      
+
       book.tags.forEach(tag => {
         stats[tag] = (stats[tag] || 0) + 1;
       });
     });
-    
+
     return Object.entries(stats)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
@@ -89,33 +103,122 @@ export default function Statistics() {
       name: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'][i],
       count: 0
     }));
-    
+
     booksThisYear.forEach(userBook => {
       if (!userBook.end_date) return;
       const month = new Date(userBook.end_date).getMonth();
       months[month].count++;
     });
-    
+
     return months;
   }, [booksThisYear]);
+
+  const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
+
+  const toggleYearSelection = (year) => {
+    if (selectedYears.includes(year)) {
+      setSelectedYears(selectedYears.filter(y => y !== year));
+    } else {
+      setSelectedYears([...selectedYears, year].sort((a, b) => b - a)); // Sort for consistent display
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))' }}>
-            <BarChart className="w-7 h-7 text-white" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))' }}>
+              <BarChart className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                Statistiques {viewMode === 'single' ? selectedYear : viewMode === 'all' ? 'Globales' : 'Comparaison'}
+              </h1>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                {booksThisYear.length} livre{booksThisYear.length > 1 ? 's' : ''} lu{booksThisYear.length > 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              Statistiques {selectedYear}
-            </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {booksThisYear.length} livre{booksThisYear.length > 1 ? 's' : ''} lu{booksThisYear.length > 1 ? 's' : ''}
-            </p>
+
+          {/* View Mode Selector */}
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'single' ? 'default' : 'outline'}
+              onClick={() => setViewMode('single')}
+              style={viewMode === 'single' ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: 'white'
+              } : { color: '#000000', borderColor: 'var(--beige)' }}
+            >
+              Année unique
+            </Button>
+            <Button
+              variant={viewMode === 'all' ? 'default' : 'outline'}
+              onClick={() => setViewMode('all')}
+              style={viewMode === 'all' ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: 'white'
+              } : { color: '#000000', borderColor: 'var(--beige)' }}
+            >
+              Toutes
+            </Button>
+            <Button
+              variant={viewMode === 'compare' ? 'default' : 'outline'}
+              onClick={() => setViewMode('compare')}
+              style={viewMode === 'compare' ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: 'white'
+              } : { color: '#000000', borderColor: 'var(--beige)' }}
+            >
+              Comparer
+            </Button>
           </div>
         </div>
+
+        {/* Year Selection */}
+        {viewMode === 'single' && (
+          <div className="mb-6">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-4 py-2 rounded-lg border-2 font-medium"
+              style={{ borderColor: 'var(--beige)', color: '#000000' }}
+            >
+              {years.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {viewMode === 'compare' && (
+          <div className="mb-6 p-4 rounded-xl bg-white shadow-lg">
+            <p className="text-sm font-medium mb-3" style={{ color: 'var(--dark-text)' }}>
+              Sélectionnez les années à comparer :
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {years.map(year => (
+                <button
+                  key={year}
+                  onClick={() => toggleYearSelection(year)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    selectedYears.includes(year) ? 'shadow-md' : ''
+                  }`}
+                  style={{
+                    backgroundColor: selectedYears.includes(year) ? 'var(--soft-pink)' : 'var(--cream)',
+                    color: selectedYears.includes(year) ? 'white' : '#000000',
+                    border: '2px solid',
+                    borderColor: selectedYears.includes(year) ? 'var(--deep-pink)' : 'var(--beige)'
+                  }}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-0 shadow-lg">
