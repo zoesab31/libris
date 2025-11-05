@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +33,7 @@ export default function NotificationBell({ user }) {
     return () => document.removeEventListener('click', initAudio);
   }, []);
 
-  const { data: notifications = [] } = useQuery({
+  const { data: allNotifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => base44.entities.Notification.filter({ 
       created_by: user?.email 
@@ -40,6 +41,12 @@ export default function NotificationBell({ user }) {
     enabled: !!user,
     refetchInterval: 5000,
   });
+
+  // Filter out notifications where from_user equals current user email
+  // This prevents showing notifications for actions the user did themselves
+  const notifications = allNotifications.filter(n => 
+    !n.from_user || n.from_user !== user?.email
+  );
 
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId) => 
