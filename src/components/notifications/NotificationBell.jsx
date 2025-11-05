@@ -49,6 +49,19 @@ export default function NotificationBell({ user }) {
     },
   });
 
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const unreadNotifications = notifications.filter(n => !n.is_read);
+      const updatePromises = unreadNotifications.map(n => 
+        base44.entities.Notification.update(n.id, { is_read: true })
+      );
+      await Promise.all(updatePromises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   // Play notification sound
@@ -121,8 +134,15 @@ export default function NotificationBell({ user }) {
     }
   };
 
+  const handleOpenChange = (open) => {
+    if (open && unreadCount > 0) {
+      // Mark all notifications as read when opening the popover
+      markAllAsReadMutation.mutate();
+    }
+  };
+
   return (
-    <Popover>
+    <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
@@ -137,7 +157,7 @@ export default function NotificationBell({ user }) {
       <PopoverContent className="w-80 max-h-96 overflow-y-auto" align="end">
         <div className="space-y-1">
           <h3 className="font-bold text-lg mb-3" style={{ color: 'var(--dark-text)' }}>
-            Notifications {unreadCount > 0 && `(${unreadCount})`}
+            Notifications
           </h3>
           
           {notifications.length === 0 ? (
@@ -151,8 +171,8 @@ export default function NotificationBell({ user }) {
                 onClick={() => handleNotificationClick(notification)}
                 className="w-full p-3 rounded-lg text-left transition-all hover:shadow-md"
                 style={{ 
-                  backgroundColor: notification.is_read ? 'white' : 'var(--cream)',
-                  border: notification.is_read ? '1px solid var(--beige)' : '2px solid var(--soft-pink)'
+                  backgroundColor: 'white',
+                  border: '1px solid var(--beige)'
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -170,10 +190,6 @@ export default function NotificationBell({ user }) {
                       })}
                     </p>
                   </div>
-                  {!notification.is_read && (
-                    <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
-                         style={{ backgroundColor: 'var(--deep-pink)' }} />
-                  )}
                 </div>
               </button>
             ))
