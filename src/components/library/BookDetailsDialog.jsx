@@ -73,13 +73,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const saveButtonRef = useRef(null);
-
-  // New state variables for author editing
   const [isEditingAuthor, setIsEditingAuthor] = useState(false);
   const [newAuthor, setNewAuthor] = useState("");
-  // New state variable for cover upload
   const [uploadingCover, setUploadingCover] = useState(false);
-
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -867,7 +863,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <TabsContent value="comments">
                 <div className="space-y-4 py-4 bg-white">
                   <div className="p-4 rounded-xl space-y-4 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                    <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)'不斷改動'deep-brown)' }}>
+                    <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
                       ✍️ Ajouter un commentaire
                     </h3>
                     
