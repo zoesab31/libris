@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle, Download } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -19,7 +18,6 @@ import {
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 const navigationItems = [
   {
@@ -97,51 +95,10 @@ const navigationItems = [
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
-
-  // Handle PWA install prompt
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallButton(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      setShowInstallButton(false);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      toast.info("L'installation n'est pas disponible sur ce navigateur");
-      return;
-    }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      toast.success("✅ Application installée avec succès !");
-      setShowInstallButton(false);
-    } else {
-      toast.info("Installation annulée");
-    }
-
-    setDeferredPrompt(null);
-  };
 
   // Apply theme class to body
   useEffect(() => {
@@ -343,17 +300,6 @@ export default function Layout({ children, currentPageName }) {
             </div>
             {user && (
               <div className="flex items-center gap-2 md:gap-3">
-                {showInstallButton && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleInstallClick}
-                    className="relative w-8 h-8 md:w-10 md:h-10 animate-pulse"
-                    title="Installer l'application"
-                  >
-                    <Download className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
-                  </Button>
-                )}
                 <Link to={createPageUrl("Chat")}>
                   <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
                     <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
