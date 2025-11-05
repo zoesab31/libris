@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users, Check } from "lucide-react";
+import { BookOpen, Star, Music, Users, Check, FolderPlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import BookDetailsDialog from "./BookDetailsDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function BookGrid({ userBooks, allBooks, customShelves, isLoading, selectionMode, selectedBooks, onSelectionChange, onExitSelectionMode }) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
+  const [showShelfDialog, setShowShelfDialog] = useState(false);
+  const [selectedShelf, setSelectedShelf] = useState("");
   const queryClient = useQueryClient();
 
   const deleteMultipleMutation = useMutation({
@@ -44,12 +55,47 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
     }
   });
 
+  const addToShelfMutation = useMutation({
+    mutationFn: async ({ bookIds, shelfName }) => {
+      const updatePromises = bookIds.map(bookId => 
+        base44.entities.UserBook.update(bookId, { 
+          custom_shelf: shelfName || undefined 
+        })
+      );
+      await Promise.all(updatePromises);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      const shelfName = variables.shelfName || "Aucune étagère";
+      toast.success(`${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ajouté${selectedBooks.length > 1 ? 's' : ''} à "${shelfName}"`);
+      setShowShelfDialog(false);
+      setSelectedShelf("");
+      onExitSelectionMode();
+    },
+    onError: (error) => {
+      console.error("Error adding to shelf:", error);
+      toast.error("Erreur lors de l'ajout à l'étagère");
+    }
+  });
+
   const toggleBookSelection = (bookId) => {
     if (selectedBooks.includes(bookId)) {
       onSelectionChange(selectedBooks.filter(id => id !== bookId));
     } else {
       onSelectionChange([...selectedBooks, bookId]);
     }
+  };
+
+  const handleAddToShelf = () => {
+    if (selectedBooks.length === 0) return;
+    setShowShelfDialog(true);
+  };
+
+  const confirmAddToShelf = () => {
+    addToShelfMutation.mutate({
+      bookIds: selectedBooks,
+      shelfName: selectedShelf
+    });
   };
 
   // Handle delete when selection mode and books selected - MUST BE BEFORE ANY RETURN
@@ -136,23 +182,34 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
       )}
 
       {selectionMode && selectedBooks.length > 0 && (
-        <div className="mb-4 p-4 rounded-xl flex items-center justify-between" 
+        <div className="mb-4 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3" 
              style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
           <span className="font-bold">
             {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
           </span>
-          <button
-            onClick={() => {
-              if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-                deleteMultipleMutation.mutate(selectedBooks);
-              }
-            }}
-            disabled={deleteMultipleMutation.isPending}
-            className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-          >
-            {deleteMultipleMutation.isPending ? "Suppression..." : "Supprimer"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddToShelf}
+              disabled={addToShelfMutation.isPending}
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600 flex items-center gap-2"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+            >
+              <FolderPlus className="w-4 h-4" />
+              Ajouter à une étagère
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+                  deleteMultipleMutation.mutate(selectedBooks);
+                }
+              }}
+              disabled={deleteMultipleMutation.isPending}
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+            >
+              {deleteMultipleMutation.isPending ? "Suppression..." : "Supprimer"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -279,6 +336,73 @@ export default function BookGrid({ userBooks, allBooks, customShelves, isLoading
           onOpenChange={(open) => !open && setSelectedUserBook(null)}
         />
       )}
+
+      {/* Add to Shelf Dialog */}
+      <Dialog open={showShelfDialog} onOpenChange={setShowShelfDialog}>
+        <DialogContent className="bg-white border border-neutral-200 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+              <FolderPlus className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+              Ajouter à une étagère
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-neutral-600">
+              Sélectionnez l'étagère où ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
+            </p>
+
+            <div>
+              <Label htmlFor="shelf-select">Étagère</Label>
+              <Select value={selectedShelf} onValueChange={setSelectedShelf}>
+                <SelectTrigger id="shelf-select">
+                  <SelectValue placeholder="Choisir une étagère..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Aucune étagère</SelectItem>
+                  {customShelves.map(shelf => (
+                    <SelectItem key={shelf.id} value={shelf.name}>
+                      {shelf.icon} {shelf.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {customShelves.length === 0 && (
+              <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  💡 Vous n'avez pas encore d'étagère personnalisée. Créez-en une depuis le bouton "Gérer mes étagères" !
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowShelfDialog(false);
+                setSelectedShelf("");
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={confirmAddToShelf}
+              disabled={addToShelfMutation.isPending}
+              className="text-white"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+            >
+              {addToShelfMutation.isPending ? (
+                <>Ajout...</>
+              ) : (
+                <>Confirmer</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
