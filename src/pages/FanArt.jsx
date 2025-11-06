@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -53,6 +54,8 @@ export default function FanArt() {
     if (!selectedBook) return { fanArts: [], title: "Tous les fan arts" };
     
     const bookData = fanArtsByBook[selectedBook];
+    if (!bookData) return { fanArts: [], title: "Tous les fan arts" }; // Safety check
+    
     const bookTitle = bookData.book?.title || "Sans livre";
     
     if (!selectedSubfolder) {
@@ -102,6 +105,8 @@ export default function FanArt() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {books.map(bookId => {
               const bookData = fanArtsByBook[bookId];
+              if (!bookData) return null; // Safety check
+              
               const book = bookData.book;
               const totalFanArts = Object.values(bookData.subfolders).flat().length;
               const subfoldersCount = Object.keys(bookData.subfolders).length;
@@ -148,41 +153,43 @@ export default function FanArt() {
             </Button>
 
             <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>
-              {fanArtsByBook[selectedBook].book?.title || "Sans livre"}
+              {fanArtsByBook[selectedBook]?.book?.title || "Sans livre"}
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-              {Object.keys(fanArtsByBook[selectedBook].subfolders).map(subfolder => {
-                const fanArtsCount = fanArtsByBook[selectedBook].subfolders[subfolder].length;
-                const firstFanArt = fanArtsByBook[selectedBook].subfolders[subfolder][0];
+            {fanArtsByBook[selectedBook] && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                {Object.keys(fanArtsByBook[selectedBook].subfolders).map(subfolder => {
+                  const fanArtsCount = fanArtsByBook[selectedBook].subfolders[subfolder].length;
+                  const firstFanArt = fanArtsByBook[selectedBook].subfolders[subfolder][0];
 
-                return (
-                  <button
-                    key={subfolder}
-                    onClick={() => setSelectedSubfolder(subfolder)}
-                    className="group p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                    style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
-                  >
-                    <div className="mb-4 w-full aspect-square rounded-lg overflow-hidden shadow-md"
-                         style={{ backgroundColor: 'var(--beige)' }}>
-                      {firstFanArt?.image_url ? (
-                        <img src={firstFanArt.image_url} alt={subfolder} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="font-bold text-center mb-2" style={{ color: 'var(--dark-text)' }}>
-                      📁 {subfolder}
-                    </h3>
-                    <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
-                      {fanArtsCount} fan art{fanArtsCount > 1 ? 's' : ''}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <button
+                      key={subfolder}
+                      onClick={() => setSelectedSubfolder(subfolder)}
+                      className="group p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                      style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                    >
+                      <div className="mb-4 w-full aspect-square rounded-lg overflow-hidden shadow-md"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {firstFanArt?.image_url ? (
+                          <img src={firstFanArt.image_url} alt={subfolder} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-center mb-2" style={{ color: 'var(--dark-text)' }}>
+                        📁 {subfolder}
+                      </h3>
+                      <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                        {fanArtsCount} fan art{fanArtsCount > 1 ? 's' : ''}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div>
@@ -207,8 +214,7 @@ export default function FanArt() {
         <AddFanArtDialog 
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
-          books={allBooks}
-          existingFolders={books}
+          user={user}
         />
       </div>
     </div>
