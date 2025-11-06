@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -97,7 +98,7 @@ export default function VirtualLibrary() {
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
-  const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
+  const shelves = Math.max(Math.ceil(readBooks.length / 14), 3); // Changed from 12 to 14
 
   useEffect(() => {
     if (readBooks.length > 0 && user) {
@@ -184,11 +185,11 @@ export default function VirtualLibrary() {
               <div key={shelfNum} className="relative">
                 <div className="min-h-[200px] rounded-lg shadow-lg flex items-end px-4 py-4 gap-2 overflow-x-auto"
                      style={{ backgroundColor: '#8B4513' }}>
-                  {readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).map((userBook, idx) => {
+                  {readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).map((userBook, idx) => { // Changed from 12 to 14
                     const book = allBooks.find(b => b.id === userBook.book_id);
                     const bookColor = userBook.book_color || "#FFB3D9";
                     const textColor = getContrastColor(bookColor);
-                    const globalIndex = shelfNum * 12 + idx;
+                    const globalIndex = shelfNum * 14 + idx; // Changed from 12 to 14
                     const isColorPickerOpen = openColorPicker === userBook.id;
                     
                     return (
@@ -287,7 +288,7 @@ export default function VirtualLibrary() {
                       </Popover>
                     );
                   })}
-                  {Array(Math.max(0, 12 - (readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).length))).fill(0).map((_, emptyIdx) => (
+                  {Array(Math.max(0, 14 - (readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).length))).fill(0).map((_, emptyIdx) => ( // Changed from 12 to 14
                     <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-16 h-[200px] flex-shrink-0" />
                   ))}
                 </div>
@@ -301,7 +302,7 @@ export default function VirtualLibrary() {
             📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
             <br />
             <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-              Cliquez sur un livre pour changer sa couleur
+              Cliquez sur un livre pour changer sa couleur • 14 livres par étagère
             </span>
           </p>
         </div>
