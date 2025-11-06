@@ -71,16 +71,15 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("search");
 
-  // Search state
+  // Search tab state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedBook, setSelectedBook] = useState(null); // Changed to singular for single selection
-  const [customCoverUrl, setCustomCoverUrl] = useState("");
-  const [uploadedCoverFile, setUploadedCoverFile] = useState(null);
-  const [uploadedCoverPreview, setUploadedCoverPreview] = useState(null);
-  const [status, setStatus] = useState("À lire"); // New state for immediate status selection
+  const [selectedBooks, setSelectedBooks] = useState([]); // Changed to array for multiple selection
+  const [defaultStatus, setDefaultStatus] = useState("À lire"); // Status for all selected books
+  const [individualStatuses, setIndividualStatuses] = useState({}); // Individual status overrides
 
+  // Manual tab state
   const [step, setStep] = useState(1);
   const [bookData, setBookData] = useState({
     title: "",
@@ -183,36 +182,6 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Handle file upload for custom cover (for search tab)
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadedCoverFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedCoverPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Get final cover URL for preview (for search tab)
-  const getFinalCoverUrl = (book) => {
-    if (selectedBook && selectedBook.id === book.id) {
-      if (uploadedCoverPreview) return uploadedCoverPreview;
-      if (customCoverUrl) return customCoverUrl;
-    }
-    return book.coverUrl;
-  };
-
-  // Toggle book selection (for single selection in search tab)
-  const toggleBookSelection = (book) => {
-    setSelectedBook(prev => (prev && prev.id === book.id) ? null : book);
-    setCustomCoverUrl(""); // Reset custom cover options on new selection
-    setUploadedCoverFile(null);
-    setUploadedCoverPreview(null);
-  };
-
   // Placeholder mutation for awarding points
   const awardPointsForLuStatusMutation = useMutation({
     mutationFn: async () => {
@@ -227,24 +196,89 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     }
   });
 
-  // Mutation for adding a UserBook entry for an *existing* book_id
-  const addBookMutation = useMutation({
-    mutationFn: async ({ bookId, status, book_color }) => {
-      await base44.entities.UserBook.create({
-        book_id: bookId,
-        status: status,
-        book_color: book_color,
-      });
+  // Toggle book selection (for multiple selection in search tab)
+  const toggleBookSelection = (book) => {
+    setSelectedBooks(prev => {
+      if (prev.find(b => b.id === book.id)) {
+        // Remove book
+        setIndividualStatuses(current => {
+          const newStatuses = { ...current };
+          delete newStatuses[book.id];
+          return newStatuses;
+        });
+        return prev.filter(b => b.id !== book.id);
+      } else {
+        // Add book
+        return [...prev, book];
+      }
+    });
+  };
+
+  // Mutation for adding multiple UserBook entries from search results
+  const addBooksMutation = useMutation({
+    mutationFn: async ({ books, statuses }) => {
+      const addedBookIds = [];
+      for (const book of books) {
+        let finalCoverUrl = book.coverUrl;
+        // In a multi-selection scenario, custom covers for individual books are less practical.
+        // We will stick to the cover URL from Google Books or a default.
+
+        let coverColor = '#FFB3D9'; // Default color
+        if (finalCoverUrl) {
+          try {
+            coverColor = await getDominantColor(finalCoverUrl);
+          } catch (error) {
+            console.log(`Could not extract color for book ${book.title}, using default`, error);
+          }
+        }
+
+        // Map categories to genre
+        let genre = "Autre";
+        if (book.categories && book.categories.length > 0) {
+          const category = book.categories[0].toLowerCase();
+          if (category.includes("fiction") || category.includes("roman")) genre = "Romance";
+          else if (category.includes("fantasy") || category.includes("fantastique")) genre = "Fantasy";
+          else if (category.includes("thriller")) genre = "Thriller";
+          else if (category.includes("young adult") || category.includes("jeunesse")) genre = "Young Adult";
+          else if (category.includes("science fiction")) genre = "Science-Fiction";
+          else if (category.includes("historique")) genre = "Historique";
+        }
+        if (!GENRES.includes(genre)) {
+          genre = "Autre";
+        }
+
+        // Create the Book entity first
+        const createdBook = await base44.entities.Book.create({
+          title: book.title,
+          author: book.author,
+          cover_url: finalCoverUrl,
+          page_count: book.pageCount,
+          publication_year: book.year,
+          synopsis: book.description,
+          isbn: book.isbn,
+          genre: genre,
+        });
+
+        // Then create the UserBook entry
+        const bookStatus = statuses[book.id] || defaultStatus;
+        await base44.entities.UserBook.create({
+          book_id: createdBook.id,
+          status: bookStatus,
+          book_color: coverColor,
+          // created_by: user.id // Assuming user ID is available, if needed
+        });
+        addedBookIds.push(createdBook.id);
+
+        if (user && bookStatus === "Lu") {
+          await awardPointsForLuStatusMutation.mutateAsync();
+        }
+      }
     },
     onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       queryClient.invalidateQueries({ queryKey: ['books'] });
-
-      if (user && variables.status === "Lu") {
-        await awardPointsForLuStatusMutation.mutateAsync();
-      }
-
-      toast.success("✨ Livre ajouté avec succès !", {
+      
+      toast.success(`✨ ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ajouté${selectedBooks.length > 1 ? 's' : ''} !`, {
         duration: 3000,
         style: {
           background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
@@ -252,84 +286,18 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
           fontWeight: 'bold'
         }
       });
-
-      setSelectedBook(null);
+      
+      setSelectedBooks([]);
       setSearchQuery("");
-      setStatus("À lire");
-      setCustomCoverUrl("");
-      setUploadedCoverFile(null);
-      setUploadedCoverPreview(null);
+      setDefaultStatus("À lire");
+      setIndividualStatuses({});
       onOpenChange(false);
     },
     onError: (error) => {
-      console.error("Error adding user book from search:", error);
-      toast.error("Erreur lors de l'ajout du livre à votre bibliothèque.");
+      console.error("Error adding books from search:", error);
+      toast.error("Erreur lors de l'ajout des livres à votre bibliothèque.");
     }
   });
-
-  // Function to handle adding the selected book from search results
-  const addSelectedBookToLibrary = async () => {
-    if (!selectedBook) return;
-
-    try {
-      let bookToProcess = { ...selectedBook };
-      let finalCoverUrl = bookToProcess.coverUrl;
-
-      // Handle custom cover (URL or file upload)
-      if (uploadedCoverFile) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadedCoverFile });
-        finalCoverUrl = file_url;
-      } else if (customCoverUrl) {
-        finalCoverUrl = customCoverUrl;
-      }
-
-      let coverColor = '#FFB3D9'; // Default color
-      if (finalCoverUrl) {
-        try {
-          coverColor = await getDominantColor(finalCoverUrl);
-        } catch (error) {
-          console.log("Could not extract color for search result, using default", error);
-        }
-      }
-
-      // Map categories to genre
-      let genre = "Autre";
-      if (bookToProcess.categories.length > 0) {
-        const category = bookToProcess.categories[0].toLowerCase();
-        if (category.includes("fiction") || category.includes("roman")) genre = "Romance";
-        else if (category.includes("fantasy") || category.includes("fantastique")) genre = "Fantasy";
-        else if (category.includes("thriller")) genre = "Thriller";
-        else if (category.includes("young adult") || category.includes("jeunesse")) genre = "Young Adult";
-        else if (category.includes("science fiction")) genre = "Science-Fiction";
-        else if (category.includes("historique")) genre = "Historique";
-      }
-      if (!GENRES.includes(genre)) {
-        genre = "Autre";
-      }
-
-      // First, ensure the Book entity exists in our database
-      // In a real application, you might query your backend by ISBN/title/author
-      // For this implementation, we'll create a new Book entity if found via Google Books search
-      // (similar to the previous multi-selection behavior, but for a single book).
-      const createdBook = await base44.entities.Book.create({
-        title: bookToProcess.title,
-        author: bookToProcess.author,
-        cover_url: finalCoverUrl,
-        page_count: bookToProcess.pageCount,
-        publication_year: bookToProcess.year,
-        synopsis: bookToProcess.description,
-        isbn: bookToProcess.isbn,
-        genre: genre,
-      });
-
-      // Then, add the UserBook entry using the addBookMutation
-      addBookMutation.mutate({ bookId: createdBook.id, status: status, book_color: coverColor });
-
-    } catch (error) {
-      console.error("Erreur lors de l'ajout du livre depuis la recherche:", error);
-      toast.error("Erreur lors de l'ajout du livre depuis la recherche");
-    }
-  };
 
 
   const createMutation = useMutation({
@@ -389,15 +357,13 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   const resetForm = () => {
     setStep(1);
-    setActiveTab("search");
+    setActiveTab("search"); // Reset to search tab
     setSearchQuery("");
     setSearchResults([]);
-    setSelectedBook(null); // Updated for singular selection
-    setCustomCoverUrl("");
-    setUploadedCoverFile(null);
-    setUploadedCoverPreview(null);
-    setStatus("À lire"); // Reset new status state
-    setBookData({
+    setSelectedBooks([]); // Reset selected books
+    setDefaultStatus("À lire"); // Reset default status
+    setIndividualStatuses({}); // Reset individual statuses
+    setBookData({ // Reset manual tab form
       title: "",
       author: "",
       cover_url: "",
@@ -408,7 +374,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       isbn: "",
       publication_year: ""
     });
-    setUserBookData({
+    setUserBookData({ // Reset manual tab user book data
       status: "À lire",
       rating: "",
       review: "",
@@ -476,7 +442,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Left: Search Results */}
-              <div className="lg:col-span-2 space-y-3">
+              <div className={`space-y-3 ${selectedBooks.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
                 {isSearching && (
                   <div className="flex items-center justify-center p-8">
                     <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--deep-pink)' }} />
@@ -492,7 +458,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 {!isSearching && searchResults.length > 0 && (
                   <div className="max-h-[500px] overflow-y-auto space-y-3 pr-2">
                     {searchResults.map((book) => {
-                      const isSelected = selectedBook && selectedBook.id === book.id;
+                      const isSelected = selectedBooks.find(b => b.id === book.id);
 
                       return (
                         <button
@@ -508,13 +474,13 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                             borderColor: isSelected ? 'var(--deep-pink)' : 'transparent'
                           }}
                         >
-                          {/* Radio Button */}
+                          {/* Checkbox for multiple selection */}
                           <div className="flex-shrink-0 pt-1">
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${
-                              isSelected ? 'bg-gradient-to-br from-pink-500 to-pink-600' : 'border-gray-300'
-                            }`}>
-                              {isSelected && <div className="w-3 h-3 rounded-full bg-white" />}
-                            </div>
+                            <Checkbox checked={isSelected} className={`w-5 h-5 rounded-full border-2 ${
+                              isSelected ? 'bg-gradient-to-br from-pink-500 to-pink-600 border-pink-500' : 'border-gray-300'
+                            }`}
+                              style={isSelected ? { borderColor: 'var(--deep-pink)', backgroundColor: 'var(--deep-pink)' } : {}}
+                            />
                           </div>
 
                           {/* Book Cover */}
@@ -557,102 +523,33 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 )}
               </div>
 
-              {/* Right: Preview / Actions */}
-              <div className="hidden lg:block lg:col-span-1">
-                {selectedBook ? (
+              {/* Right: Summary / Actions for Selected Books */}
+              {selectedBooks.length > 0 && (
+                <div className="lg:col-span-1">
                   <div className="sticky top-0 p-6 rounded-xl shadow-lg"
                        style={{ backgroundColor: 'white', borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--soft-pink)' }}>
                     <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      📖 Aperçu
+                      📖 {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
                     </h3>
 
-                    {/* Single book preview with customization */}
-                    <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4"
-                         style={{ backgroundColor: 'var(--beige)' }}>
-                      {getFinalCoverUrl(selectedBook) ? (
-                        <img
-                          src={getFinalCoverUrl(selectedBook)}
-                          alt={selectedBook.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = 'https://placehold.co/300x450/FFE1F0/FF1493?text=?';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                      )}
-                    </div>
-
-                    <h4 className="font-bold mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                      {selectedBook.title}
-                    </h4>
-                    <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
-                      {selectedBook.author}
-                    </p>
-                    <p className="text-xs mb-4" style={{ color: 'var(--dark-text)' }}>
-                      {selectedBook.year && `${selectedBook.year} • `}
-                      {selectedBook.pageCount && `${selectedBook.pageCount} pages`}
-                    </p>
-
-                    {/* Custom Cover Options */}
-                    <div className="space-y-3 mb-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
-                      <Label className="text-xs font-bold" style={{ color: 'var(--dark-text)' }}>
-                        🎨 Personnaliser la couverture
-                      </Label>
-
-                      <div>
-                        <Label htmlFor="cover-url" className="text-xs flex items-center gap-1 mb-1">
-                          <LinkIcon className="w-3 h-3" />
-                          URL de la couverture
-                        </Label>
-                        <Input
-                          id="cover-url"
-                          value={customCoverUrl}
-                          onChange={(e) => {
-                            setCustomCoverUrl(e.target.value);
-                            setUploadedCoverFile(null);
-                            setUploadedCoverPreview(null);
-                          }}
-                          placeholder="https://..."
-                          className="text-xs"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="cover-upload" className="text-xs flex items-center gap-1 mb-1">
-                          <Upload className="w-3 h-3" />
-                          Importer une image
-                        </Label>
-                        <Input
-                          id="cover-upload"
-                          type="file"
-                          accept="image/png,image/jpeg,image/jpg"
-                          onChange={handleFileUpload}
-                          className="text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Status Selection */}
-                    <div>
+                    {/* Status for all books */}
+                    <div className="mb-4">
                       <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                        Statut du livre
+                        Statut par défaut
                       </Label>
                       <div className="grid grid-cols-3 gap-2">
                         {["Lu", "À lire", "Mes envies"].map((s) => (
                           <button
                             key={s}
-                            onClick={() => setStatus(s)}
+                            onClick={() => setDefaultStatus(s)}
                             className={`p-3 rounded-lg text-sm font-medium transition-all ${
-                              status === s ? 'shadow-md scale-105' : 'hover:shadow-md'
+                              defaultStatus === s ? 'shadow-md scale-105' : 'hover:shadow-md'
                             }`}
                             style={{
-                              backgroundColor: status === s ? 'var(--soft-pink)' : 'white',
-                              color: status === s ? 'white' : '#000000',
+                              backgroundColor: defaultStatus === s ? 'var(--soft-pink)' : 'white',
+                              color: defaultStatus === s ? 'white' : '#000000',
                               border: '2px solid',
-                              borderColor: status === s ? 'var(--deep-pink)' : 'var(--beige)'
+                              borderColor: defaultStatus === s ? 'var(--deep-pink)' : 'var(--beige)'
                             }}
                           >
                             {s}
@@ -661,13 +558,60 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                       </div>
                     </div>
 
+                    {/* Individual statuses override */}
+                    <div className="mb-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
+                      <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                        Statut individuel (optionnel)
+                      </Label>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        {selectedBooks.map((book) => (
+                          <div key={book.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                            <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0"
+                                 style={{ backgroundColor: 'white' }}>
+                              {book.coverUrl ? (
+                                <img
+                                  src={book.coverUrl}
+                                  alt={book.title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xs">?</div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
+                                {book.title}
+                              </p>
+                            </div>
+                            <Select
+                              value={individualStatuses[book.id] || defaultStatus}
+                              onValueChange={(value) => setIndividualStatuses({
+                                ...individualStatuses,
+                                [book.id]: value
+                              })}
+                            >
+                              <SelectTrigger className="w-[100px] text-sm h-auto py-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["Lu", "À lire", "Mes envies"].map(s => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <Button
-                      onClick={addSelectedBookToLibrary}
+                      onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
                       className="w-full text-white font-medium mt-4"
                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                      disabled={!selectedBook || addBookMutation.isPending}
+                      disabled={selectedBooks.length === 0 || addBooksMutation.isPending}
                     >
-                      {addBookMutation.isPending ? (
+                      {addBooksMutation.isPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Ajout en cours...
@@ -675,34 +619,37 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                       ) : (
                         <>
                           <Plus className="w-4 h-4 mr-2" />
-                          Ajouter ce livre
+                          Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
                         </>
                       )}
                     </Button>
                   </div>
-                ) : (
-                  <div className="sticky top-0 p-8 rounded-xl text-center"
-                       style={{ backgroundColor: 'var(--cream)' }}>
-                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                      Sélectionnez un livre pour continuer
-                    </p>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Placeholder when no books are selected */}
+              {!selectedBooks.length && !isSearching && searchResults.length > 0 && (
+                <div className="hidden lg:block lg:col-span-1 sticky top-0 p-8 rounded-xl text-center"
+                     style={{ backgroundColor: 'var(--cream)' }}>
+                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: 'var(--warm-pink)' }} />
+                  <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
+                    Sélectionnez un ou plusieurs livres
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Mobile sticky footer with add button */}
-            {selectedBook && (
+            {selectedBooks.length > 0 && (
               <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 shadow-lg z-50"
                    style={{ borderColor: 'var(--soft-pink)' }}>
                 <Button
-                  onClick={addSelectedBookToLibrary}
+                  onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
                   className="w-full text-white font-medium py-6"
                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  disabled={!selectedBook || addBookMutation.isPending}
+                  disabled={selectedBooks.length === 0 || addBooksMutation.isPending}
                 >
-                  {addBookMutation.isPending ? (
+                  {addBooksMutation.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Ajout en cours...
@@ -710,7 +657,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   ) : (
                     <>
                       <Plus className="w-5 h-5 mr-2" />
-                      Ajouter ce livre
+                      Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
                     </>
                   )}
                 </Button>
@@ -909,7 +856,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="abandon-percentage" className="text-xs">% d'avancement</Label>
+                        <Label htmlFor="abandon-percentage" className="text-xs">Portion lue (%)</Label>
                         <Input
                           id="abandon-percentage"
                           type="number"

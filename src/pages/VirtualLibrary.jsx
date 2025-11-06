@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -97,7 +98,7 @@ export default function VirtualLibrary() {
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
-  const shelves = Math.max(Math.ceil(readBooks.length / 12), 3);
+  const shelves = Math.max(Math.ceil(readBooks.length / 14), 3); // Changed from 12 to 14
 
   useEffect(() => {
     if (readBooks.length > 0 && user) {
@@ -155,40 +156,40 @@ export default function VirtualLibrary() {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+    <div className="p-3 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-3 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <Store className="w-7 h-7 text-white" />
+              <Store className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-xl md:text-3xl lg:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 Ma Bibliothèque Virtuelle
               </h1>
-              <p className="text-lg font-medium" style={{ color: 'var(--deep-pink)' }}>
+              <p className="text-sm md:text-lg font-medium" style={{ color: 'var(--deep-pink)' }}>
                 {readBooks.length} livres lus • {shelves} étagère{shelves > 1 ? 's' : ''}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="relative rounded-2xl p-8 shadow-xl" 
+        <div className="relative rounded-2xl p-3 md:p-8 shadow-xl" 
              style={{ 
                background: 'linear-gradient(to bottom, #FFF5F0, #FFF8F5)',
-               minHeight: '600px'
+               minHeight: '400px'
              }}>
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {Array(shelves).fill(0).map((_, shelfNum) => (
               <div key={shelfNum} className="relative">
-                <div className="min-h-[200px] rounded-lg shadow-lg flex items-end px-4 py-4 gap-2 overflow-x-auto"
+                <div className="min-h-[140px] md:min-h-[200px] rounded-lg shadow-lg flex items-end px-2 md:px-4 py-2 md:py-4 gap-1 md:gap-2 overflow-x-auto"
                      style={{ backgroundColor: '#8B4513' }}>
-                  {readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).map((userBook, idx) => {
+                  {readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).map((userBook, idx) => { // Changed from 12 to 14
                     const book = allBooks.find(b => b.id === userBook.book_id);
                     const bookColor = userBook.book_color || "#FFB3D9";
                     const textColor = getContrastColor(bookColor);
-                    const globalIndex = shelfNum * 12 + idx;
+                    const globalIndex = shelfNum * 14 + idx; // Changed from 12 to 14
                     const isColorPickerOpen = openColorPicker === userBook.id;
                     
                     return (
@@ -203,14 +204,14 @@ export default function VirtualLibrary() {
                             onDragStart={(e) => handleDragStart(e, userBook.id)}
                             onDragOver={(e) => handleDragOver(e, globalIndex)}
                             onDrop={(e) => handleDrop(e, globalIndex)}
-                            className={`w-16 h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
+                            className={`w-12 h-[140px] md:w-16 md:h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
                               dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
                             }`}
                             style={{ 
                               backgroundColor: bookColor,
                               opacity: draggedBookId === userBook.id ? 0.5 : 1,
                               zIndex: isColorPickerOpen ? 50 : 10,
-                              padding: '12px 0'
+                              padding: '8px 0'
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -225,11 +226,10 @@ export default function VirtualLibrary() {
                                    transform: 'rotate(180deg)',
                                    width: '100%'
                                  }}>
-                              <div className="flex flex-col items-center gap-2">
-                                <p className="font-bold text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-h-[150px] text-center"
+                              <div className="flex flex-col items-center gap-1 md:gap-2">
+                                <p className="font-bold text-[10px] md:text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-h-[110px] md:max-h-[150px] text-center"
                                    style={{ 
                                      color: textColor,
-                                     fontSize: '14px',
                                      fontWeight: 700,
                                      WebkitFontSmoothing: 'antialiased',
                                      textRendering: 'optimizeLegibility'
@@ -237,11 +237,8 @@ export default function VirtualLibrary() {
                                   {book?.title || 'Livre'}
                                 </p>
                                 {book?.author && (
-                                  <p className="text-xs opacity-80 whitespace-nowrap overflow-hidden text-ellipsis"
-                                     style={{ 
-                                       color: textColor,
-                                       fontSize: '11px'
-                                     }}>
+                                  <p className="text-[8px] md:text-xs opacity-80 whitespace-nowrap overflow-hidden text-ellipsis"
+                                     style={{ color: textColor }}>
                                     {book.author}
                                   </p>
                                 )}
@@ -287,8 +284,8 @@ export default function VirtualLibrary() {
                       </Popover>
                     );
                   })}
-                  {Array(Math.max(0, 12 - (readBooks.slice(shelfNum * 12, (shelfNum + 1) * 12).length))).fill(0).map((_, emptyIdx) => (
-                    <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-16 h-[200px] flex-shrink-0" />
+                  {Array(Math.max(0, 14 - (readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).length))).fill(0).map((_, emptyIdx) => (
+                    <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-12 h-[140px] md:w-16 md:h-[200px] flex-shrink-0" />
                   ))}
                 </div>
               </div>
@@ -296,11 +293,11 @@ export default function VirtualLibrary() {
           </div>
         </div>
 
-        <div className="mt-6 p-6 rounded-xl text-center" style={{ backgroundColor: 'white' }}>
-          <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
+        <div className="mt-4 md:mt-6 p-3 md:p-6 rounded-xl text-center" style={{ backgroundColor: 'white' }}>
+          <p className="text-sm md:text-lg" style={{ color: 'var(--dark-text)' }}>
             📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
             <br />
-            <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+            <span className="text-xs md:text-sm" style={{ color: 'var(--warm-pink)' }}>
               Cliquez sur un livre pour changer sa couleur
             </span>
           </p>
