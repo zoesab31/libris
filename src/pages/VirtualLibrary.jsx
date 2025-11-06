@@ -51,8 +51,6 @@ const getContrastColor = (hexColor) => {
 
 export default function VirtualLibrary() {
   const [user, setUser] = useState(null);
-  const [draggedBookId, setDraggedBookId] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [openColorPicker, setOpenColorPicker] = useState(null);
   const queryClient = useQueryClient();
 
@@ -88,16 +86,7 @@ export default function VirtualLibrary() {
     },
   });
 
-  const reorderBookMutation = useMutation({
-    mutationFn: async ({ bookId, newPosition }) => {
-      await base44.entities.UserBook.update(bookId, { shelf_position: newPosition });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-    },
-  });
-
-  const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
+  const readBooks = myBooks.filter(b => b.status === "Lu");
   
   // Calculate books per shelf based on screen size
   const [booksPerShelf, setBooksPerShelf] = useState(14);
@@ -130,45 +119,6 @@ export default function VirtualLibrary() {
       });
     }
   }, [readBooks.length, user]);
-
-  const handleDragStart = (e, userBookId) => {
-    setDraggedBookId(userBookId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = async (e, dropIndex) => {
-    e.preventDefault();
-    
-    if (!draggedBookId) return;
-
-    const draggedIndex = readBooks.findIndex(b => b.id === draggedBookId);
-    if (draggedIndex === -1 || draggedIndex === dropIndex) {
-      setDraggedBookId(null);
-      setDragOverIndex(null);
-      return;
-    }
-
-    const newBooks = [...readBooks];
-    const [removed] = newBooks.splice(draggedIndex, 1);
-    newBooks.splice(dropIndex, 0, removed);
-
-    for (let i = 0; i < newBooks.length; i++) {
-      await reorderBookMutation.mutateAsync({ 
-        bookId: newBooks[i].id, 
-        newPosition: i 
-      });
-    }
-
-    toast.success("✨ Bibliothèque réorganisée !");
-    setDraggedBookId(null);
-    setDragOverIndex(null);
-  };
 
   const handleColorChange = (userBookId, colorHex) => {
     requestAnimationFrame(() => {
@@ -215,7 +165,6 @@ export default function VirtualLibrary() {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       const bookColor = userBook.book_color || "#FFB3D9";
                       const textColor = getContrastColor(bookColor);
-                      const globalIndex = startIndex + idx;
                       const isColorPickerOpen = openColorPicker === userBook.id;
                       
                       return (
@@ -226,16 +175,9 @@ export default function VirtualLibrary() {
                         >
                           <PopoverTrigger asChild>
                             <div 
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, userBook.id)}
-                              onDragOver={(e) => handleDragOver(e, globalIndex)}
-                              onDrop={(e) => handleDrop(e, globalIndex)}
-                              className={`w-12 h-[140px] md:w-16 md:h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
-                                dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
-                              }`}
+                              className={`w-12 h-[140px] md:w-16 md:h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative`}
                               style={{ 
                                 backgroundColor: bookColor,
-                                opacity: draggedBookId === userBook.id ? 0.5 : 1,
                                 zIndex: isColorPickerOpen ? 50 : 10,
                                 padding: '8px 0'
                               }}
@@ -322,7 +264,7 @@ export default function VirtualLibrary() {
 
         <div className="mt-4 md:mt-6 p-3 md:p-6 rounded-xl text-center" style={{ backgroundColor: 'white' }}>
           <p className="text-sm md:text-lg" style={{ color: 'var(--dark-text)' }}>
-            📚 <strong>Astuce :</strong> Glissez-déposez vos livres pour réorganiser votre bibliothèque !
+            📚 <strong>Bibliothèque virtuelle :</strong> Vos livres lus organisés en étagères
             <br />
             <span className="text-xs md:text-sm" style={{ color: 'var(--warm-pink)' }}>
               Cliquez sur un livre pour changer sa couleur

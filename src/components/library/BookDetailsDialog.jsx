@@ -880,29 +880,15 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
               <TabsContent value="synopsis">
                 <div className="space-y-4 py-4 bg-white">
-                  <div className="p-6 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                    {book.synopsis ? (
-                      <div>
-                        <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                          📖 Synopsis
-                        </h3>
-                        <p className="text-base leading-relaxed" style={{ color: 'var(--dark-text)' }}>
-                          {book.synopsis}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                        <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
-                          Aucun synopsis disponible
-                        </p>
-                        <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
-                          Modifiez le livre pour ajouter un synopsis
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
+                  {book.synopsis ? (
+                    <p className="leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--dark-text)' }}>
+                      {book.synopsis}
+                    </p>
+                  ) : (
+                    <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
+                      Aucun synopsis disponible
+                    </p>
+                  )}
                   {book.genre && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>

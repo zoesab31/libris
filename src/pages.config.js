@@ -9,14 +9,12 @@ import Discover from './pages/Discover';
 import Maps from './pages/Maps';
 import Profile from './pages/Profile';
 import SharedReadings from './pages/SharedReadings';
-import BookTournament from './pages/BookTournament';
 import VirtualLibrary from './pages/VirtualLibrary';
 import AccountSettings from './pages/AccountSettings';
 import Friends from './pages/Friends';
 import ShelfView from './pages/ShelfView';
 import Chat from './pages/Chat';
 import UserProfile from './pages/UserProfile';
-import Series from './pages/Series';
 import Statistics from './pages/Statistics';
 import Layout from './Layout.jsx';
 
@@ -33,14 +31,12 @@ export const PAGES = {
     "Maps": Maps,
     "Profile": Profile,
     "SharedReadings": SharedReadings,
-    "BookTournament": BookTournament,
     "VirtualLibrary": VirtualLibrary,
     "AccountSettings": AccountSettings,
     "Friends": Friends,
     "ShelfView": ShelfView,
     "Chat": Chat,
     "UserProfile": UserProfile,
-    "Series": Series,
     "Statistics": Statistics,
 }
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -36,11 +37,7 @@ const navigationItems = [
     url: createPageUrl("VirtualLibrary"),
     icon: Store,
   },
-  {
-    title: "Mes Séries",
-    url: createPageUrl("Series"),
-    icon: BookOpen,
-  },
+  // Removed "Mes Séries"
   {
     title: "Citations",
     url: createPageUrl("Quotes"),
@@ -56,11 +53,7 @@ const navigationItems = [
     url: createPageUrl("Statistics"),
     icon: TrendingUp,
   },
-  {
-    title: "Tournoi du Livre",
-    url: createPageUrl("BookTournament"),
-    icon: Trophy,
-  },
+  // Removed "Tournoi du Livre"
   {
     title: "Abécédaire",
     url: createPageUrl("Authors"),

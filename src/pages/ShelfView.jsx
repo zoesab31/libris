@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,8 +19,6 @@ export default function ShelfView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [shelf, setShelf] = useState(null);
   const [selectedUserBook, setSelectedUserBook] = useState(null);
-  const [draggedBookId, setDraggedBookId] = useState(null);
-  const [dragOverId, setDragOverId] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -40,13 +39,7 @@ export default function ShelfView() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const reorderBookMutation = useMutation({
-    mutationFn: ({ bookId, position }) => 
-      base44.entities.UserBook.update(bookId, { shelf_position: position }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-    },
-  });
+  // Reorder mutation and drag/drop states/handlers are removed as per requirements.
 
   if (!user || !shelf) {
     return (
@@ -85,57 +78,10 @@ export default function ShelfView() {
       const bookA = allBooks.find(book => book.id === a.book_id);
       const bookB = allBooks.find(book => book.id === b.book_id);
       return bookA?.author.localeCompare(bookB?.author);
-    } else if (sortBy === "position") {
-      return (a.shelf_position || 0) - (b.shelf_position || 0);
     }
+    // "position" sort option and its logic have been removed.
     return 0;
   });
-
-  const handleDragStart = (e, userBookId) => {
-    setDraggedBookId(userBookId);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, userBookId) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverId(userBookId);
-  };
-
-  const handleDrop = async (e, dropOnBookId) => {
-    e.preventDefault();
-    
-    if (!draggedBookId || draggedBookId === dropOnBookId) {
-      setDraggedBookId(null);
-      setDragOverId(null);
-      return;
-    }
-
-    const draggedIndex = sortedBooks.findIndex(b => b.id === draggedBookId);
-    const dropIndex = sortedBooks.findIndex(b => b.id === dropOnBookId);
-
-    if (draggedIndex === -1 || dropIndex === -1) {
-      setDraggedBookId(null);
-      setDragOverId(null);
-      return;
-    }
-
-    // Reorder
-    const newBooks = [...sortedBooks];
-    const [removed] = newBooks.splice(draggedIndex, 1);
-    newBooks.splice(dropIndex, 0, removed);
-
-    // Update positions
-    const promises = newBooks.map((book, index) => 
-      reorderBookMutation.mutateAsync({ bookId: book.id, position: index })
-    );
-
-    await Promise.all(promises);
-    toast.success("Livres réorganisés !");
-
-    setDraggedBookId(null);
-    setDragOverId(null);
-  };
 
   const avgRating = shelfBooks.filter(b => b.rating).length > 0
     ? (shelfBooks.filter(b => b.rating).reduce((sum, b) => sum + b.rating, 0) / shelfBooks.filter(b => b.rating).length).toFixed(1)
@@ -192,7 +138,7 @@ export default function ShelfView() {
               <SelectValue placeholder="Trier par..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="position">Ma disposition</SelectItem>
+              {/* The "Ma disposition" option for sorting by position is removed */}
               <SelectItem value="recent">Plus récents</SelectItem>
               <SelectItem value="title">Titre (A-Z)</SelectItem>
               <SelectItem value="author">Auteur (A-Z)</SelectItem>
@@ -210,13 +156,8 @@ export default function ShelfView() {
               return (
                 <div 
                   key={userBook.id} 
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, userBook.id)}
-                  onDragOver={(e) => handleDragOver(e, userBook.id)}
-                  onDrop={(e) => handleDrop(e, userBook.id)}
-                  className={`group cursor-pointer ${dragOverId === userBook.id ? 'ring-4 ring-pink-400' : ''}`}
-                  style={{ opacity: draggedBookId === userBook.id ? 0.5 : 1 }}
-                  onClick={() => !draggedBookId && setSelectedUserBook(userBook)}
+                  className="group cursor-pointer" // Drag & drop related classes/styles removed
+                  onClick={() => setSelectedUserBook(userBook)} // No longer conditional on draggedBookId
                 >
                   <div className="relative mb-3">
                     <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
