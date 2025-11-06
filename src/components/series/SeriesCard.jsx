@@ -30,6 +30,17 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
     }
   };
 
+  // Calculate books read based on actual user books status
+  const calculateBooksRead = () => {
+    if (!series.reading_order) return 0;
+    
+    return series.reading_order.filter(item => {
+      if (!item.book_id) return false; // Not released books don't count
+      const userBook = myBooks.find(ub => ub.book_id === item.book_id);
+      return userBook && userBook.status === 'Lu';
+    }).length;
+  };
+
   // Get book statuses
   const getBookStatus = (bookId) => {
     const userBook = myBooks.find(ub => ub.book_id === bookId);
@@ -37,12 +48,12 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
     
     if (userBook.status === 'Lu') return 'read';
     if (userBook.status === 'À lire' || userBook.status === 'En cours') return 'unread';
-    if (userBook.status === 'Mes envies') return 'wishlist';
+    if (userBook.status === 'Wishlist') return 'wishlist';
     return 'not_owned';
   };
 
   const totalBooks = series.total_books;
-  const booksRead = series.books_read?.length || 0;
+  const booksRead = calculateBooksRead(); // Use calculated value
   const progressPercent = (booksRead / totalBooks) * 100;
 
   // Generate dots for each book

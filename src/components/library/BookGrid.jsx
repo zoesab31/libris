@@ -25,18 +25,12 @@ export default function BookGrid({
   selectionMode,
   selectedBooks,
   onSelectionChange,
-  onExitSelectionMode,
-  showPALSelector = false,
-  readingLists = [],
-  palMode = null,
-  onRemoveFromPAL = null
+  onExitSelectionMode
 }) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
   const [showShelfDialog, setShowShelfDialog] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState("");
-  const [showPALDialog, setShowPALDialog] = useState(false);
-  const [bookToAddToPAL, setBookToAddToPAL] = useState(null);
   const queryClient = useQueryClient();
 
   // Helper to get first author only
@@ -98,27 +92,6 @@ export default function BookGrid({
     onError: (error) => {
       console.error("Error adding to shelf:", error);
       toast.error("Erreur lors de l'ajout à l'étagère");
-    }
-  });
-
-  // New mutation for adding to PAL
-  const addToPALMutation = useMutation({
-    mutationFn: async ({ palId, bookId }) => {
-      const pal = readingLists.find(p => p.id === palId);
-      if (!pal) return;
-
-      const updatedBookIds = [...(pal.book_ids || []), bookId];
-      await base44.entities.ReadingList.update(palId, { book_ids: updatedBookIds });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-      toast.success("✅ Livre ajouté à la PAL !");
-      setShowPALDialog(false);
-      setBookToAddToPAL(null);
-    },
-    onError: (error) => {
-      console.error("Error adding to PAL:", error);
-      toast.error("Erreur lors de l'ajout à la PAL.");
     }
   });
 
@@ -290,21 +263,9 @@ export default function BookGrid({
                 </div>
               )}
 
-              {palMode && onRemoveFromPAL && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveFromPAL(userBook.book_id);
-                  }}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg z-20 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-
               <div
                 onClick={() => {
-                  if (!selectionMode) { // Changed: removed palMode check, only prevent click in selection mode
+                  if (!selectionMode) {
                     setSelectedUserBook(userBook);
                   }
                 }}
@@ -416,22 +377,6 @@ export default function BookGrid({
                   {book.genre}
                 </p>
               )}
-
-              {showPALSelector && !palMode && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setBookToAddToPAL(userBook.id);
-                    setShowPALDialog(true);
-                  }}
-                  className="w-full mt-2 text-xs"
-                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-                >
-                  Ajouter à une PAL
-                </Button>
-              )}
             </div>
           );
         })}
@@ -508,44 +453,6 @@ export default function BookGrid({
               ) : (
                 <>Confirmer</>
               )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* PAL Selection Dialog */}
-      <Dialog open={showPALDialog} onOpenChange={setShowPALDialog}>
-        <DialogContent className="bg-white border border-neutral-200 rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-neutral-900">
-              Ajouter à une PAL
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            {readingLists.length > 0 ? (
-              readingLists.map((pal) => (
-                <Button
-                  key={pal.id}
-                  variant="outline"
-                  className="w-full justify-start text-neutral-700 hover:bg-neutral-100"
-                  onClick={() => addToPALMutation.mutate({ palId: pal.id, bookId: bookToAddToPAL })}
-                  disabled={pal.book_ids?.includes(bookToAddToPAL) || addToPALMutation.isPending}
-                >
-                  <span className="flex items-center gap-2">
-                    {pal.icon} {pal.name}
-                  </span>
-                  {pal.book_ids?.includes(bookToAddToPAL) && " (déjà ajouté)"}
-                </Button>
-              ))
-            ) : (
-              <p className="text-center py-4" style={{ color: 'var(--warm-brown)' }}>
-                Aucune PAL créée. Créez-en une d'abord !
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPALDialog(false)}>
-              Annuler
             </Button>
           </DialogFooter>
         </DialogContent>

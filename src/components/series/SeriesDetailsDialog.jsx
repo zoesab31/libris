@@ -10,10 +10,25 @@ import { toast } from "sonner";
 export default function SeriesDetailsDialog({ series, open, onOpenChange, myBooks, allBooks }) {
   const queryClient = useQueryClient();
 
+  // Calculate books read based on actual user books status
+  const calculateBooksRead = () => {
+    if (!series.reading_order) return 0;
+    
+    return series.reading_order.filter(item => {
+      if (!item.book_id) return false; // Not released books don't count
+      const userBook = myBooks.find(ub => ub.book_id === item.book_id);
+      return userBook && userBook.status === 'Lu';
+    }).length;
+  };
+
   const markAsCompleteMutation = useMutation({
     mutationFn: async () => {
+      const booksReadIds = series.reading_order
+        .filter(ro => ro.book_id)
+        .map(ro => ro.book_id);
+      
       await base44.entities.BookSeries.update(series.id, {
-        books_read: series.reading_order.map(ro => ro.book_id).filter(Boolean)
+        books_read: booksReadIds
       });
     },
     onSuccess: () => {
@@ -50,7 +65,7 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
     
     if (userBook.status === 'Lu') return 'read';
     if (userBook.status === 'À lire' || userBook.status === 'En cours') return 'unread';
-    if (userBook.status === 'Mes envies') return 'wishlist';
+    if (userBook.status === 'Wishlist') return 'wishlist';
     return 'not_owned';
   };
 
@@ -81,7 +96,7 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
   };
 
   const totalBooks = series.total_books;
-  const booksRead = series.books_read?.length || 0;
+  const booksRead = calculateBooksRead(); // Use calculated value
   const progressPercent = (booksRead / totalBooks) * 100;
   const isComplete = booksRead === totalBooks;
 
@@ -106,7 +121,6 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Header with cover and info */}
           <div className="flex gap-6">
             {series.cover_url && (
               <div className="w-32 h-48 rounded-xl overflow-hidden shadow-lg flex-shrink-0">

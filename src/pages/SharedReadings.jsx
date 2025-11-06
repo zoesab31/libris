@@ -38,6 +38,7 @@ export default function SharedReadings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState("leave");
   const [activeTab, setActiveTab] = useState("active"); // New state
+  const [selectedWishlist, setSelectedWishlist] = useState(null); // New state for editing wishlist
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -371,7 +372,7 @@ export default function SharedReadings() {
                     key={wishlist.id}
                     wishlist={wishlist}
                     books={allBooks}
-                    onEdit={() => {/* TODO: implement edit */}}
+                    onEdit={(w) => setSelectedWishlist(w)}
                   />
                 ))}
               </div>
@@ -407,6 +408,15 @@ export default function SharedReadings() {
             book={allBooks.find(b => b.id === selectedReading.book_id)}
             open={!!selectedReading}
             onOpenChange={(open) => !open && setSelectedReading(null)}
+          />
+        )}
+
+        {selectedWishlist && (
+          <WishlistDetailsDialog
+            wishlist={selectedWishlist}
+            open={!!selectedWishlist}
+            onOpenChange={(open) => !open && setSelectedWishlist(null)}
+            user={user}
           />
         )}
 
@@ -481,7 +491,7 @@ function WishlistCard({ wishlist, books, onEdit }) {
   return (
     <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           style={{ backgroundColor: 'white' }}
-          onClick={onEdit}>
+          onClick={() => onEdit(wishlist)}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -796,6 +806,307 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
               {createMutation.isPending ? "Création..." : "Créer"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// WishlistDetailsDialog Component
+function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
+  const [title, setTitle] = useState(wishlist?.title || "");
+  const [description, setDescription] = useState(wishlist?.description || "");
+  const [icon, setIcon] = useState(wishlist?.icon || "📚");
+  const [isPublic, setIsPublic] = useState(wishlist?.is_public || false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBooks, setSelectedBooks] = useState(wishlist?.book_ids || []);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (wishlist) {
+      setTitle(wishlist.title || "");
+      setDescription(wishlist.description || "");
+      setIcon(wishlist.icon || "📚");
+      setIsPublic(wishlist.is_public || false);
+      setSelectedBooks(wishlist.book_ids || []);
+      setSearchQuery(""); // Clear search query when wishlist changes
+    }
+  }, [wishlist]);
+
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
+  });
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooks'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  const myLibraryBooks = useMemo(() => {
+    if (!user) return [];
+    const myBookIds = myBooks.map(ub => ub.book_id);
+    return allBooks.filter(book => myBookIds.includes(book.id));
+  }, [allBooks, myBooks, user]);
+
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return myLibraryBooks
+      .filter(book =>
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query)
+      )
+      .slice(0, 10);
+  }, [searchQuery, myLibraryBooks]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data) => base44.entities.SharedReadingWishlist.update(wishlist.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("✨ Liste mise à jour !");
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error updating wishlist:", error);
+      toast.error("Erreur lors de la mise à jour de la liste.");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => base44.entities.SharedReadingWishlist.delete(wishlist.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("✅ Liste supprimée !");
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error deleting wishlist:", error);
+      toast.error("Erreur lors de la suppression.");
+    },
+  });
+
+  const toggleBookSelection = (bookId) => {
+    setSelectedBooks(prev =>
+      prev.includes(bookId)
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
+  };
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      toast.error("Le titre est requis.");
+      return;
+    }
+    updateMutation.mutate({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      icon,
+      is_public: isPublic,
+      book_ids: selectedBooks,
+    });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`Êtes-vous sûre de vouloir supprimer la liste "${wishlist.title}" ?`)) {
+      deleteMutation.mutate();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
+            <span>💭 Modifier la liste</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleUpdate} className="space-y-6 py-4">
+          {/* Same form fields as AddWishlistDialog */}
+          <div>
+            <Label htmlFor="title">Titre *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Lectures d'été 2025"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez cette liste..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="icon">Emoji</Label>
+            <Select value={icon} onValueChange={setIcon}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["📚", "💭", "🌸", "☀️", "❄️", "🍂", "🌺", "💕", "✨", "🎀"].map(e => (
+                  <SelectItem key={e} value={e}>{e}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Book search and selection - same as AddWishlistDialog */}
+          <div>
+            <Label>Livres dans la liste</Label>
+            <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
+              Recherchez et sélectionnez des livres de votre bibliothèque
+            </p>
+            
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                      style={{ color: 'var(--warm-pink)' }} />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un livre..."
+                className="pl-10"
+              />
+            </div>
+
+            {/* Selected books */}
+            {selectedBooks.length > 0 && (
+              <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                <p className="text-sm font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBooks.map((bookId) => {
+                    const book = allBooks.find(b => b.id === bookId);
+                    if (!book) return null;
+                    return (
+                      <div
+                        key={bookId}
+                        className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: 'var(--soft-pink)' }}
+                      >
+                        <span>{book.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleBookSelection(bookId)}
+                          className="hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Search results */}
+            {searchQuery.length >= 2 && filteredBooks.length > 0 && (
+              <div className="border rounded-lg max-h-64 overflow-y-auto" 
+                   style={{ borderColor: 'var(--beige)' }}>
+                {filteredBooks.map((book) => {
+                  const isSelected = selectedBooks.includes(book.id);
+                  return (
+                    <button
+                      key={book.id}
+                      type="button"
+                      onClick={() => toggleBookSelection(book.id)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left border-b last:border-b-0"
+                      style={{
+                        backgroundColor: isSelected ? 'var(--cream)' : 'white',
+                        borderColor: 'var(--beige)'
+                      }}
+                    >
+                      <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0" 
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book.cover_url ? (
+                          <img src={book.cover_url} alt={book.title} 
+                               className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <BookOpen className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-1" 
+                           style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </p>
+                        <p className="text-xs line-clamp-1" 
+                           style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                      </div>
+
+                      {isSelected && (
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                             style={{ backgroundColor: 'var(--deep-pink)' }}>
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {searchQuery.length >= 2 && filteredBooks.length === 0 && (
+              <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                Aucun livre trouvé dans votre bibliothèque
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg"
+               style={{ backgroundColor: 'var(--cream)' }}>
+            <Label htmlFor="public">Liste publique</Label>
+            <Switch
+              id="public"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={!title.trim() || updateMutation.isPending}
+              className="text-white font-medium"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+            >
+              {updateMutation.isPending ? "Mise à jour..." : "Enregistrer"}
             </Button>
           </div>
         </form>
