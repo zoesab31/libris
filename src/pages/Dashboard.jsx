@@ -31,7 +31,7 @@ export default function Dashboard() {
     enabled: !!user,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: allBooks = [] } = useQuery({
@@ -39,6 +39,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Book.list(),
     staleTime: 0,
     refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: comments = [] } = useQuery({
@@ -46,6 +47,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ReadingComment.list('-created_date', 5),
     staleTime: 0,
     refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: readingGoal } = useQuery({
@@ -60,14 +62,16 @@ export default function Dashboard() {
     enabled: !!user,
     staleTime: 0,
     refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: myFriends = [] } = useQuery({
     queryKey: ['myFriends'],
     queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
     enabled: !!user,
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    cacheTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: friendsBooks = [] } = useQuery({
@@ -85,8 +89,9 @@ export default function Dashboard() {
       return allFriendsBooks.flat();
     },
     enabled: myFriends.length > 0,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: friendsFinishedBooks = [] } = useQuery({
@@ -114,7 +119,7 @@ export default function Dashboard() {
     enabled: myFriends.length > 0,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: friendsComments = [] } = useQuery({
@@ -133,16 +138,18 @@ export default function Dashboard() {
       ).slice(0, 5);
     },
     enabled: myFriends.length > 0,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: allSharedReadings = [] } = useQuery({
     queryKey: ['sharedReadings'],
     queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 20 * 60 * 1000, // 20 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000, // Refresh every second
   });
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
