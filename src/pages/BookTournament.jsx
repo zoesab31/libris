@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 // Removed confetti import as it's no longer used based on the outline
 
-const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", Décembre"];
 
 const ROUND_COLORS = {
   monthly: "bg-gray-100 border-gray-300",
@@ -166,7 +166,23 @@ export default function BookTournament() {
   const generateBracketIfReady = async (tournamentId, monthlyWinners) => {
     const winnerIds = Object.values(monthlyWinners).filter(Boolean);
     
-    if (winnerIds.length === 0) return;
+    // Only proceed if all 12 months have a winner, or if there's an existing tournament with a non-empty bracket
+    // This needs to be carefully adjusted based on actual tournament rules (e.g., if a quarter-final starts with fewer than 12 winners)
+    // For now, let's assume all 12 are needed for full bracket, or at least 2 for other bracket types.
+    const eligibleWinners = Object.values(monthlyWinners).filter(Boolean);
+    
+    // Only generate if there's at least two winners, and if the existing bracket is empty
+    // or if the number of winners changes significantly to warrant a regeneration
+    if (eligibleWinners.length < 2) return;
+
+    // Check if the current tournament already has a bracket that is not empty
+    const currentBracket = currentTournament?.bracket;
+    if (currentBracket && currentBracket.rounds.length > 0) {
+      // If bracket already exists, don't regenerate unless number of winners implies a new structure
+      // This logic can be more complex, but for simplicity, we avoid regenerating an ongoing bracket
+      return;
+    }
+
 
     // Determine bracket structure based on number of winners
     let bracketStructure;
@@ -343,6 +359,38 @@ export default function BookTournament() {
   const bracket = currentTournament?.bracket || { rounds: [], champion: null };
   const rounds = bracket.rounds || [];
 
+  // Auto-select single book winners - moved to useEffect to avoid infinite loops
+  useEffect(() => {
+    if (!currentTournament || selectMonthWinnerMutation.isPending || !currentTournament.monthly_picks) return;
+
+    Object.keys(currentTournament.monthly_picks).forEach((monthKey) => {
+      const month = parseInt(monthKey, 10);
+      const books = booksByMonth[month];
+      const winner = currentTournament?.monthly_winners?.[month];
+      
+      // Auto-select if there's only one book and no winner yet
+      if (books && books.length === 1 && !winner) {
+        selectMonthWinnerMutation.mutate({ month, bookId: books[0].book_id });
+      }
+    });
+  }, [currentTournament?.id, currentTournament?.monthly_winners, currentTournament?.monthly_picks, booksByMonth, selectMonthWinnerMutation.isPending]);
+
+  // Auto-bye matches - moved to useEffect
+  useEffect(() => {
+    if (!currentTournament || !rounds || rounds.length === 0 || selectMatchWinnerMutation.isPending) return;
+
+    rounds.forEach((round, roundIdx) => {
+      if (!round.matches) return;
+      
+      round.matches.forEach((match, matchIdx) => {
+        // Auto-bye if one side is empty and no winner yet
+        if (match && match.left && !match.right && !match.winner) {
+          selectMatchWinnerMutation.mutate({ roundIndex: roundIdx, matchIndex: matchIdx, bookId: match.left });
+        }
+      });
+    });
+  }, [currentTournament?.bracket?.rounds, rounds, selectMatchWinnerMutation.isPending]);
+
   // Render monthly card
   const renderMonthlyCard = (month) => {
     const books = booksByMonth[month] || [];
@@ -358,10 +406,7 @@ export default function BookTournament() {
       );
     }
 
-    if (books.length === 1 && !winner) {
-      // Auto-select
-      selectMonthWinnerMutation.mutate({ month, bookId: books[0].book_id });
-    }
+    // Removed auto-select from here - now handled in useEffect
 
     return (
       <div className={`p-3 rounded-xl border-2 transition-all ${winner ? 'shadow-lg scale-105' : ''}`} 
@@ -377,7 +422,7 @@ export default function BookTournament() {
               <button
                 key={userBook.id}
                 onClick={() => selectMonthWinnerMutation.mutate({ month, bookId: userBook.book_id })}
-                disabled={selectMonthWinnerMutation.isPending}
+                disabled={selectMonthWinnerMutation.isPending || !!winner} // Disable if there's already a winner for this month
                 className={`w-full flex gap-2 p-2 rounded-lg transition-all hover:shadow-md ${isWinner ? 'bg-gradient-to-r from-yellow-100 to-pink-100' : 'hover:bg-gray-50'}`}
               >
                 <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 shadow-sm" style={{ backgroundColor: 'var(--beige)' }}>
@@ -415,10 +460,7 @@ export default function BookTournament() {
     const leftBook = allBooks.find(b => b.id === match.left);
     const rightBook = allBooks.find(b => b.id === match.right);
 
-    // Auto-bye if one side is empty
-    if (match.left && !match.right && !match.winner) {
-      selectMatchWinnerMutation.mutate({ roundIndex, matchIndex, bookId: match.left });
-    }
+    // Removed auto-bye from here - now handled in useEffect
 
     return (
       <div className="p-3 rounded-xl border-2 bg-white space-y-2" style={{ borderColor: match.winner ? accentColor : 'var(--beige)' }}>
