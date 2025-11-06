@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
 
 const ROUND_NAMES = {
   round_of_16: "Huitièmes de finale",
@@ -366,7 +366,15 @@ export default function BookTournament() {
                 {votedMatches}/{totalMatches} matchs complétés
               </p>
             </div>
-            <Progress value={progressPercent} className="h-2" />
+            <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--beige)' }}>
+              <div 
+                className="h-full transition-all duration-500"
+                style={{ 
+                  width: `${progressPercent}%`,
+                  background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})`
+                }}
+              />
+            </div>
           </div>
         )}
 
