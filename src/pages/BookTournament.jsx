@@ -17,6 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 const ROUND_NAMES = {
   round_of_16: "Huitièmes de finale",
@@ -61,7 +63,9 @@ export default function BookTournament() {
   const [tournamentType, setTournamentType] = useState("best");
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [isGeneratingNextRound, setIsGeneratingNextRound] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -91,7 +95,7 @@ export default function BookTournament() {
     enabled: !!user,
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000, // Refresh every 5 seconds during tournament
+    refetchInterval: 1000, // Refresh every second for better responsiveness
   });
 
   const { data: matches = [] } = useQuery({
@@ -103,7 +107,7 @@ export default function BookTournament() {
     enabled: !!currentTournament,
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 1000, // Refresh every second
   });
 
   const { data: allTournaments = [] } = useQuery({
@@ -239,62 +243,247 @@ export default function BookTournament() {
     }
   });
 
-  // Vote mutation
+  // Improved vote mutation with auto-progression
   const voteMutation = useMutation({
     mutationFn: async ({ matchId, winnerBookId }) => {
+      // Update the match with winner
       await base44.entities.TournamentMatch.update(matchId, {
         winner_book_id: winnerBookId
       });
 
-      // Check if round is complete
-      const currentRound = selectedMatch.round;
-      const roundMatches = matches.filter(m => m.round === currentRound);
-      const allVoted = roundMatches.every(m => m.winner_book_id || m.id === matchId);
+      // Get fresh match data
+      const updatedMatches = await base44.entities.TournamentMatch.filter({
+        tournament_id: currentTournament.id,
+        created_by: user?.email
+      });
+
+      const currentMatch = updatedMatches.find(m => m.id === matchId);
+      const currentRound = currentMatch.round;
+      
+      // Check if ALL matches in current round have winners
+      const roundMatches = updatedMatches.filter(m => m.round === currentRound);
+      const allVoted = roundMatches.every(m => m.winner_book_id);
 
       if (allVoted) {
-        // Move to next round
+        // All matches in this round are complete - generate next round
         const currentRoundIndex = tournamentStructure.rounds.indexOf(currentRound);
         const nextRound = tournamentStructure.rounds[currentRoundIndex + 1];
 
         if (nextRound) {
-          // Create next round matches
-          const winners = [];
-          for (const match of roundMatches) {
-            const winnerId = match.id === matchId ? winnerBookId : match.winner_book_id;
-            winners.push(winnerId);
-          }
+          // Collect winners from current round (in stable order)
+          const winners = roundMatches
+            .sort((a, b) => a.position - b.position)
+            .map(m => m.winner_book_id);
 
-          const nextMatchPromises = [];
-          for (let i = 0; i < winners.length / 2; i++) {
-            nextMatchPromises.push(
-              base44.entities.TournamentMatch.create({
-                tournament_id: currentTournament.id,
-                round: nextRound,
+          // Handle byes for odd numbers
+          let pairsToCreate = [];
+          if (winners.length % 2 === 1) {
+            // First winner gets a bye (auto-advances)
+            const byeWinner = winners.shift();
+            // Create closed match with bye
+            await base44.entities.TournamentMatch.create({
+              tournament_id: currentTournament.id,
+              round: nextRound,
+              position: 0,
+              book_1_id: byeWinner,
+              book_2_id: null,
+              winner_book_id: byeWinner
+            });
+            
+            // Remaining winners start at position 1
+            for (let i = 0; i < winners.length / 2; i++) {
+              pairsToCreate.push({
+                position: i + 1,
+                book_1_id: winners[i * 2],
+                book_2_id: winners[i * 2 + 1]
+              });
+            }
+          } else {
+            // Even number - create normal pairs
+            for (let i = 0; i < winners.length / 2; i++) {
+              pairsToCreate.push({
                 position: i,
                 book_1_id: winners[i * 2],
                 book_2_id: winners[i * 2 + 1]
-              })
-            );
+              });
+            }
           }
-          await Promise.all(nextMatchPromises);
 
-          // Update tournament
+          // Create all next round matches
+          const createPromises = pairsToCreate.map(pair =>
+            base44.entities.TournamentMatch.create({
+              tournament_id: currentTournament.id,
+              round: nextRound,
+              position: pair.position,
+              book_1_id: pair.book_1_id,
+              book_2_id: pair.book_2_id
+            })
+          );
+          await Promise.all(createPromises);
+
+          // Update tournament current round
           await base44.entities.Tournament.update(currentTournament.id, {
             current_round: nextRound
           });
         } else {
-          // Tournament complete!
+          // No next round = tournament complete!
           await base44.entities.Tournament.update(currentTournament.id, {
             status: "completed",
             winner_book_id: winnerBookId
           });
         }
       }
+
+      return { allVoted, currentRound };
+    },
+    onSuccess: async () => {
+      // Force immediate refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tournament'] }),
+        queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] })
+      ]);
+      
+      // Immediate refetch for instant UI update
+      await queryClient.refetchQueries({ queryKey: ['tournament', selectedYear, tournamentType] });
+      await queryClient.refetchQueries({ queryKey: ['tournamentMatches', currentTournament?.id] });
+      
+      setSelectedMatch(null);
+      toast({
+        title: "Vote enregistré !",
+        description: "Votre vote a été pris en compte.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error voting:", error);
+      toast({
+        title: "Erreur lors du vote",
+        description: "Impossible d'enregistrer votre vote. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Manual force next round (emergency button)
+  const forceNextRoundMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentTournament) return;
+      setIsGeneratingNextRound(true);
+      
+      const currentRound = currentTournament.current_round;
+      const roundMatches = matches.filter(m => m.round === currentRound);
+      
+      // Handle any ties with ratings or random
+      const matchesWithoutWinners = roundMatches.filter(m => !m.winner_book_id);
+      
+      for (const match of matchesWithoutWinners) {
+        // Tie-break logic
+        const book1 = allBooks.find(b => b.id === match.book_1_id);
+        const book2 = allBooks.find(b => b.id === match.book_2_id);
+        const userBook1 = myBooks.find(ub => ub.book_id === match.book_1_id);
+        const userBook2 = myBooks.find(ub => ub.book_id === match.book_2_id);
+        
+        let winner;
+        if (!match.book_2_id) { // This is a bye match that somehow wasn't marked complete
+          winner = match.book_1_id;
+        } else if (userBook1?.rating !== undefined && userBook2?.rating !== undefined) {
+          winner = userBook1.rating >= userBook2.rating ? match.book_1_id : match.book_2_id;
+        } else if (userBook1?.rating !== undefined) {
+          winner = match.book_1_id;
+        } else if (userBook2?.rating !== undefined) {
+          winner = match.book_2_id;
+        } else {
+          // Random with seed based on book IDs for consistency - simple random for now
+          winner = Math.random() > 0.5 ? match.book_1_id : match.book_2_id;
+        }
+        
+        await base44.entities.TournamentMatch.update(match.id, {
+          winner_book_id: winner
+        });
+      }
+      
+      // Refresh and generate next round (fetch matches again to ensure all are updated)
+      const updatedMatches = await base44.entities.TournamentMatch.filter({
+        tournament_id: currentTournament.id,
+        created_by: user?.email
+      });
+      
+      const currentRoundIndex = tournamentStructure.rounds.indexOf(currentRound);
+      const nextRound = tournamentStructure.rounds[currentRoundIndex + 1];
+      
+      if (nextRound) {
+        const winners = updatedMatches
+          .filter(m => m.round === currentRound)
+          .sort((a, b) => a.position - b.position)
+          .map(m => m.winner_book_id);
+        
+        let pairsToCreate = [];
+        if (winners.length % 2 === 1) {
+          const byeWinner = winners.shift();
+          await base44.entities.TournamentMatch.create({
+            tournament_id: currentTournament.id,
+            round: nextRound,
+            position: 0,
+            book_1_id: byeWinner,
+            book_2_id: null,
+            winner_book_id: byeWinner
+          });
+          
+          for (let i = 0; i < winners.length / 2; i++) {
+            pairsToCreate.push({
+              position: i + 1,
+              book_1_id: winners[i * 2],
+              book_2_id: winners[i * 2 + 1]
+            });
+          }
+        } else {
+          for (let i = 0; i < winners.length / 2; i++) {
+            pairsToCreate.push({
+              position: i,
+              book_1_id: winners[i * 2],
+              book_2_id: winners[i * 2 + 1]
+            });
+          }
+        }
+        
+        const createPromises = pairsToCreate.map(pair =>
+          base44.entities.TournamentMatch.create({
+            tournament_id: currentTournament.id,
+            round: nextRound,
+            position: pair.position,
+            book_1_id: pair.book_1_id,
+            book_2_id: pair.book_2_id
+          })
+        );
+        await Promise.all(createPromises);
+        
+        await base44.entities.Tournament.update(currentTournament.id, {
+          current_round: nextRound
+        });
+      } else {
+        // Tournament complete even with forced winners
+        await base44.entities.Tournament.update(currentTournament.id, {
+          status: "completed",
+          winner_book_id: winners[0] // Assuming the last remaining winner
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
       queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
-      setSelectedMatch(null);
+      setIsGeneratingNextRound(false);
+      toast({
+        title: "Tour suivant généré !",
+        description: "Tous les matchs du tour précédent sont clos et le tour suivant est prêt.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error forcing next round:", error);
+      setIsGeneratingNextRound(false);
+      toast({
+        title: "Erreur lors de la génération du tour",
+        description: "Impossible de générer le tour suivant. Veuillez vérifier les données.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -325,14 +514,29 @@ export default function BookTournament() {
     if (!currentTournament || currentTournament.status === "completed") return null;
     return matches.find(m => 
       m.round === currentTournament.current_round && 
-      !m.winner_book_id
+      !m.winner_book_id &&
+      m.book_2_id !== null // Skip bye matches
     );
   }, [matches, currentTournament]);
 
   // Calculate progress
-  const totalMatches = matches.length;
-  const votedMatches = matches.filter(m => m.winner_book_id).length;
+  const totalMatches = matches.filter(m => m.book_2_id !== null).length; // Exclude byes
+  const votedMatches = matches.filter(m => m.winner_book_id && m.book_2_id !== null).length;
   const progressPercent = totalMatches > 0 ? (votedMatches / totalMatches) * 100 : 0;
+
+  // Check if waiting for next round generation
+  const isWaitingForNextRound = useMemo(() => {
+    if (!currentTournament || currentTournament.status === "completed" || !matches.length) return false;
+    const currentRoundMatches = matches.filter(m => m.round === currentTournament.current_round);
+    if (currentRoundMatches.length === 0 && currentTournament.status === "in_progress") return true; // No matches in current round yet, might be initial state after round complete but before next generated
+    const allVotedForVotableMatches = currentRoundMatches.every(m => m.winner_book_id || m.book_2_id === null); // All votable matches have a winner, or it's a bye
+    // This condition is true when all votable matches are done, and nextMatchToVote hasn't appeared yet.
+    // Also ensure there are actually votable matches in the round, otherwise it's still generating.
+    const hasVotableMatchesInCurrentRound = currentRoundMatches.some(m => m.book_2_id !== null);
+    
+    return allVotedForVotableMatches && !nextMatchToVote && hasVotableMatchesInCurrentRound;
+  }, [currentTournament, matches, nextMatchToVote]);
+
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -482,6 +686,26 @@ export default function BookTournament() {
                 }}
               />
             </div>
+            
+            {isWaitingForNextRound && (
+              <div className="mt-4 flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
+                  <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                    Génération du tour suivant...
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => forceNextRoundMutation.mutate()}
+                  disabled={isGeneratingNextRound || forceNextRoundMutation.isPending}
+                  style={{ borderColor: accentColor, color: accentColor }}
+                >
+                  {isGeneratingNextRound || forceNextRoundMutation.isPending ? "Génération..." : "↻ Forcer"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -616,7 +840,7 @@ export default function BookTournament() {
                 </h2>
                 
                 <div className="grid md:grid-cols-2 gap-6">
-                  {[nextMatchToVote.book_1_id, nextMatchToVote.book_2_id].map((bookId) => {
+                  {[nextMatchToVote.book_1_id, nextMatchToVote.book_2_id].filter(Boolean).map((bookId) => {
                     const userBook = myBooks.find(ub => ub.book_id === bookId);
                     const book = allBooks.find(b => b.id === bookId);
                     if (!book) return null;
@@ -626,11 +850,10 @@ export default function BookTournament() {
                         key={bookId}
                         onClick={() => voteMutation.mutate({ matchId: nextMatchToVote.id, winnerBookId: bookId })}
                         disabled={voteMutation.isPending}
-                        className="group p-6 rounded-2xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                        className="group p-6 rounded-2xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor: 'white',
                           border: `3px solid ${isDark ? '#ccc' : 'var(--beige)'}`,
-                          opacity: voteMutation.isPending ? 0.5 : 1
                         }}
                       >
                         <div className={`aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4 ${isDark ? 'grayscale group-hover:grayscale-0' : ''}`}
@@ -655,7 +878,7 @@ export default function BookTournament() {
                           {book.author}
                         </p>
                         
-                        {userBook?.rating && (
+                        {userBook?.rating !== undefined && ( // Check for undefined specifically to allow 0 rating
                           <div className="flex items-center justify-center gap-1 mb-3">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <span key={i} className={i < userBook.rating ? 'text-yellow-500' : 'text-gray-300'}>
@@ -667,7 +890,7 @@ export default function BookTournament() {
 
                         <div className="mt-4 px-4 py-3 rounded-xl font-bold text-white"
                              style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
-                          Voter pour ce livre
+                          {voteMutation.isPending ? "Vote en cours..." : "Voter pour ce livre"}
                         </div>
                       </button>
                     );
@@ -677,13 +900,19 @@ export default function BookTournament() {
             </Card>
           </div>
         ) : (
-          /* Waiting for next round */
-          <div className="text-center py-20">
-            <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20 animate-pulse" style={{ color: accentColor }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Préparation du tour suivant...
-            </h3>
-          </div>
+          /* Waiting for next round - or if isWaitingForNextRound is false but no nextMatchToVote */
+          // This state is now mostly handled by the Progress Bar's `isWaitingForNextRound` block
+          !isWaitingForNextRound && currentTournament?.status === "in_progress" && (
+            <div className="text-center py-20">
+              <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20 animate-pulse" style={{ color: accentColor }} />
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                Préparation du tour suivant...
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                Si le tour suivant ne s'affiche pas automatiquement, les données sont peut-être en cours de synchronisation.
+              </p>
+            </div>
+          )
         )}
 
         {/* History Dialog */}
@@ -762,6 +991,7 @@ export default function BookTournament() {
           </DialogContent>
         </Dialog>
       </div>
+      <Toaster />
     </div>
   );
 }
