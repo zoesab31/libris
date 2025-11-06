@@ -333,7 +333,7 @@ export default function MyLibrary() {
             {readingLists.length === 0 ? (
               <div className="text-center py-20">
                 <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }>
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucune PAL créée
                 </h3>
                 <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
