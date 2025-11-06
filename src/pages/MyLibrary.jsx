@@ -10,7 +10,7 @@ import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
 import PALManager from "../components/library/PALManager"; // New import
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } => "@/utils";
 import { toast } from 'sonner'; // New import for notifications
 import BookDetailsDialog from "../components/library/BookDetailsDialog"; // New import for BookDetailsDialog
 
@@ -230,6 +230,18 @@ export default function MyLibrary() {
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 flex-wrap h-auto">
+              {customShelves.length > 0 && (
+                <TabsTrigger
+                  value="custom"
+                  className="rounded-lg font-bold data-[state=active]:text-white"
+                  style={activeTab === "custom" ? {
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: '#FFFFFF'
+                  } : { color: '#000000' }}
+                >
+                  Étagères perso
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="tous"
                 className="rounded-lg font-bold data-[state=active]:text-white"
@@ -271,6 +283,16 @@ export default function MyLibrary() {
                 À lire
               </TabsTrigger>
               <TabsTrigger
+                value="pal" // New Tab Trigger
+                className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
+                style={activeTab === "pal" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
+              >
+                📚 Mes PAL
+              </TabsTrigger>
+              <TabsTrigger
                 value="Mes envies"
                 className="rounded-lg font-bold data-[state=active]:text-white"
                 style={activeTab === "Mes envies" ? {
@@ -291,16 +313,6 @@ export default function MyLibrary() {
                 Abandonnés
               </TabsTrigger>
               <TabsTrigger
-                value="pal" // New Tab Trigger
-                className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
-                style={activeTab === "pal" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                  color: '#FFFFFF'
-                } : { color: '#000000' }}
-              >
-                📚 Mes PAL
-              </TabsTrigger>
-              <TabsTrigger
                 value="historique"
                 className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
                 style={activeTab === "historique" ? {
@@ -311,18 +323,6 @@ export default function MyLibrary() {
                 <Calendar className="w-4 h-4" />
                 Historique
               </TabsTrigger>
-              {customShelves.length > 0 && (
-                <TabsTrigger
-                  value="custom"
-                  className="rounded-lg font-bold data-[state=active]:text-white"
-                  style={activeTab === "custom" ? {
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                    color: '#FFFFFF'
-                  } : { color: '#000000' }}
-                >
-                  Étagères perso
-                </TabsTrigger>
-              )}
             </TabsList>
           </Tabs>
         </div>

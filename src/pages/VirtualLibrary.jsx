@@ -98,7 +98,27 @@ export default function VirtualLibrary() {
   });
 
   const readBooks = myBooks.filter(b => b.status === "Lu").sort((a, b) => (a.shelf_position || 0) - (b.shelf_position || 0));
-  const shelves = Math.max(Math.ceil(readBooks.length / 14), 3); // Changed from 12 to 14
+  
+  // Calculate books per shelf based on screen size
+  const [booksPerShelf, setBooksPerShelf] = useState(14);
+  
+  useEffect(() => {
+    const calculateBooksPerShelf = () => {
+      const width = window.innerWidth;
+      if (width < 640) return 6;  // mobile
+      if (width < 768) return 8;  // tablet
+      if (width < 1024) return 12; // small desktop
+      return 14; // large desktop
+    };
+    
+    setBooksPerShelf(calculateBooksPerShelf());
+    
+    const handleResize = () => setBooksPerShelf(calculateBooksPerShelf());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  const shelves = Math.max(Math.ceil(readBooks.length / booksPerShelf), 3);
 
   useEffect(() => {
     if (readBooks.length > 0 && user) {
@@ -145,6 +165,7 @@ export default function VirtualLibrary() {
       });
     }
 
+    toast.success("✨ Bibliothèque réorganisée !");
     setDraggedBookId(null);
     setDragOverIndex(null);
   };
@@ -181,115 +202,121 @@ export default function VirtualLibrary() {
                minHeight: '400px'
              }}>
           <div className="space-y-6 md:space-y-8">
-            {Array(shelves).fill(0).map((_, shelfNum) => (
-              <div key={shelfNum} className="relative">
-                <div className="min-h-[140px] md:min-h-[200px] rounded-lg shadow-lg flex items-end px-2 md:px-4 py-2 md:py-4 gap-1 md:gap-2 overflow-x-auto"
-                     style={{ backgroundColor: '#8B4513' }}>
-                  {readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).map((userBook, idx) => { // Changed from 12 to 14
-                    const book = allBooks.find(b => b.id === userBook.book_id);
-                    const bookColor = userBook.book_color || "#FFB3D9";
-                    const textColor = getContrastColor(bookColor);
-                    const globalIndex = shelfNum * 14 + idx; // Changed from 12 to 14
-                    const isColorPickerOpen = openColorPicker === userBook.id;
-                    
-                    return (
-                      <Popover 
-                        key={userBook.id || idx} 
-                        open={isColorPickerOpen} 
-                        onOpenChange={(open) => setOpenColorPicker(open ? userBook.id : null)}
-                      >
-                        <PopoverTrigger asChild>
-                          <div 
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, userBook.id)}
-                            onDragOver={(e) => handleDragOver(e, globalIndex)}
-                            onDrop={(e) => handleDrop(e, globalIndex)}
-                            className={`w-12 h-[140px] md:w-16 md:h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
-                              dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
-                            }`}
-                            style={{ 
-                              backgroundColor: bookColor,
-                              opacity: draggedBookId === userBook.id ? 0.5 : 1,
-                              zIndex: isColorPickerOpen ? 50 : 10,
-                              padding: '8px 0'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenColorPicker(userBook.id);
-                            }}
-                            title={`${book?.title || 'Livre'} - ${book?.author || ''}`}
-                          >
-                            <div className="h-full flex items-center justify-center overflow-hidden"
-                                 style={{
-                                   writingMode: 'vertical-rl',
-                                   textOrientation: 'mixed',
-                                   transform: 'rotate(180deg)',
-                                   width: '100%'
-                                 }}>
-                              <div className="flex flex-col items-center gap-1 md:gap-2">
-                                <p className="font-bold text-[10px] md:text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-h-[110px] md:max-h-[150px] text-center"
-                                   style={{ 
-                                     color: textColor,
-                                     fontWeight: 700,
-                                     WebkitFontSmoothing: 'antialiased',
-                                     textRendering: 'optimizeLegibility'
+            {Array(shelves).fill(0).map((_, shelfNum) => {
+              const startIndex = shelfNum * booksPerShelf;
+              const endIndex = (shelfNum + 1) * booksPerShelf;
+              const shelfBooks = readBooks.slice(startIndex, endIndex);
+              
+              return (
+                <div key={shelfNum} className="relative">
+                  <div className="min-h-[140px] md:min-h-[200px] rounded-lg shadow-lg flex items-end px-2 md:px-4 py-2 md:py-4 gap-1 md:gap-2 overflow-x-auto"
+                       style={{ backgroundColor: '#8B4513' }}>
+                    {shelfBooks.map((userBook, idx) => {
+                      const book = allBooks.find(b => b.id === userBook.book_id);
+                      const bookColor = userBook.book_color || "#FFB3D9";
+                      const textColor = getContrastColor(bookColor);
+                      const globalIndex = startIndex + idx;
+                      const isColorPickerOpen = openColorPicker === userBook.id;
+                      
+                      return (
+                        <Popover 
+                          key={userBook.id || idx} 
+                          open={isColorPickerOpen} 
+                          onOpenChange={(open) => setOpenColorPicker(open ? userBook.id : null)}
+                        >
+                          <PopoverTrigger asChild>
+                            <div 
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, userBook.id)}
+                              onDragOver={(e) => handleDragOver(e, globalIndex)}
+                              onDrop={(e) => handleDrop(e, globalIndex)}
+                              className={`w-12 h-[140px] md:w-16 md:h-[200px] rounded-sm shadow-md hover:shadow-xl transform hover:scale-105 transition-all flex flex-col items-center justify-center flex-shrink-0 cursor-pointer relative ${
+                                dragOverIndex === globalIndex ? 'ring-4 ring-pink-400' : ''
+                              }`}
+                              style={{ 
+                                backgroundColor: bookColor,
+                                opacity: draggedBookId === userBook.id ? 0.5 : 1,
+                                zIndex: isColorPickerOpen ? 50 : 10,
+                                padding: '8px 0'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenColorPicker(userBook.id);
+                              }}
+                              title={`${book?.title || 'Livre'} - ${book?.author || ''}`}
+                            >
+                              <div className="h-full flex items-center justify-center overflow-hidden"
+                                   style={{
+                                     writingMode: 'vertical-rl',
+                                     textOrientation: 'mixed',
+                                     transform: 'rotate(180deg)',
+                                     width: '100%'
                                    }}>
-                                  {book?.title || 'Livre'}
-                                </p>
-                                {book?.author && (
-                                  <p className="text-[8px] md:text-xs opacity-80 whitespace-nowrap overflow-hidden text-ellipsis"
-                                     style={{ color: textColor }}>
-                                    {book.author}
+                                <div className="flex flex-col items-center gap-1 md:gap-2">
+                                  <p className="font-bold text-[10px] md:text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-h-[110px] md:max-h-[150px] text-center"
+                                     style={{ 
+                                       color: textColor,
+                                       fontWeight: 700,
+                                       WebkitFontSmoothing: 'antialiased',
+                                       textRendering: 'optimizeLegibility'
+                                     }}>
+                                    {book?.title || 'Livre'}
                                   </p>
-                                )}
+                                  {book?.author && (
+                                    <p className="text-[8px] md:text-xs opacity-80 whitespace-nowrap overflow-hidden text-ellipsis"
+                                       style={{ color: textColor }}>
+                                      {book.author}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </PopoverTrigger>
-                        
-                        <PopoverContent 
-                          className="w-64 p-3 bg-white border-2" 
-                          style={{ borderColor: 'var(--beige)' }}
-                          align="start"
-                          side="bottom"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="space-y-2">
-                            <p className="text-xs font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                              🎨 Choisir une couleur
-                            </p>
-                            <div className="grid grid-cols-6 gap-1.5">
-                              {SPINE_COLORS.map((color) => (
-                                <button
-                                  key={color.hex}
-                                  onClick={() => handleColorChange(userBook.id, color.hex)}
-                                  className="w-8 h-8 rounded-md hover:scale-110 transition-transform focus:ring-2 focus:ring-offset-1"
-                                  style={{ 
-                                    backgroundColor: color.hex,
-                                    outline: bookColor === color.hex ? '2px solid var(--deep-pink)' : 'none',
-                                    outlineOffset: '2px'
-                                  }}
-                                  title={`${color.name} (${color.hex})`}
-                                  aria-label={color.name}
-                                />
-                              ))}
-                            </div>
-                            <div className="pt-2 border-t" style={{ borderColor: 'var(--beige)' }}>
-                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                                Cliquez sur une couleur pour l'appliquer
+                          </PopoverTrigger>
+                          
+                          <PopoverContent 
+                            className="w-64 p-3 bg-white border-2" 
+                            style={{ borderColor: 'var(--beige)' }}
+                            align="start"
+                            side="bottom"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-2">
+                              <p className="text-xs font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                                🎨 Choisir une couleur
                               </p>
+                              <div className="grid grid-cols-6 gap-1.5">
+                                {SPINE_COLORS.map((color) => (
+                                  <button
+                                    key={color.hex}
+                                    onClick={() => handleColorChange(userBook.id, color.hex)}
+                                    className="w-8 h-8 rounded-md hover:scale-110 transition-transform focus:ring-2 focus:ring-offset-1"
+                                    style={{ 
+                                      backgroundColor: color.hex,
+                                      outline: bookColor === color.hex ? '2px solid var(--deep-pink)' : 'none',
+                                      outlineOffset: '2px'
+                                    }}
+                                    title={`${color.name} (${color.hex})`}
+                                    aria-label={color.name}
+                                  />
+                                ))}
+                              </div>
+                              <div className="pt-2 border-t" style={{ borderColor: 'var(--beige)' }}>
+                                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                  Cliquez sur une couleur pour l'appliquer
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    );
-                  })}
-                  {Array(Math.max(0, 14 - (readBooks.slice(shelfNum * 14, (shelfNum + 1) * 14).length))).fill(0).map((_, emptyIdx) => (
-                    <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-12 h-[140px] md:w-16 md:h-[200px] flex-shrink-0" />
-                  ))}
+                          </PopoverContent>
+                        </Popover>
+                      );
+                    })}
+                    {Array(Math.max(0, booksPerShelf - (shelfBooks.length))).fill(0).map((_, emptyIdx) => (
+                      <div key={`empty-${shelfNum}-${emptyIdx}`} className="w-12 h-[140px] md:w-16 md:h-[200px] flex-shrink-0" />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
