@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users, Check, FolderPlus, X } from "lucide-react"; // Added X
+import { BookOpen, Star, Music, Users, Check, FolderPlus, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
@@ -26,17 +26,17 @@ export default function BookGrid({
   selectedBooks,
   onSelectionChange,
   onExitSelectionMode,
-  showPALSelector = false, // New prop
-  readingLists = [],      // New prop
-  palMode = null,         // New prop
-  onRemoveFromPAL = null  // New prop
+  showPALSelector = false,
+  readingLists = [],
+  palMode = null,
+  onRemoveFromPAL = null
 }) {
   const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
   const [showShelfDialog, setShowShelfDialog] = useState(false);
   const [selectedShelf, setSelectedShelf] = useState("");
-  const [showPALDialog, setShowPALDialog] = useState(false); // New state
-  const [bookToAddToPAL, setBookToAddToPAL] = useState(null); // New state
+  const [showPALDialog, setShowPALDialog] = useState(false);
+  const [bookToAddToPAL, setBookToAddToPAL] = useState(null);
   const queryClient = useQueryClient();
 
   // Helper to get first author only
@@ -258,7 +258,7 @@ export default function BookGrid({
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-        {sortedBooks.map((userBook) => { // Changed to sortedBooks.map
+        {sortedBooks.map((userBook) => {
           const book = allBooks.find(b => b.id === userBook.book_id);
           if (!book) return null;
 
@@ -276,7 +276,7 @@ export default function BookGrid({
             >
               {selectionMode && (
                 <div
-                  onClick={(e) => { // Added stopPropagation
+                  onClick={(e) => {
                     e.stopPropagation();
                     toggleBookSelection(userBook.id);
                   }}
@@ -290,7 +290,7 @@ export default function BookGrid({
                 </div>
               )}
 
-              {palMode && onRemoveFromPAL && ( // New PAL remove button
+              {palMode && onRemoveFromPAL && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -303,9 +303,7 @@ export default function BookGrid({
               )}
 
               <div
-                // Click handler for opening BookDetailsDialog
                 onClick={() => {
-                  // Only open details if not in selection mode or PAL mode
                   if (!selectionMode && !palMode && !showPALSelector) {
                     setSelectedUserBook(userBook);
                   }
@@ -315,7 +313,10 @@ export default function BookGrid({
                 style={{ backgroundColor: 'var(--beige)' }}
               >
                 {isCurrentlyReading && (
-                  <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                  <div
+                    className="absolute -top-1 -left-1 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-br-xl shadow-lg animate-pulse"
+                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% 75%, 75% 100%, 0 100%)' }}
+                  >
                     En cours
                   </div>
                 )}
@@ -327,7 +328,7 @@ export default function BookGrid({
                   </div>
                 )}
 
-                <div className="w-full h-full"> {/* Inner div for cover */}
+                <div className="w-full h-full">
                   {book.cover_url ? (
                     <img
                       src={book.cover_url}
@@ -336,7 +337,7 @@ export default function BookGrid({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} /> {/* Changed color */}
+                      <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
                     </div>
                   )}
                 </div>
@@ -373,9 +374,9 @@ export default function BookGrid({
                 )}
               </div>
 
-              <h3 
-                className="font-bold mt-2 mb-1 group-hover:underline book-title-display" 
-                style={{ 
+              <h3
+                className="font-bold mt-2 mb-1 group-hover:underline book-title-display"
+                style={{
                   color: 'var(--dark-text)',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -391,9 +392,9 @@ export default function BookGrid({
               >
                 {book.title}
               </h3>
-              <p 
-                className="mb-1 book-author-display" 
-                style={{ 
+              <p
+                className="mb-1 book-author-display"
+                style={{
                   color: 'var(--warm-pink)',
                   overflowWrap: 'anywhere',
                   whiteSpace: 'normal',
@@ -416,7 +417,7 @@ export default function BookGrid({
                 </p>
               )}
 
-              {showPALSelector && !palMode && ( // New "Add to PAL" button
+              {showPALSelector && !palMode && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -436,7 +437,7 @@ export default function BookGrid({
         })}
       </div>
 
-      {selectedUserBook && !selectionMode && ( // Added !selectionMode condition
+      {selectedUserBook && !selectionMode && (
         <BookDetailsDialog
           userBook={selectedUserBook}
           book={allBooks.find(b => b.id === selectedUserBook.book_id)}
@@ -467,7 +468,7 @@ export default function BookGrid({
                   <SelectValue placeholder="Choisir une étagère..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Aucune étagère</SelectItem> {/* Use empty string for consistency */}
+                  <SelectItem value={null}>Aucune étagère</SelectItem>
                   {customShelves.map(shelf => (
                     <SelectItem key={shelf.id} value={shelf.name}>
                       {shelf.icon} {shelf.name}
