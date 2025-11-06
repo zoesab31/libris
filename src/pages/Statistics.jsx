@@ -348,7 +348,14 @@ export default function Statistics() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={(entry) => {
+                      // Only show label if value is 3 or more
+                      if (entry.value >= 3) {
+                        const percent = (entry.value / booksThisYear.length * 100).toFixed(0);
+                        return `${entry.name} ${percent}%`;
+                      }
+                      return null;
+                    }}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -357,7 +364,12 @@ export default function Statistics() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      const percent = (value / booksThisYear.length * 100).toFixed(1);
+                      return [`${value} livre${value > 1 ? 's' : ''} (${percent}%)`, name];
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
