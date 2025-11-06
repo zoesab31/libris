@@ -1,342 +1,352 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import React, { useState, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, X, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Plus, X, Upload, Loader2 } from 'lucide-react';
 
-export default function AddSeriesDialog({ open, onOpenChange, myBooks, allBooks }) {
+export default function AddSeriesDialog({ open, onOpenChange, user }) {
+  const [seriesName, setSeriesName] = useState("");
+  const [author, setAuthor] = useState("");
+  const [totalBooks, setTotalBooks] = useState("");
+  const [description, setDescription] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+  const [readingOrder, setReadingOrder] = useState([{ order: 1, title: "", bookId: null }]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeOrderIndex, setActiveOrderIndex] = useState(null);
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(1);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  
-  const [seriesData, setSeriesData] = useState({
-    series_name: "",
-    author: "",
-    total_books: "",
-    cover_url: "",
-    description: ""
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooks'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
   });
 
-  const [readingOrder, setReadingOrder] = useState([]);
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
+  });
 
-  const createSeriesMutation = useMutation({
-    mutationFn: async () => {
-      await base44.entities.BookSeries.create({
-        ...seriesData,
-        total_books: parseInt(seriesData.total_books),
-        reading_order: readingOrder,
-        books_read: readingOrder.filter(ro => {
-          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
-          return userBook?.status === "Lu";
-        }).map(ro => ro.book_id),
-        books_in_pal: readingOrder.filter(ro => {
-          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
-          return userBook?.status === "À lire" || userBook?.status === "En cours";
-        }).map(ro => ro.book_id),
-        books_wishlist: readingOrder.filter(ro => {
-          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
-          return userBook?.status === "Mes envies";
-        }).map(ro => ro.book_id)
-      });
+  // Filter books based on search query
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    
+    const query = searchQuery.toLowerCase().trim();
+    
+    // Get books from my library
+    const myBookIds = myBooks.map(ub => ub.book_id);
+    const myLibraryBooks = allBooks.filter(book => myBookIds.includes(book.id));
+    
+    // Filter by search query
+    return myLibraryBooks
+      .filter(book => 
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query)
+      )
+      .slice(0, 10); // Limit to 10 results
+  }, [searchQuery, myBooks, allBooks]);
+
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      return await base44.entities.BookSeries.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
-      toast.success("✨ Série ajoutée avec succès !");
-      resetForm();
-      onOpenChange(false);
+      toast.success("✨ Série créée avec succès !");
+      handleClose();
     },
     onError: (error) => {
       console.error("Error creating series:", error);
-      toast.error("Erreur lors de l'ajout de la série");
+      toast.error("Erreur lors de la création de la série");
     }
   });
 
-  const resetForm = () => {
-    setStep(1);
-    setSeriesData({
-      series_name: "",
-      author: "",
-      total_books: "",
-      cover_url: "",
-      description: ""
-    });
-    setReadingOrder([]);
+  const handleClose = () => {
+    setSeriesName("");
+    setAuthor("");
+    setTotalBooks("");
+    setDescription("");
+    setCoverUrl("");
+    setReadingOrder([{ order: 1, title: "", bookId: null }]);
+    setSearchQuery("");
+    setActiveOrderIndex(null);
+    onOpenChange(false);
   };
 
-  const handleCoverUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingCover(true);
-    try {
-      const result = await base44.integrations.Core.UploadFile({ file });
-      setSeriesData({ ...seriesData, cover_url: result.file_url });
-      toast.success("Couverture uploadée !");
-    } catch (error) {
-      console.error("Error uploading cover:", error);
-      toast.error("Erreur lors de l'upload");
-    } finally {
-      setUploadingCover(false);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!seriesName.trim() || !totalBooks) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
     }
+
+    const data = {
+      series_name: seriesName.trim(),
+      author: author.trim() || undefined,
+      total_books: parseInt(totalBooks),
+      description: description.trim() || undefined,
+      cover_url: coverUrl.trim() || undefined,
+      reading_order: readingOrder
+        .filter(ro => ro.title.trim() || ro.bookId)
+        .map(ro => ({
+          order: ro.order,
+          title: ro.title.trim(),
+          book_id: ro.bookId || undefined
+        })),
+      books_read: [],
+      books_in_pal: [],
+      books_wishlist: []
+    };
+
+    createMutation.mutate(data);
   };
 
   const addBookToOrder = () => {
-    setReadingOrder([...readingOrder, { order: readingOrder.length + 1, book_id: "", title: "" }]);
-  };
-
-  const updateBookInOrder = (index, field, value) => {
-    const newOrder = [...readingOrder];
-    newOrder[index][field] = value;
-    
-    // If book_id is selected, auto-fill title
-    if (field === 'book_id' && value) {
-      const book = allBooks.find(b => b.id === value);
-      if (book) {
-        newOrder[index].title = book.title;
-      }
-    }
-    
-    setReadingOrder(newOrder);
+    setReadingOrder([...readingOrder, { 
+      order: readingOrder.length + 1, 
+      title: "", 
+      bookId: null 
+    }]);
   };
 
   const removeBookFromOrder = (index) => {
-    setReadingOrder(readingOrder.filter((_, i) => i !== index));
+    const newOrder = readingOrder.filter((_, i) => i !== index);
+    // Recalculate order numbers
+    const reorderedBooks = newOrder.map((book, idx) => ({
+      ...book,
+      order: idx + 1
+    }));
+    setReadingOrder(reorderedBooks);
   };
 
-  // Get books that match the series (same author or similar title)
-  const suggestedBooks = myBooks
-    .map(ub => allBooks.find(b => b.id === ub.book_id))
-    .filter(book => book && (
-      book.author?.toLowerCase().includes(seriesData.author?.toLowerCase()) ||
-      book.title?.toLowerCase().includes(seriesData.series_name?.toLowerCase())
-    ))
-    .filter(book => !readingOrder.some(ro => ro.book_id === book.id));
+  const updateOrderBook = (index, field, value) => {
+    const newOrder = [...readingOrder];
+    newOrder[index] = { ...newOrder[index], [field]: value };
+    setReadingOrder(newOrder);
+  };
+
+  const selectBookForOrder = (index, book) => {
+    const newOrder = [...readingOrder];
+    newOrder[index] = {
+      ...newOrder[index],
+      title: book.title,
+      bookId: book.id
+    };
+    setReadingOrder(newOrder);
+    setSearchQuery("");
+    setActiveOrderIndex(null);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
-            {step === 1 ? "Créer une série 🌿" : "Organiser les tomes 📚"}
+          <DialogTitle className="text-2xl flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+            📚 Créer une série
           </DialogTitle>
         </DialogHeader>
 
-        {step === 1 ? (
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="series_name">Nom de la série *</Label>
+              <Label htmlFor="seriesName">Nom de la série *</Label>
               <Input
-                id="series_name"
-                value={seriesData.series_name}
-                onChange={(e) => setSeriesData({ ...seriesData, series_name: e.target.value })}
-                placeholder="ex: A Court of Thorns and Roses"
+                id="seriesName"
+                value={seriesName}
+                onChange={(e) => setSeriesName(e.target.value)}
+                placeholder="Ex: Throne of Glass"
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="author">Auteur *</Label>
+              <Label htmlFor="author">Auteur</Label>
               <Input
                 id="author"
-                value={seriesData.author}
-                onChange={(e) => setSeriesData({ ...seriesData, author: e.target.value })}
-                placeholder="ex: Sarah J. Maas"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="Ex: Sarah J. Maas"
               />
             </div>
 
             <div>
-              <Label htmlFor="total_books">Nombre de tomes *</Label>
+              <Label htmlFor="totalBooks">Nombre total de tomes *</Label>
               <Input
-                id="total_books"
+                id="totalBooks"
                 type="number"
                 min="1"
-                value={seriesData.total_books}
-                onChange={(e) => setSeriesData({ ...seriesData, total_books: e.target.value })}
-                placeholder="ex: 5"
+                value={totalBooks}
+                onChange={(e) => setTotalBooks(e.target.value)}
+                placeholder="Ex: 8"
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="cover">Couverture de la série</Label>
-              <div className="flex gap-3 items-start">
-                <Input
-                  id="cover"
-                  value={seriesData.cover_url}
-                  onChange={(e) => setSeriesData({ ...seriesData, cover_url: e.target.value })}
-                  placeholder="URL de la couverture ou..."
-                />
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverUpload}
-                    className="hidden"
-                    disabled={uploadingCover}
-                  />
-                  <Button type="button" variant="outline" disabled={uploadingCover}>
-                    {uploadingCover ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  </Button>
-                </label>
-              </div>
-              {seriesData.cover_url && (
-                <div className="mt-3 relative w-32">
-                  <img
-                    src={seriesData.cover_url}
-                    alt="Aperçu"
-                    className="w-32 h-48 object-cover rounded-lg shadow-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSeriesData({ ...seriesData, cover_url: "" })}
-                    className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description (optionnel)</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={seriesData.description}
-                onChange={(e) => setSeriesData({ ...seriesData, description: e.target.value })}
-                placeholder="Une brève description de la série..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Décrivez la série..."
                 rows={3}
               />
             </div>
 
-            <Button
-              onClick={() => setStep(2)}
-              disabled={!seriesData.series_name || !seriesData.author || !seriesData.total_books}
-              className="w-full text-white font-medium"
-              style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}
-            >
-              Suivant : Organiser les tomes
-            </Button>
+            <div>
+              <Label htmlFor="coverUrl">URL de la couverture</Label>
+              <Input
+                id="coverUrl"
+                value={coverUrl}
+                onChange={(e) => setCoverUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4 py-4">
-            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label>Organiser les tomes 📖</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addBookToOrder}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Ajouter un tome
+              </Button>
+            </div>
+            <p className="text-xs mb-3" style={{ color: 'var(--warm-pink)' }}>
               Ajoutez les tomes de la série dans l'ordre. Vous pouvez lier des livres de votre bibliothèque ou ajouter des titres manuellement.
             </p>
 
-            {/* Suggested books */}
-            {suggestedBooks.length > 0 && (
-              <div className="p-4 rounded-xl" style={{ backgroundColor: '#F0F9FF' }}>
-                <Label className="text-sm font-bold mb-2 block">
-                  📚 Livres suggérés de votre bibliothèque
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedBooks.slice(0, 5).map(book => (
-                    <button
-                      key={book.id}
-                      onClick={() => {
-                        addBookToOrder();
-                        const newIndex = readingOrder.length;
-                        setTimeout(() => {
-                          updateBookInOrder(newIndex, 'book_id', book.id);
-                        }, 0);
-                      }}
-                      className="text-xs px-3 py-1 rounded-full transition-all hover:shadow-md"
-                      style={{
-                        backgroundColor: '#A8D5E5',
-                        color: 'white'
-                      }}
-                    >
-                      + {book.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Reading order */}
             <div className="space-y-3">
-              {readingOrder.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start p-3 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                       style={{ backgroundColor: '#A8D5E5', color: 'white' }}>
-                    {index + 1}
+              {readingOrder.map((book, index) => (
+                <div key={index} className="flex items-start gap-2 p-3 rounded-lg" 
+                     style={{ backgroundColor: 'var(--cream)' }}>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 font-bold text-white"
+                       style={{ backgroundColor: 'var(--deep-pink)' }}>
+                    {book.order}
                   </div>
-                  
-                  <div className="flex-1 space-y-2">
-                    <Select
-                      value={item.book_id}
-                      onValueChange={(value) => updateBookInOrder(index, 'book_id', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choisir un livre de votre bibliothèque" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allBooks
-                          .filter(book => myBooks.some(ub => ub.book_id === book.id))
-                          .map(book => (
-                            <SelectItem key={book.id} value={book.id}>
-                              {book.title}
-                            </SelectItem>
+                  <div className="flex-1 space-y-2 relative">
+                    <div className="relative">
+                      <Input
+                        value={activeOrderIndex === index ? searchQuery : book.title}
+                        onChange={(e) => {
+                          if (activeOrderIndex === index) {
+                            setSearchQuery(e.target.value);
+                          } else {
+                            updateOrderBook(index, 'title', e.target.value);
+                          }
+                        }}
+                        onFocus={() => {
+                          setActiveOrderIndex(index);
+                          setSearchQuery(book.title);
+                        }}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => {
+                            if (activeOrderIndex === index) {
+                              setActiveOrderIndex(null);
+                              setSearchQuery("");
+                            }
+                          }, 200);
+                        }}
+                        placeholder="Choisir un livre de votre bibliothèque"
+                        className="pr-8"
+                      />
+                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      
+                      {/* Autocomplete dropdown */}
+                      {activeOrderIndex === index && searchQuery.length >= 2 && filteredBooks.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border-2 max-h-64 overflow-y-auto"
+                             style={{ borderColor: 'var(--beige)' }}>
+                          {filteredBooks.map((bookOption) => (
+                            <button
+                              key={bookOption.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                selectBookForOrder(index, bookOption);
+                              }}
+                              className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left"
+                            >
+                              <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0"
+                                   style={{ backgroundColor: 'var(--beige)' }}>
+                                {bookOption.cover_url ? (
+                                  <img src={bookOption.cover_url} alt={bookOption.title} 
+                                       className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs">
+                                    📖
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm line-clamp-1" 
+                                   style={{ color: 'var(--dark-text)' }}>
+                                  {bookOption.title}
+                                </p>
+                                <p className="text-xs line-clamp-1" 
+                                   style={{ color: 'var(--warm-pink)' }}>
+                                  {bookOption.author}
+                                </p>
+                              </div>
+                            </button>
                           ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Input
-                      value={item.title}
-                      onChange={(e) => updateBookInOrder(index, 'title', e.target.value)}
-                      placeholder="ou entrez le titre manuellement"
-                    />
+                        </div>
+                      )}
+                    </div>
+                    {book.bookId && (
+                      <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                        ✓ Lié à votre bibliothèque
+                      </p>
+                    )}
                   </div>
-
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => removeBookFromOrder(index)}
-                    className="p-2 rounded-lg hover:bg-red-100 transition-colors"
+                    className="flex-shrink-0"
                   >
-                    <X className="w-4 h-4 text-red-500" />
-                  </button>
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
               ))}
             </div>
-
-            <Button
-              onClick={addBookToOrder}
-              variant="outline"
-              className="w-full"
-              style={{ borderColor: '#A8D5E5', color: 'var(--dark-text)' }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un tome
-            </Button>
-
-            <DialogFooter className="gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setStep(1)}
-              >
-                Retour
-              </Button>
-              <Button
-                onClick={() => createSeriesMutation.mutate()}
-                disabled={createSeriesMutation.isPending || readingOrder.length === 0}
-                className="text-white font-medium"
-                style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}
-              >
-                {createSeriesMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Création...
-                  </>
-                ) : (
-                  "Créer la série"
-                )}
-              </Button>
-            </DialogFooter>
           </div>
-        )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="text-white font-medium"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+            >
+              {createMutation.isPending ? "Création..." : "Créer la série"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

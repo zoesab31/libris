@@ -39,6 +39,11 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
     enabled: !!user,
   });
 
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+  });
+
   const { data: sharedReadings = [] } = useQuery({
     queryKey: ['sharedReadingsForGoal', year],
     queryFn: async () => {
@@ -80,32 +85,41 @@ export default function ReadingGoalCard({ currentGoal, booksReadThisYear, year, 
     },
   });
 
+  // Helper to check if DNF counts
+  const abandonedBookCounts = (userBook) => {
+    if (userBook.status !== "Abandonné") return false;
+    
+    if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
+    
+    if (userBook.abandon_page) {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Get effective date
+  const getEffectiveDate = (userBook) => {
+    if (userBook.status === "Lu" && userBook.end_date) {
+      return userBook.end_date;
+    }
+    if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+      // If it's an abandoned book that counts, use its end_date or updated_date if end_date isn't available
+      return userBook.end_date || userBook.updated_date;
+    }
+    return null;
+  };
+
   const getBooksReadForYear = (targetYear) => {
     return allUserBooksForGoalCalculation.filter(b => {
-      if (!b.end_date) return false;
-      const endYear = new Date(b.end_date).getFullYear();
-      if (endYear !== targetYear) return false;
+      const effectiveDate = getEffectiveDate(b);
+      if (!effectiveDate) return false;
       
-      // Count "Lu" books
-      if (b.status === "Lu") return true;
-      
-      // Count "Abandonné" books if >50%
-      if (b.status === "Abandonné") {
-        // Check percentage
-        if (b.abandon_percentage >= 50) return true;
-        
-        // Check page count - need to find the book
-        // If we were to implement page count, we'd need to fetch the actual book details
-        // (e.g., total_pages) and compare b.abandon_page against total_pages.
-        // For simplicity, as per the outline, we'll stick to percentage for now.
-        // if (b.abandon_page && b.book_id) {
-        //   // This would require a separate query or pre-fetched data for the book's total_pages
-        //   // const bookDetails = allBooks.find(book => book.id === b.book_id);
-        //   // if (bookDetails && b.abandon_page / bookDetails.total_pages >= 0.5) return true;
-        // }
-      }
-      
-      return false;
+      const year = new Date(effectiveDate).getFullYear();
+      return year === targetYear;
     }).length;
   };
 

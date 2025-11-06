@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Added Button import
+import { Button } from "@/components/ui/button";
 import { BarChart, BookOpen, Calendar, TrendingUp, Palette, FileText } from "lucide-react";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 
@@ -30,23 +30,55 @@ export default function Statistics() {
     queryFn: () => base44.entities.Book.list(),
   });
 
+  // Helper function to check if abandoned book counts (>50%)
+  const abandonedBookCounts = (userBook) => {
+    if (userBook.status !== "Abandonné") return false;
+    
+    if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
+    
+    if (userBook.abandon_page) {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Get effective date for a book
+  const getEffectiveDate = (userBook) => {
+    if (userBook.status === "Lu" && userBook.end_date) {
+      return userBook.end_date;
+    }
+    if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+      return userBook.end_date || userBook.updated_date; // Use end_date if available, otherwise updated_date for abandoned books
+    }
+    return null;
+  };
+
   const booksThisYear = useMemo(() => {
     if (viewMode === 'all') {
-      return myBooks.filter(b => b.end_date && b.status === "Lu");
+      return myBooks.filter(b => {
+        const effectiveDate = getEffectiveDate(b);
+        return effectiveDate !== null;
+      });
     } else if (viewMode === 'compare') {
       return myBooks.filter(b => {
-        if (!b.end_date || b.status !== "Lu") return false;
-        const year = new Date(b.end_date).getFullYear();
+        const effectiveDate = getEffectiveDate(b);
+        if (!effectiveDate) return false;
+        const year = new Date(effectiveDate).getFullYear();
         return selectedYears.includes(year);
       });
     } else { // 'single' mode
       return myBooks.filter(b => {
-        if (!b.end_date || b.status !== "Lu") return false;
-        const year = new Date(b.end_date).getFullYear();
+        const effectiveDate = getEffectiveDate(b);
+        if (!effectiveDate) return false;
+        const year = new Date(effectiveDate).getFullYear();
         return year === selectedYear;
       });
     }
-  }, [myBooks, selectedYear, viewMode, selectedYears]);
+  }, [myBooks, selectedYear, viewMode, selectedYears, allBooks]);
 
   const genreStats = useMemo(() => {
     const stats = {};
@@ -88,12 +120,19 @@ export default function Statistics() {
   const totalPages = useMemo(() => {
     return booksThisYear.reduce((sum, userBook) => {
       const book = allBooks.find(b => b.id === userBook.book_id);
-      return sum + (book?.page_count || 0);
+      if (!book) return sum;
+
+      // Only count full pages for "Lu" books (Option A)
+      if (userBook.status === "Lu") {
+        return sum + (book.page_count || 0);
+      }
+      
+      return sum;
     }, 0);
   }, [booksThisYear, allBooks]);
 
   const avgRating = useMemo(() => {
-    const rated = booksThisYear.filter(b => b.rating);
+    const rated = booksThisYear.filter(b => b.rating && b.status === "Lu");
     if (rated.length === 0) return 0;
     const sum = rated.reduce((acc, b) => acc + b.rating, 0);
     return (sum / rated.length).toFixed(1);
@@ -106,13 +145,14 @@ export default function Statistics() {
     }));
 
     booksThisYear.forEach(userBook => {
-      if (!userBook.end_date) return;
-      const month = new Date(userBook.end_date).getMonth();
+      const effectiveDate = getEffectiveDate(userBook);
+      if (!effectiveDate) return;
+      const month = new Date(effectiveDate).getMonth();
       months[month].count++;
     });
 
     return months;
-  }, [booksThisYear]);
+  }, [booksThisYear, allBooks]); // Add allBooks to dependencies because getEffectiveDate uses it
 
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 

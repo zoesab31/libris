@@ -155,73 +155,64 @@ export default function Dashboard() {
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const readBooks = myBooks.filter(b => b.status === "Lu");
   
-  // Helper function to check if abandoned book counts
+  // Helper function to check if abandoned book counts (>50%)
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
     
-    // Find the associated book data. This needs to be done once at the start.
-    const book = allBooks.find(b => b.id === userBook.book_id);
-    if (!book) return false; // If the base book isn't found, we can't evaluate page_count
-
-    // Check percentage
-    if (userBook.abandon_percentage >= 50) return true;
+    // Check percentage first
+    if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
     
-    // Check page count (only if abandon_percentage condition wasn't met or not available)
-    if (userBook.abandon_page && book.page_count) {
-      if (userBook.abandon_page >= book.page_count / 2) {
+    // Check page count as fallback
+    if (userBook.abandon_page) {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
         return true;
       }
     }
     
     return false;
   };
-  
-  // Year-scoped: Books read + abandoned >50% in selected year (based on end_date)
-  const booksReadThisYear = myBooks.filter(b => {
-    if (!b.end_date) return false;
-    const endYear = new Date(b.end_date).getFullYear();
-    if (endYear !== selectedYear) return false;
-    
-    // Count "Lu" books
-    if (b.status === "Lu") return true;
-    
-    // Count "Abandonné" books if >50%
-    if (b.status === "Abandonné") {
-      return abandonedBookCounts(b);
+
+  // Get effective date for a book (for year scoping)
+  const getEffectiveDate = (userBook) => {
+    if (userBook.status === "Lu" && userBook.end_date) {
+      return userBook.end_date;
     }
+    if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+      // Use end_date if available (when book was abandoned), otherwise updated_date
+      return userBook.end_date || userBook.updated_date;
+    }
+    return null;
+  };
+  
+  // Year-scoped: Books read + DNF ≥50% in selected year (based on effective_date)
+  const booksReadThisYear = myBooks.filter(b => {
+    const effectiveDate = getEffectiveDate(b);
+    if (!effectiveDate) return false;
     
-    return false;
+    const year = new Date(effectiveDate).getFullYear();
+    return year === selectedYear;
   }).length;
 
   // Year-scoped: Total pages read in selected year
   const totalPagesThisYear = myBooks
     .filter(b => {
-      if (!b.end_date) return false;
-      const endYear = new Date(b.end_date).getFullYear();
-      if (endYear !== selectedYear) return false;
+      const effectiveDate = getEffectiveDate(b);
+      if (!effectiveDate) return false;
       
-      // Count pages from "Lu" books
-      if (b.status === "Lu") return true;
-      
-      // Count pages from "Abandonné" books if >50%
-      if (b.status === "Abandonné") {
-        return abandonedBookCounts(b);
-      }
-      
-      return false;
+      const year = new Date(effectiveDate).getFullYear();
+      return year === selectedYear;
     })
     .reduce((sum, userBook) => {
       const book = allBooks.find(b => b.id === userBook.book_id);
-      if (!book) return sum; // If book data is missing, don't add pages
+      if (!book) return sum;
 
+      // Only count full pages for "Lu" books
       if (userBook.status === "Lu") {
         return sum + (book.page_count || 0);
       }
-      // For abandoned books, count only pages read as per the prompt's request
-      // The filter already ensures it's a "qualifying" abandoned book
-      if (userBook.status === "Abandonné" && userBook.abandon_page) {
-        return sum + userBook.abandon_page;
-      }
+      
+      // For DNF ≥50%, don't count pages (Option A per requirements)
       return sum;
     }, 0);
 
