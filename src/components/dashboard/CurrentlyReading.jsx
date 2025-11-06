@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Calendar } from "lucide-react";
@@ -46,64 +45,72 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
               
               return (
                 <div key={userBook.id} 
-                     className="flex gap-4 p-4 rounded-xl transition-all hover:shadow-md relative"
+                     className="flex flex-col gap-3 p-4 rounded-xl transition-all hover:shadow-md"
                      style={{ backgroundColor: 'var(--cream)' }}>
-                  <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-md relative"
-                       style={{ backgroundColor: 'var(--beige)' }}>
-                    {book.cover_url ? (
-                      <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                      </div>
-                    )}
-                    {/* Reader tag */}
-                    <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full text-xs font-bold text-white shadow-md"
-                         style={{ backgroundColor: userBook.isYou ? 'var(--deep-pink)' : 'var(--soft-pink)' }}>
+                  {/* Reader name above everything */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold px-2 py-1 rounded-full"
+                          style={{ 
+                            backgroundColor: userBook.isYou ? 'var(--deep-pink)' : 'var(--soft-pink)',
+                            color: 'white'
+                          }}>
                       {userBook.reader} 📖
-                    </div>
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 
-                      className="font-bold mb-1 book-title-display" 
-                      style={{ 
-                        color: 'var(--dark-text)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        overflowWrap: 'anywhere',
-                        wordBreak: 'break-word',
-                        fontSize: 'clamp(14px, 2.4vw, 16px)',
-                        lineHeight: '1.2'
-                      }}
-                      title={book.title}
-                    >
-                      {book.title}
-                    </h3>
-                    <p 
-                      className="text-sm mb-2 book-author-display" 
-                      style={{ 
-                        color: 'var(--warm-pink)',
-                        overflowWrap: 'anywhere',
-                        whiteSpace: 'normal',
-                        fontSize: 'clamp(12px, 2vw, 14px)',
-                        lineHeight: '1.2',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}
-                      title={book.author}
-                    >
-                      {book.author}
-                    </p>
-                    {userBook.start_date && (
-                      <p className="text-xs flex items-center gap-1" style={{ color: 'var(--dark-text)', minHeight: '20px' }}>
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        Début : {format(new Date(userBook.start_date), 'dd MMM yyyy', { locale: fr })}
+                  
+                  <div className="flex gap-4">
+                    <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-md"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {book.cover_url ? (
+                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 
+                        className="font-bold mb-1 book-title-display" 
+                        style={{ 
+                          color: 'var(--dark-text)',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          overflowWrap: 'anywhere',
+                          wordBreak: 'break-word',
+                          fontSize: 'clamp(14px, 2.4vw, 16px)',
+                          lineHeight: '1.2'
+                        }}
+                        title={book.title}
+                      >
+                        {book.title}
+                      </h3>
+                      <p 
+                        className="text-sm mb-2 book-author-display" 
+                        style={{ 
+                          color: 'var(--warm-pink)',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'normal',
+                          fontSize: 'clamp(12px, 2vw, 14px)',
+                          lineHeight: '1.2',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                        title={book.author}
+                      >
+                        {book.author}
                       </p>
-                    )}
+                      {userBook.start_date && (
+                        <p className="text-xs flex items-center gap-1" style={{ color: 'var(--dark-text)', minHeight: '20px' }}>
+                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                          Début : {format(new Date(userBook.start_date), 'dd MMM yyyy', { locale: fr })}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
