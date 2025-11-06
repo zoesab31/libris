@@ -164,19 +164,17 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      {/* Header with banner */}
-      <div className="relative h-48" style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
-        <div className="absolute top-4 left-4">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Retour
-          </Button>
-        </div>
+      {/* Header - Removed banner, just back button */}
+      <div className="p-4">
+        <Button variant="ghost" onClick={() => navigate(-1)} style={{ color: 'var(--deep-pink)' }}>
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Retour
+        </Button>
       </div>
 
       {/* Profile info */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-20">
-        <div className="flex flex-col md:flex-row gap-6 items-start md:items-end mb-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-8">
+        <div className="flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
           {/* Large centered profile picture */}
           <div className="w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-white bg-white mx-auto md:mx-0"
                style={{ 
