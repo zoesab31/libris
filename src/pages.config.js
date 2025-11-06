@@ -16,6 +16,7 @@ import ShelfView from './pages/ShelfView';
 import Chat from './pages/Chat';
 import UserProfile from './pages/UserProfile';
 import Statistics from './pages/Statistics';
+import BookTournament from './pages/BookTournament';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "Chat": Chat,
     "UserProfile": UserProfile,
     "Statistics": Statistics,
+    "BookTournament": BookTournament,
 }
 
 export const pagesConfig = {

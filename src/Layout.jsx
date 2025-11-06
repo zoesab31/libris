@@ -37,7 +37,6 @@ const navigationItems = [
     url: createPageUrl("VirtualLibrary"),
     icon: Store,
   },
-  // Removed "Mes Séries"
   {
     title: "Citations",
     url: createPageUrl("Quotes"),
@@ -53,7 +52,11 @@ const navigationItems = [
     url: createPageUrl("Statistics"),
     icon: TrendingUp,
   },
-  // Removed "Tournoi du Livre"
+  {
+    title: "Tournoi du Livre",
+    url: createPageUrl("BookTournament"),
+    icon: Trophy,
+  },
   {
     title: "Abécédaire",
     url: createPageUrl("Authors"),
