@@ -260,9 +260,13 @@ export default function BookTournament() {
   // Select match winner mutation
   const selectMatchWinnerMutation = useMutation({
     mutationFn: async ({ roundIndex, matchIndex, bookId }) => {
-      if (!currentTournament) return;
+      if (!currentTournament || !currentTournament.bracket || !currentTournament.bracket.rounds) return;
 
       const bracket = { ...currentTournament.bracket };
+      
+      // Safety check
+      if (!bracket.rounds[roundIndex] || !bracket.rounds[roundIndex].matches[matchIndex]) return;
+      
       bracket.rounds[roundIndex].matches[matchIndex].winner = bookId;
 
       // Check if round is complete
@@ -335,6 +339,10 @@ export default function BookTournament() {
   // Count eligible books
   const totalEligibleBooks = Object.values(booksByMonth).flat().length;
 
+  // Get safe bracket data
+  const bracket = currentTournament?.bracket || { rounds: [], champion: null };
+  const rounds = bracket.rounds || [];
+
   // Render monthly card
   const renderMonthlyCard = (month) => {
     const books = booksByMonth[month] || [];
@@ -402,7 +410,7 @@ export default function BookTournament() {
 
   // Render match card
   const renderMatchCard = (match, roundIndex, matchIndex) => {
-    if (!match.left && !match.right) return null;
+    if (!match || (!match.left && !match.right)) return null;
 
     const leftBook = allBooks.find(b => b.id === match.left);
     const rightBook = allBooks.find(b => b.id === match.right);
@@ -594,7 +602,7 @@ export default function BookTournament() {
                   {isDark ? "💀 Pire lecture" : "🏆 Meilleure lecture"} de {selectedYear}
                 </h2>
                 {(() => {
-                  const book = allBooks.find(b => b.id === currentTournament.bracket.champion);
+                  const book = allBooks.find(b => b.id === bracket.champion);
                   if (!book) return null;
                   return (
                     <div className="flex flex-col items-center gap-4">
@@ -633,13 +641,13 @@ export default function BookTournament() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                {currentColumn === 0 ? "Mois" : currentTournament.bracket.rounds[currentColumn - 1]?.name}
+                {currentColumn === 0 ? "Mois" : rounds[currentColumn - 1]?.name || ""}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setCurrentColumn(Math.min((currentTournament.bracket.rounds.length), currentColumn + 1))}
-                disabled={currentColumn >= currentTournament.bracket.rounds.length}
+                onClick={() => setCurrentColumn(Math.min(rounds.length, currentColumn + 1))}
+                disabled={currentColumn >= rounds.length}
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
@@ -664,16 +672,16 @@ export default function BookTournament() {
               </div>
 
               {/* Bracket Rounds */}
-              {currentTournament.bracket.rounds.map((round, roundIdx) => (
+              {rounds.map((round, roundIdx) => (
                 <div key={roundIdx} className="flex-shrink-0 w-64 space-y-4">
                   <h3 className="text-lg font-bold text-center mb-4 px-3 py-2 rounded-lg" 
                       style={{ 
-                        backgroundColor: roundIdx === currentTournament.bracket.rounds.length - 1 ? 'var(--gold)' : 'var(--cream)', 
-                        color: roundIdx === currentTournament.bracket.rounds.length - 1 ? 'white' : 'var(--dark-text)' 
+                        backgroundColor: roundIdx === rounds.length - 1 ? 'var(--gold)' : 'var(--cream)', 
+                        color: roundIdx === rounds.length - 1 ? 'white' : 'var(--dark-text)' 
                       }}>
                     {round.name}
                   </h3>
-                  {round.matches.map((match, matchIdx) => (
+                  {(round.matches || []).map((match, matchIdx) => (
                     <div key={matchIdx}>
                       {renderMatchCard(match, roundIdx, matchIdx)}
                     </div>
@@ -699,7 +707,7 @@ export default function BookTournament() {
               ) : (
                 /* Round View */
                 <div className="space-y-4">
-                  {currentTournament.bracket.rounds[currentColumn - 1]?.matches.map((match, matchIdx) => (
+                  {(rounds[currentColumn - 1]?.matches || []).map((match, matchIdx) => (
                     <div key={matchIdx}>
                       {renderMatchCard(match, currentColumn - 1, matchIdx)}
                     </div>
