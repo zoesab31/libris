@@ -304,7 +304,7 @@ export default function BookGrid({
 
               <div
                 onClick={() => {
-                  if (!selectionMode && !palMode) { // Changed this line
+                  if (!selectionMode) { // Changed: removed palMode check, only prevent click in selection mode
                     setSelectedUserBook(userBook);
                   }
                 }}
