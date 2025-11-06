@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Star, X } from "lucide-react";
+import { BookOpen, Star, X } from "lucide-react"; // Added X import
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -34,40 +34,41 @@ export default function MonthlyVoteDialog({ month, monthName, year, books, curre
           });
         }
       } else {
-        // Best book voting - allow null for "no book"
+        // Handle best book voting (original logic)
         if (currentVote) {
-          await base44.entities.MonthlyBookVote.update(currentVote.id, { book_id: bookId || null });
+          await base44.entities.MonthlyBookVote.update(currentVote.id, { book_id: bookId });
         } else {
           await base44.entities.MonthlyBookVote.create({
             year,
             month,
-            book_id: bookId || null, // Allow null
+            book_id: bookId,
           });
           
-          if (bookId) { // Only award points if a book is selected
-            const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user?.email });
-            if (existingPoints.length > 0) {
-              await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-                total_points: (existingPoints[0].total_points || 0) + 10
-              });
-            } else {
-              await base44.entities.ReadingPoints.create({ total_points: 10, points_spent: 0 });
-            }
+          // Award 10 points for voting
+          const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user?.email });
+          if (existingPoints.length > 0) {
+            await base44.entities.ReadingPoints.update(existingPoints[0].id, {
+              total_points: (existingPoints[0].total_points || 0) + 10
+            });
+          } else {
+            // Note: `created_by` is used for filtering existing points,
+            // but not explicitly passed for creation here in the original code.
+            // Assuming the `base44.entities.ReadingPoints.create` handles `created_by` implicitly
+            // or it's not a required field for initial creation.
+            await base44.entities.ReadingPoints.create({ total_points: 10, points_spent: 0 });
           }
         }
       }
     },
-    onSuccess: (_, bookId) => { // Added bookId as second argument to onSuccess
+    onSuccess: () => {
       if (isWorst) {
         queryClient.invalidateQueries({ queryKey: ['monthlyWorstVotes'] }); // Invalidate specific query key for worst votes
       } else {
         queryClient.invalidateQueries({ queryKey: ['monthlyVotes'] }); // Original query key for best votes
-        if (bookId) { // Only invalidate points if book was selected
-          queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-        }
+        queryClient.invalidateQueries({ queryKey: ['readingPoints'] }); // Invalidate reading points only for best votes
       }
       // Adjust toast message based on isWorst and if it's a new vote
-      toast.success(`Vote enregistré pour ${monthName} ! ${!currentVote && !isWorst && bookId ? '+10 points 🌟' : ''}`);
+      toast.success(`Vote enregistré pour ${monthName} ! ${!currentVote && !isWorst ? '+10 points 🌟' : ''}`);
       onOpenChange(false);
     },
   });
@@ -87,27 +88,29 @@ export default function MonthlyVoteDialog({ month, monthName, year, books, curre
           </p>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {/* "Aucun livre" option for ALL votes (best and worst) */}
-            <button
-              onClick={() => setSelectedBookId("")} // Set selectedBookId to empty string for "Aucun livre"
-              className={`p-4 rounded-xl text-center transition-all ${
-                selectedBookId === "" ? 'shadow-xl scale-105' : 'shadow-md hover:shadow-lg'
-              }`}
-              style={{ 
-                backgroundColor: 'white',
-                borderWidth: '3px',
-                borderStyle: 'solid',
-                borderColor: selectedBookId === "" ? (isWorst ? '#EF4444' : 'var(--gold)') : 'transparent'
-              }}
-            >
-              <div className="w-full aspect-[2/3] rounded-lg overflow-hidden mb-3 flex items-center justify-center" // Centering icon
-                   style={{ backgroundColor: 'var(--beige)' }}>
-                <X className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
-              </div>
-              <h3 className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
-                Aucun livre
-              </h3>
-            </button>
+            {/* Option "Aucun livre" for worst voting only */}
+            {isWorst && (
+              <button
+                onClick={() => setSelectedBookId("")} // Set selectedBookId to empty string for "Aucun livre"
+                className={`p-4 rounded-xl text-center transition-all ${ // text-center for this button
+                  selectedBookId === "" ? 'shadow-xl scale-105' : 'shadow-md hover:shadow-lg'
+                }`}
+                style={{ 
+                  backgroundColor: 'white',
+                  borderWidth: '3px',
+                  borderStyle: 'solid',
+                  borderColor: selectedBookId === "" ? '#EF4444' : 'transparent' // Red border for selected "Aucun livre"
+                }}
+              >
+                <div className="w-full aspect-[2/3] rounded-lg overflow-hidden mb-3 flex items-center justify-center" // Centering icon
+                     style={{ backgroundColor: 'var(--beige)' }}>
+                  <X className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
+                </div>
+                <h3 className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                  Aucun livre
+                </h3>
+              </button>
+            )}
 
             {books.map((book) => (
               <button
@@ -162,8 +165,8 @@ export default function MonthlyVoteDialog({ month, monthName, year, books, curre
             </Button>
             <Button
               onClick={() => voteMutation.mutate(selectedBookId)}
-              // Disable if mutation is pending
-              disabled={voteMutation.isPending}
+              // Disable if not isWorst AND no book selected, or if mutation is pending
+              disabled={(!isWorst && !selectedBookId) || voteMutation.isPending}
               className="text-white font-medium"
               style={{ background: isWorst 
                 ? 'linear-gradient(135deg, #EF4444, #DC2626)' // Red gradient for worst book
