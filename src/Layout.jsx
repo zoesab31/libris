@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,7 +16,6 @@ import {
   SidebarFooter,
   SidebarProvider,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
@@ -98,21 +98,13 @@ const navigationItems = [
   },
 ];
 
-function LayoutContent({ children, currentPageName }) {
+export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const { setOpen, isMobile } = useSidebar();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
-
-  // Close sidebar on mobile when navigating to a new page
-  useEffect(() => {
-    if (isMobile) {
-      setOpen(false);
-    }
-  }, [location.pathname, isMobile, setOpen]);
 
   // Apply theme class to body
   useEffect(() => {
@@ -130,7 +122,7 @@ function LayoutContent({ children, currentPageName }) {
   const isDark = user?.theme === 'dark';
 
   return (
-    <>
+    <SidebarProvider>
       <style>{`
         :root {
           --cream: #FFF5F9;
@@ -329,14 +321,7 @@ function LayoutContent({ children, currentPageName }) {
           </div>
         </main>
       </div>
-    </>
-  );
-}
-
-export default function Layout({ children, currentPageName }) {
-  return (
-    <SidebarProvider>
-      <LayoutContent children={children} currentPageName={currentPageName} />
     </SidebarProvider>
   );
 }
+
