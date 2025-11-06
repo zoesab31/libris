@@ -33,7 +33,8 @@ export default function Chat() {
       );
     },
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 30000, // 30 seconds instead of 5
+    staleTime: 15 * 1000, // 15 seconds
   });
 
   const { data: messages = [] } = useQuery({
@@ -42,7 +43,8 @@ export default function Chat() {
       chat_room_id: selectedChat?.id 
     }, 'created_date'),
     enabled: !!selectedChat,
-    refetchInterval: 2000,
+    refetchInterval: 5000, // 5 seconds instead of 2
+    staleTime: 2 * 1000, // 2 seconds
   });
 
   const { data: myFriends = [] } = useQuery({

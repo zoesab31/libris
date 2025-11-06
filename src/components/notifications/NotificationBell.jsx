@@ -39,7 +39,9 @@ export default function NotificationBell({ user }) {
       created_by: user?.email 
     }, '-created_date', 50),
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 30000, // 30 seconds instead of 5
+    staleTime: 15 * 1000, // 15 seconds
+    refetchOnWindowFocus: true,
   });
 
   // Filter out notifications where from_user equals current user email
