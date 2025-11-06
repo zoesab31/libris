@@ -91,8 +91,8 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
               </div>
               <Button
                 onClick={() => setMode("custom")} // Switch to custom mode to edit
-                className="w-full text-white font-medium py-6 text-lg mt-4"
-                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}
+                className="w-full font-medium py-6 text-lg mt-4"
+                style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
               >
                 <Wand2 className="w-5 h-5 mr-2" />
                 Commencer la personnalisation
