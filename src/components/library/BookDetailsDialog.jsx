@@ -101,6 +101,13 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      queryClient.invalidateQueries({ queryKey: ['friendsBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['friendsFinishedBooks'] });
+      
+      // Force refetch immediately
+      await queryClient.refetchQueries({ queryKey: ['myBooks'] });
+      
       toast.success("✅ Modifications enregistrées !");
 
       const oldStatus = userBook.status;
@@ -766,8 +773,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       <div>
                         <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Titre</Label>
                         <Input
-                          value={userBook.music || ""}
-                          onChange={(e) => updateUserBookMutation.mutate({ music: e.target.value })}
+                          value={editedData.music || ""}
+                          onChange={(e) => setEditedData({...editedData, music: e.target.value})}
                           placeholder="Titre de la chanson"
                           className="text-sm"
                         />
@@ -775,8 +782,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       <div>
                         <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Artiste</Label>
                         <Input
-                          value={userBook.music_artist || ""}
-                          onChange={(e) => updateUserBookMutation.mutate({ music_artist: e.target.value })}
+                          value={editedData.music_artist || ""}
+                          onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
                           placeholder="Nom de l'artiste"
                           className="text-sm"
                         />
@@ -784,14 +791,14 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       <div>
                         <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Lien (YouTube, Spotify, Deezer)</Label>
                         <Input
-                          value={userBook.music_link || ""}
-                          onChange={(e) => updateUserBookMutation.mutate({ music_link: e.target.value })}
+                          value={editedData.music_link || ""}
+                          onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
                           placeholder="https://..."
                           className="text-sm"
                         />
-                        {userBook.music_link && (
+                        {editedData.music_link && (
                           <a 
-                            href={userBook.music_link} 
+                            href={editedData.music_link} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-xs mt-1 inline-flex items-center gap-1 hover:underline"
@@ -850,15 +857,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     <Button
                       ref={saveButtonRef}
                       onClick={() => {
-                        // Create a copy of editedData and remove fields handled by direct mutations
-                        const dataForMutation = { ...editedData };
-                        delete dataForMutation.music;
-                        delete dataForMutation.music_artist;
-                        delete dataForMutation.music_link;
-
+                        // Include ALL data including music fields
                         updateUserBookMutation.mutate({
-                          ...dataForMutation,
-                          rating: dataForMutation.rating ? parseFloat(dataForMutation.rating) : undefined,
+                          ...editedData,
+                          rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
                         });
                       }}
                       disabled={updateUserBookMutation.isPending}

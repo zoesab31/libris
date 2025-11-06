@@ -27,22 +27,23 @@ export default function Dashboard() {
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    cacheTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: comments = [] } = useQuery({
     queryKey: ['recentComments'],
     queryFn: () => base44.entities.ReadingComment.list('-created_date', 5),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: readingGoal } = useQuery({
@@ -55,8 +56,8 @@ export default function Dashboard() {
       return goals[0] || null;
     },
     enabled: !!user,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 20 * 60 * 1000, // 20 minutes
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   const { data: myFriends = [] } = useQuery({

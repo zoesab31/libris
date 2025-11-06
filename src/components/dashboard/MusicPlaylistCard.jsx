@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music, ExternalLink, Play } from "lucide-react";
@@ -60,6 +61,9 @@ export default function MusicPlaylistCard({ myBooks, allBooks }) {
             <Music className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
             <p className="text-xs md:text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
               Associez des musiques (YouTube, Spotify, Deezer) à vos livres pour créer votre playlist
+            </p>
+            <p className="text-xs mt-2" style={{ color: 'var(--warm-pink)' }}>
+              💡 Ajoutez une musique dans les détails d'un livre "En cours"
             </p>
           </div>
         </CardContent>
