@@ -1,8 +1,35 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Trash2 } from 'lucide-react';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 
 export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
+  const queryClient = useQueryClient();
+
+  const deleteSeriesMutation = useMutation({
+    mutationFn: async () => {
+      await base44.entities.BookSeries.delete(series.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
+      toast.success("✅ Série supprimée !");
+    },
+    onError: (error) => {
+      console.error("Error deleting series:", error);
+      toast.error("Erreur lors de la suppression");
+    }
+  });
+
+  const handleDelete = (e) => {
+    e.stopPropagation(); // Prevent card onClick from firing
+    if (window.confirm(`Êtes-vous sûre de vouloir supprimer la série "${series.series_name}" ?`)) {
+      deleteSeriesMutation.mutate();
+    }
+  };
+
   // Get book statuses
   const getBookStatus = (bookId) => {
     const userBook = myBooks.find(ub => ub.book_id === bookId);
@@ -53,9 +80,21 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
   return (
     <Card
       onClick={onClick}
-      className="cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg overflow-hidden"
+      className="cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg overflow-hidden relative group"
       style={{ backgroundColor: 'white' }}
     >
+      {/* Delete button - visible on hover */}
+      <button
+        onClick={handleDelete}
+        disabled={deleteSeriesMutation.isPending}
+        className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-red-500 text-white 
+                   flex items-center justify-center opacity-0 group-hover:opacity-100 
+                   transition-opacity hover:bg-red-600 shadow-lg"
+        title="Supprimer la série"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+
       <div className="h-2" style={{ 
         background: progressPercent === 100 
           ? 'linear-gradient(90deg, #B8E6D5, #98D8C8)' 

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Check, ShoppingCart, Clock } from 'lucide-react';
+import { BookOpen, Check, ShoppingCart, Clock, Trash2 } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -20,6 +21,27 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
       toast.success("🎉 Série marquée comme complète !");
     }
   });
+
+  const deleteSeriesMutation = useMutation({
+    mutationFn: async () => {
+      await base44.entities.BookSeries.delete(series.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
+      toast.success("✅ Série supprimée !");
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error deleting series:", error);
+      toast.error("Erreur lors de la suppression de la série");
+    }
+  });
+
+  const handleDelete = () => {
+    if (window.confirm(`Êtes-vous sûre de vouloir supprimer la série "${series.series_name}" ?`)) {
+      deleteSeriesMutation.mutate();
+    }
+  };
 
   const getBookStatus = (bookId) => {
     if (!bookId) return 'not_released';
@@ -67,9 +89,20 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
-            {series.series_name} 📖
-          </DialogTitle>
+          <div className="flex items-start justify-between">
+            <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              {series.series_name} 📖
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={deleteSeriesMutation.isPending}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
