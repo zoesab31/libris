@@ -349,8 +349,8 @@ export default function Statistics() {
                     cy="50%"
                     labelLine={false}
                     label={(entry) => {
-                      // Only show label if value is 3 or more
-                      if (entry.value >= 3) {
+                      // Only show label if value is 2 or more
+                      if (entry.value >= 2) {
                         const percent = (entry.value / booksThisYear.length * 100).toFixed(0);
                         return `${entry.name} ${percent}%`;
                       }

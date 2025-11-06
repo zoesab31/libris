@@ -55,7 +55,7 @@ const getDominantColor = (imageUrl) => {
   });
 };
 
-const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
+const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const queryClient = useQueryClient();
