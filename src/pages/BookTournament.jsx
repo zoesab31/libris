@@ -89,6 +89,9 @@ export default function BookTournament() {
       return tournaments[0] || null;
     },
     enabled: !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000, // Refresh every 5 seconds during tournament
   });
 
   const { data: matches = [] } = useQuery({
@@ -98,6 +101,9 @@ export default function BookTournament() {
       created_by: user?.email
     }),
     enabled: !!currentTournament,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   const { data: allTournaments = [] } = useQuery({

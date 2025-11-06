@@ -54,9 +54,10 @@ export default function Statistics() {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book) return;
 
+      // ONLY use custom_genres, ignore the old "genre" field
       const genres = book.custom_genres && book.custom_genres.length > 0
         ? book.custom_genres
-        : (book.genre ? [book.genre] : ['Non classé']);
+        : ['Non classé'];
 
       genres.forEach(genre => {
         stats[genre] = (stats[genre] || 0) + 1;

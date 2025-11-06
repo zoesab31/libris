@@ -13,6 +13,8 @@ import CurrentlyReading from "../components/dashboard/CurrentlyReading";
 import ReadingGoalCard from "../components/dashboard/ReadingGoalCard";
 import YearSelector from "../components/dashboard/YearSelector";
 import MusicPlaylistCard from "../components/dashboard/MusicPlaylistCard";
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -88,24 +90,31 @@ export default function Dashboard() {
   });
 
   const { data: friendsFinishedBooks = [] } = useQuery({
-    queryKey: ['friendsFinishedBooks'],
+    queryKey: ['friendsFinishedBooks', selectedYear],
     queryFn: async () => {
       const friendsEmails = myFriends.map(f => f.friend_email);
       if (friendsEmails.length === 0) return [];
       
       const allFriendsFinishedBooks = await Promise.all(
         friendsEmails.map(email => 
-          base44.entities.UserBook.filter({ created_by: email, status: "Lu" }, '-updated_date', 10)
+          base44.entities.UserBook.filter({ created_by: email, status: "Lu" }, '-end_date', 50)
         )
       );
       
+      // Filter by selected year based on end_date
       return allFriendsFinishedBooks.flat()
-        .sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))
+        .filter(userBook => {
+          if (!userBook.end_date) return false; // Exclude books without end_date
+          const endYear = new Date(userBook.end_date).getFullYear();
+          return endYear === selectedYear;
+        })
+        .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
         .slice(0, 10);
     },
     enabled: myFriends.length > 0,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const { data: friendsComments = [] } = useQuery({
@@ -310,73 +319,90 @@ export default function Dashboard() {
             />
 
             {/* Friends' finished books */}
-            {friendsFinishedBooks.length > 0 && (
+            {myFriends.length > 0 && (
               <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
                 <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--soft-pink), var(--lavender))' }} />
                 <CardHeader className="p-4 md:p-6">
                   <CardTitle className="flex items-center gap-2 text-base md:text-xl" style={{ color: 'var(--dark-text)' }}>
                     <Users className="w-5 h-5 md:w-6 md:h-6" />
-                    Livres terminés par mes amies
+                    Livres terminés par mes amies en {selectedYear}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 md:p-6">
-                  <div className="space-y-3">
-                    {friendsFinishedBooks.map((userBook) => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      const friend = myFriends.find(f => f.friend_email === userBook.created_by);
-                      if (!book || !friend) return null;
+                  {friendsFinishedBooks.length > 0 ? (
+                    <div className="space-y-3">
+                      {friendsFinishedBooks.map((userBook) => {
+                        const book = allBooks.find(b => b.id === userBook.book_id);
+                        const friend = myFriends.find(f => f.friend_email === userBook.created_by);
+                        if (!book || !friend) return null;
 
-                      return (
-                        <div
-                          key={userBook.id}
-                          className="flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl transition-all hover:shadow-md"
-                          style={{ backgroundColor: 'var(--cream)' }}
-                        >
-                          <div className="w-12 h-16 md:w-16 md:h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book.cover_url ? (
-                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <BookOpen className="w-6 h-6 md:w-8 md:h-8" style={{ color: 'var(--warm-pink)' }} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                                   style={{ backgroundColor: 'var(--soft-pink)' }}>
-                                {friend.friend_name?.[0]?.toUpperCase() || 'A'}
-                              </div>
-                              <p className="text-xs md:text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
-                                {friend.friend_name?.split(' ')[0]} a terminé
-                              </p>
+                        return (
+                          <div
+                            key={`${userBook.id}-${userBook.end_date}`}
+                            className="flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl transition-all hover:shadow-md"
+                            style={{ backgroundColor: 'var(--cream)' }}
+                          >
+                            <div className="w-12 h-16 md:w-16 md:h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              {book.cover_url ? (
+                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <BookOpen className="w-6 h-6 md:w-8 md:h-8" style={{ color: 'var(--warm-pink)' }} />
+                                </div>
+                              )}
                             </div>
-                            <h3 className="font-bold text-xs md:text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </h3>
-                            <p className="text-[10px] md:text-xs mb-1" style={{ color: 'var(--warm-pink)' }}>
-                              {book.author}
-                            </p>
-                            {userBook.rating !== undefined && userBook.rating !== null && (
-                              <div className="flex items-center gap-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className="w-2.5 h-2.5 md:w-3 md:h-3"
-                                    style={{
-                                      fill: i < userBook.rating ? 'var(--gold)' : 'none',
-                                      stroke: 'var(--gold)',
-                                    }}
-                                  />
-                                ))}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                     style={{ backgroundColor: 'var(--soft-pink)' }}>
+                                  {friend.friend_name?.[0]?.toUpperCase() || 'A'}
+                                </div>
+                                <p className="text-xs md:text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
+                                  {friend.friend_name?.split(' ')[0]} a terminé
+                                </p>
                               </div>
-                            )}
+                              <h3 className="font-bold text-xs md:text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                                {book.title}
+                              </h3>
+                              <p className="text-[10px] md:text-xs mb-1" style={{ color: 'var(--warm-pink)' }}>
+                                {book.author}
+                              </p>
+                              {userBook.end_date && (
+                                <p className="text-[10px] md:text-xs" style={{ color: '#999' }}>
+                                  {format(new Date(userBook.end_date), 'd MMM yyyy', { locale: fr })}
+                                </p>
+                              )}
+                              {userBook.rating !== undefined && userBook.rating !== null && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className="w-2.5 h-2.5 md:w-3 md:h-3"
+                                      style={{
+                                        fill: i < userBook.rating ? 'var(--gold)' : 'none',
+                                        stroke: 'var(--gold)',
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                      <Users className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                      <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
+                        Aucun livre terminé en {selectedYear}
+                      </p>
+                      <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                        Vos amies n'ont pas encore terminé de livre cette année
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

@@ -35,8 +35,49 @@ export default function SharedReadings() {
 
   const { data: sharedReadings = [], isLoading } = useQuery({
     queryKey: ['sharedReadings'],
-    queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      const readings = await base44.entities.SharedReading.filter({ created_by: user?.email }, '-created_date');
+      
+      // Auto-update status based on current date
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to start of day
+      
+      const updatedReadings = await Promise.all(
+        readings.map(async (reading) => {
+          let newStatus = reading.status;
+          
+          if (reading.start_date && reading.end_date) {
+            const startDate = new Date(reading.start_date);
+            const endDate = new Date(reading.end_date);
+            startDate.setHours(0, 0, 0, 0); // Normalize to start of day
+            endDate.setHours(0, 0, 0, 0);   // Normalize to start of day
+            
+            // Determine status based on dates
+            if (today < startDate) {
+              newStatus = "À venir";
+            } else if (today > endDate) {
+              newStatus = "Terminée";
+            } else {
+              newStatus = "En cours";
+            }
+            
+            // Update if status changed
+            if (newStatus !== reading.status) {
+              await base44.entities.SharedReading.update(reading.id, { status: newStatus });
+              return { ...reading, status: newStatus }; // Return updated reading immediately
+            }
+          }
+          
+          return reading; // Return original if no change or dates are missing
+        })
+      );
+      
+      return updatedReadings;
+    },
     enabled: !!user,
+    staleTime: 0, // Always consider data stale to check for status updates
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchInterval: 60000, // Refetch every minute to check for status updates
   });
 
   const { data: allBooks = [] } = useQuery({
