@@ -304,7 +304,7 @@ export default function BookGrid({
 
               <div
                 onClick={() => {
-                  if (!selectionMode && !palMode && !showPALSelector) {
+                  if (!selectionMode && !palMode) { // Changed this line
                     setSelectedUserBook(userBook);
                   }
                 }}
