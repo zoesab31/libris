@@ -26,6 +26,7 @@ export default function BookTournament() {
   const [worstBookId, setWorstBookId] = useState("");
   const [worstReason, setWorstReason] = useState("");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false); // NEW
   const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -81,6 +82,33 @@ export default function BookTournament() {
         month: null // Filter for the yearly worst, not monthly
       });
       return result[0] || null;
+    },
+    enabled: !!user,
+  });
+
+  // Query for historical winners
+  const { data: historicalWinners = [] } = useQuery({
+    queryKey: ['historicalWinners'],
+    queryFn: async () => {
+      const winners = await base44.entities.BookOfTheYear.filter({
+        created_by: user?.email,
+        is_worst: false,
+        month: null // Only yearly winners
+      });
+      return winners.sort((a, b) => b.year - a.year);
+    },
+    enabled: !!user,
+  });
+
+  const { data: historicalWorst = [] } = useQuery({
+    queryKey: ['historicalWorst'],
+    queryFn: async () => {
+      const worst = await base44.entities.BookOfTheYear.filter({
+        created_by: user?.email,
+        is_worst: true,
+        month: null // Only yearly worst
+      });
+      return worst.sort((a, b) => b.year - a.year);
     },
     enabled: !!user,
   });
@@ -166,21 +194,34 @@ export default function BookTournament() {
   ).reverse(); // To show current year first
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+    <div className="p-3 md:p-4 lg:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--deep-pink))' }}>
-            <Trophy className="w-7 h-7 text-white" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
+                 style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--deep-pink))' }}>
+              <Trophy className="w-5 h-5 md:w-7 md:h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                Tournoi du Livre 🏆
+              </h1>
+              <p className="text-sm md:text-lg" style={{ color: 'var(--warm-pink)' }}>
+                Élisez vos meilleures et pires lectures de {selectedYear}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              Tournoi du Livre 🏆
-            </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              Élisez vos meilleures et pires lectures de {selectedYear}
-            </p>
-          </div>
+
+          {/* History Button */}
+          <Button
+            onClick={() => setShowHistoryDialog(true)}
+            variant="outline"
+            className="text-sm md:text-base font-medium"
+            style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Historique
+          </Button>
         </div>
 
         {/* Year Selector */}
@@ -584,6 +625,150 @@ export default function BookTournament() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* History Dialog */}
+        <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
+                📜 Historique des tournois
+              </DialogTitle>
+            </DialogHeader>
+
+            <Tabs defaultValue="best" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="best">👑 Meilleures lectures</TabsTrigger>
+                <TabsTrigger value="worst">👎 Pires lectures</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="best">
+                {historicalWinners.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--gold)' }} />
+                    <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
+                      Aucun historique pour le moment
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {historicalWinners.map((winner) => {
+                      const book = allBooks.find(b => b.id === winner.book_id);
+                      
+                      return (
+                        <div key={winner.id} className="p-6 rounded-xl shadow-lg"
+                             style={{ backgroundColor: 'white', borderLeft: '4px solid var(--gold)' }}>
+                          <div className="flex gap-6">
+                            <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              {book?.cover_url ? (
+                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Crown className="w-6 h-6" style={{ color: 'var(--gold)' }} />
+                                <h3 className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>
+                                  {winner.year}
+                                </h3>
+                              </div>
+                              {book ? (
+                                <>
+                                  <h4 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                                    {book.title}
+                                  </h4>
+                                  <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
+                                    par {book.author}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-lg font-medium mb-3" style={{ color: 'var(--warm-pink)' }}>
+                                  Aucun livre sélectionné
+                                </p>
+                              )}
+                              {winner.reason && (
+                                <p className="text-sm italic p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
+                                  "{winner.reason}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="worst">
+                {historicalWorst.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ThumbsDown className="w-16 h-16 mx-auto mb-4 opacity-20 text-red-500" />
+                    <p className="text-lg" style={{ color: 'var(--dark-text)' }}>
+                      Aucun historique pour le moment
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {historicalWorst.map((worst) => {
+                      const book = worst.book_id ? allBooks.find(b => b.id === worst.book_id) : null;
+                      
+                      return (
+                        <div key={worst.id} className="p-6 rounded-xl shadow-lg"
+                             style={{ backgroundColor: 'white', borderLeft: '4px solid #EF4444' }}>
+                          <div className="flex gap-6">
+                            {book && (
+                              <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                                   style={{ backgroundColor: 'var(--beige)' }}>
+                                {book.cover_url ? (
+                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-3">
+                                <ThumbsDown className="w-6 h-6 text-red-500" />
+                                <h3 className="text-2xl font-bold text-red-500">
+                                  {worst.year}
+                                </h3>
+                              </div>
+                              {book ? (
+                                <>
+                                  <h4 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                                    {book.title}
+                                  </h4>
+                                  <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
+                                    par {book.author}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-lg font-medium mb-3" style={{ color: 'var(--warm-pink)' }}>
+                                  Aucun livre sélectionné
+                                </p>
+                              )}
+                              {worst.reason && (
+                                <p className="text-sm italic p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
+                                  "{worst.reason}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>

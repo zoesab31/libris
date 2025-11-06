@@ -12,6 +12,7 @@ import RecentActivity from "../components/dashboard/RecentActivity";
 import CurrentlyReading from "../components/dashboard/CurrentlyReading";
 import ReadingGoalCard from "../components/dashboard/ReadingGoalCard";
 import YearSelector from "../components/dashboard/YearSelector";
+import MusicPlaylistCard from "../components/dashboard/MusicPlaylistCard";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -381,87 +382,7 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4 md:space-y-6">
-            <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
-              <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--gold))' }} />
-              <CardHeader className="p-4 md:p-6">
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: 'var(--dark-text)' }}>
-                  <Music className="w-4 h-4 md:w-5 md:h-5" />
-                  Ma Playlist Littéraire 🎵
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                {myBooks.filter(b => b.music).slice(0, 3).length > 0 ? (
-                  <div className="space-y-3">
-                    {myBooks.filter(b => b.music).slice(0, 3).map((userBook) => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      
-                      let youtubeId = null;
-                      if (userBook.music_link) {
-                        const match = userBook.music_link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-                        if (match) youtubeId = match[1];
-                      }
-                      
-                      return (
-                        <div key={userBook.id} 
-                             className="group relative p-3 md:p-4 rounded-xl transition-all hover:shadow-md"
-                             style={{ 
-                               background: 'linear-gradient(135deg, var(--soft-pink), var(--beige))',
-                             }}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-md animate-pulse"
-                                 style={{ backgroundColor: 'var(--deep-pink)' }}>
-                              <Music className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-xs md:text-sm mb-1 line-clamp-1" style={{ color: 'var(--dark-text)' }}>
-                                🎵 {userBook.music}
-                              </p>
-                              <p className="text-[10px] md:text-xs font-medium mb-1" style={{ color: 'var(--warm-pink)' }}>
-                                par {userBook.music_artist}
-                              </p>
-                              <p className="text-[10px] md:text-xs line-clamp-1" style={{ color: 'var(--dark-text)' }}>
-                                📚 {book?.title}
-                              </p>
-                              {userBook.music_link && (
-                                <a 
-                                  href={userBook.music_link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] md:text-xs underline mt-1 block"
-                                  style={{ color: 'var(--deep-pink)' }}
-                                >
-                                  🔗 Écouter
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {youtubeId && (
-                            <div className="mt-3 rounded-lg overflow-hidden">
-                              <iframe 
-                                width="100%" 
-                                height="120" 
-                                src={`https://www.youtube.com/embed/${youtubeId}`}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Music className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <p className="text-xs md:text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                      Associez des musiques à vos livres pour créer votre playlist
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <MusicPlaylistCard myBooks={myBooks} allBooks={allBooks} />
 
             <Card className="shadow-lg border-0 overflow-hidden" style={{ backgroundColor: 'white' }}>
               <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--rose-gold), var(--soft-pink))' }} />
