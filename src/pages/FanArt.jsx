@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Plus, FolderOpen, ChevronLeft, Trash2 } from "lucide-react";
 import AddFanArtDialog from "../components/fanart/AddFanArtDialog";
 import FanArtGallery from "../components/fanart/FanArtGallery";
-import { toast } from 'react-hot-toast'; // Assuming react-hot-toast for notifications
+import { toast } from "sonner";
 
 export default function FanArt() {
   const [user, setUser] = useState(null);
@@ -32,20 +31,15 @@ export default function FanArt() {
 
   const deleteBookMutation = useMutation({
     mutationFn: async (bookId) => {
-      // Get all fan arts for this book
       const bookFanArts = fanArts.filter(fa => fa.book_id === bookId);
-      // Delete all fan arts
       const deletePromises = bookFanArts.map(fa => base44.entities.FanArt.delete(fa.id));
       await Promise.all(deletePromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-      toast.success("Livre et fan arts supprimés avec succès.");
+      toast.success("Livre et fan arts supprimés");
       setSelectedBook(null);
       setSelectedSubfolder(null);
-    },
-    onError: (error) => {
-      toast.error(`Erreur lors de la suppression du livre : ${error.message}`);
     },
   });
 
@@ -60,11 +54,8 @@ export default function FanArt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-      toast.success("Dossier supprimé avec succès.");
+      toast.success("Dossier supprimé");
       setSelectedSubfolder(null);
-    },
-    onError: (error) => {
-      toast.error(`Erreur lors de la suppression du dossier : ${error.message}`);
     },
   });
 
@@ -89,22 +80,19 @@ export default function FanArt() {
 
   const books = Object.keys(fanArtsByBook);
 
-  // Get current view data
   const getCurrentViewData = () => {
     if (!selectedBook) return { fanArts: [], title: "Tous les fan arts" };
     
     const bookData = fanArtsByBook[selectedBook];
-    if (!bookData) return { fanArts: [], title: "Tous les fan arts" }; // Safety check
+    if (!bookData) return { fanArts: [], title: "Tous les fan arts" };
     
     const bookTitle = bookData.book?.title || "Sans livre";
     
     if (!selectedSubfolder) {
-      // Show all fan arts for this book
       const allFanArts = Object.values(bookData.subfolders).flat();
       return { fanArts: allFanArts, title: bookTitle };
     }
     
-    // Show fan arts for specific subfolder
     return {
       fanArts: bookData.subfolders[selectedSubfolder] || [],
       title: `${bookTitle} → ${selectedSubfolder}`
@@ -140,7 +128,6 @@ export default function FanArt() {
           </Button>
         </div>
 
-        {/* Navigation */}
         {!selectedBook ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {books.map(bookId => {
@@ -178,18 +165,16 @@ export default function FanArt() {
                     </p>
                   </button>
                   
-                  {/* Delete button */}
                   <Button
                     size="icon"
                     variant="destructive"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.confirm(`Supprimer tous les fan arts de "${book?.title || 'Sans livre'}" ? Cette action est irréversible.`)) {
+                      if (window.confirm(`Supprimer tous les fan arts de "${book?.title || 'Sans livre'}" ?`)) {
                         deleteBookMutation.mutate(bookId);
                       }
                     }}
-                    disabled={deleteBookMutation.isLoading}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -216,11 +201,10 @@ export default function FanArt() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (window.confirm(`Supprimer tous les fan arts de ce livre ("${fanArtsByBook[selectedBook]?.book?.title || 'Sans livre'}") ? Cette action est irréversible.`)) {
+                  if (window.confirm(`Supprimer tous les fan arts de ce livre ?`)) {
                     deleteBookMutation.mutate(selectedBook);
                   }
                 }}
-                disabled={deleteBookMutation.isLoading}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Supprimer le livre
@@ -258,18 +242,16 @@ export default function FanArt() {
                         </p>
                       </button>
                       
-                      {/* Delete button */}
                       <Button
                         size="icon"
                         variant="destructive"
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm(`Supprimer le dossier "${subfolder}" et tous ses fan arts ? Cette action est irréversible.`)) {
+                          if (window.confirm(`Supprimer le dossier "${subfolder}" et tous ses fan arts ?`)) {
                             deleteSubfolderMutation.mutate({ bookId: selectedBook, subfolder });
                           }
                         }}
-                        disabled={deleteSubfolderMutation.isLoading}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -294,11 +276,10 @@ export default function FanArt() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (window.confirm(`Supprimer le dossier "${selectedSubfolder}" et tous ses fan arts ? Cette action est irréversible.`)) {
+                  if (window.confirm(`Supprimer le dossier "${selectedSubfolder}" et tous ses fan arts ?`)) {
                     deleteSubfolderMutation.mutate({ bookId: selectedBook, subfolder: selectedSubfolder });
                   }
                 }}
-                disabled={deleteSubfolderMutation.isLoading}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Supprimer le dossier
