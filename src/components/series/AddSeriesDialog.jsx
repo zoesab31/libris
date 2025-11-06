@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X, Search } from "lucide-react";
+import { Plus, X, Search, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddSeriesDialog({ open, onOpenChange, user }) {
@@ -23,6 +24,8 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
   const [readingOrder, setReadingOrder] = useState([{ order: 1, title: "", bookId: null }]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeOrderIndex, setActiveOrderIndex] = useState(null);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [onlineResults, setOnlineResults] = useState([]);
   const queryClient = useQueryClient();
 
   const { data: myBooks = [] } = useQuery({
@@ -37,24 +40,78 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
     enabled: open,
   });
 
-  // Filter books based on search query
-  const filteredBooks = useMemo(() => {
+  // Filter books from library based on search query
+  const myLibraryBooks = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
     
     const query = searchQuery.toLowerCase().trim();
-    
-    // Get books from my library
     const myBookIds = myBooks.map(ub => ub.book_id);
-    const myLibraryBooks = allBooks.filter(book => myBookIds.includes(book.id));
+    const libraryBooks = allBooks.filter(book => myBookIds.includes(book.id));
     
-    // Filter by search query
-    return myLibraryBooks
+    return libraryBooks
       .filter(book => 
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query)
       )
-      .slice(0, 10); // Limit to 10 results
+      .slice(0, 5); // Limit to 5 results for library
   }, [searchQuery, myBooks, allBooks]);
+
+  // Search Google Books API when user types
+  useEffect(() => {
+    if (activeOrderIndex === null || !searchQuery || searchQuery.length < 2) {
+      setOnlineResults([]);
+      return;
+    }
+
+    setIsSearchingOnline(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=8&langRestrict=fr`
+        );
+        const data = await response.json();
+
+        if (data.items) {
+          const books = data.items.map(item => {
+            let coverUrl = "";
+            if (item.volumeInfo.imageLinks) {
+              coverUrl = item.volumeInfo.imageLinks.large ||
+                        item.volumeInfo.imageLinks.medium ||
+                        item.volumeInfo.imageLinks.thumbnail ||
+                        "";
+              if (coverUrl) {
+                coverUrl = coverUrl.replace('http:', 'https:');
+                if (coverUrl.includes('books.google.com')) {
+                  coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
+                  if (!coverUrl.includes('zoom=')) {
+                    coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
+                  }
+                }
+              }
+            }
+
+            return {
+              id: item.id, // Using Google Books ID
+              title: item.volumeInfo.title || "Titre inconnu",
+              author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
+              coverUrl: coverUrl,
+              isOnline: true
+            };
+          });
+          setOnlineResults(books);
+        } else {
+          setOnlineResults([]);
+        }
+      } catch (error) {
+        console.error("Erreur de recherche:", error);
+        setOnlineResults([]);
+      } finally {
+        setIsSearchingOnline(false);
+      }
+    }, 500); // Debounce online search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, activeOrderIndex]);
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
@@ -80,6 +137,8 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
     setReadingOrder([{ order: 1, title: "", bookId: null }]);
     setSearchQuery("");
     setActiveOrderIndex(null);
+    setOnlineResults([]); // Reset online results
+    setIsSearchingOnline(false); // Reset online search status
     onOpenChange(false);
   };
 
@@ -102,7 +161,7 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
         .map(ro => ({
           order: ro.order,
           title: ro.title.trim(),
-          book_id: ro.bookId || undefined
+          book_id: ro.bookId || undefined // Book ID from local library
         })),
       books_read: [],
       books_in_pal: [],
@@ -141,12 +200,46 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
     newOrder[index] = {
       ...newOrder[index],
       title: book.title,
-      bookId: book.id
+      // If it's an online book, we don't store its `bookId` in our DB.
+      // We only store the title for online books.
+      bookId: book.isOnline ? null : book.id, 
+      isOnline: book.isOnline || false
     };
     setReadingOrder(newOrder);
     setSearchQuery("");
     setActiveOrderIndex(null);
+    setOnlineResults([]); // Clear results after selection
   };
+
+  // Combine library books and online results
+  const combinedResults = useMemo(() => {
+    const results = [];
+    
+    // Convert myLibraryBooks into the same format as onlineResults for consistent display
+    const formattedMyLibraryBooks = myLibraryBooks.map(book => ({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      coverUrl: book.cover_url, // Use cover_url for local books
+      isOnline: false
+    }));
+
+    if (formattedMyLibraryBooks.length > 0) {
+      results.push({
+        section: "Dans votre bibliothèque",
+        books: formattedMyLibraryBooks
+      });
+    }
+    
+    if (onlineResults.length > 0) {
+      results.push({
+        section: "Recherche en ligne",
+        books: onlineResults
+      });
+    }
+    
+    return results;
+  }, [myLibraryBooks, onlineResults]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -229,7 +322,7 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
               </Button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'var(--warm-pink)' }}>
-              Ajoutez les tomes de la série dans l'ordre. Vous pouvez lier des livres de votre bibliothèque ou ajouter des titres manuellement.
+              Recherchez des livres de votre bibliothèque ou trouvez-les en ligne. Vous pouvez aussi ajouter des titres manuellement.
             </p>
 
             <div className="space-y-3">
@@ -253,7 +346,8 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
                         }}
                         onFocus={() => {
                           setActiveOrderIndex(index);
-                          setSearchQuery(book.title);
+                          // Only set searchQuery if the book has a title, otherwise start fresh
+                          setSearchQuery(book.title || "");
                         }}
                         onBlur={() => {
                           // Delay to allow click on suggestion
@@ -261,57 +355,84 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
                             if (activeOrderIndex === index) {
                               setActiveOrderIndex(null);
                               setSearchQuery("");
+                              setOnlineResults([]); // Clear online results on blur
                             }
                           }, 200);
                         }}
-                        placeholder="Choisir un livre de votre bibliothèque"
+                        placeholder="Rechercher un livre ou saisir le titre manuellement"
                         className="pr-8"
                       />
-                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      {isSearchingOnline && activeOrderIndex === index ? (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                      ) : (
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      )}
                       
-                      {/* Autocomplete dropdown */}
-                      {activeOrderIndex === index && searchQuery.length >= 2 && filteredBooks.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border-2 max-h-64 overflow-y-auto"
+                      {/* Combined dropdown */}
+                      {activeOrderIndex === index && searchQuery.length >= 2 && combinedResults.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border-2 max-h-96 overflow-y-auto"
                              style={{ borderColor: 'var(--beige)' }}>
-                          {filteredBooks.map((bookOption) => (
-                            <button
-                              key={bookOption.id}
-                              type="button"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                selectBookForOrder(index, bookOption);
-                              }}
-                              className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left"
-                            >
-                              <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0"
-                                   style={{ backgroundColor: 'var(--beige)' }}>
-                                {bookOption.cover_url ? (
-                                  <img src={bookOption.cover_url} alt={bookOption.title} 
-                                       className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs">
-                                    📖
+                          {combinedResults.map((section, sIdx) => (
+                            <div key={sIdx}>
+                              <div className="sticky top-0 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-600 border-b"
+                                   style={{ borderColor: 'var(--beige)' }}>
+                                {section.section}
+                              </div>
+                              {section.books.map((bookOption) => (
+                                <button
+                                  key={bookOption.id || `${bookOption.title}-${bookOption.author}`} // Fallback key for online books without unique IDs
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectBookForOrder(index, bookOption);
+                                  }}
+                                  className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left border-b last:border-b-0"
+                                  style={{ borderColor: 'var(--beige)' }}
+                                >
+                                  <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0"
+                                       style={{ backgroundColor: 'var(--beige)' }}>
+                                    {bookOption.coverUrl ? (
+                                      <img 
+                                        src={bookOption.coverUrl} 
+                                        alt={bookOption.title} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <BookOpen className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm line-clamp-1" 
-                                   style={{ color: 'var(--dark-text)' }}>
-                                  {bookOption.title}
-                                </p>
-                                <p className="text-xs line-clamp-1" 
-                                   style={{ color: 'var(--warm-pink)' }}>
-                                  {bookOption.author}
-                                </p>
-                              </div>
-                            </button>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm line-clamp-1" 
+                                       style={{ color: 'var(--dark-text)' }}>
+                                      {bookOption.title}
+                                    </p>
+                                    <p className="text-xs line-clamp-1" 
+                                       style={{ color: 'var(--warm-pink)' }}>
+                                      {bookOption.author}
+                                    </p>
+                                    {bookOption.isOnline && (
+                                      <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                                        🌐 Recherche en ligne
+                                      </p>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                    {book.bookId && (
-                      <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                        ✓ Lié à votre bibliothèque
+                    {book.bookId && !book.isOnline && (
+                      <p className="text-xs mt-1" style={{ color: '#10b981' }}>
+                        ✓ Dans votre bibliothèque
+                      </p>
+                    )}
+                    {book.isOnline && (
+                      <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
+                        🌐 Ajouté depuis la recherche en ligne (non lié à votre bibliothèque)
                       </p>
                     )}
                   </div>
