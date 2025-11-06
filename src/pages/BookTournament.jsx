@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 // Removed confetti import as it's no longer used based on the outline
 
-const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", Décembre"];
+const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 const ROUND_COLORS = {
   monthly: "bg-gray-100 border-gray-300",
@@ -640,7 +640,7 @@ export default function BookTournament() {
             <Card className="shadow-2xl border-0 overflow-hidden">
               <div className="h-3" style={{ background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})` }} />
               <CardContent className="p-8 text-center">
-                <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }>
                   {isDark ? "💀 Pire lecture" : "🏆 Meilleure lecture"} de {selectedYear}
                 </h2>
                 {(() => {
