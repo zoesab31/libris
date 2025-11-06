@@ -39,7 +39,7 @@ const navigationItems = [
   },
   {
     title: "Séries à compléter",
-    url: createPageUrl("SeriesTracking"),
+    url: createPageUrl("Series"),
     icon: BookOpen,
   },
   {

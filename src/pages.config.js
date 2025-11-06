@@ -17,7 +17,7 @@ import Chat from './pages/Chat';
 import UserProfile from './pages/UserProfile';
 import Statistics from './pages/Statistics';
 import BookTournament from './pages/BookTournament';
-import SeriesTracking from './pages/SeriesTracking';
+import Series from './pages/Series';
 import Layout from './Layout.jsx';
 
 
@@ -41,7 +41,7 @@ export const PAGES = {
     "UserProfile": UserProfile,
     "Statistics": Statistics,
     "BookTournament": BookTournament,
-    "SeriesTracking": SeriesTracking,
+    "Series": Series,
 }
 
 export const pagesConfig = {
