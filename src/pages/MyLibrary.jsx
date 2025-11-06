@@ -8,11 +8,11 @@ import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft } from "lu
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
-import PALManager from "../components/library/PALManager"; // New import
+import PALManager from "../components/library/PALManager";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } => "@/utils";
-import { toast } from 'sonner'; // New import for notifications
-import BookDetailsDialog from "../components/library/BookDetailsDialog"; // New import for BookDetailsDialog
+import { createPageUrl } from "@/utils";
+import { toast } from 'sonner';
+import BookDetailsDialog from "../components/library/BookDetailsDialog";
 
 export default function MyLibrary() {
   const navigate = useNavigate();
@@ -333,7 +333,7 @@ export default function MyLibrary() {
             {readingLists.length === 0 ? (
               <div className="text-center py-20">
                 <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }>
                   Aucune PAL créée
                 </h3>
                 <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
