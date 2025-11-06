@@ -38,6 +38,11 @@ const navigationItems = [
     icon: Store,
   },
   {
+    title: "Séries à compléter",
+    url: createPageUrl("SeriesTracking"),
+    icon: BookOpen,
+  },
+  {
     title: "Citations",
     url: createPageUrl("Quotes"),
     icon: Quote,
