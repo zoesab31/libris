@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -156,18 +157,8 @@ export default function BookTournament() {
         });
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => { // Modified: Removed confetti logic for best book
       queryClient.invalidateQueries({ queryKey: ['yearlyWinners'] });
-      
-      if (!variables.isWorst) {
-        // Confetti for best book
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FF1493', '#FF69B4']
-        });
-      }
     }
   });
 
