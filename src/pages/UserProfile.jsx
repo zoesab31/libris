@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import {
   Sheet,
@@ -96,6 +96,15 @@ export default function UserProfile() {
     queryKey: ['userCharacters', userEmail],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: userEmail }, 'rank'),
     enabled: !!userEmail && activeTab === 'characters',
+  });
+
+  const { data: userBooksWithMusic = [] } = useQuery({
+    queryKey: ['userBooksWithMusic', userEmail],
+    queryFn: async () => {
+      const books = await base44.entities.UserBook.filter({ created_by: userEmail });
+      return books.filter(b => b.music && b.music_link);
+    },
+    enabled: !!userEmail && activeTab === 'music',
   });
 
   const { data: sharedReadings = [] } = useQuery({
@@ -254,7 +263,7 @@ export default function UserProfile() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8">
+          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap">
             <TabsTrigger 
               value="library" 
               className="rounded-lg font-bold"
@@ -294,6 +303,14 @@ export default function UserProfile() {
             >
               <Heart className="w-4 h-4 mr-2" />
               Personnages
+            </TabsTrigger>
+            <TabsTrigger 
+              value="music" 
+              className="rounded-lg font-bold"
+              style={activeTab === "music" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <Music className="w-4 h-4 mr-2" />
+              Playlist
             </TabsTrigger>
           </TabsList>
 
@@ -493,6 +510,77 @@ export default function UserProfile() {
               <div className="text-center py-12">
                 <Heart className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <p style={{ color: 'var(--warm-pink)' }}>Aucun personnage préféré</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="music">
+            <div className="space-y-4">
+              {userBooksWithMusic.map(userBook => {
+                const book = allBooks.find(b => b.id === userBook.book_id);
+                const platform = userBook.music_link?.includes('youtube') || userBook.music_link?.includes('youtu.be') 
+                  ? 'youtube' 
+                  : userBook.music_link?.includes('spotify') 
+                  ? 'spotify' 
+                  : userBook.music_link?.includes('deezer')
+                  ? 'deezer'
+                  : 'other';
+                
+                const platformInfo = {
+                  youtube: { icon: '🎥', color: '#FF0000', name: 'YouTube' },
+                  spotify: { icon: '🎵', color: '#1DB954', name: 'Spotify' },
+                  deezer: { icon: '🎶', color: '#FF6600', name: 'Deezer' },
+                  other: { icon: '🔗', color: accentColor, name: 'Lien' }
+                };
+
+                const info = platformInfo[platform];
+
+                return (
+                  <Card key={userBook.id} className="p-6 bg-white">
+                    <div className="flex gap-4">
+                      <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book?.cover_url && (
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                              🎵 {userBook.music}
+                            </h3>
+                            <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
+                              par {userBook.music_artist}
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--dark-text)' }}>
+                              📚 {book?.title}
+                            </p>
+                          </div>
+                          <a 
+                            href={userBook.music_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <Button size="sm" variant="outline" style={{ borderColor: info.color, color: info.color }}>
+                              {info.icon} Ouvrir
+                            </Button>
+                          </a>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full font-medium inline-block"
+                              style={{ backgroundColor: info.color, color: 'white' }}>
+                          {info.name}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            {userBooksWithMusic.length === 0 && (
+              <div className="text-center py-12">
+                <Music className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucune musique associée</p>
               </div>
             )}
           </TabsContent>
