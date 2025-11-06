@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Users, Plus, BookOpen, Trash2, X } from "lucide-react";
+import { Users, Plus, BookOpen, Trash2, X, Search, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import AddSharedReadingDialog from "../components/sharedreadings/AddSharedReadingDialog";
 import SharedReadingCard from "../components/sharedreadings/SharedReadingCard";
@@ -531,7 +531,40 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("📚");
   const [isPublic, setIsPublic] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBooks, setSelectedBooks] = useState([]);
   const queryClient = useQueryClient();
+
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
+  });
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooks'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  // Filter books from library
+  const myLibraryBooks = useMemo(() => {
+    if (!user) return [];
+    const myBookIds = myBooks.map(ub => ub.book_id);
+    return allBooks.filter(book => myBookIds.includes(book.id));
+  }, [allBooks, myBooks, user]);
+
+  // Filter books by search query
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const query = searchQuery.toLowerCase().trim();
+    return myLibraryBooks
+      .filter(book =>
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query)
+      )
+      .slice(0, 10);
+  }, [searchQuery, myLibraryBooks]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.SharedReadingWishlist.create(data),
@@ -551,7 +584,17 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
     setDescription("");
     setIcon("📚");
     setIsPublic(false);
+    setSearchQuery("");
+    setSelectedBooks([]);
     onOpenChange(false);
+  };
+
+  const toggleBookSelection = (bookId) => {
+    setSelectedBooks(prev =>
+      prev.includes(bookId)
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
   };
 
   const handleSubmit = (e) => {
@@ -565,22 +608,22 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
       description: description.trim() || undefined,
       icon,
       is_public: isPublic,
-      book_ids: [],
+      book_ids: selectedBooks,
       shared_with: [],
-      created_by: user?.email, // Set the creator of the wishlist
+      created_by: user?.email,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
             💭 Nouvelle liste de souhaits
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
           <div>
             <Label htmlFor="title">Titre *</Label>
             <Input
@@ -615,6 +658,117 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Book search and selection */}
+          <div>
+            <Label>Ajouter des livres à la liste</Label>
+            <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
+              Recherchez et sélectionnez des livres de votre bibliothèque
+            </p>
+            
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                      style={{ color: 'var(--warm-pink)' }} />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un livre par titre ou auteur..."
+                className="pl-10"
+              />
+            </div>
+
+            {/* Selected books */}
+            {selectedBooks.length > 0 && (
+              <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                <p className="text-sm font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedBooks.map((bookId) => {
+                    const book = allBooks.find(b => b.id === bookId);
+                    if (!book) return null;
+                    return (
+                      <div
+                        key={bookId}
+                        className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: 'var(--soft-pink)' }}
+                      >
+                        <span>{book.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleBookSelection(bookId)}
+                          className="hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Search results */}
+            {searchQuery.length >= 2 && filteredBooks.length > 0 && (
+              <div className="border rounded-lg max-h-64 overflow-y-auto" 
+                   style={{ borderColor: 'var(--beige)' }}>
+                {filteredBooks.map((book) => {
+                  const isSelected = selectedBooks.includes(book.id);
+                  return (
+                    <button
+                      key={book.id}
+                      type="button"
+                      onClick={() => toggleBookSelection(book.id)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left border-b last:border-b-0"
+                      style={{
+                        backgroundColor: isSelected ? 'var(--cream)' : 'white',
+                        borderColor: 'var(--beige)'
+                      }}
+                    >
+                      {/* Book cover */}
+                      <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0" 
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book.cover_url ? (
+                          <img src={book.cover_url} alt={book.title} 
+                               className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <BookOpen className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Book info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-1" 
+                           style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </p>
+                        <p className="text-xs line-clamp-1" 
+                           style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                      </div>
+
+                      {/* Selection indicator */}
+                      {isSelected && (
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                             style={{ backgroundColor: 'var(--deep-pink)' }}>
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {searchQuery.length >= 2 && filteredBooks.length === 0 && (
+              <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                Aucun livre trouvé dans votre bibliothèque
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg"
