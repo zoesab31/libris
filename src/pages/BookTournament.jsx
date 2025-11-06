@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Trophy, Calendar, History, Sparkles, Skull, ChevronDown, Play, RotateCcw, Zap } from "lucide-react";
+import { Trophy, Calendar, History, Skull, ChevronDown, RotateCcw, Share2, Undo, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -17,55 +16,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
-const ROUND_NAMES = {
-  round_of_16: "Huitièmes de finale",
-  quarter: "Quarts de finale",
-  semi: "Demi-finales",
-  final: "Finale"
-};
+const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-const ROUND_ORDER = ["round_of_16", "quarter", "semi", "final"];
-
-// Badges selon le nombre de lectures
-const READING_BADGES = {
-  1: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
-  2: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
-  3: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
-  4: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
-  5: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
-  6: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
-  7: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
-  8: { emoji: "📚", title: "Aventurier des mots", message: "Tu dévores les mondes littéraires." },
-};
-
-const getReadingBadge = (count) => {
-  if (count >= 16) return { emoji: "🏆", title: "Grand lecteur", message: "Rien ne t'arrête, champion de l'imaginaire." };
-  if (count >= 8) return READING_BADGES[8];
-  return READING_BADGES[count] || READING_BADGES[1];
-};
-
-// Calculer la structure du tournoi selon le nombre de livres
-const getTournamentStructure = (bookCount) => {
-  if (bookCount === 0) return { type: "none", rounds: [], size: 0, message: "Aucun livre éligible" };
-  if (bookCount === 1) return { type: "auto", rounds: ["final"], size: 1, message: "Lecture unique — auto-vainqueur 🎉" };
-  if (bookCount <= 3) return { type: "duel", rounds: ["final"], size: 2, message: "Duel de l'année 💫" };
-  if (bookCount <= 7) return { type: "mini", rounds: ["quarter", "semi", "final"], size: 4, message: "Mini tournoi ✨" };
-  if (bookCount <= 15) return { type: "standard", rounds: ["round_of_16", "quarter", "semi", "final"], size: 8, message: "Tournoi standard 🎯" };
-  return { type: "full", rounds: ["round_of_16", "quarter", "semi", "final"], size: 16, message: "Tournoi complet 🏆" };
+const ROUND_COLORS = {
+  monthly: "bg-gray-100 border-gray-300",
+  eighth: "bg-pink-50 border-pink-300",
+  quarter: "bg-orange-50 border-orange-300",
+  semi: "bg-purple-50 border-purple-300",
+  final: "bg-yellow-50 border-yellow-400"
 };
 
 export default function BookTournament() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [tournamentType, setTournamentType] = useState("best");
+  const [mode, setMode] = useState("best"); // "best" or "worst"
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [isGeneratingNextRound, setIsGeneratingNextRound] = useState(false);
+  const [currentColumn, setCurrentColumn] = useState(0); // For mobile carousel
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -82,408 +52,266 @@ export default function BookTournament() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const { data: currentTournament } = useQuery({
-    queryKey: ['tournament', selectedYear, tournamentType],
+  const { data: currentTournament, refetch: refetchTournament } = useQuery({
+    queryKey: ['tournament', selectedYear, mode],
     queryFn: async () => {
       const tournaments = await base44.entities.Tournament.filter({
         created_by: user?.email,
         year: selectedYear,
-        type: tournamentType
+        type: mode
       });
       return tournaments[0] || null;
     },
     enabled: !!user,
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: 1000, // Refresh every second for better responsiveness
+    refetchInterval: 2000,
   });
 
-  const { data: matches = [] } = useQuery({
-    queryKey: ['tournamentMatches', currentTournament?.id],
-    queryFn: () => base44.entities.TournamentMatch.filter({
-      tournament_id: currentTournament.id,
-      created_by: user?.email
-    }),
-    enabled: !!currentTournament,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000, // Refresh every second
-  });
-
-  const { data: allTournaments = [] } = useQuery({
-    queryKey: ['allTournaments'],
-    queryFn: () => base44.entities.Tournament.filter({
-      created_by: user?.email,
-      status: "completed"
-    }),
-    enabled: !!user && showHistoryDialog,
-  });
-
-  // Helper to check if DNF book counts
+  // Helper: check if DNF book counts (>50%)
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
     if (userBook.abandon_percentage >= 50) return true;
-    if (userBook.abandon_page) {
-      const book = allBooks.find(b => b.id === userBook.book_id);
-      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
-        return true;
-      }
+    
+    const book = allBooks.find(b => b.id === userBook.book_id);
+    if (book?.page_count && userBook.abandon_page >= book.page_count / 2) {
+      return true;
     }
     return false;
   };
 
-  // Get eligible books for the year
-  const eligibleBooks = useMemo(() => {
-    return myBooks.filter(userBook => {
-      if (!userBook.end_date) return false;
-      const endYear = new Date(userBook.end_date).getFullYear();
-      if (endYear !== selectedYear) return false;
-      
-      if (userBook.status === "Lu") return true;
-      if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) return true;
-      
-      return false;
+  // Get books finished in selected year, organized by month
+  const booksByMonth = useMemo(() => {
+    const months = {};
+    
+    for (let i = 0; i < 12; i++) {
+      months[i] = [];
+    }
+
+    myBooks.forEach(userBook => {
+      if (!userBook.end_date) return;
+      const endDate = new Date(userBook.end_date);
+      if (endDate.getFullYear() !== selectedYear) return;
+
+      const isLu = userBook.status === "Lu";
+      const isQualifiedDNF = userBook.status === "Abandonné" && abandonedBookCounts(userBook);
+
+      // For "best" mode: only Lu books
+      // For "worst" mode: Lu books + qualified DNF
+      if (mode === "best" && !isLu) return;
+      if (mode === "worst" && !isLu && !isQualifiedDNF) return;
+
+      const month = endDate.getMonth();
+      months[month].push(userBook);
     });
-  }, [myBooks, selectedYear, allBooks]);
 
-  const tournamentStructure = getTournamentStructure(eligibleBooks.length);
+    return months;
+  }, [myBooks, selectedYear, mode, allBooks]);
 
-  // Create tournament mutation
-  const createTournamentMutation = useMutation({
+  // Initialize tournament mutation
+  const initTournamentMutation = useMutation({
     mutationFn: async () => {
-      // Shuffle books randomly
-      const shuffled = [...eligibleBooks].sort(() => Math.random() - 0.5);
-      const participants = shuffled.slice(0, tournamentStructure.size);
-      
-      // Pour 1 livre : créer directement le tournoi complété
-      if (tournamentStructure.type === "auto") {
-        const tournament = await base44.entities.Tournament.create({
-          year: selectedYear,
-          type: tournamentType,
-          status: "completed",
-          current_round: "final",
-          winner_book_id: participants[0].book_id,
-          participant_books: [participants[0].book_id]
-        });
-        return tournament;
+      // Delete existing tournament if any
+      if (currentTournament) {
+        await base44.entities.Tournament.delete(currentTournament.id);
       }
 
-      // Create tournament
-      const firstRound = tournamentStructure.rounds[0];
+      // Create monthly picks structure
+      const monthlyPicks = {};
+      Object.keys(booksByMonth).forEach(month => {
+        monthlyPicks[month] = booksByMonth[month].map(ub => ub.book_id);
+      });
+
+      // Create new tournament
       const tournament = await base44.entities.Tournament.create({
         year: selectedYear,
-        type: tournamentType,
+        type: mode,
         status: "in_progress",
-        current_round: firstRound,
-        participant_books: participants.map(b => b.book_id)
+        monthly_picks: monthlyPicks,
+        monthly_winners: {},
+        bracket: { rounds: [], champion: null },
+        participant_books: Object.values(monthlyPicks).flat()
       });
 
-      // Create matches for first round
-      const matchPromises = [];
-      const matchCount = participants.length / 2;
-      for (let i = 0; i < matchCount; i++) {
-        matchPromises.push(
-          base44.entities.TournamentMatch.create({
-            tournament_id: tournament.id,
-            round: firstRound,
-            position: i,
-            book_1_id: participants[i * 2]?.book_id,
-            book_2_id: participants[i * 2 + 1]?.book_id
-          })
-        );
-      }
-      await Promise.all(matchPromises);
-      
       return tournament;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
-      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
+      toast.success("Tournoi initialisé !");
     }
   });
 
-  // Auto tournament mutation (random winner based on ratings)
-  const autoTournamentMutation = useMutation({
-    mutationFn: async () => {
-      const shuffled = [...eligibleBooks].sort(() => Math.random() - 0.5);
-      
-      // Pondération par note si disponible
-      const weighted = shuffled.map(ub => {
-        const userBook = myBooks.find(mb => mb.book_id === ub.book_id);
-        const weight = userBook?.rating || 3; // Note par défaut = 3
-        return { ...ub, weight };
-      });
-      
-      // Sélection pondérée
-      const totalWeight = weighted.reduce((sum, b) => sum + b.weight, 0);
-      let random = Math.random() * totalWeight;
-      let winner = weighted[0];
-      
-      for (const book of weighted) {
-        random -= book.weight;
-        if (random <= 0) {
-          winner = book;
-          break;
-        }
-      }
-      
-      const tournament = await base44.entities.Tournament.create({
-        year: selectedYear,
-        type: tournamentType,
-        status: "completed",
-        current_round: "final",
-        winner_book_id: winner.book_id,
-        participant_books: shuffled.slice(0, tournamentStructure.size).map(b => b.book_id)
-      });
-      
-      return tournament;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tournament'] });
-    }
-  });
-
-  // Improved vote mutation with auto-progression
-  const voteMutation = useMutation({
-    mutationFn: async ({ matchId, winnerBookId }) => {
-      // Update the match with winner
-      await base44.entities.TournamentMatch.update(matchId, {
-        winner_book_id: winnerBookId
-      });
-
-      // Get fresh match data
-      const updatedMatches = await base44.entities.TournamentMatch.filter({
-        tournament_id: currentTournament.id,
-        created_by: user?.email
-      });
-
-      const currentMatch = updatedMatches.find(m => m.id === matchId);
-      const currentRound = currentMatch.round;
-      
-      // Check if ALL matches in current round have winners
-      const roundMatches = updatedMatches.filter(m => m.round === currentRound);
-      const allVoted = roundMatches.every(m => m.winner_book_id);
-
-      if (allVoted) {
-        // All matches in this round are complete - generate next round
-        const currentRoundIndex = tournamentStructure.rounds.indexOf(currentRound);
-        const nextRound = tournamentStructure.rounds[currentRoundIndex + 1];
-
-        if (nextRound) {
-          // Collect winners from current round (in stable order)
-          const winners = roundMatches
-            .sort((a, b) => a.position - b.position)
-            .map(m => m.winner_book_id);
-
-          // Handle byes for odd numbers
-          let pairsToCreate = [];
-          if (winners.length % 2 === 1) {
-            // First winner gets a bye (auto-advances)
-            const byeWinner = winners.shift();
-            // Create closed match with bye
-            await base44.entities.TournamentMatch.create({
-              tournament_id: currentTournament.id,
-              round: nextRound,
-              position: 0,
-              book_1_id: byeWinner,
-              book_2_id: null,
-              winner_book_id: byeWinner
-            });
-            
-            // Remaining winners start at position 1
-            for (let i = 0; i < winners.length / 2; i++) {
-              pairsToCreate.push({
-                position: i + 1,
-                book_1_id: winners[i * 2],
-                book_2_id: winners[i * 2 + 1]
-              });
-            }
-          } else {
-            // Even number - create normal pairs
-            for (let i = 0; i < winners.length / 2; i++) {
-              pairsToCreate.push({
-                position: i,
-                book_1_id: winners[i * 2],
-                book_2_id: winners[i * 2 + 1]
-              });
-            }
-          }
-
-          // Create all next round matches
-          const createPromises = pairsToCreate.map(pair =>
-            base44.entities.TournamentMatch.create({
-              tournament_id: currentTournament.id,
-              round: nextRound,
-              position: pair.position,
-              book_1_id: pair.book_1_id,
-              book_2_id: pair.book_2_id
-            })
-          );
-          await Promise.all(createPromises);
-
-          // Update tournament current round
-          await base44.entities.Tournament.update(currentTournament.id, {
-            current_round: nextRound
-          });
-        } else {
-          // No next round = tournament complete!
-          await base44.entities.Tournament.update(currentTournament.id, {
-            status: "completed",
-            winner_book_id: winnerBookId
-          });
-        }
-      }
-
-      return { allVoted, currentRound };
-    },
-    onSuccess: async () => {
-      // Force immediate refetch
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['tournament'] }),
-        queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] })
-      ]);
-      
-      // Immediate refetch for instant UI update
-      await queryClient.refetchQueries({ queryKey: ['tournament', selectedYear, tournamentType] });
-      await queryClient.refetchQueries({ queryKey: ['tournamentMatches', currentTournament?.id] });
-      
-      setSelectedMatch(null);
-      toast({
-        title: "Vote enregistré !",
-        description: "Votre vote a été pris en compte.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error voting:", error);
-      toast({
-        title: "Erreur lors du vote",
-        description: "Impossible d'enregistrer votre vote. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Manual force next round (emergency button)
-  const forceNextRoundMutation = useMutation({
-    mutationFn: async () => {
+  // Select monthly winner mutation
+  const selectMonthWinnerMutation = useMutation({
+    mutationFn: async ({ month, bookId }) => {
       if (!currentTournament) return;
-      setIsGeneratingNextRound(true);
+
+      const monthlyWinners = { ...currentTournament.monthly_winners, [month]: bookId };
       
-      const currentRound = currentTournament.current_round;
-      const roundMatches = matches.filter(m => m.round === currentRound);
-      
-      // Handle any ties with ratings or random
-      const matchesWithoutWinners = roundMatches.filter(m => !m.winner_book_id);
-      
-      for (const match of matchesWithoutWinners) {
-        // Tie-break logic
-        const book1 = allBooks.find(b => b.id === match.book_1_id);
-        const book2 = allBooks.find(b => b.id === match.book_2_id);
-        const userBook1 = myBooks.find(ub => ub.book_id === match.book_1_id);
-        const userBook2 = myBooks.find(ub => ub.book_id === match.book_2_id);
-        
-        let winner;
-        if (!match.book_2_id) { // This is a bye match that somehow wasn't marked complete
-          winner = match.book_1_id;
-        } else if (userBook1?.rating !== undefined && userBook2?.rating !== undefined) {
-          winner = userBook1.rating >= userBook2.rating ? match.book_1_id : match.book_2_id;
-        } else if (userBook1?.rating !== undefined) {
-          winner = match.book_1_id;
-        } else if (userBook2?.rating !== undefined) {
-          winner = match.book_2_id;
-        } else {
-          // Random with seed based on book IDs for consistency - simple random for now
-          winner = Math.random() > 0.5 ? match.book_1_id : match.book_2_id;
-        }
-        
-        await base44.entities.TournamentMatch.update(match.id, {
-          winner_book_id: winner
-        });
-      }
-      
-      // Refresh and generate next round (fetch matches again to ensure all are updated)
-      const updatedMatches = await base44.entities.TournamentMatch.filter({
-        tournament_id: currentTournament.id,
-        created_by: user?.email
+      await base44.entities.Tournament.update(currentTournament.id, {
+        monthly_winners: monthlyWinners
       });
-      
-      const currentRoundIndex = tournamentStructure.rounds.indexOf(currentRound);
-      const nextRound = tournamentStructure.rounds[currentRoundIndex + 1];
-      
-      if (nextRound) {
-        const winners = updatedMatches
-          .filter(m => m.round === currentRound)
-          .sort((a, b) => a.position - b.position)
-          .map(m => m.winner_book_id);
+
+      // Check if we need to generate rounds
+      await generateBracketIfReady(currentTournament.id, monthlyWinners);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournament'] });
+      toast.success("✨ Gagnant mensuel sélectionné");
+    }
+  });
+
+  // Helper to generate bracket when all monthly winners are selected
+  const generateBracketIfReady = async (tournamentId, monthlyWinners) => {
+    const winnerIds = Object.values(monthlyWinners).filter(Boolean);
+    
+    if (winnerIds.length === 0) return;
+
+    // Determine bracket structure based on number of winners
+    let bracketStructure;
+    if (winnerIds.length <= 3) {
+      // Mini tournament: direct duel then final
+      bracketStructure = generateMiniTournament(winnerIds);
+    } else if (winnerIds.length <= 7) {
+      // Compact: quarters -> semi -> final
+      bracketStructure = generateCompactTournament(winnerIds);
+    } else {
+      // Full: eighths -> quarters -> semi -> final
+      bracketStructure = generateFullTournament(monthlyWinners);
+    }
+
+    await base44.entities.Tournament.update(tournamentId, {
+      bracket: bracketStructure
+    });
+  };
+
+  // Generate bracket structures
+  const generateFullTournament = (monthlyWinners) => {
+    const pairs = [
+      [0, 1], // Jan-Feb
+      [2, 3], // Mar-Apr
+      [4, 5], // May-Jun
+      [6, 7], // Jul-Aug
+      [8, 9], // Sep-Oct
+      [10, 11] // Nov-Dec
+    ];
+
+    const eighthMatches = pairs.map(([m1, m2]) => ({
+      left: monthlyWinners[m1] || null,
+      right: monthlyWinners[m2] || null,
+      winner: null
+    }));
+
+    return {
+      rounds: [
+        { name: "Huitièmes", matches: eighthMatches },
+        { name: "Quarts", matches: [] },
+        { name: "Demi-finales", matches: [] },
+        { name: "Finale", matches: [] }
+      ],
+      champion: null
+    };
+  };
+
+  const generateCompactTournament = (winnerIds) => {
+    const quarterMatches = [];
+    for (let i = 0; i < winnerIds.length; i += 2) {
+      quarterMatches.push({
+        left: winnerIds[i],
+        right: winnerIds[i + 1] || null,
+        winner: null
+      });
+    }
+
+    return {
+      rounds: [
+        { name: "Quarts", matches: quarterMatches },
+        { name: "Demi-finales", matches: [] },
+        { name: "Finale", matches: [] }
+      ],
+      champion: null
+    };
+  };
+
+  const generateMiniTournament = (winnerIds) => {
+    if (winnerIds.length === 1) {
+      return {
+        rounds: [{ name: "Finale", matches: [{ left: winnerIds[0], right: null, winner: winnerIds[0] }] }],
+        champion: winnerIds[0]
+      };
+    }
+
+    const matches = [];
+    for (let i = 0; i < winnerIds.length; i += 2) {
+      matches.push({
+        left: winnerIds[i],
+        right: winnerIds[i + 1] || null,
+        winner: null
+      });
+    }
+
+    return {
+      rounds: [{ name: "Finale", matches }],
+      champion: null
+    };
+  };
+
+  // Select match winner mutation
+  const selectMatchWinnerMutation = useMutation({
+    mutationFn: async ({ roundIndex, matchIndex, bookId }) => {
+      if (!currentTournament) return;
+
+      const bracket = { ...currentTournament.bracket };
+      bracket.rounds[roundIndex].matches[matchIndex].winner = bookId;
+
+      // Check if round is complete
+      const round = bracket.rounds[roundIndex];
+      const allMatchesComplete = round.matches.every(m => m.winner || !m.right);
+
+      if (allMatchesComplete && roundIndex < bracket.rounds.length - 1) {
+        // Generate next round
+        const winners = round.matches.map(m => m.winner).filter(Boolean);
+        const nextRound = bracket.rounds[roundIndex + 1];
         
-        let pairsToCreate = [];
-        if (winners.length % 2 === 1) {
-          const byeWinner = winners.shift();
-          await base44.entities.TournamentMatch.create({
-            tournament_id: currentTournament.id,
-            round: nextRound,
-            position: 0,
-            book_1_id: byeWinner,
-            book_2_id: null,
-            winner_book_id: byeWinner
+        nextRound.matches = [];
+        for (let i = 0; i < winners.length; i += 2) {
+          nextRound.matches.push({
+            left: winners[i],
+            right: winners[i + 1] || null,
+            winner: null
           });
-          
-          for (let i = 0; i < winners.length / 2; i++) {
-            pairsToCreate.push({
-              position: i + 1,
-              book_1_id: winners[i * 2],
-              book_2_id: winners[i * 2 + 1]
-            });
-          }
-        } else {
-          for (let i = 0; i < winners.length / 2; i++) {
-            pairsToCreate.push({
-              position: i,
-              book_1_id: winners[i * 2],
-              book_2_id: winners[i * 2 + 1]
-            });
-          }
+        }
+      }
+
+      // Check if tournament is complete (final round winner selected)
+      if (roundIndex === bracket.rounds.length - 1 && bracket.rounds[roundIndex].matches[matchIndex].winner) {
+        bracket.champion = bookId;
+        
+        await base44.entities.Tournament.update(currentTournament.id, {
+          bracket,
+          status: "completed",
+          winner_book_id: bookId
+        });
+
+        // Confetti for best, dark smoke for worst
+        if (mode === "best") {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
         }
         
-        const createPromises = pairsToCreate.map(pair =>
-          base44.entities.TournamentMatch.create({
-            tournament_id: currentTournament.id,
-            round: nextRound,
-            position: pair.position,
-            book_1_id: pair.book_1_id,
-            book_2_id: pair.book_2_id
-          })
-        );
-        await Promise.all(createPromises);
-        
-        await base44.entities.Tournament.update(currentTournament.id, {
-          current_round: nextRound
-        });
+        toast.success(mode === "best" ? "🏆 Champion désigné !" : "💀 Pire lecture désignée");
       } else {
-        // Tournament complete even with forced winners
         await base44.entities.Tournament.update(currentTournament.id, {
-          status: "completed",
-          winner_book_id: winners[0] // Assuming the last remaining winner
+          bracket
         });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
-      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
-      setIsGeneratingNextRound(false);
-      toast({
-        title: "Tour suivant généré !",
-        description: "Tous les matchs du tour précédent sont clos et le tour suivant est prêt.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error forcing next round:", error);
-      setIsGeneratingNextRound(false);
-      toast({
-        title: "Erreur lors de la génération du tour",
-        description: "Impossible de générer le tour suivant. Veuillez vérifier les données.",
-        variant: "destructive",
-      });
+      toast.success("Vote enregistré !");
     }
   });
 
@@ -492,247 +320,282 @@ export default function BookTournament() {
     mutationFn: async () => {
       if (currentTournament) {
         await base44.entities.Tournament.delete(currentTournament.id);
-        const deletePromises = matches.map(m => base44.entities.TournamentMatch.delete(m.id));
-        await Promise.all(deletePromises);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
-      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
+      toast.success("Tournoi réinitialisé");
     }
   });
 
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i + 2);
-
-  const isDark = tournamentType === "worst";
+  const isDark = mode === "worst";
   const accentColor = isDark ? '#666' : 'var(--gold)';
   const secondaryColor = isDark ? '#999' : 'var(--deep-pink)';
-  const badge = getReadingBadge(eligibleBooks.length);
 
-  // Get current match to vote on
-  const nextMatchToVote = useMemo(() => {
-    if (!currentTournament || currentTournament.status === "completed") return null;
-    return matches.find(m => 
-      m.round === currentTournament.current_round && 
-      !m.winner_book_id &&
-      m.book_2_id !== null // Skip bye matches
+  // Count eligible books
+  const totalEligibleBooks = Object.values(booksByMonth).flat().length;
+
+  // Render monthly card
+  const renderMonthlyCard = (month) => {
+    const books = booksByMonth[month] || [];
+    const winner = currentTournament?.monthly_winners?.[month];
+
+    if (books.length === 0) {
+      return (
+        <div className="p-4 rounded-xl border-2 border-dashed opacity-50" style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--beige)' }}>
+          <p className="text-xs font-medium text-center" style={{ color: 'var(--warm-pink)' }}>
+            Aucune lecture
+          </p>
+        </div>
+      );
+    }
+
+    if (books.length === 1 && !winner) {
+      // Auto-select
+      selectMonthWinnerMutation.mutate({ month, bookId: books[0].book_id });
+    }
+
+    return (
+      <div className={`p-3 rounded-xl border-2 transition-all ${winner ? 'shadow-lg scale-105' : ''}`} 
+           style={{ backgroundColor: 'white', borderColor: winner ? accentColor : 'var(--beige)' }}>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {books.map(userBook => {
+            const book = allBooks.find(b => b.id === userBook.book_id);
+            if (!book) return null;
+
+            const isWinner = winner === userBook.book_id;
+
+            return (
+              <button
+                key={userBook.id}
+                onClick={() => selectMonthWinnerMutation.mutate({ month, bookId: userBook.book_id })}
+                disabled={selectMonthWinnerMutation.isPending}
+                className={`w-full flex gap-2 p-2 rounded-lg transition-all hover:shadow-md ${isWinner ? 'bg-gradient-to-r from-yellow-100 to-pink-100' : 'hover:bg-gray-50'}`}
+              >
+                <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 shadow-sm" style={{ backgroundColor: 'var(--beige)' }}>
+                  {book.cover_url ? (
+                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-xl">{mode === "best" ? "📖" : "💀"}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                    {book.title}
+                  </p>
+                  {isWinner && (
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-lg">{mode === "best" ? "✓" : "💀"}</span>
+                      <span className="text-xs font-bold" style={{ color: accentColor }}>Sélectionné</span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     );
-  }, [matches, currentTournament]);
+  };
 
-  // Calculate progress
-  const totalMatches = matches.filter(m => m.book_2_id !== null).length; // Exclude byes
-  const votedMatches = matches.filter(m => m.winner_book_id && m.book_2_id !== null).length;
-  const progressPercent = totalMatches > 0 ? (votedMatches / totalMatches) * 100 : 0;
+  // Render match card
+  const renderMatchCard = (match, roundIndex, matchIndex) => {
+    if (!match.left && !match.right) return null;
 
-  // Check if waiting for next round generation
-  const isWaitingForNextRound = useMemo(() => {
-    if (!currentTournament || currentTournament.status === "completed" || !matches.length) return false;
-    const currentRoundMatches = matches.filter(m => m.round === currentTournament.current_round);
-    if (currentRoundMatches.length === 0 && currentTournament.status === "in_progress") return true; // No matches in current round yet, might be initial state after round complete but before next generated
-    const allVotedForVotableMatches = currentRoundMatches.every(m => m.winner_book_id || m.book_2_id === null); // All votable matches have a winner, or it's a bye
-    // This condition is true when all votable matches are done, and nextMatchToVote hasn't appeared yet.
-    // Also ensure there are actually votable matches in the round, otherwise it's still generating.
-    const hasVotableMatchesInCurrentRound = currentRoundMatches.some(m => m.book_2_id !== null);
-    
-    return allVotedForVotableMatches && !nextMatchToVote && hasVotableMatchesInCurrentRound;
-  }, [currentTournament, matches, nextMatchToVote]);
+    const leftBook = allBooks.find(b => b.id === match.left);
+    const rightBook = allBooks.find(b => b.id === match.right);
 
+    // Auto-bye if one side is empty
+    if (match.left && !match.right && !match.winner) {
+      selectMatchWinnerMutation.mutate({ roundIndex, matchIndex, bookId: match.left });
+    }
+
+    return (
+      <div className="p-3 rounded-xl border-2 bg-white space-y-2" style={{ borderColor: match.winner ? accentColor : 'var(--beige)' }}>
+        {/* Left book */}
+        {leftBook && (
+          <button
+            onClick={() => selectMatchWinnerMutation.mutate({ roundIndex, matchIndex, bookId: match.left })}
+            disabled={selectMatchWinnerMutation.isPending || !!match.winner}
+            className={`w-full flex gap-2 p-2 rounded-lg transition-all ${match.winner === match.left ? 'bg-gradient-to-r from-yellow-100 to-pink-100 shadow-md' : 'hover:bg-gray-50'}`}
+          >
+            <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 shadow-sm" style={{ backgroundColor: 'var(--beige)' }}>
+              {leftBook.cover_url ? (
+                <img src={leftBook.cover_url} alt={leftBook.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-xl">{mode === "best" ? "📖" : "💀"}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                {leftBook.title}
+              </p>
+              {match.winner === match.left && (
+                <span className="text-lg">{mode === "best" ? "✓" : "💀"}</span>
+              )}
+            </div>
+          </button>
+        )}
+
+        {/* VS */}
+        {rightBook && (
+          <>
+            <div className="text-center py-1">
+              <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                VS
+              </span>
+            </div>
+
+            {/* Right book */}
+            <button
+              onClick={() => selectMatchWinnerMutation.mutate({ roundIndex, matchIndex, bookId: match.right })}
+              disabled={selectMatchWinnerMutation.isPending || !!match.winner}
+              className={`w-full flex gap-2 p-2 rounded-lg transition-all ${match.winner === match.right ? 'bg-gradient-to-r from-yellow-100 to-pink-100 shadow-md' : 'hover:bg-gray-50'}`}
+            >
+              <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 shadow-sm" style={{ backgroundColor: 'var(--beige)' }}>
+                {rightBook.cover_url ? (
+                  <img src={rightBook.cover_url} alt={rightBook.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-xl">{mode === "best" ? "📖" : "💀"}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                  {rightBook.title}
+                </p>
+                {match.winner === match.right && (
+                  <span className="text-lg">{mode === "best" ? "✓" : "💀"}</span>
+                )}
+              </div>
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
               {isDark ? <Skull className="w-7 h-7 text-white" /> : <Trophy className="w-7 h-7 text-white" />}
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 {isDark ? "💀" : "🏆"} Tournoi du Livre {selectedYear}
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {isDark ? "Pire lecture" : "Meilleure lecture"} • {eligibleBooks.length} livre{eligibleBooks.length > 1 ? 's' : ''} éligible{eligibleBooks.length > 1 ? 's' : ''}
+              <p className="text-sm md:text-base" style={{ color: 'var(--warm-pink)' }}>
+                {totalEligibleBooks} livre{totalEligibleBooks > 1 ? 's' : ''} éligible{totalEligibleBooks > 1 ? 's' : ''}
               </p>
             </div>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             {/* Year Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="px-6 py-6 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all border-2"
-                  style={{
-                    backgroundColor: 'white',
-                    borderColor: secondaryColor,
-                    color: '#000000'
-                  }}
-                >
-                  <Calendar className="w-5 h-5 mr-2" style={{ color: secondaryColor }} />
-                  📅 {selectedYear}
-                  <ChevronDown className="w-5 h-5 ml-2" style={{ color: secondaryColor }} />
+                <Button variant="outline" className="border-2" style={{ borderColor: 'var(--beige)' }}>
+                  <Calendar className="w-4 h-4 mr-2" />
+                  {selectedYear}
+                  <ChevronDown className="w-4 h-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="max-h-64 overflow-y-auto">
-                {years.map((year) => (
-                  <DropdownMenuItem
-                    key={year}
-                    onClick={() => setSelectedYear(year)}
-                    className={`cursor-pointer font-medium ${
-                      selectedYear === year ? 'bg-pink-100 font-bold' : ''
-                    }`}
-                    style={{
-                      color: selectedYear === year ? secondaryColor : '#000000'
-                    }}
-                  >
-                    {selectedYear === year && '✓ '}{year}
+              <DropdownMenuContent>
+                {years.map(year => (
+                  <DropdownMenuItem key={year} onClick={() => setSelectedYear(year)}>
+                    {year}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Tournament Type Toggle */}
-            <div className="flex gap-2 bg-white rounded-xl p-1 shadow-lg">
+            {/* Mode Toggle */}
+            <div className="flex gap-1 bg-white rounded-lg p-1 shadow-sm">
               <Button
-                onClick={() => setTournamentType("best")}
-                variant={tournamentType === "best" ? "default" : "ghost"}
-                className="rounded-lg font-bold"
-                style={tournamentType === "best" ? {
-                  background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))',
-                  color: 'white'
-                } : {}}
+                onClick={() => setMode("best")}
+                variant={mode === "best" ? "default" : "ghost"}
+                size="sm"
+                className={mode === "best" ? "bg-gradient-to-r from-yellow-400 to-pink-400 text-white" : ""}
               >
                 👑 Meilleure
               </Button>
               <Button
-                onClick={() => setTournamentType("worst")}
-                variant={tournamentType === "worst" ? "default" : "ghost"}
-                className="rounded-lg font-bold"
-                style={tournamentType === "worst" ? {
-                  background: 'linear-gradient(135deg, #666, #999)',
-                  color: 'white'
-                } : {}}
+                onClick={() => setMode("worst")}
+                variant={mode === "worst" ? "default" : "ghost"}
+                size="sm"
+                className={mode === "worst" ? "bg-gradient-to-r from-gray-500 to-gray-700 text-white" : ""}
               >
                 💀 Pire
               </Button>
             </div>
 
-            {/* History Button */}
-            <Button
-              variant="outline"
-              onClick={() => setShowHistoryDialog(true)}
-              className="px-6 py-6 rounded-xl font-bold shadow-lg"
-              style={{
-                borderColor: 'var(--beige)',
-                color: secondaryColor
-              }}
-            >
-              <History className="w-5 h-5 mr-2" />
-              Historique
-            </Button>
-
             {currentTournament && (
               <Button
                 variant="outline"
                 onClick={() => resetMutation.mutate()}
-                disabled={resetMutation.isPending}
-                className="px-6 py-6 rounded-xl font-bold shadow-lg"
-                style={{
-                  borderColor: 'var(--beige)',
-                  color: '#ff1744'
-                }}
+                className="border-2"
+                style={{ borderColor: 'var(--beige)' }}
               >
-                <RotateCcw className="w-5 h-5 mr-2" />
+                <RotateCcw className="w-4 h-4 mr-2" />
                 Recommencer
               </Button>
             )}
           </div>
         </div>
 
-        {/* Badge de lecteur */}
-        {!currentTournament && eligibleBooks.length > 0 && (
-          <div className="mb-6 p-6 rounded-2xl text-center shadow-lg"
-               style={{ background: 'linear-gradient(135deg, var(--cream), white)' }}>
-            <div className="text-5xl mb-2">{badge.emoji}</div>
-            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-              {badge.title}
-            </h3>
-            <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>
-              {badge.message}
-            </p>
-          </div>
-        )}
-
-        {/* Progress Bar */}
-        {currentTournament && currentTournament.status !== "completed" && matches.length > 0 && (
-          <div className="mb-8 p-6 rounded-xl shadow-md" style={{ backgroundColor: 'white' }}>
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                Tour actuel : {ROUND_NAMES[currentTournament.current_round]}
-              </p>
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                {votedMatches}/{totalMatches} matchs complétés
-              </p>
-            </div>
-            <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--beige)' }}>
-              <div 
-                className="h-full transition-all duration-500"
-                style={{ 
-                  width: `${progressPercent}%`,
-                  background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})`
-                }}
-              />
-            </div>
-            
-            {isWaitingForNextRound && (
-              <div className="mt-4 flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                    Génération du tour suivant...
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => forceNextRoundMutation.mutate()}
-                  disabled={isGeneratingNextRound || forceNextRoundMutation.isPending}
-                  style={{ borderColor: accentColor, color: accentColor }}
-                >
-                  {isGeneratingNextRound || forceNextRoundMutation.isPending ? "Génération..." : "↻ Forcer"}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Main Content */}
-        {!currentTournament || currentTournament.status === "completed" ? (
-          currentTournament?.status === "completed" ? (
-            /* Winner Display */
-            <Card className="shadow-xl border-0 overflow-hidden max-w-2xl mx-auto">
+        {!currentTournament ? (
+          totalEligibleBooks === 0 ? (
+            <div className="text-center py-20">
+              {isDark ? <Skull className="w-20 h-20 mx-auto mb-6 opacity-20" /> : <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />}
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                Aucune lecture éligible en {selectedYear}
+              </h3>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                Ajoutez des livres terminés pour lancer le tournoi
+              </p>
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              {isDark ? <Skull className="w-20 h-20 mx-auto mb-6 opacity-20" /> : <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />}
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                Lancez le tournoi {selectedYear} !
+              </h3>
+              <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                {totalEligibleBooks} livre{totalEligibleBooks > 1 ? 's' : ''} prêt{totalEligibleBooks > 1 ? 's' : ''} à s'affronter
+              </p>
+              <Button
+                onClick={() => initTournamentMutation.mutate()}
+                disabled={initTournamentMutation.isPending}
+                className="text-white font-bold px-8 py-6 text-lg shadow-xl"
+                style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}
+              >
+                Démarrer le tournoi
+              </Button>
+            </div>
+          )
+        ) : currentTournament.status === "completed" ? (
+          /* Winner Display */
+          <div className="max-w-2xl mx-auto">
+            <Card className="shadow-2xl border-0 overflow-hidden">
               <div className="h-3" style={{ background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})` }} />
               <CardContent className="p-8 text-center">
-                {isDark ? (
-                  <Skull className="w-20 h-20 mx-auto mb-4" style={{ color: accentColor }} />
-                ) : (
-                  <Sparkles className="w-20 h-20 mx-auto mb-4" style={{ color: accentColor }} />
-                )}
-                
-                {/* Badge final */}
-                <div className="text-5xl mb-3">{badge.emoji}</div>
-                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-pink)' }}>
-                  {badge.title} • {eligibleBooks.length} lecture{eligibleBooks.length > 1 ? 's' : ''} cette année
-                </h3>
-                
                 <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
                   {isDark ? "💀 Pire lecture" : "🏆 Meilleure lecture"} de {selectedYear}
                 </h2>
                 {(() => {
-                  const book = allBooks.find(b => b.id === currentTournament.winner_book_id);
+                  const book = allBooks.find(b => b.id === currentTournament.bracket.champion);
                   if (!book) return null;
                   return (
                     <div className="flex flex-col items-center gap-4">
@@ -747,251 +610,107 @@ export default function BookTournament() {
                         <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                           {book.title}
                         </h3>
-                        <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
+                        <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                           {book.author}
-                        </p>
-                        <p className="text-sm italic" style={{ color: '#666' }}>
-                          {tournamentStructure.type === "auto" 
-                            ? "Auto-désigné comme lecture unique 🎯" 
-                            : `Vainqueur du ${tournamentStructure.message.toLowerCase()}`}
                         </p>
                       </div>
                     </div>
                   );
                 })()}
-                <Button
-                  onClick={() => resetMutation.mutate()}
-                  className="mt-6"
-                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})`, color: 'white' }}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Recommencer
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            /* Setup Screen */
-            <div className="text-center py-20">
-              {isDark ? (
-                <Skull className="w-24 h-24 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />
-              ) : (
-                <Trophy className="w-24 h-24 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />
-              )}
-              <h3 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                Lancez le tournoi {selectedYear} !
-              </h3>
-              <p className="text-xl mb-2" style={{ color: 'var(--warm-pink)' }}>
-                {eligibleBooks.length} livre{eligibleBooks.length > 1 ? 's' : ''} éligible{eligibleBooks.length > 1 ? 's' : ''}
-              </p>
-              <p className="text-sm mb-2" style={{ color: '#999' }}>
-                {tournamentStructure.message}
-              </p>
-              <p className="text-xs mb-8 italic" style={{ color: 'var(--warm-pink)' }}>
-                {eligibleBooks.length === 1 
-                  ? "Même une seule histoire, c'est déjà une victoire 💖" 
-                  : eligibleBooks.length <= 3
-                  ? "Ton univers de l'année est plus petit, mais tout aussi magique 🌙"
-                  : "Que le meilleur livre gagne ! ✨"}
-              </p>
-              {eligibleBooks.length >= 1 ? (
-                <div className="flex gap-4 justify-center flex-wrap">
-                  <Button 
-                    onClick={() => createTournamentMutation.mutate()}
-                    disabled={createTournamentMutation.isPending}
-                    className="shadow-xl text-white font-bold px-10 py-8 text-xl rounded-2xl"
-                    style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}
-                  >
-                    <Play className="w-7 h-7 mr-3" />
-                    {tournamentStructure.type === "auto" ? "Désigner le gagnant" : "Commencer le tournoi"}
-                  </Button>
-                  
-                  {eligibleBooks.length > 1 && eligibleBooks.length <= 10 && (
-                    <Button 
-                      onClick={() => autoTournamentMutation.mutate()}
-                      disabled={autoTournamentMutation.isPending}
-                      variant="outline"
-                      className="shadow-xl font-bold px-10 py-8 text-xl rounded-2xl"
-                      style={{ borderColor: accentColor, color: accentColor }}
-                    >
-                      <Zap className="w-7 h-7 mr-3" />
-                      Auto-tournoi
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="max-w-md mx-auto p-6 rounded-xl" style={{ backgroundColor: 'var(--beige)' }}>
-                  <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                    Vous n'avez pas encore terminé de livre cette année.
-                    <br />
-                    Revenez quand vous aurez lu au moins un livre !
-                  </p>
-                </div>
-              )}
-            </div>
-          )
-        ) : nextMatchToVote ? (
-          /* Voting Screen */
-          <div className="max-w-4xl mx-auto">
-            <Card className="shadow-2xl border-0 overflow-hidden">
-              <div className="h-3" style={{ background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})` }} />
-              <CardContent className="p-8">
-                <h2 className="text-2xl font-bold text-center mb-8" style={{ color: 'var(--dark-text)' }}>
-                  {ROUND_NAMES[nextMatchToVote.round]}
-                </h2>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  {[nextMatchToVote.book_1_id, nextMatchToVote.book_2_id].filter(Boolean).map((bookId) => {
-                    const userBook = myBooks.find(ub => ub.book_id === bookId);
-                    const book = allBooks.find(b => b.id === bookId);
-                    if (!book) return null;
-
-                    return (
-                      <button
-                        key={bookId}
-                        onClick={() => voteMutation.mutate({ matchId: nextMatchToVote.id, winnerBookId: bookId })}
-                        disabled={voteMutation.isPending}
-                        className="group p-6 rounded-2xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          backgroundColor: 'white',
-                          border: `3px solid ${isDark ? '#ccc' : 'var(--beige)'}`,
-                        }}
-                      >
-                        <div className={`aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4 ${isDark ? 'grayscale group-hover:grayscale-0' : ''}`}
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {book.cover_url ? (
-                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              {isDark ? (
-                                <Skull className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
-                              ) : (
-                                <Trophy className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <h3 className="font-bold text-xl mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {book.title}
-                        </h3>
-                        <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                          {book.author}
-                        </p>
-                        
-                        {userBook?.rating !== undefined && ( // Check for undefined specifically to allow 0 rating
-                          <div className="flex items-center justify-center gap-1 mb-3">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <span key={i} className={i < userBook.rating ? 'text-yellow-500' : 'text-gray-300'}>
-                                ⭐
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="mt-4 px-4 py-3 rounded-xl font-bold text-white"
-                             style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
-                          {voteMutation.isPending ? "Vote en cours..." : "Voter pour ce livre"}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
               </CardContent>
             </Card>
           </div>
         ) : (
-          /* Waiting for next round - or if isWaitingForNextRound is false but no nextMatchToVote */
-          // This state is now mostly handled by the Progress Bar's `isWaitingForNextRound` block
-          !isWaitingForNextRound && currentTournament?.status === "in_progress" && (
-            <div className="text-center py-20">
-              <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20 animate-pulse" style={{ color: accentColor }} />
-              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                Préparation du tour suivant...
-              </h3>
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                Si le tour suivant ne s'affiche pas automatiquement, les données sont peut-être en cours de synchronisation.
-              </p>
+          /* Bracket View */
+          <div>
+            {/* Mobile: Column Navigation */}
+            <div className="md:hidden mb-4 flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentColumn(Math.max(0, currentColumn - 1))}
+                disabled={currentColumn === 0}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                {currentColumn === 0 ? "Mois" : currentTournament.bracket.rounds[currentColumn - 1]?.name}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentColumn(Math.min((currentTournament.bracket.rounds.length), currentColumn + 1))}
+                disabled={currentColumn >= currentTournament.bracket.rounds.length}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Button>
             </div>
-          )
-        )}
 
-        {/* History Dialog */}
-        <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                <History className="w-6 h-6" />
-                Historique des Tournois
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              {allTournaments.length === 0 ? (
-                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                  Aucun tournoi terminé
-                </p>
+            {/* Desktop: Full Bracket */}
+            <div className="hidden md:flex gap-6 overflow-x-auto pb-4">
+              {/* Monthly Column */}
+              <div className="flex-shrink-0 w-64 space-y-3">
+                <h3 className="text-lg font-bold text-center mb-4 px-3 py-2 rounded-lg" 
+                    style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
+                  📅 Mois
+                </h3>
+                {MONTH_NAMES.map((name, idx) => (
+                  <div key={idx}>
+                    <h4 className="text-sm font-bold mb-2 px-2" style={{ color: 'var(--warm-pink)' }}>
+                      {name}
+                    </h4>
+                    {renderMonthlyCard(idx)}
+                  </div>
+                ))}
+              </div>
+
+              {/* Bracket Rounds */}
+              {currentTournament.bracket.rounds.map((round, roundIdx) => (
+                <div key={roundIdx} className="flex-shrink-0 w-64 space-y-4">
+                  <h3 className="text-lg font-bold text-center mb-4 px-3 py-2 rounded-lg" 
+                      style={{ 
+                        backgroundColor: roundIdx === currentTournament.bracket.rounds.length - 1 ? 'var(--gold)' : 'var(--cream)', 
+                        color: roundIdx === currentTournament.bracket.rounds.length - 1 ? 'white' : 'var(--dark-text)' 
+                      }}>
+                    {round.name}
+                  </h3>
+                  {round.matches.map((match, matchIdx) => (
+                    <div key={matchIdx}>
+                      {renderMatchCard(match, roundIdx, matchIdx)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile: Single Column View */}
+            <div className="md:hidden">
+              {currentColumn === 0 ? (
+                /* Monthly View */
+                <div className="space-y-3">
+                  {MONTH_NAMES.map((name, idx) => (
+                    <div key={idx}>
+                      <h4 className="text-sm font-bold mb-2 px-2" style={{ color: 'var(--warm-pink)' }}>
+                        {name}
+                      </h4>
+                      {renderMonthlyCard(idx)}
+                    </div>
+                  ))}
+                </div>
               ) : (
-                allTournaments
-                  .sort((a, b) => b.year - a.year)
-                  .map((tournament) => {
-                    const book = allBooks.find(b => b.id === tournament.winner_book_id);
-                    const isBest = tournament.type === "best";
-                    
-                    return (
-                      <Card key={tournament.id} className="shadow-lg border-0">
-                        <div className="h-2" style={{ 
-                          background: isBest 
-                            ? 'linear-gradient(90deg, var(--gold), var(--deep-pink))' 
-                            : 'linear-gradient(90deg, #666, #999)' 
-                        }} />
-                        <CardContent className="p-6">
-                          <div className="flex gap-4">
-                            <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book?.cover_url ? (
-                                <img 
-                                  src={book.cover_url} 
-                                  alt={book.title} 
-                                  className={`w-full h-full object-cover ${!isBest ? 'grayscale' : ''}`} 
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  {isBest ? <Trophy className="w-8 h-8" /> : <Skull className="w-8 h-8" />}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                {isBest ? (
-                                  <Trophy className="w-5 h-5" style={{ color: 'var(--gold)' }} />
-                                ) : (
-                                  <Skull className="w-5 h-5 text-gray-600" />
-                                )}
-                                <h3 className="text-lg font-bold" style={{ color: 'var(--dark-text)' }}>
-                                  {isBest ? "Meilleure" : "Pire"} lecture {tournament.year}
-                                </h3>
-                              </div>
-                              {book && (
-                                <>
-                                  <p className="font-bold text-lg mb-1" style={{ color: 'var(--dark-text)' }}>
-                                    {book.title}
-                                  </p>
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {book.author}
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
+                /* Round View */
+                <div className="space-y-4">
+                  {currentTournament.bracket.rounds[currentColumn - 1]?.matches.map((match, matchIdx) => (
+                    <div key={matchIdx}>
+                      {renderMatchCard(match, currentColumn - 1, matchIdx)}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
       </div>
-      <Toaster />
     </div>
   );
 }
