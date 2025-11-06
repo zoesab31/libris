@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Trophy, Calendar, History, Sparkles, Skull, ChevronDown, Play, RotateCcw } from "lucide-react";
+import { Trophy, Calendar, History, Sparkles, Skull, ChevronDown, Play, RotateCcw, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -26,6 +26,34 @@ const ROUND_NAMES = {
 };
 
 const ROUND_ORDER = ["round_of_16", "quarter", "semi", "final"];
+
+// Badges selon le nombre de lectures
+const READING_BADGES = {
+  1: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
+  2: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
+  3: { emoji: "🌱", title: "Explorateur naissant", message: "Chaque page est un nouveau départ." },
+  4: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
+  5: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
+  6: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
+  7: { emoji: "📘", title: "Lecteur tranquille", message: "Tu avances à ton rythme, et c'est beau." },
+  8: { emoji: "📚", title: "Aventurier des mots", message: "Tu dévores les mondes littéraires." },
+};
+
+const getReadingBadge = (count) => {
+  if (count >= 16) return { emoji: "🏆", title: "Grand lecteur", message: "Rien ne t'arrête, champion de l'imaginaire." };
+  if (count >= 8) return READING_BADGES[8];
+  return READING_BADGES[count] || READING_BADGES[1];
+};
+
+// Calculer la structure du tournoi selon le nombre de livres
+const getTournamentStructure = (bookCount) => {
+  if (bookCount === 0) return { type: "none", rounds: [], size: 0, message: "Aucun livre éligible" };
+  if (bookCount === 1) return { type: "auto", rounds: ["final"], size: 1, message: "Lecture unique — auto-vainqueur 🎉" };
+  if (bookCount <= 3) return { type: "duel", rounds: ["final"], size: 2, message: "Duel de l'année 💫" };
+  if (bookCount <= 7) return { type: "mini", rounds: ["quarter", "semi", "final"], size: 4, message: "Mini tournoi ✨" };
+  if (bookCount <= 15) return { type: "standard", rounds: ["round_of_16", "quarter", "semi", "final"], size: 8, message: "Tournoi standard 🎯" };
+  return { type: "full", rounds: ["round_of_16", "quarter", "semi", "final"], size: 16, message: "Tournoi complet 🏆" };
+};
 
 export default function BookTournament() {
   const [user, setUser] = useState(null);
@@ -108,29 +136,46 @@ export default function BookTournament() {
     });
   }, [myBooks, selectedYear, allBooks]);
 
+  const tournamentStructure = getTournamentStructure(eligibleBooks.length);
+
   // Create tournament mutation
   const createTournamentMutation = useMutation({
     mutationFn: async () => {
       // Shuffle books randomly
       const shuffled = [...eligibleBooks].sort(() => Math.random() - 0.5);
-      const participants = shuffled.slice(0, 16); // Take first 16 books
+      const participants = shuffled.slice(0, tournamentStructure.size);
       
+      // Pour 1 livre : créer directement le tournoi complété
+      if (tournamentStructure.type === "auto") {
+        const tournament = await base44.entities.Tournament.create({
+          year: selectedYear,
+          type: tournamentType,
+          status: "completed",
+          current_round: "final",
+          winner_book_id: participants[0].book_id,
+          participant_books: [participants[0].book_id]
+        });
+        return tournament;
+      }
+
       // Create tournament
+      const firstRound = tournamentStructure.rounds[0];
       const tournament = await base44.entities.Tournament.create({
         year: selectedYear,
         type: tournamentType,
         status: "in_progress",
-        current_round: "round_of_16",
+        current_round: firstRound,
         participant_books: participants.map(b => b.book_id)
       });
 
-      // Create matches for round of 16
+      // Create matches for first round
       const matchPromises = [];
-      for (let i = 0; i < 8; i++) {
+      const matchCount = participants.length / 2;
+      for (let i = 0; i < matchCount; i++) {
         matchPromises.push(
           base44.entities.TournamentMatch.create({
             tournament_id: tournament.id,
-            round: "round_of_16",
+            round: firstRound,
             position: i,
             book_1_id: participants[i * 2]?.book_id,
             book_2_id: participants[i * 2 + 1]?.book_id
@@ -144,6 +189,47 @@ export default function BookTournament() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
       queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
+    }
+  });
+
+  // Auto tournament mutation (random winner based on ratings)
+  const autoTournamentMutation = useMutation({
+    mutationFn: async () => {
+      const shuffled = [...eligibleBooks].sort(() => Math.random() - 0.5);
+      
+      // Pondération par note si disponible
+      const weighted = shuffled.map(ub => {
+        const userBook = myBooks.find(mb => mb.book_id === ub.book_id);
+        const weight = userBook?.rating || 3; // Note par défaut = 3
+        return { ...ub, weight };
+      });
+      
+      // Sélection pondérée
+      const totalWeight = weighted.reduce((sum, b) => sum + b.weight, 0);
+      let random = Math.random() * totalWeight;
+      let winner = weighted[0];
+      
+      for (const book of weighted) {
+        random -= book.weight;
+        if (random <= 0) {
+          winner = book;
+          break;
+        }
+      }
+      
+      const tournament = await base44.entities.Tournament.create({
+        year: selectedYear,
+        type: tournamentType,
+        status: "completed",
+        current_round: "final",
+        winner_book_id: winner.book_id,
+        participant_books: shuffled.slice(0, tournamentStructure.size).map(b => b.book_id)
+      });
+      
+      return tournament;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournament'] });
     }
   });
 
@@ -161,8 +247,8 @@ export default function BookTournament() {
 
       if (allVoted) {
         // Move to next round
-        const currentRoundIndex = ROUND_ORDER.indexOf(currentRound);
-        const nextRound = ROUND_ORDER[currentRoundIndex + 1];
+        const currentRoundIndex = tournamentStructure.rounds.indexOf(currentRound);
+        const nextRound = tournamentStructure.rounds[currentRoundIndex + 1];
 
         if (nextRound) {
           // Create next round matches
@@ -226,6 +312,7 @@ export default function BookTournament() {
   const isDark = tournamentType === "worst";
   const accentColor = isDark ? '#666' : 'var(--gold)';
   const secondaryColor = isDark ? '#999' : 'var(--deep-pink)';
+  const badge = getReadingBadge(eligibleBooks.length);
 
   // Get current match to vote on
   const nextMatchToVote = useMemo(() => {
@@ -256,7 +343,7 @@ export default function BookTournament() {
                 {isDark ? "💀" : "🏆"} Tournoi du Livre {selectedYear}
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {isDark ? "Pire lecture" : "Meilleure lecture"}
+                {isDark ? "Pire lecture" : "Meilleure lecture"} • {eligibleBooks.length} livre{eligibleBooks.length > 1 ? 's' : ''} éligible{eligibleBooks.length > 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -355,8 +442,22 @@ export default function BookTournament() {
           </div>
         </div>
 
+        {/* Badge de lecteur */}
+        {!currentTournament && eligibleBooks.length > 0 && (
+          <div className="mb-6 p-6 rounded-2xl text-center shadow-lg"
+               style={{ background: 'linear-gradient(135deg, var(--cream), white)' }}>
+            <div className="text-5xl mb-2">{badge.emoji}</div>
+            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+              {badge.title}
+            </h3>
+            <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>
+              {badge.message}
+            </p>
+          </div>
+        )}
+
         {/* Progress Bar */}
-        {currentTournament && currentTournament.status !== "completed" && (
+        {currentTournament && currentTournament.status !== "completed" && matches.length > 0 && (
           <div className="mb-8 p-6 rounded-xl shadow-md" style={{ backgroundColor: 'white' }}>
             <div className="flex justify-between items-center mb-3">
               <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
@@ -390,6 +491,13 @@ export default function BookTournament() {
                 ) : (
                   <Sparkles className="w-20 h-20 mx-auto mb-4" style={{ color: accentColor }} />
                 )}
+                
+                {/* Badge final */}
+                <div className="text-5xl mb-3">{badge.emoji}</div>
+                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-pink)' }}>
+                  {badge.title} • {eligibleBooks.length} lecture{eligibleBooks.length > 1 ? 's' : ''} cette année
+                </h3>
+                
                 <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
                   {isDark ? "💀 Pire lecture" : "🏆 Meilleure lecture"} de {selectedYear}
                 </h2>
@@ -411,6 +519,11 @@ export default function BookTournament() {
                         </h3>
                         <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
                           {book.author}
+                        </p>
+                        <p className="text-sm italic" style={{ color: '#666' }}>
+                          {tournamentStructure.type === "auto" 
+                            ? "Auto-désigné comme lecture unique 🎯" 
+                            : `Vainqueur du ${tournamentStructure.message.toLowerCase()}`}
                         </p>
                       </div>
                     </div>
@@ -438,27 +551,49 @@ export default function BookTournament() {
                 Lancez le tournoi {selectedYear} !
               </h3>
               <p className="text-xl mb-2" style={{ color: 'var(--warm-pink)' }}>
-                {eligibleBooks.length} livres éligibles
+                {eligibleBooks.length} livre{eligibleBooks.length > 1 ? 's' : ''} éligible{eligibleBooks.length > 1 ? 's' : ''}
               </p>
-              <p className="text-sm mb-8" style={{ color: '#999' }}>
-                (Livres lus + abandonnés à plus de 50%)
+              <p className="text-sm mb-2" style={{ color: '#999' }}>
+                {tournamentStructure.message}
               </p>
-              {eligibleBooks.length >= 16 ? (
-                <Button 
-                  onClick={() => createTournamentMutation.mutate()}
-                  disabled={createTournamentMutation.isPending}
-                  className="shadow-xl text-white font-bold px-10 py-8 text-xl rounded-2xl"
-                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}
-                >
-                  <Play className="w-7 h-7 mr-3" />
-                  Commencer le tournoi
-                </Button>
+              <p className="text-xs mb-8 italic" style={{ color: 'var(--warm-pink)' }}>
+                {eligibleBooks.length === 1 
+                  ? "Même une seule histoire, c'est déjà une victoire 💖" 
+                  : eligibleBooks.length <= 3
+                  ? "Ton univers de l'année est plus petit, mais tout aussi magique 🌙"
+                  : "Que le meilleur livre gagne ! ✨"}
+              </p>
+              {eligibleBooks.length >= 1 ? (
+                <div className="flex gap-4 justify-center flex-wrap">
+                  <Button 
+                    onClick={() => createTournamentMutation.mutate()}
+                    disabled={createTournamentMutation.isPending}
+                    className="shadow-xl text-white font-bold px-10 py-8 text-xl rounded-2xl"
+                    style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}
+                  >
+                    <Play className="w-7 h-7 mr-3" />
+                    {tournamentStructure.type === "auto" ? "Désigner le gagnant" : "Commencer le tournoi"}
+                  </Button>
+                  
+                  {eligibleBooks.length > 1 && eligibleBooks.length <= 10 && (
+                    <Button 
+                      onClick={() => autoTournamentMutation.mutate()}
+                      disabled={autoTournamentMutation.isPending}
+                      variant="outline"
+                      className="shadow-xl font-bold px-10 py-8 text-xl rounded-2xl"
+                      style={{ borderColor: accentColor, color: accentColor }}
+                    >
+                      <Zap className="w-7 h-7 mr-3" />
+                      Auto-tournoi
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <div className="max-w-md mx-auto p-6 rounded-xl" style={{ backgroundColor: 'var(--beige)' }}>
                   <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                    Vous avez besoin d'au moins 16 livres lus pour lancer un tournoi.
+                    Vous n'avez pas encore terminé de livre cette année.
                     <br />
-                    ({eligibleBooks.length}/16 livres disponibles)
+                    Revenez quand vous aurez lu au moins un livre !
                   </p>
                 </div>
               )}
