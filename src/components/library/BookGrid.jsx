@@ -314,16 +314,15 @@ export default function BookGrid({
                               transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
                 style={{ backgroundColor: 'var(--beige)' }}
               >
-                {/* NEW: En cours tag - semi-transparent, top-left corner */}
                 {isCurrentlyReading && (
-                  <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-yellow-400/75 to-orange-500/75 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-lg">
-                    En cours 📖
+                  <div className="absolute -top-2 -left-2 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                    En cours
                   </div>
                 )}
 
                 {isServicePress && userBook.status === "À lire" && !isCurrentlyReading && (
-                  <div className="absolute top-2 left-2 z-10 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-lg backdrop-blur-sm"
-                       style={{ background: 'linear-gradient(135deg, var(--deep-pink)/75, var(--warm-pink)/75)' }}>
+                  <div className="absolute -top-2 -left-2 z-10 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
+                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                     📬 Service Press
                   </div>
                 )}

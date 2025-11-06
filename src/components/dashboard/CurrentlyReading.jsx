@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Calendar } from "lucide-react";
@@ -20,7 +21,7 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
   }
 
   const allCurrentlyReading = [
-    ...books.map(b => ({ ...b, reader: user?.display_name || user?.full_name?.split(' ')[0] || 'Vous', isYou: true })),
+    ...books.map(b => ({ ...b, reader: user?.full_name?.split(' ')[0] || 'Vous', isYou: true })),
     ...friendsBooks.map(fb => {
       const friend = myFriends.find(f => f.friend_email === fb.created_by);
       return { ...fb, reader: friend?.friend_name?.split(' ')[0] || 'Ami(e)', isYou: false };
@@ -49,17 +50,6 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                      style={{ backgroundColor: 'var(--cream)' }}>
                   <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-md relative"
                        style={{ backgroundColor: 'var(--beige)' }}>
-                    {/* Reader name ABOVE the cover */}
-                    <div className="absolute -top-6 left-0 right-0 text-center">
-                      <span className="text-xs font-bold px-2 py-1 rounded-full shadow-sm"
-                            style={{ 
-                              backgroundColor: userBook.isYou ? 'var(--deep-pink)' : 'var(--soft-pink)',
-                              color: 'white'
-                            }}>
-                        {userBook.reader}
-                      </span>
-                    </div>
-                    
                     {book.cover_url ? (
                       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
@@ -67,10 +57,10 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                         <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
-                    
-                    {/* En cours tag on cover */}
-                    <div className="absolute top-1 left-1 bg-gradient-to-r from-yellow-400/75 to-orange-500/75 backdrop-blur-sm text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-lg">
-                      En cours
+                    {/* Reader tag */}
+                    <div className="absolute -top-2 -left-2 px-2 py-1 rounded-full text-xs font-bold text-white shadow-md"
+                         style={{ backgroundColor: userBook.isYou ? 'var(--deep-pink)' : 'var(--soft-pink)' }}>
+                      {userBook.reader} 📖
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">

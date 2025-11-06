@@ -157,9 +157,9 @@ export default function Bingo() {
             <Button 
               onClick={() => setShowCreate(true)}
               className="shadow-lg text-white font-medium px-8 py-6 text-lg rounded-xl"
-              style={{ backgroundColor: '#000000' }}>
+              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
               <Sparkles className="w-6 h-6 mr-2" />
-              Commencer la personnalisation
+              Commencer
             </Button>
           </div>
         ) : (

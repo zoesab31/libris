@@ -348,11 +348,7 @@ export default function Statistics() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent, value }) => {
-                      // Only show label if more than 1 book in this genre
-                      if (value === 1) return null;
-                      return `${name} ${(percent * 100).toFixed(0)}%`;
-                    }}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -361,9 +357,7 @@ export default function Statistics() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value, name) => [`${value} livre${value > 1 ? 's' : ''}`, name]}
-                  />
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
