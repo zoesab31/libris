@@ -19,8 +19,7 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
   const [imageUrls, setImageUrls] = useState([""]); // Changed from imageUrl to imageUrls (array)
   const [selectedBookId, setSelectedBookId] = useState("");
   const [artistName, setArtistName] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(""); // Removed sourceUrl state
   const [folderPath, setFolderPath] = useState("");
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,8 +79,7 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
     setImageUrls([""]); // Reset to a single empty input field
     setSelectedBookId("");
     setArtistName("");
-    setSourceUrl("");
-    setNote("");
+    setNote(""); // Removed setSourceUrl
     setFolderPath("");
     setSearchQuery("");
     setShowSuggestions(false);
@@ -101,7 +99,6 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
       image_url: url.trim(),
       book_id: selectedBookId || undefined,
       artist_name: artistName.trim() || undefined,
-      source_url: sourceUrl.trim() || undefined,
       note: note.trim() || undefined,
       folder_path: folderPath.trim() || undefined,
     }));
@@ -392,16 +389,7 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
             />
           </div>
 
-          {/* Source URL */}
-          <div>
-            <Label htmlFor="sourceUrl">Source URL</Label>
-            <Input
-              id="sourceUrl"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
+          {/* Removed Source URL section */}
 
           {/* Note */}
           <div>
