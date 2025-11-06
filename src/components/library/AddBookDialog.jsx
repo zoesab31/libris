@@ -65,7 +65,7 @@ const getDominantColor = (imageUrl) => {
 const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain",
                 "Historique", "Young Adult", "New Adult", "Dystopie", "Paranormal", "Autre"];
 
-const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Mes envies"];
+const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
 
 export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
@@ -537,12 +537,12 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                       <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
                         Statut par défaut
                       </Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {["Lu", "À lire", "Mes envies"].map((s) => (
+                      <div className="grid grid-cols-2 gap-2">
+                        {STATUSES.map((s) => (
                           <button
                             key={s}
                             onClick={() => setDefaultStatus(s)}
-                            className={`p-3 rounded-lg text-sm font-medium transition-all ${
+                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
                               defaultStatus === s ? 'shadow-md scale-105' : 'hover:shadow-md'
                             }`}
                             style={{
@@ -595,7 +595,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {["Lu", "À lire", "Mes envies"].map(s => (
+                                {STATUSES.map(s => (
                                   <SelectItem key={s} value={s}>{s}</SelectItem>
                                 ))}
                               </SelectContent>
