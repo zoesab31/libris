@@ -293,14 +293,14 @@ export default function MyLibrary() {
                 📚 Mes PAL
               </TabsTrigger>
               <TabsTrigger
-                value="Mes envies"
+                value="Wishlist"
                 className="rounded-lg font-bold data-[state=active]:text-white"
-                style={activeTab === "Mes envies" ? {
+                style={activeTab === "Wishlist" ? {
                   background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                Mes envies
+                Wishlist
               </TabsTrigger>
               <TabsTrigger
                 value="Abandonné"
