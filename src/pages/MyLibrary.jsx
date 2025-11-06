@@ -27,6 +27,7 @@ export default function MyLibrary() {
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
   const [selectedUserBook, setSelectedUserBook] = useState(null); // New state
+  const [expandedPALYears, setExpandedPALYears] = useState({});
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -113,6 +114,34 @@ export default function MyLibrary() {
 
   const toggleYear = (year) => {
     setExpandedYears(prev => ({
+      ...prev,
+      [year]: !prev[year]
+    }));
+  };
+
+  // Group PALs by year
+  const palsByYear = useMemo(() => {
+    const grouped = {};
+    readingLists.forEach(pal => {
+      const year = pal.year || new Date().getFullYear();
+      if (!grouped[year]) {
+        grouped[year] = [];
+      }
+      grouped[year].push(pal);
+    });
+    
+    // Sort PALs within each year by month (descending)
+    Object.keys(grouped).forEach(year => {
+      grouped[year].sort((a, b) => (b.month || 0) - (a.month || 0));
+    });
+    
+    return grouped;
+  }, [readingLists]);
+
+  const palYears = Object.keys(palsByYear).sort((a, b) => b - a); // Most recent first
+
+  const togglePALYear = (year) => {
+    setExpandedPALYears(prev => ({
       ...prev,
       [year]: !prev[year]
     }));
@@ -400,78 +429,119 @@ export default function MyLibrary() {
                 />
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {readingLists.map((pal) => {
-                  // Filter myBooks to only show "À lire" books that are part of this PAL
-                  const palBooks = myBooks.filter(userBook => 
-                    pal.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
-                  );
-                  const previewBooks = palBooks.slice(0, 3);
-                  const monthName = pal.month ? monthNames[pal.month - 1] : "";
+              <div className="space-y-6">
+                {palYears.map(year => {
+                  const yearPALs = palsByYear[year];
+                  const totalBooks = yearPALs.reduce((sum, pal) => sum + (pal.book_ids?.length || 0), 0);
+                  const isExpanded = expandedPALYears[year];
 
                   return (
-                    <div
-                      key={pal.id}
-                      onClick={() => setSelectedPAL(pal)}
-                      className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                      style={{
-                        backgroundColor: 'white',
-                        border: '2px solid var(--beige)'
-                      }}
-                    >
-                      <div className="mb-4 flex items-center justify-center gap-1 h-32">
-                        {previewBooks.length > 0 ? (
-                          <div className="flex gap-1 items-end">
-                            {previewBooks.map((userBook, idx) => {
-                              const book = allBooks.find(b => b.id === userBook.book_id);
+                    <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                      <button
+                        onClick={() => togglePALYear(year)}
+                        className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                        style={{ backgroundColor: 'var(--cream)' }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                            <span className="text-white font-bold text-lg">{year}</span>
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-left" style={{ color: 'var(--dark-text)' }}>
+                              PAL {year}
+                            </h2>
+                            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                              {yearPALs.length} PAL{yearPALs.length > 1 ? 's' : ''} • {totalBooks} livre{totalBooks > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                        ) : (
+                          <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                        )}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="p-6">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {yearPALs.map((pal) => {
+                              const palBooks = myBooks.filter(userBook => 
+                                pal.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+                              );
+                              const previewBooks = palBooks.slice(0, 3);
+                              const monthName = pal.month ? monthNames[pal.month - 1] : "";
+
                               return (
                                 <div
-                                  key={userBook.id}
-                                  className="w-8 h-20 rounded-sm shadow-md overflow-hidden"
+                                  key={pal.id}
+                                  onClick={() => setSelectedPAL(pal)}
+                                  className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
                                   style={{
-                                    transform: `translateY(${idx * 2}px)`
+                                    backgroundColor: 'white',
+                                    border: '2px solid var(--beige)'
                                   }}
                                 >
-                                  {book?.cover_url ? (
-                                    <img
-                                      src={book.cover_url}
-                                      alt={book.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-pink-200 flex items-center justify-center text-xs text-center text-gray-500">
-                                      No Cover
-                                    </div>
-                                  )}
+                                  <div className="mb-4 flex items-center justify-center gap-1 h-32">
+                                    {previewBooks.length > 0 ? (
+                                      <div className="flex gap-1 items-end">
+                                        {previewBooks.map((userBook, idx) => {
+                                          const book = allBooks.find(b => b.id === userBook.book_id);
+                                          return (
+                                            <div
+                                              key={userBook.id}
+                                              className="w-8 h-20 rounded-sm shadow-md overflow-hidden"
+                                              style={{
+                                                transform: `translateY(${idx * 2}px)`
+                                              }}
+                                            >
+                                              {book?.cover_url ? (
+                                                <img
+                                                  src={book.cover_url}
+                                                  alt={book.title}
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                <div className="w-full h-full bg-pink-200 flex items-center justify-center text-xs text-center text-gray-500">
+                                                  ?
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <div className="text-6xl opacity-20">{pal.icon}</div>
+                                    )}
+                                  </div>
+
+                                  <div className="text-center">
+                                    <h3 className="text-lg font-bold mb-1"
+                                        style={{ color: 'var(--dark-text)' }}>
+                                      {pal.icon} {pal.name}
+                                    </h3>
+                                    {monthName && (
+                                      <p className="text-xs mb-2 flex items-center justify-center gap-1" style={{ color: 'var(--warm-brown)' }}>
+                                        <Calendar className="w-3 h-3" />
+                                        {monthName} {pal.year}
+                                      </p>
+                                    )}
+                                    <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                                      {palBooks.length} livre{palBooks.length > 1 ? 's' : ''}
+                                    </p>
+                                    {pal.description && (
+                                      <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                                        {pal.description}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             })}
                           </div>
-                        ) : (
-                          <div className="text-6xl opacity-20">{pal.icon}</div>
-                        )}
-                      </div>
-
-                      <div className="text-center">
-                        <h3 className="text-lg font-bold mb-1"
-                            style={{ color: 'var(--dark-text)' }}>
-                          {pal.icon} {pal.name}
-                        </h3>
-                        {monthName && pal.year && (
-                          <p className="text-xs mb-2 flex items-center justify-center gap-1" style={{ color: 'var(--warm-brown)' }}>
-                            <Calendar className="w-3 h-3" />
-                            {monthName} {pal.year}
-                          </p>
-                        )}
-                        <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
-                          {palBooks.length} livre{palBooks.length > 1 ? 's' : ''}
-                        </p>
-                        {pal.description && (
-                          <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                            {pal.description}
-                          </p>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
