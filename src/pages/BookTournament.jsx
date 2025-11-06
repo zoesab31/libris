@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import confetti from "canvas-confetti";
+// Removed confetti import as it's no longer used based on the outline
 
 const MONTH_NAMES = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
@@ -293,16 +294,10 @@ export default function BookTournament() {
           winner_book_id: bookId
         });
 
-        // Confetti for best, dark smoke for worst
-        if (mode === "best") {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        }
-        
-        toast.success(mode === "best" ? "🏆 Champion désigné !" : "💀 Pire lecture désignée");
+        // Success message for completion
+        toast.success(mode === "best" ? "🏆 Champion désigné !" : "💀 Pire lecture désignée", {
+          duration: 5000,
+        });
       } else {
         await base44.entities.Tournament.update(currentTournament.id, {
           bracket
@@ -312,6 +307,10 @@ export default function BookTournament() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament'] });
       toast.success("Vote enregistré !");
+    },
+    onError: (error) => {
+      console.error("Error voting:", error);
+      toast.error("Erreur lors du vote");
     }
   });
 
