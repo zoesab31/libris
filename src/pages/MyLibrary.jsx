@@ -581,22 +581,50 @@ export default function MyLibrary() {
                                           </div>
                                         )}
                                       </div>
-                                      <h4 className="font-bold text-sm mt-2 line-clamp-2 group-hover:underline" 
-                                          style={{ color: 'var(--dark-text)' }}>
+                                      <h4 
+                                        className="font-bold mt-2 group-hover:underline book-title-display" 
+                                        style={{ 
+                                          color: 'var(--dark-text)',
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden',
+                                          overflowWrap: 'anywhere',
+                                          wordBreak: 'break-word',
+                                          fontSize: 'clamp(13px, 2.2vw, 15px)',
+                                          lineHeight: '1.25',
+                                          minHeight: '2.5em'
+                                        }}
+                                        title={book.title}
+                                      >
                                         {book.title}
                                       </h4>
-                                      <p className="text-xs line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                                      <p 
+                                        className="book-author-display" 
+                                        style={{ 
+                                          color: 'var(--warm-pink)',
+                                          overflowWrap: 'anywhere',
+                                          whiteSpace: 'normal',
+                                          fontSize: 'clamp(11px, 1.8vw, 13px)',
+                                          lineHeight: '1.2',
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 1,
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden'
+                                        }}
+                                        title={book.author}
+                                      >
                                         {book.author}
                                       </p>
                                       {userBook.rating && (
-                                        <div className="flex items-center gap-1 mt-1">
+                                        <div className="flex items-center gap-1 mt-1" style={{ minHeight: '20px' }}>
                                           <span className="text-xs font-bold" style={{ color: 'var(--gold)' }}>
                                             ⭐ {userBook.rating}/5
                                           </span>
                                         </div>
                                       )}
                                       {isDNF && (
-                                        <p className="text-xs mt-1 font-medium" style={{ color: '#666' }}>
+                                        <p className="text-xs mt-1 font-medium" style={{ color: '#666', minHeight: '18px' }}>
                                           DNF {userBook.abandon_percentage ? `${userBook.abandon_percentage}%` : ''}
                                         </p>
                                       )}

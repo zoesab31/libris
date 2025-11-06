@@ -367,8 +367,23 @@ export default function UserProfile() {
                           <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
                         </div>
                       )}
-                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-white text-xs font-bold line-clamp-2 mb-1">{book.title}</p>
+                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                        <p 
+                          className="text-white font-bold mb-2 book-title-display" 
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                            fontSize: 'clamp(12px, 2.2vw, 14px)',
+                            lineHeight: '1.25'
+                          }}
+                          title={book.title}
+                        >
+                          {book.title}
+                        </p>
                         <div className="flex gap-1 flex-wrap">
                           <span className="text-xs px-2 py-1 rounded-full"
                                 style={{ backgroundColor: accentColor, color: 'white' }}>

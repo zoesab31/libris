@@ -373,13 +373,43 @@ export default function BookGrid({
                 )}
               </div>
 
-              <h3 className="font-bold text-sm mt-2 mb-1 line-clamp-2 group-hover:underline" // Added mt-2
-                  style={{ color: 'var(--dark-text)' }}> {/* Changed color */}
+              <h3 
+                className="font-bold mt-2 mb-1 group-hover:underline book-title-display" 
+                style={{ 
+                  color: 'var(--dark-text)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  fontSize: 'clamp(13px, 2.2vw, 15px)',
+                  lineHeight: '1.25',
+                  minHeight: '2.5em'
+                }}
+                title={book.title}
+              >
                 {book.title}
               </h3>
-              <p className="text-xs line-clamp-1 mb-1" style={{ color: 'var(--warm-pink)' }}> {/* Changed color, added mb-1 */}
+              <p 
+                className="mb-1 book-author-display" 
+                style={{ 
+                  color: 'var(--warm-pink)',
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'normal',
+                  fontSize: 'clamp(11px, 1.8vw, 13px)',
+                  lineHeight: '1.2',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: '1.4em'
+                }}
+                title={book.author}
+              >
                 {getFirstAuthor(book.author)}
               </p>
+
               {book.genre && (
                 <p className="text-xs mt-1" style={{ color: 'var(--soft-brown)' }}>
                   {book.genre}

@@ -329,6 +329,107 @@ export default function Layout({ children, currentPageName }) {
           background-color: rgba(255, 107, 157, 0.1);
         }
 
+        /* Book title and author display utilities */
+        .book-title-display {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          line-height: 1.25;
+        }
+
+        .book-author-display {
+          overflow-wrap: anywhere;
+          white-space: normal;
+          line-height: 1.2;
+        }
+
+        /* Smooth text wrapping for cards */
+        .card-text-wrap {
+          min-width: 0;
+          flex: 1;
+        }
+
+        /* Tooltip for truncated text */
+        .book-title-display:hover::after,
+        .book-author-display:hover::after {
+          content: attr(title);
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-8px);
+          background-color: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 13px;
+          white-space: normal;
+          max-width: 250px;
+          z-index: 1000;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+          line-height: 1.4;
+        }
+
+        @media (hover: hover) {
+          .book-title-display:hover::after,
+          .book-author-display:hover::after {
+            opacity: 1;
+          }
+        }
+
+        /* Prevent badge overlap */
+        .book-card-badge {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          z-index: 2;
+        }
+
+        /* Card overlay gradient for readability */
+        .card-title-overlay {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          padding: 10px 12px;
+          background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,240,246,0.9) 100%);
+        }
+
+        /* Responsive text sizing */
+        @media (max-width: 640px) {
+          .book-title-display {
+            font-size: clamp(12px, 3vw, 14px);
+          }
+          
+          .book-author-display {
+            font-size: clamp(10px, 2.5vw, 12px);
+          }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .book-title-display {
+            font-size: clamp(13px, 2.4vw, 15px);
+          }
+          
+          .book-author-display {
+            font-size: clamp(11px, 2vw, 13px);
+          }
+        }
+
+        @media (min-width: 1025px) {
+          .book-title-display {
+            font-size: clamp(14px, 1.2vw, 16px);
+          }
+          
+          .book-author-display {
+            font-size: clamp(12px, 1vw, 14px);
+          }
+        }
+
         @media (max-width: 768px) {
           .mobile-hide {
             display: none;

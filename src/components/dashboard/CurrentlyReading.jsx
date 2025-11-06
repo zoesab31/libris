@@ -64,15 +64,43 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                    <h3 
+                      className="font-bold mb-1 book-title-display" 
+                      style={{ 
+                        color: 'var(--dark-text)',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
+                        fontSize: 'clamp(14px, 2.4vw, 16px)',
+                        lineHeight: '1.2'
+                      }}
+                      title={book.title}
+                    >
                       {book.title}
                     </h3>
-                    <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                    <p 
+                      className="text-sm mb-2 book-author-display" 
+                      style={{ 
+                        color: 'var(--warm-pink)',
+                        overflowWrap: 'anywhere',
+                        whiteSpace: 'normal',
+                        fontSize: 'clamp(12px, 2vw, 14px)',
+                        lineHeight: '1.2',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}
+                      title={book.author}
+                    >
                       {book.author}
                     </p>
                     {userBook.start_date && (
-                      <p className="text-xs flex items-center gap-1" style={{ color: 'var(--dark-text)' }}>
-                        <Calendar className="w-3 h-3" />
+                      <p className="text-xs flex items-center gap-1" style={{ color: 'var(--dark-text)', minHeight: '20px' }}>
+                        <Calendar className="w-3 h-3 flex-shrink-0" />
                         Début : {format(new Date(userBook.start_date), 'dd MMM yyyy', { locale: fr })}
                       </p>
                     )}
