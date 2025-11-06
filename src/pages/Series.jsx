@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ export default function Series() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [sortBy, setSortBy] = useState("name");
+  const [editingSeries, setEditingSeries] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -87,7 +89,7 @@ export default function Series() {
             </div>
           </div>
           <Button 
-            onClick={() => setShowAddDialog(true)}
+            onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
             className="shadow-lg text-white font-medium px-6 rounded-xl"
             style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}>
             <Plus className="w-5 h-5 mr-2" />
@@ -208,13 +210,27 @@ export default function Series() {
         {sortedSeries.length > 0 ? (
           <div className="space-y-4">
             {sortedSeries.map((series) => (
-              <SeriesCard
-                key={series.id}
-                series={series}
-                myBooks={myBooks}
-                allBooks={allBooks}
-                onClick={() => setSelectedSeries(series)}
-              />
+              <div key={series.id} className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingSeries(series);
+                    setShowAddDialog(true);
+                  }}
+                  className="absolute top-4 right-16 z-10 text-xs"
+                  style={{ color: 'var(--deep-pink)' }}
+                >
+                  Modifier
+                </Button>
+                <SeriesCard
+                  series={series}
+                  myBooks={myBooks}
+                  allBooks={allBooks}
+                  onClick={() => setSelectedSeries(series)}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -229,7 +245,7 @@ export default function Series() {
             </p>
             {!searchQuery && (
               <Button
-                onClick={() => setShowAddDialog(true)}
+                onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
                 className="text-white font-medium"
                 style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}
               >
@@ -243,9 +259,12 @@ export default function Series() {
         {/* Dialogs */}
         <AddSeriesDialog
           open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          myBooks={myBooks}
-          allBooks={allBooks}
+          onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) setEditingSeries(null);
+          }}
+          user={user}
+          editSeries={editingSeries}
         />
 
         {selectedSeries && (

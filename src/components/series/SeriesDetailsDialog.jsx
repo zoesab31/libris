@@ -76,7 +76,7 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
       case 'wishlist':
         return <ShoppingCart className="w-4 h-4 text-white" />;
       case 'not_released':
-        return <Clock className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4" style={{ color: '#000000' }} />;
       default:
         return <BookOpen className="w-4 h-4 text-white" />;
     }
@@ -248,15 +248,15 @@ export default function SeriesDetailsDialog({ series, open, onOpenChange, myBook
                         className="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1"
                         style={{
                           backgroundColor: getStatusColor(status),
-                          color: status === 'not_released' ? '#9CA3AF' : 'white'
+                          color: status === 'not_released' ? '#000000' : 'white'
                         }}
                       >
                         {getStatusIcon(status)}
                         {status === 'read' && 'Lu'}
-                        {status === 'unread' && 'À lire'}
+                        {status === 'unread' && <span style={{ color: '#000000' }}>Non lu</span>}
                         {status === 'wishlist' && 'Envie'}
-                        {status === 'not_released' && 'Pas encore sorti'}
-                        {status === 'not_owned' && 'Non possédé'}
+                        {status === 'not_released' && <span style={{ color: '#000000' }}>Non sorti</span>}
+                        {status === 'not_owned' && <span style={{ color: '#000000' }}>Non lu</span>}
                       </div>
                       
                       {userBook?.rating && (

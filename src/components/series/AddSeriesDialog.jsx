@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, X, Search, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AddSeriesDialog({ open, onOpenChange, user }) {
+export default function AddSeriesDialog({ open, onOpenChange, user, editSeries = null }) {
   const [seriesName, setSeriesName] = useState("");
   const [author, setAuthor] = useState("");
   const [totalBooks, setTotalBooks] = useState("");
@@ -39,6 +39,28 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
     queryFn: () => base44.entities.Book.list(),
     enabled: open,
   });
+
+  // Load edit data
+  useEffect(() => {
+    if (editSeries) {
+      setSeriesName(editSeries.series_name || "");
+      setAuthor(editSeries.author || "");
+      setTotalBooks(editSeries.total_books?.toString() || "");
+      setDescription(editSeries.description || "");
+      setCoverUrl(editSeries.cover_url || "");
+      // Ensure reading_order has unique keys or default to a new entry if empty
+      const initialReadingOrder = editSeries.reading_order && editSeries.reading_order.length > 0
+        ? editSeries.reading_order.map((item, idx) => ({
+            order: item.order || (idx + 1),
+            title: item.title || "",
+            bookId: item.book_id || null,
+            // When loading for edit, assume it's not "online" unless explicitly flagged or needed for display
+            isOnline: !item.book_id && !!item.title,
+          }))
+        : [{ order: 1, title: "", bookId: null }];
+      setReadingOrder(initialReadingOrder);
+    }
+  }, [editSeries]);
 
   // Filter books from library based on search query
   const myLibraryBooks = useMemo(() => {
@@ -115,16 +137,19 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
+      if (editSeries) {
+        return await base44.entities.BookSeries.update(editSeries.id, data);
+      }
       return await base44.entities.BookSeries.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
-      toast.success("✨ Série créée avec succès !");
+      toast.success(editSeries ? "✨ Série modifiée avec succès !" : "✨ Série créée avec succès !");
       handleClose();
     },
     onError: (error) => {
-      console.error("Error creating series:", error);
-      toast.error("Erreur lors de la création de la série");
+      console.error("Error saving series:", error);
+      toast.error(editSeries ? "Erreur lors de la modification de la série" : "Erreur lors de la création de la série");
     }
   });
 
@@ -163,9 +188,9 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
           title: ro.title.trim(),
           book_id: ro.bookId || undefined // Book ID from local library
         })),
-      books_read: [],
-      books_in_pal: [],
-      books_wishlist: []
+      books_read: editSeries?.books_read || [], // Preserve existing if editing
+      books_in_pal: editSeries?.books_in_pal || [], // Preserve existing if editing
+      books_wishlist: editSeries?.books_wishlist || [] // Preserve existing if editing
     };
 
     createMutation.mutate(data);
@@ -246,7 +271,7 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-            📚 Créer une série
+            📚 {editSeries ? "Modifier la série" : "Créer une série"}
           </DialogTitle>
         </DialogHeader>
 
@@ -464,7 +489,7 @@ export default function AddSeriesDialog({ open, onOpenChange, user }) {
               className="text-white font-medium"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
-              {createMutation.isPending ? "Création..." : "Créer la série"}
+              {createMutation.isPending ? (editSeries ? "Modification..." : "Création...") : (editSeries ? "Modifier la série" : "Créer la série")}
             </Button>
           </div>
         </form>

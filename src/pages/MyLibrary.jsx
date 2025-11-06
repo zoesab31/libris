@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
+import PALManager from "../components/library/PALManager"; // Added import for PALManager
 
 export default function MyLibrary() {
   const navigate = useNavigate();
@@ -24,6 +25,9 @@ export default function MyLibrary() {
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
   const [selectedUserBook, setSelectedUserBook] = useState(null);
+  const [expandedPALYears, setExpandedPALYears] = useState({}); // New state
+  const [showPALs, setShowPALs] = useState(false); // New state
+  const [selectedPAL, setSelectedPAL] = useState(null); // New state
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -43,6 +47,12 @@ export default function MyLibrary() {
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
     queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: readingLists = [] } = useQuery({
+    queryKey: ['readingLists'],
+    queryFn: () => base44.entities.ReadingList.filter({ created_by: user?.email }),
     enabled: !!user,
   });
 
@@ -113,12 +123,42 @@ export default function MyLibrary() {
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
 
+  // Group PALs by year
+  const palsByYear = useMemo(() => {
+    const grouped = {};
+    readingLists.forEach(pal => {
+      const year = pal.year || new Date().getFullYear();
+      if (!grouped[year]) {
+        grouped[year] = [];
+      }
+      grouped[year].push(pal);
+    });
+    
+    // Sort PALs within each year by month (descending)
+    Object.keys(grouped).forEach(year => {
+      grouped[year].sort((a, b) => (b.month || 0) - (a.month || 0));
+    });
+    
+    return grouped;
+  }, [readingLists]);
+
+  const palYears = Object.keys(palsByYear).sort((a, b) => b - a);
+
+  const togglePALYear = (year) => {
+    setExpandedPALYears(prev => ({
+      ...prev,
+      [year]: !prev[year]
+    }));
+  };
+
   const filteredBooks = activeTab === "tous"
     ? myBooks
     : activeTab === "custom"
     ? [] // Don't show individual books in custom tab, only folders
     : activeTab === "historique"
     ? [] // No books shown directly in history tab, only organized view
+    : activeTab === "pal"
+    ? [] // No books shown directly in PAL tab, only organized view
     : myBooks.filter(b => b.status === activeTab);
 
   const getBookDetails = (userBook) => {
@@ -283,6 +323,16 @@ export default function MyLibrary() {
                 Abandonnés
               </TabsTrigger>
               <TabsTrigger
+                value="pal"
+                className="rounded-lg font-bold data-[state=active]:text-white"
+                style={activeTab === "pal" ? {
+                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  color: '#FFFFFF'
+                } : { color: '#000000' }}
+              >
+                PAL
+              </TabsTrigger>
+              <TabsTrigger
                 value="historique"
                 className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
                 style={activeTab === "historique" ? {
@@ -297,7 +347,211 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        {activeTab === "historique" ? (
+        {activeTab === "pal" ? (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                Mes PAL (Piles À Lire)
+              </h2>
+              <Button
+                onClick={() => setShowPALs(true)}
+                className="font-medium text-white"
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Gérer mes PAL
+              </Button>
+            </div>
+
+            {readingLists.length === 0 ? (
+              <div className="text-center py-20">
+                <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune PAL créée
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Créez votre première PAL pour organiser vos futures lectures par mois
+                </p>
+                <Button
+                  onClick={() => setShowPALs(true)}
+                  className="font-medium"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: 'white'
+                  }}
+                >
+                  Créer une PAL
+                </Button>
+              </div>
+            ) : selectedPAL ? (
+              <div>
+                <div className="flex items-center gap-4 mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedPAL(null)}
+                    className="p-2"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                      {selectedPAL.icon} {selectedPAL.name}
+                    </h2>
+                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                      {(selectedPAL.book_ids?.length || 0)} livre{(selectedPAL.book_ids?.length || 0) > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                
+                <BookGrid
+                  userBooks={myBooks.filter(userBook => 
+                    selectedPAL.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+                  )}
+                  allBooks={allBooks}
+                  customShelves={customShelves}
+                  isLoading={isLoading}
+                  selectionMode={false}
+                  selectedBooks={[]}
+                  onSelectionChange={() => {}}
+                  onExitSelectionMode={() => {}}
+                  palMode={selectedPAL}
+                  onRemoveFromPAL={(bookIdToRemove) => {
+                    const updatedBookIds = (selectedPAL.book_ids || []).filter(id => id !== bookIdToRemove);
+                    base44.entities.ReadingList.update(selectedPAL.id, { book_ids: updatedBookIds })
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['readingLists'] });
+                        // Update selectedPAL immediately to reflect the change
+                        setSelectedPAL({ ...selectedPAL, book_ids: updatedBookIds });
+                        toast.success("Livre retiré de la PAL");
+                      })
+                      .catch(error => {
+                        console.error("Failed to remove book from PAL:", error);
+                        toast.error("Échec de la suppression du livre de la PAL.");
+                      });
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {palYears.map(year => {
+                  const yearPALs = palsByYear[year];
+                  const totalBooks = yearPALs.reduce((sum, pal) => sum + (pal.book_ids?.length || 0), 0);
+                  const isExpanded = expandedPALYears[year];
+
+                  return (
+                    <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                      <button
+                        onClick={() => togglePALYear(year)}
+                        className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                        style={{ backgroundColor: 'var(--cream)' }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                            <span className="text-white font-bold text-lg">{year}</span>
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-left" style={{ color: 'var(--dark-text)' }}>
+                              PAL {year}
+                            </h2>
+                            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                              {yearPALs.length} PAL{yearPALs.length > 1 ? 's' : ''} • {totalBooks} livre{totalBooks > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                        ) : (
+                          <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                        )}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="p-6">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {yearPALs.map((pal) => {
+                              const palBooks = myBooks.filter(userBook => 
+                                pal.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+                              );
+                              const previewBooks = palBooks.slice(0, 3);
+                              const monthName = pal.month ? monthNames[pal.month - 1] : "";
+
+                              return (
+                                <div
+                                  key={pal.id}
+                                  onClick={() => setSelectedPAL(pal)}
+                                  className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                                  style={{
+                                    backgroundColor: 'white',
+                                    border: '2px solid var(--beige)'
+                                  }}
+                                >
+                                  <div className="mb-4 flex items-center justify-center gap-1 h-32">
+                                    {previewBooks.length > 0 ? (
+                                      <div className="flex gap-1 items-end">
+                                        {previewBooks.map((userBook, idx) => {
+                                          const book = allBooks.find(b => b.id === userBook.book_id);
+                                          return (
+                                            <div
+                                              key={userBook.id}
+                                              className="w-8 h-20 rounded-sm shadow-md overflow-hidden"
+                                              style={{
+                                                transform: `translateY(${idx * 2}px)`
+                                              }}
+                                            >
+                                              {book?.cover_url ? (
+                                                <img
+                                                  src={book.cover_url}
+                                                  alt={book.title}
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                <div className="w-full h-full bg-pink-200 flex items-center justify-center text-xs text-center text-gray-500">
+                                                  ?
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <div className="text-6xl opacity-20">{pal.icon}</div>
+                                    )}
+                                  </div>
+
+                                  <div className="text-center">
+                                    <h3 className="text-lg font-bold mb-1"
+                                        style={{ color: 'var(--dark-text)' }}>
+                                      {pal.icon} {pal.name}
+                                    </h3>
+                                    {monthName && (
+                                      <p className="text-xs mb-2 flex items-center justify-center gap-1" style={{ color: 'var(--warm-brown)' }}>
+                                        <Calendar className="w-3 h-3" />
+                                        {monthName} {pal.year}
+                                      </p>
+                                    )}
+                                    <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                                      {palBooks.length} livre{palBooks.length > 1 ? 's' : ''}
+                                    </p>
+                                    {pal.description && (
+                                      <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                                        {pal.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "historique" ? (
           <div className="space-y-6">
             {years.length === 0 ? (
               <div className="text-center py-20">
@@ -577,6 +831,8 @@ export default function MyLibrary() {
               setSelectionMode(false);
               setSelectedBooks([]);
             }}
+            showPALSelector={activeTab === "À lire"} // Pass prop for PAL selector
+            readingLists={readingLists} // Pass reading lists to BookGrid
           />
         )}
 
@@ -600,6 +856,12 @@ export default function MyLibrary() {
             onOpenChange={(open) => !open && setSelectedUserBook(null)}
           />
         )}
+
+        <PALManager
+          open={showPALs}
+          onOpenChange={setShowPALs}
+          pals={readingLists}
+        />
       </div>
     </div>
   );
