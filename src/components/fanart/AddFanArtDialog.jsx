@@ -1,69 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Upload, FolderPlus, ChevronRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, Loader2, Search, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AddFanArtDialog({ open, onOpenChange, books, existingFolders }) {
-  const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
+export default function AddFanArtDialog({ open, onOpenChange, user }) {
+  const [imageUrl, setImageUrl] = useState("");
+  const [selectedBookId, setSelectedBookId] = useState("");
+  const [artistName, setArtistName] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [note, setNote] = useState("");
+  const [folderPath, setFolderPath] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [showNewSubfolder, setShowNewSubfolder] = useState(false);
-  const [newSubfolderName, setNewSubfolderName] = useState("");
-  const [fanArtData, setFanArtData] = useState({
-    image_url: "",
-    book_id: "",
-    folder_path: "",
-    artist_name: "",
-    source_url: "",
-    note: "",
-  });
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooksForFanArt', user?.email],
+    queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user && open,
   });
 
-  const { data: fanArts = [] } = useQuery({
-    queryKey: ['fanArts'],
-    queryFn: () => base44.entities.FanArt.filter({ created_by: user?.email }),
-    enabled: !!user,
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
   });
 
-  // Filter to only show books that user has in their library
-  const availableBooks = books.filter(book => 
-    myBooks.some(ub => ub.book_id === book.id)
-  );
+  // Filter books based on search query
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    
+    const query = searchQuery.toLowerCase().trim();
+    
+    // Get books from my library
+    const myBookIds = myBooks.map(ub => ub.book_id);
+    const myLibraryBooks = allBooks.filter(book => myBookIds.includes(book.id));
+    
+    // Filter by search query
+    return myLibraryBooks
+      .filter(book => 
+        book.title.toLowerCase().includes(query) ||
+        book.author.toLowerCase().includes(query)
+      )
+      .slice(0, 10); // Limit to 10 results
+  }, [searchQuery, myBooks, allBooks]);
 
-  // Get existing subfolders for selected book
-  const selectedBookFanArts = fanArtData.book_id 
-    ? fanArts.filter(fa => fa.book_id === fanArtData.book_id && fa.folder_path)
-    : [];
-  
-  const existingSubfolders = [...new Set(selectedBookFanArts.map(fa => fa.folder_path))];
+  const selectedBook = allBooks.find(b => b.id === selectedBookId);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.FanArt.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-      toast.success("Fan art ajouté !");
-      onOpenChange(false);
-      setFanArtData({ image_url: "", book_id: "", folder_path: "", artist_name: "", source_url: "", note: "" });
-      setShowNewSubfolder(false);
-      setNewSubfolderName("");
+      toast.success("✨ Fan art ajouté !");
+      handleClose();
     },
+    onError: (error) => {
+      console.error("Error creating fan art:", error);
+      toast.error("Erreur lors de l'ajout du fan art");
+    }
   });
+
+  const handleClose = () => {
+    setImageUrl("");
+    setSelectedBookId("");
+    setArtistName("");
+    setSourceUrl("");
+    setNote("");
+    setFolderPath("");
+    setSearchQuery("");
+    setShowSuggestions(false);
+    onOpenChange(false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!imageUrl.trim()) {
+      toast.error("Veuillez ajouter une image");
+      return;
+    }
+
+    createMutation.mutate({
+      image_url: imageUrl.trim(),
+      book_id: selectedBookId || undefined,
+      artist_name: artistName.trim() || undefined,
+      source_url: sourceUrl.trim() || undefined,
+      note: note.trim() || undefined,
+      folder_path: folderPath.trim() || undefined,
+    });
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -72,130 +109,43 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
     setUploading(true);
     try {
       const result = await base44.integrations.Core.UploadFile({ file });
-      setFanArtData({ ...fanArtData, image_url: result.file_url });
+      setImageUrl(result.file_url);
       toast.success("Image uploadée !");
     } catch (error) {
+      console.error("Error uploading file:", error);
       toast.error("Erreur lors de l'upload");
     } finally {
       setUploading(false);
     }
   };
 
-  const selectedBook = availableBooks.find(b => b.id === fanArtData.book_id);
+  const selectBook = (book) => {
+    setSelectedBookId(book.id);
+    setSearchQuery(book.title);
+    setShowSuggestions(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
+          <DialogTitle className="text-2xl flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
             🎨 Ajouter un fan art
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Image URL and Upload */}
           <div>
-            <Label htmlFor="book">Livre associé *</Label>
-            <Select value={fanArtData.book_id} onValueChange={(value) => {
-              setFanArtData({...fanArtData, book_id: value, folder_path: ""});
-              setShowNewSubfolder(false);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez un livre" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBooks.map((book) => (
-                  <SelectItem key={book.id} value={book.id}>
-                    {book.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {fanArtData.book_id && (
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
-                  📚 {selectedBook?.title}
-                </span>
-                <ChevronRight className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-                <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                  Sous-dossier
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {existingSubfolders.length > 0 && (
-                  <div>
-                    <Label className="text-xs">Dossiers existants</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      {existingSubfolders.map((subfolder) => (
-                        <button
-                          key={subfolder}
-                          onClick={() => {
-                            setFanArtData({...fanArtData, folder_path: subfolder});
-                            setShowNewSubfolder(false);
-                          }}
-                          className="p-2 rounded-lg text-left text-sm font-medium transition-all hover:shadow-md"
-                          style={{
-                            backgroundColor: fanArtData.folder_path === subfolder ? 'var(--soft-pink)' : 'white',
-                            color: fanArtData.folder_path === subfolder ? 'white' : 'var(--dark-text)',
-                            border: '2px solid',
-                            borderColor: fanArtData.folder_path === subfolder ? 'var(--deep-pink)' : 'var(--beige)'
-                          }}
-                        >
-                          📁 {subfolder}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowNewSubfolder(!showNewSubfolder)}
-                  className="w-full"
-                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-                >
-                  <FolderPlus className="w-4 h-4 mr-2" />
-                  {showNewSubfolder ? "Annuler" : "Nouveau sous-dossier"}
-                </Button>
-
-                {showNewSubfolder && (
-                  <div className="space-y-2">
-                    <Input
-                      value={newSubfolderName}
-                      onChange={(e) => setNewSubfolderName(e.target.value)}
-                      placeholder="Ex: Personnages, Scènes, Couples..."
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        if (newSubfolderName.trim()) {
-                          setFanArtData({...fanArtData, folder_path: newSubfolderName.trim()});
-                          setShowNewSubfolder(false);
-                          setNewSubfolderName("");
-                        }
-                      }}
-                      className="w-full"
-                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
-                    >
-                      Créer "{newSubfolderName}"
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <Label>Image *</Label>
-            <div className="flex gap-3">
+            <Label htmlFor="imageUrl">Image *</Label>
+            <div className="flex gap-2">
               <Input
-                value={fanArtData.image_url}
-                onChange={(e) => setFanArtData({...fanArtData, image_url: e.target.value})}
+                id="imageUrl"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="URL de l'image ou..."
+                required
+                className="flex-1"
               />
               <label className="cursor-pointer">
                 <input
@@ -205,69 +155,196 @@ export default function AddFanArtDialog({ open, onOpenChange, books, existingFol
                   className="hidden"
                   disabled={uploading}
                 />
-                <Button type="button" variant="outline" disabled={uploading} asChild>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  disabled={uploading}
+                  className="w-24"
+                  asChild
+                >
                   <span>
-                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Upload
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload
+                      </>
+                    )}
                   </span>
                 </Button>
               </label>
             </div>
+            {imageUrl && (
+              <div className="mt-3 rounded-lg overflow-hidden">
+                <img src={imageUrl} alt="Preview" className="w-full max-h-64 object-cover" />
+              </div>
+            )}
           </div>
 
-          {fanArtData.image_url && (
-            <div className="rounded-xl overflow-hidden">
-              <img src={fanArtData.image_url} alt="Preview" className="w-full h-64 object-cover" />
-            </div>
-          )}
+          {/* Book Selection with Search */}
+          <div>
+            <Label htmlFor="bookSearch">Livre associé (optionnel)</Label>
+            <div className="relative">
+              <Input
+                id="bookSearch"
+                value={showSuggestions ? searchQuery : (selectedBook?.title || searchQuery)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                  if (!e.target.value) {
+                    setSelectedBookId("");
+                  }
+                }}
+                onFocus={() => {
+                  setShowSuggestions(true);
+                  if (selectedBook) {
+                    setSearchQuery(selectedBook.title);
+                  }
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+                placeholder="Rechercher un livre de votre bibliothèque..."
+                className="pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="artist">Artiste</Label>
-              <Input
-                id="artist"
-                value={fanArtData.artist_name}
-                onChange={(e) => setFanArtData({...fanArtData, artist_name: e.target.value})}
-                placeholder="Nom de l'artiste"
-              />
+              {/* Autocomplete dropdown */}
+              {showSuggestions && searchQuery.length >= 2 && filteredBooks.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border-2 max-h-64 overflow-y-auto"
+                     style={{ borderColor: 'var(--beige)' }}>
+                  {filteredBooks.map((book) => (
+                    <button
+                      key={book.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectBook(book);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left"
+                    >
+                      <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book.cover_url ? (
+                          <img src={book.cover_url} alt={book.title} 
+                               className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-1" 
+                           style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </p>
+                        <p className="text-xs line-clamp-1" 
+                           style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <Label htmlFor="source">Source URL</Label>
-              <Input
-                id="source"
-                value={fanArtData.source_url}
-                onChange={(e) => setFanArtData({...fanArtData, source_url: e.target.value})}
-                placeholder="https://..."
-              />
-            </div>
+            {selectedBook && (
+              <div className="mt-2 flex items-center gap-2 p-2 rounded-lg" 
+                   style={{ backgroundColor: 'var(--cream)' }}>
+                <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0"
+                     style={{ backgroundColor: 'var(--beige)' }}>
+                  {selectedBook.cover_url ? (
+                    <img src={selectedBook.cover_url} alt={selectedBook.title} 
+                         className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                    {selectedBook.title}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                    {selectedBook.author}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Folder Path */}
+          <div>
+            <Label htmlFor="folderPath">Dossier (optionnel)</Label>
+            <Input
+              id="folderPath"
+              value={folderPath}
+              onChange={(e) => setFolderPath(e.target.value)}
+              placeholder="Ex: ACOTAR/Rhysand ou Keleana/Personnages"
+            />
+            <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+              Organisez vos fan arts par dossier pour mieux les retrouver
+            </p>
+          </div>
+
+          {/* Artist Name */}
+          <div>
+            <Label htmlFor="artistName">Artiste</Label>
+            <Input
+              id="artistName"
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              placeholder="Nom de l'artiste"
+            />
+          </div>
+
+          {/* Source URL */}
+          <div>
+            <Label htmlFor="sourceUrl">Source URL</Label>
+            <Input
+              id="sourceUrl"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+
+          {/* Note */}
           <div>
             <Label htmlFor="note">Note</Label>
             <Textarea
               id="note"
-              value={fanArtData.note}
-              onChange={(e) => setFanArtData({...fanArtData, note: e.target.value})}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
               placeholder="Pourquoi vous aimez ce fan art..."
               rows={3}
             />
           </div>
 
-          <Button
-            onClick={() => createMutation.mutate(fanArtData)}
-            disabled={!fanArtData.book_id || !fanArtData.image_url || createMutation.isPending}
-            className="w-full font-medium py-6"
-            style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
-          >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Ajout en cours...
-              </>
-            ) : (
-              "Ajouter le fan art"
-            )}
-          </Button>
-        </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || !imageUrl}
+              className="text-white font-medium"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+            >
+              {createMutation.isPending ? "Ajout..." : "Ajouter"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
