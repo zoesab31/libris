@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Plus, FolderOpen, ChevronLeft } from "lucide-react";
+import { Image as ImageIcon, Plus, FolderOpen, ChevronLeft, Trash2 } from "lucide-react";
 import AddFanArtDialog from "../components/fanart/AddFanArtDialog";
 import FanArtGallery from "../components/fanart/FanArtGallery";
+import { toast } from 'react-hot-toast'; // Assuming react-hot-toast for notifications
 
 export default function FanArt() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [selectedSubfolder, setSelectedSubfolder] = useState(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -26,6 +28,44 @@ export default function FanArt() {
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
+  });
+
+  const deleteBookMutation = useMutation({
+    mutationFn: async (bookId) => {
+      // Get all fan arts for this book
+      const bookFanArts = fanArts.filter(fa => fa.book_id === bookId);
+      // Delete all fan arts
+      const deletePromises = bookFanArts.map(fa => base44.entities.FanArt.delete(fa.id));
+      await Promise.all(deletePromises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fanArts'] });
+      toast.success("Livre et fan arts supprimés avec succès.");
+      setSelectedBook(null);
+      setSelectedSubfolder(null);
+    },
+    onError: (error) => {
+      toast.error(`Erreur lors de la suppression du livre : ${error.message}`);
+    },
+  });
+
+  const deleteSubfolderMutation = useMutation({
+    mutationFn: async ({ bookId, subfolder }) => {
+      const bookData = fanArtsByBook[bookId];
+      if (!bookData) return;
+      
+      const subfolderFanArts = bookData.subfolders[subfolder] || [];
+      const deletePromises = subfolderFanArts.map(fa => base44.entities.FanArt.delete(fa.id));
+      await Promise.all(deletePromises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fanArts'] });
+      toast.success("Dossier supprimé avec succès.");
+      setSelectedSubfolder(null);
+    },
+    onError: (error) => {
+      toast.error(`Erreur lors de la suppression du dossier : ${error.message}`);
+    },
   });
 
   // Group by book
@@ -105,38 +145,55 @@ export default function FanArt() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             {books.map(bookId => {
               const bookData = fanArtsByBook[bookId];
-              if (!bookData) return null; // Safety check
+              if (!bookData) return null;
               
               const book = bookData.book;
               const totalFanArts = Object.values(bookData.subfolders).flat().length;
               const subfoldersCount = Object.keys(bookData.subfolders).length;
 
               return (
-                <button
-                  key={bookId}
-                  onClick={() => setSelectedBook(bookId)}
-                  className="group p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                  style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
-                >
-                  <div className="mb-4">
-                    {book?.cover_url ? (
-                      <div className="w-full aspect-[2/3] rounded-lg overflow-hidden shadow-md">
-                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-[2/3] rounded-lg flex items-center justify-center"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-center mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                    {book?.title || "Sans livre"}
-                  </h3>
-                  <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
-                    {totalFanArts} fan art{totalFanArts > 1 ? 's' : ''} • {subfoldersCount} dossier{subfoldersCount > 1 ? 's' : ''}
-                  </p>
-                </button>
+                <div key={bookId} className="relative group">
+                  <button
+                    onClick={() => setSelectedBook(bookId)}
+                    className="w-full p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                    style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                  >
+                    <div className="mb-4">
+                      {book?.cover_url ? (
+                        <div className="w-full aspect-[2/3] rounded-lg overflow-hidden shadow-md">
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-[2/3] rounded-lg flex items-center justify-center"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-center mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                      {book?.title || "Sans livre"}
+                    </h3>
+                    <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                      {totalFanArts} fan art{totalFanArts > 1 ? 's' : ''} • {subfoldersCount} dossier{subfoldersCount > 1 ? 's' : ''}
+                    </p>
+                  </button>
+                  
+                  {/* Delete button */}
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Supprimer tous les fan arts de "${book?.title || 'Sans livre'}" ? Cette action est irréversible.`)) {
+                        deleteBookMutation.mutate(bookId);
+                      }
+                    }}
+                    disabled={deleteBookMutation.isLoading}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               );
             })}
           </div>
@@ -152,9 +209,23 @@ export default function FanArt() {
               Retour aux livres
             </Button>
 
-            <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>
-              {fanArtsByBook[selectedBook]?.book?.title || "Sans livre"}
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                {fanArtsByBook[selectedBook]?.book?.title || "Sans livre"}
+              </h2>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (window.confirm(`Supprimer tous les fan arts de ce livre ("${fanArtsByBook[selectedBook]?.book?.title || 'Sans livre'}") ? Cette action est irréversible.`)) {
+                    deleteBookMutation.mutate(selectedBook);
+                  }
+                }}
+                disabled={deleteBookMutation.isLoading}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer le livre
+              </Button>
+            </div>
 
             {fanArtsByBook[selectedBook] && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
@@ -163,29 +234,46 @@ export default function FanArt() {
                   const firstFanArt = fanArtsByBook[selectedBook].subfolders[subfolder][0];
 
                   return (
-                    <button
-                      key={subfolder}
-                      onClick={() => setSelectedSubfolder(subfolder)}
-                      className="group p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                      style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
-                    >
-                      <div className="mb-4 w-full aspect-square rounded-lg overflow-hidden shadow-md"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {firstFanArt?.image_url ? (
-                          <img src={firstFanArt.image_url} alt={subfolder} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-center mb-2" style={{ color: 'var(--dark-text)' }}>
-                        📁 {subfolder}
-                      </h3>
-                      <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
-                        {fanArtsCount} fan art{fanArtsCount > 1 ? 's' : ''}
-                      </p>
-                    </button>
+                    <div key={subfolder} className="relative group">
+                      <button
+                        onClick={() => setSelectedSubfolder(subfolder)}
+                        className="w-full p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                        style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                      >
+                        <div className="mb-4 w-full aspect-square rounded-lg overflow-hidden shadow-md"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {firstFanArt?.image_url ? (
+                            <img src={firstFanArt.image_url} alt={subfolder} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <FolderOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-center mb-2" style={{ color: 'var(--dark-text)' }}>
+                          📁 {subfolder}
+                        </h3>
+                        <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                          {fanArtsCount} fan art{fanArtsCount > 1 ? 's' : ''}
+                        </p>
+                      </button>
+                      
+                      {/* Delete button */}
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Supprimer le dossier "${subfolder}" et tous ses fan arts ? Cette action est irréversible.`)) {
+                            deleteSubfolderMutation.mutate({ bookId: selectedBook, subfolder });
+                          }
+                        }}
+                        disabled={deleteSubfolderMutation.isLoading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   );
                 })}
               </div>
@@ -193,15 +281,29 @@ export default function FanArt() {
           </div>
         ) : (
           <div>
-            <Button
-              variant="ghost"
-              onClick={() => setSelectedSubfolder(null)}
-              className="mb-6"
-              style={{ color: 'var(--deep-pink)' }}
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Retour aux dossiers
-            </Button>
+            <div className="flex items-center justify-between mb-6">
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedSubfolder(null)}
+                style={{ color: 'var(--deep-pink)' }}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Retour aux dossiers
+              </Button>
+
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (window.confirm(`Supprimer le dossier "${selectedSubfolder}" et tous ses fan arts ? Cette action est irréversible.`)) {
+                    deleteSubfolderMutation.mutate({ bookId: selectedBook, subfolder: selectedSubfolder });
+                  }
+                }}
+                disabled={deleteSubfolderMutation.isLoading}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer le dossier
+              </Button>
+            </div>
 
             <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>
               {title}

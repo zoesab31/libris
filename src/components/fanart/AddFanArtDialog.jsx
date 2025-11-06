@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,11 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Loader2, Search, BookOpen } from "lucide-react";
+import { Upload, Loader2, Search, BookOpen, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AddFanArtDialog({ open, onOpenChange, user }) {
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState([""]); // Changed from imageUrl to imageUrls (array)
   const [selectedBookId, setSelectedBookId] = useState("");
   const [artistName, setArtistName] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -60,10 +61,13 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
   const selectedBook = allBooks.find(b => b.id === selectedBookId);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.FanArt.create(data),
-    onSuccess: () => {
+    mutationFn: async (fanArts) => { // Now expects an array of fan art data
+      const promises = fanArts.map(data => base44.entities.FanArt.create(data));
+      return await Promise.all(promises);
+    },
+    onSuccess: (data, fanArts) => { // data is the result of Promise.all, fanArts is the variables passed
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-      toast.success("✨ Fan art ajouté !");
+      toast.success(`✨ ${fanArts.length} fan art${fanArts.length > 1 ? 's' : ''} ajouté${fanArts.length > 1 ? 's' : ''} !`);
       handleClose();
     },
     onError: (error) => {
@@ -73,7 +77,7 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
   });
 
   const handleClose = () => {
-    setImageUrl("");
+    setImageUrls([""]); // Reset to a single empty input field
     setSelectedBookId("");
     setArtistName("");
     setSourceUrl("");
@@ -87,32 +91,45 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!imageUrl.trim()) {
-      toast.error("Veuillez ajouter une image");
+    const validUrls = imageUrls.filter(url => url.trim());
+    if (validUrls.length === 0) {
+      toast.error("Veuillez ajouter au moins une image");
       return;
     }
 
-    createMutation.mutate({
-      image_url: imageUrl.trim(),
+    const fanArts = validUrls.map(url => ({
+      image_url: url.trim(),
       book_id: selectedBookId || undefined,
       artist_name: artistName.trim() || undefined,
       source_url: sourceUrl.trim() || undefined,
       note: note.trim() || undefined,
       folder_path: folderPath.trim() || undefined,
-    });
+    }));
+
+    createMutation.mutate(fanArts); // Pass the array of fan arts
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []); // Handle multiple files
+    if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const result = await base44.integrations.Core.UploadFile({ file });
-      setImageUrl(result.file_url);
-      toast.success("Image uploadée !");
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      const results = await Promise.all(uploadPromises);
+      
+      const newUrls = results.map(r => r.file_url);
+      setImageUrls(prev => {
+        // Filter out any empty strings from the previous state before adding new ones
+        const filtered = prev.filter(url => url.trim()); 
+        return [...filtered, ...newUrls];
+      });
+      
+      toast.success(`${files.length} image${files.length > 1 ? 's' : ''} uploadée${files.length > 1 ? 's' : ''} !`);
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("Error uploading files:", error);
       toast.error("Erreur lors de l'upload");
     } finally {
       setUploading(false);
@@ -125,6 +142,21 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
     setShowSuggestions(false);
   };
 
+  // Functions to manage multiple image URLs
+  const addUrlField = () => {
+    setImageUrls([...imageUrls, ""]);
+  };
+
+  const removeUrlField = (index) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
+
+  const updateUrl = (index, value) => {
+    const newUrls = [...imageUrls];
+    newUrls[index] = value;
+    setImageUrls(newUrls);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -135,54 +167,110 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          {/* Image URL and Upload */}
+          {/* Images */}
           <div>
-            <Label htmlFor="imageUrl">Image *</Label>
-            <div className="flex gap-2">
-              <Input
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="URL de l'image ou..."
-                required
-                className="flex-1"
-              />
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  disabled={uploading}
-                  className="w-24"
-                  asChild
+            <Label>Images *</Label>
+            <div className="space-y-3">
+              {/* Dynamically rendered URL input fields */}
+              {imageUrls.map((url, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input
+                    value={url}
+                    onChange={(e) => updateUrl(index, e.target.value)}
+                    placeholder="URL de l'image..."
+                    className="flex-1"
+                  />
+                  {imageUrls.length > 1 && ( // Only show remove button if more than one field
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeUrlField(index)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addUrlField}
+                  className="flex-1"
                 >
-                  <span>
-                    {uploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Upload
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload
-                      </>
-                    )}
-                  </span>
+                  + Ajouter une URL
                 </Button>
-              </label>
-            </div>
-            {imageUrl && (
-              <div className="mt-3 rounded-lg overflow-hidden">
-                <img src={imageUrl} alt="Preview" className="w-full max-h-64 object-cover" />
+                
+                <label className="cursor-pointer flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple // Allow multiple file selection
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    disabled={uploading}
+                    className="w-full"
+                    asChild
+                  >
+                    <span>
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Upload...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload images
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </label>
               </div>
-            )}
+
+              {/* Preview section */}
+              {imageUrls.some(url => url.trim()) && ( // Only show if at least one URL is present
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {imageUrls.filter(url => url.trim()).map((url, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border">
+                      <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full p-0 flex items-center justify-center z-10"
+                        onClick={() => {
+                          setImageUrls(prev => {
+                            // Find the first occurrence of the URL in the state
+                            const indexToRemove = prev.indexOf(url);
+                            if (indexToRemove > -1) {
+                              const newUrls = prev.filter((_, i) => i !== indexToRemove);
+                              // If all URLs are removed (meaning the array is now empty or only contains empty strings),
+                              // ensure there's at least one empty string for new input.
+                              if (newUrls.length === 0 || !newUrls.some(u => u.trim())) {
+                                return [""];
+                              }
+                              return newUrls;
+                            }
+                            return prev; // Should not happen if `url` is truly in `prev`
+                          });
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Book Selection with Search */}
@@ -337,11 +425,11 @@ export default function AddFanArtDialog({ open, onOpenChange, user }) {
             </Button>
             <Button
               type="submit"
-              disabled={createMutation.isPending || !imageUrl}
+              disabled={createMutation.isPending || !imageUrls.some(url => url.trim())} // Disable if no valid URLs
               className="text-white font-medium"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
-              {createMutation.isPending ? "Ajout..." : "Ajouter"}
+              {createMutation.isPending ? "Ajout..." : `Ajouter ${imageUrls.filter(u => u.trim()).length} fan art${imageUrls.filter(u => u.trim()).length > 1 ? 's' : ''}`}
             </Button>
           </div>
         </form>
