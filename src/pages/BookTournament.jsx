@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trophy, Calendar, History, Check, Sparkles, Skull, ChevronDown } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trophy, Calendar, History, Sparkles, Skull, ChevronDown, Play, RotateCcw } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,21 +16,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
 
-const MONTHS = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-];
+const ROUND_NAMES = {
+  round_of_16: "Huitièmes de finale",
+  quarter: "Quarts de finale",
+  semi: "Demi-finales",
+  final: "Finale"
+};
+
+const ROUND_ORDER = ["round_of_16", "quarter", "semi", "final"];
 
 export default function BookTournament() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [activeTab, setActiveTab] = useState("monthly");
+  const [tournamentType, setTournamentType] = useState("best");
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [showMonthlyVoteDialog, setShowMonthlyVoteDialog] = useState(false);
-  const [selectedBestBook, setSelectedBestBook] = useState(null);
-  const [selectedWorstBook, setSelectedWorstBook] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -50,21 +50,35 @@ export default function BookTournament() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const { data: monthlyVotes = [] } = useQuery({
-    queryKey: ['monthlyVotes', selectedYear],
-    queryFn: () => base44.entities.MonthlyBookVote.filter({
-      created_by: user?.email,
-      year: selectedYear
-    }),
+  const { data: currentTournament } = useQuery({
+    queryKey: ['tournament', selectedYear, tournamentType],
+    queryFn: async () => {
+      const tournaments = await base44.entities.Tournament.filter({
+        created_by: user?.email,
+        year: selectedYear,
+        type: tournamentType
+      });
+      return tournaments[0] || null;
+    },
     enabled: !!user,
   });
 
-  const { data: yearlyWinners = [] } = useQuery({
-    queryKey: ['yearlyWinners'],
-    queryFn: () => base44.entities.BookOfTheYear.filter({
+  const { data: matches = [] } = useQuery({
+    queryKey: ['tournamentMatches', currentTournament?.id],
+    queryFn: () => base44.entities.TournamentMatch.filter({
+      tournament_id: currentTournament.id,
       created_by: user?.email
     }),
-    enabled: !!user,
+    enabled: !!currentTournament,
+  });
+
+  const { data: allTournaments = [] } = useQuery({
+    queryKey: ['allTournaments'],
+    queryFn: () => base44.entities.Tournament.filter({
+      created_by: user?.email,
+      status: "completed"
+    }),
+    enabled: !!user && showHistoryDialog,
   });
 
   // Helper to check if DNF book counts
@@ -80,94 +94,152 @@ export default function BookTournament() {
     return false;
   };
 
-  // Get books read per month (including DNF >50%)
-  const booksByMonth = useMemo(() => {
-    const organized = {};
-    for (let i = 0; i < 12; i++) {
-      organized[i] = [];
-    }
-
-    myBooks.forEach(userBook => {
-      if (!userBook.end_date) return;
-      const endDate = new Date(userBook.end_date);
-      if (endDate.getFullYear() !== selectedYear) return;
+  // Get eligible books for the year
+  const eligibleBooks = useMemo(() => {
+    return myBooks.filter(userBook => {
+      if (!userBook.end_date) return false;
+      const endYear = new Date(userBook.end_date).getFullYear();
+      if (endYear !== selectedYear) return false;
       
-      const month = endDate.getMonth();
+      if (userBook.status === "Lu") return true;
+      if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) return true;
       
-      if (userBook.status === "Lu") {
-        organized[month].push(userBook);
-      } else if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
-        organized[month].push(userBook);
-      }
+      return false;
     });
-
-    return organized;
   }, [myBooks, selectedYear, allBooks]);
 
-  // Get vote for specific month
-  const getMonthVote = (monthIndex) => {
-    return monthlyVotes.find(v => v.month === monthIndex + 1);
-  };
-
-  // Save monthly vote mutation
-  const saveMonthlyVoteMutation = useMutation({
-    mutationFn: async ({ month, bestBookId, worstBookId }) => {
-      const existing = monthlyVotes.find(v => v.month === month);
+  // Create tournament mutation
+  const createTournamentMutation = useMutation({
+    mutationFn: async () => {
+      // Shuffle books randomly
+      const shuffled = [...eligibleBooks].sort(() => Math.random() - 0.5);
+      const participants = shuffled.slice(0, 16); // Take first 16 books
       
-      if (existing) {
-        await base44.entities.MonthlyBookVote.update(existing.id, {
-          best_book_id: bestBookId,
-          worst_book_id: worstBookId
-        });
-      } else {
-        await base44.entities.MonthlyBookVote.create({
-          year: selectedYear,
-          month,
-          best_book_id: bestBookId,
-          worst_book_id: worstBookId
-        });
+      // Create tournament
+      const tournament = await base44.entities.Tournament.create({
+        year: selectedYear,
+        type: tournamentType,
+        status: "in_progress",
+        current_round: "round_of_16",
+        participant_books: participants.map(b => b.book_id)
+      });
+
+      // Create matches for round of 16
+      const matchPromises = [];
+      for (let i = 0; i < 8; i++) {
+        matchPromises.push(
+          base44.entities.TournamentMatch.create({
+            tournament_id: tournament.id,
+            round: "round_of_16",
+            position: i,
+            book_1_id: participants[i * 2]?.book_id,
+            book_2_id: participants[i * 2 + 1]?.book_id
+          })
+        );
+      }
+      await Promise.all(matchPromises);
+      
+      return tournament;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournament'] });
+      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
+    }
+  });
+
+  // Vote mutation
+  const voteMutation = useMutation({
+    mutationFn: async ({ matchId, winnerBookId }) => {
+      await base44.entities.TournamentMatch.update(matchId, {
+        winner_book_id: winnerBookId
+      });
+
+      // Check if round is complete
+      const currentRound = selectedMatch.round;
+      const roundMatches = matches.filter(m => m.round === currentRound);
+      const allVoted = roundMatches.every(m => m.winner_book_id || m.id === matchId);
+
+      if (allVoted) {
+        // Move to next round
+        const currentRoundIndex = ROUND_ORDER.indexOf(currentRound);
+        const nextRound = ROUND_ORDER[currentRoundIndex + 1];
+
+        if (nextRound) {
+          // Create next round matches
+          const winners = [];
+          for (const match of roundMatches) {
+            const winnerId = match.id === matchId ? winnerBookId : match.winner_book_id;
+            winners.push(winnerId);
+          }
+
+          const nextMatchPromises = [];
+          for (let i = 0; i < winners.length / 2; i++) {
+            nextMatchPromises.push(
+              base44.entities.TournamentMatch.create({
+                tournament_id: currentTournament.id,
+                round: nextRound,
+                position: i,
+                book_1_id: winners[i * 2],
+                book_2_id: winners[i * 2 + 1]
+              })
+            );
+          }
+          await Promise.all(nextMatchPromises);
+
+          // Update tournament
+          await base44.entities.Tournament.update(currentTournament.id, {
+            current_round: nextRound
+          });
+        } else {
+          // Tournament complete!
+          await base44.entities.Tournament.update(currentTournament.id, {
+            status: "completed",
+            winner_book_id: winnerBookId
+          });
+        }
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['monthlyVotes'] });
-      setShowMonthlyVoteDialog(false);
-      setSelectedMonth(null);
-      setSelectedBestBook(null);
-      setSelectedWorstBook(null);
+      queryClient.invalidateQueries({ queryKey: ['tournament'] });
+      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
+      setSelectedMatch(null);
     }
   });
 
-  // Save yearly best/worst
-  const saveYearlyWinnerMutation = useMutation({
-    mutationFn: async ({ isWorst, bookId, reason }) => {
-      const existing = yearlyWinners.find(w => w.year === selectedYear && w.is_worst === isWorst);
-      
-      if (existing) {
-        await base44.entities.BookOfTheYear.update(existing.id, {
-          book_id: bookId,
-          reason
-        });
-      } else {
-        await base44.entities.BookOfTheYear.create({
-          year: selectedYear,
-          book_id: bookId,
-          is_worst: isWorst,
-          reason
-        });
+  // Reset tournament
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      if (currentTournament) {
+        await base44.entities.Tournament.delete(currentTournament.id);
+        const deletePromises = matches.map(m => base44.entities.TournamentMatch.delete(m.id));
+        await Promise.all(deletePromises);
       }
     },
-    onSuccess: () => { // Modified: Removed confetti logic for best book
-      queryClient.invalidateQueries({ queryKey: ['yearlyWinners'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournament'] });
+      queryClient.invalidateQueries({ queryKey: ['tournamentMatches'] });
     }
   });
 
-  const currentYearBest = yearlyWinners.find(w => w.year === selectedYear && !w.is_worst);
-  const currentYearWorst = yearlyWinners.find(w => w.year === selectedYear && w.is_worst);
-
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i + 2);
-  
-  const votedMonthsCount = monthlyVotes.length;
-  const totalMonthsWithBooks = Object.values(booksByMonth).filter(books => books.length > 0).length;
+
+  const isDark = tournamentType === "worst";
+  const accentColor = isDark ? '#666' : 'var(--gold)';
+  const secondaryColor = isDark ? '#999' : 'var(--deep-pink)';
+
+  // Get current match to vote on
+  const nextMatchToVote = useMemo(() => {
+    if (!currentTournament || currentTournament.status === "completed") return null;
+    return matches.find(m => 
+      m.round === currentTournament.current_round && 
+      !m.winner_book_id
+    );
+  }, [matches, currentTournament]);
+
+  // Calculate progress
+  const totalMatches = matches.length;
+  const votedMatches = matches.filter(m => m.winner_book_id).length;
+  const progressPercent = totalMatches > 0 ? (votedMatches / totalMatches) * 100 : 0;
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -176,20 +248,20 @@ export default function BookTournament() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))' }}>
-              <Trophy className="w-7 h-7 text-white" />
+                 style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
+              {isDark ? <Skull className="w-7 h-7 text-white" /> : <Trophy className="w-7 h-7 text-white" />}
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                🏆 Tournoi du Livre
+                {isDark ? "💀" : "🏆"} Tournoi du Livre {selectedYear}
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                Élisez vos meilleures et pires lectures de {selectedYear}
+                {isDark ? "Pire lecture" : "Meilleure lecture"}
               </p>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             {/* Year Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -198,13 +270,13 @@ export default function BookTournament() {
                   className="px-6 py-6 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all border-2"
                   style={{
                     backgroundColor: 'white',
-                    borderColor: 'var(--deep-pink)',
+                    borderColor: secondaryColor,
                     color: '#000000'
                   }}
                 >
-                  <Calendar className="w-5 h-5 mr-2" style={{ color: 'var(--deep-pink)' }} />
+                  <Calendar className="w-5 h-5 mr-2" style={{ color: secondaryColor }} />
                   📅 {selectedYear}
-                  <ChevronDown className="w-5 h-5 ml-2" style={{ color: 'var(--deep-pink)' }} />
+                  <ChevronDown className="w-5 h-5 ml-2" style={{ color: secondaryColor }} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="max-h-64 overflow-y-auto">
@@ -216,7 +288,7 @@ export default function BookTournament() {
                       selectedYear === year ? 'bg-pink-100 font-bold' : ''
                     }`}
                     style={{
-                      color: selectedYear === year ? 'var(--deep-pink)' : '#000000'
+                      color: selectedYear === year ? secondaryColor : '#000000'
                     }}
                   >
                     {selectedYear === year && '✓ '}{year}
@@ -225,6 +297,32 @@ export default function BookTournament() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Tournament Type Toggle */}
+            <div className="flex gap-2 bg-white rounded-xl p-1 shadow-lg">
+              <Button
+                onClick={() => setTournamentType("best")}
+                variant={tournamentType === "best" ? "default" : "ghost"}
+                className="rounded-lg font-bold"
+                style={tournamentType === "best" ? {
+                  background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))',
+                  color: 'white'
+                } : {}}
+              >
+                👑 Meilleure
+              </Button>
+              <Button
+                onClick={() => setTournamentType("worst")}
+                variant={tournamentType === "worst" ? "default" : "ghost"}
+                className="rounded-lg font-bold"
+                style={tournamentType === "worst" ? {
+                  background: 'linear-gradient(135deg, #666, #999)',
+                  color: 'white'
+                } : {}}
+              >
+                💀 Pire
+              </Button>
+            </div>
+
             {/* History Button */}
             <Button
               variant="outline"
@@ -232,404 +330,211 @@ export default function BookTournament() {
               className="px-6 py-6 rounded-xl font-bold shadow-lg"
               style={{
                 borderColor: 'var(--beige)',
-                color: 'var(--deep-pink)'
+                color: secondaryColor
               }}
             >
               <History className="w-5 h-5 mr-2" />
               Historique
             </Button>
+
+            {currentTournament && (
+              <Button
+                variant="outline"
+                onClick={() => resetMutation.mutate()}
+                disabled={resetMutation.isPending}
+                className="px-6 py-6 rounded-xl font-bold shadow-lg"
+                style={{
+                  borderColor: 'var(--beige)',
+                  color: '#ff1744'
+                }}
+              >
+                <RotateCcw className="w-5 h-5 mr-2" />
+                Recommencer
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Progress Counter */}
-        <div className="mb-6 p-4 rounded-xl text-center shadow-md" style={{ backgroundColor: 'white' }}>
-          <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
-            Votes mensuels enregistrés : {votedMonthsCount}/{totalMonthsWithBooks}
-          </p>
-        </div>
+        {/* Progress Bar */}
+        {currentTournament && currentTournament.status !== "completed" && (
+          <div className="mb-8 p-6 rounded-xl shadow-md" style={{ backgroundColor: 'white' }}>
+            <div className="flex justify-between items-center mb-3">
+              <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                Tour actuel : {ROUND_NAMES[currentTournament.current_round]}
+              </p>
+              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                {votedMatches}/{totalMatches} matchs complétés
+              </p>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+          </div>
+        )}
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8">
-            <TabsTrigger
-              value="monthly"
-              className="rounded-lg font-bold"
-              style={activeTab === "monthly" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              Votes mensuels
-            </TabsTrigger>
-            <TabsTrigger
-              value="best"
-              className="rounded-lg font-bold"
-              style={activeTab === "best" ? {
-                background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              👑 Meilleure lecture
-            </TabsTrigger>
-            <TabsTrigger
-              value="worst"
-              className="rounded-lg font-bold"
-              style={activeTab === "worst" ? {
-                background: 'linear-gradient(135deg, #666, #999)',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              💀 Pire lecture
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Monthly Votes Tab */}
-          <TabsContent value="monthly">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {MONTHS.map((monthName, monthIndex) => {
-                const booksInMonth = booksByMonth[monthIndex];
-                const vote = getMonthVote(monthIndex);
-                const hasVote = !!vote;
-
-                return (
-                  <Card
-                    key={monthIndex}
-                    className={`shadow-lg border-2 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
-                      hasVote ? 'border-green-400' : 'border-transparent'
-                    }`}
-                    style={{
-                      backgroundColor: hasVote ? '#e8f5e9' : 'white'
-                    }}
-                    onClick={() => {
-                      if (booksInMonth.length > 0) {
-                        setSelectedMonth(monthIndex);
-                        setShowMonthlyVoteDialog(true);
-                      }
-                    }}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg" style={{ color: 'var(--dark-text)' }}>
-                          {monthName}
-                        </CardTitle>
-                        {hasVote ? (
-                          <Check className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <Calendar className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                        {booksInMonth.length} livre{booksInMonth.length > 1 ? 's' : ''} lu{booksInMonth.length > 1 ? 's' : ''}
-                      </p>
-                      {booksInMonth.length > 0 ? (
-                        <p className="text-sm font-medium" style={{ color: hasVote ? '#2e7d32' : 'var(--deep-pink)' }}>
-                          {hasVote ? '✅ Vote enregistré' : '👉 Cliquez pour voter'}
-                        </p>
-                      ) : (
-                        <p className="text-sm" style={{ color: '#999' }}>
-                          Aucune lecture disponible
-                        </p>
+        {/* Main Content */}
+        {!currentTournament || currentTournament.status === "completed" ? (
+          currentTournament?.status === "completed" ? (
+            /* Winner Display */
+            <Card className="shadow-xl border-0 overflow-hidden max-w-2xl mx-auto">
+              <div className="h-3" style={{ background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})` }} />
+              <CardContent className="p-8 text-center">
+                {isDark ? (
+                  <Skull className="w-20 h-20 mx-auto mb-4" style={{ color: accentColor }} />
+                ) : (
+                  <Sparkles className="w-20 h-20 mx-auto mb-4" style={{ color: accentColor }} />
+                )}
+                <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                  {isDark ? "💀 Pire lecture" : "🏆 Meilleure lecture"} de {selectedYear}
+                </h2>
+                {(() => {
+                  const book = allBooks.find(b => b.id === currentTournament.winner_book_id);
+                  if (!book) return null;
+                  return (
+                    <div className="flex flex-col items-center gap-4">
+                      {book.cover_url && (
+                        <img 
+                          src={book.cover_url} 
+                          alt={book.title} 
+                          className={`w-48 h-72 object-cover rounded-xl shadow-lg ${isDark ? 'grayscale' : ''}`} 
+                        />
                       )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          {/* Best Book Tab */}
-          <TabsContent value="best">
-            <div className="max-w-2xl mx-auto">
-              {currentYearBest ? (
-                <Card className="shadow-xl border-0 overflow-hidden">
-                  <div className="h-3" style={{ background: 'linear-gradient(90deg, var(--gold), var(--deep-pink))' }} />
-                  <CardContent className="p-8 text-center">
-                    <Sparkles className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--gold)' }} />
-                    <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      ✨ Votre meilleure lecture de {selectedYear}
-                    </h2>
-                    {(() => {
-                      const book = allBooks.find(b => b.id === currentYearBest.book_id);
-                      if (!book) return null;
-                      return (
-                        <div className="flex flex-col items-center gap-4">
-                          {book.cover_url && (
-                            <img src={book.cover_url} alt={book.title} className="w-40 h-60 object-cover rounded-xl shadow-lg" />
-                          )}
-                          <div>
-                            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </h3>
-                            <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                              {book.author}
-                            </p>
-                            {currentYearBest.reason && (
-                              <p className="text-sm italic" style={{ color: '#666' }}>
-                                "{currentYearBest.reason}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="shadow-xl border-0">
-                  <CardContent className="p-8 text-center">
-                    <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--gold)' }} />
-                    <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      Élisez votre meilleure lecture de {selectedYear}
-                    </h2>
-                    <p className="mb-6" style={{ color: 'var(--warm-pink)' }}>
-                      Choisissez le livre qui vous a le plus marqué cette année
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {Object.values(booksByMonth).flat().map(userBook => {
-                        const book = allBooks.find(b => b.id === userBook.book_id);
-                        if (!book) return null;
-                        return (
-                          <button
-                            key={userBook.id}
-                            onClick={() => {
-                              saveYearlyWinnerMutation.mutate({
-                                isWorst: false,
-                                bookId: book.id,
-                                reason: ""
-                              });
-                            }}
-                            className="group"
-                          >
-                            <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-lg transition-all group-hover:shadow-2xl group-hover:-translate-y-2"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book.cover_url ? (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Trophy className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-xs mt-2 font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </p>
-                          </button>
-                        );
-                      })}
+                      <div>
+                        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </h3>
+                        <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  );
+                })()}
+                <Button
+                  onClick={() => resetMutation.mutate()}
+                  className="mt-6"
+                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})`, color: 'white' }}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Recommencer
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Setup Screen */
+            <div className="text-center py-20">
+              {isDark ? (
+                <Skull className="w-24 h-24 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />
+              ) : (
+                <Trophy className="w-24 h-24 mx-auto mb-6 opacity-20" style={{ color: accentColor }} />
+              )}
+              <h3 className="text-3xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                Lancez le tournoi {selectedYear} !
+              </h3>
+              <p className="text-xl mb-2" style={{ color: 'var(--warm-pink)' }}>
+                {eligibleBooks.length} livres éligibles
+              </p>
+              <p className="text-sm mb-8" style={{ color: '#999' }}>
+                (Livres lus + abandonnés à plus de 50%)
+              </p>
+              {eligibleBooks.length >= 16 ? (
+                <Button 
+                  onClick={() => createTournamentMutation.mutate()}
+                  disabled={createTournamentMutation.isPending}
+                  className="shadow-xl text-white font-bold px-10 py-8 text-xl rounded-2xl"
+                  style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}
+                >
+                  <Play className="w-7 h-7 mr-3" />
+                  Commencer le tournoi
+                </Button>
+              ) : (
+                <div className="max-w-md mx-auto p-6 rounded-xl" style={{ backgroundColor: 'var(--beige)' }}>
+                  <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
+                    Vous avez besoin d'au moins 16 livres lus pour lancer un tournoi.
+                    <br />
+                    ({eligibleBooks.length}/16 livres disponibles)
+                  </p>
+                </div>
               )}
             </div>
-          </TabsContent>
+          )
+        ) : nextMatchToVote ? (
+          /* Voting Screen */
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-2xl border-0 overflow-hidden">
+              <div className="h-3" style={{ background: `linear-gradient(90deg, ${accentColor}, ${secondaryColor})` }} />
+              <CardContent className="p-8">
+                <h2 className="text-2xl font-bold text-center mb-8" style={{ color: 'var(--dark-text)' }}>
+                  {ROUND_NAMES[nextMatchToVote.round]}
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  {[nextMatchToVote.book_1_id, nextMatchToVote.book_2_id].map((bookId) => {
+                    const userBook = myBooks.find(ub => ub.book_id === bookId);
+                    const book = allBooks.find(b => b.id === bookId);
+                    if (!book) return null;
 
-          {/* Worst Book Tab */}
-          <TabsContent value="worst">
-            <div className="max-w-2xl mx-auto">
-              {currentYearWorst ? (
-                <Card className="shadow-xl border-0 overflow-hidden">
-                  <div className="h-3 bg-gradient-to-r from-gray-400 to-gray-600" />
-                  <CardContent className="p-8 text-center">
-                    <Skull className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                    <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      💀 Votre pire lecture de {selectedYear}
-                    </h2>
-                    {(() => {
-                      const book = allBooks.find(b => b.id === currentYearWorst.book_id);
-                      if (!book) return null;
-                      return (
-                        <div className="flex flex-col items-center gap-4">
-                          {book.cover_url && (
-                            <img src={book.cover_url} alt={book.title} className="w-40 h-60 object-cover rounded-xl shadow-lg grayscale" />
-                          )}
-                          <div>
-                            <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </h3>
-                            <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                              {book.author}
-                            </p>
-                            {currentYearWorst.reason && (
-                              <p className="text-sm italic" style={{ color: '#666' }}>
-                                "{currentYearWorst.reason}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="shadow-xl border-0">
-                  <CardContent className="p-8 text-center">
-                    <Skull className="w-16 h-16 mx-auto mb-4 opacity-20 text-gray-600" />
-                    <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-                      Désignez votre pire lecture de {selectedYear}
-                    </h2>
-                    <p className="mb-6" style={{ color: 'var(--warm-pink)' }}>
-                      Le livre qui vous a le plus déçu cette année
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {Object.values(booksByMonth).flat().map(userBook => {
-                        const book = allBooks.find(b => b.id === userBook.book_id);
-                        if (!book) return null;
-                        return (
-                          <button
-                            key={userBook.id}
-                            onClick={() => {
-                              saveYearlyWinnerMutation.mutate({
-                                isWorst: true,
-                                bookId: book.id,
-                                reason: ""
-                              });
-                            }}
-                            className="group"
-                          >
-                            <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-lg transition-all group-hover:shadow-2xl group-hover:-translate-y-2 grayscale hover:grayscale-0"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book.cover_url ? (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                    return (
+                      <button
+                        key={bookId}
+                        onClick={() => voteMutation.mutate({ matchId: nextMatchToVote.id, winnerBookId: bookId })}
+                        disabled={voteMutation.isPending}
+                        className="group p-6 rounded-2xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                        style={{
+                          backgroundColor: 'white',
+                          border: `3px solid ${isDark ? '#ccc' : 'var(--beige)'}`,
+                          opacity: voteMutation.isPending ? 0.5 : 1
+                        }}
+                      >
+                        <div className={`aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-4 ${isDark ? 'grayscale group-hover:grayscale-0' : ''}`}
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              {isDark ? (
+                                <Skull className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Skull className="w-12 h-12 text-gray-600" />
-                                </div>
+                                <Trophy className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
                               )}
                             </div>
-                            <p className="text-xs mt-2 font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Monthly Vote Dialog */}
-        {showMonthlyVoteDialog && selectedMonth !== null && (
-          <Dialog open={showMonthlyVoteDialog} onOpenChange={setShowMonthlyVoteDialog}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                  Votes pour {MONTHS[selectedMonth]}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6 py-4">
-                {/* Best Book Selection */}
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
-                    👑 Meilleure lecture du mois
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {booksByMonth[selectedMonth].map(userBook => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      if (!book) return null;
-                      const isSelected = selectedBestBook === book.id;
-                      return (
-                        <button
-                          key={userBook.id}
-                          onClick={() => setSelectedBestBook(book.id)}
-                          className={`p-2 rounded-xl border-2 transition-all ${
-                            isSelected ? 'border-green-500 bg-green-50' : 'border-transparent hover:border-pink-300'
-                          }`}
-                        >
-                          <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-md mb-2"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book.cover_url ? (
-                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Trophy className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                              </div>
-                            )}
+                          )}
+                        </div>
+                        
+                        <h3 className="font-bold text-xl mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </h3>
+                        <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                        
+                        {userBook?.rating && (
+                          <div className="flex items-center justify-center gap-1 mb-3">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span key={i} className={i < userBook.rating ? 'text-yellow-500' : 'text-gray-300'}>
+                                ⭐
+                              </span>
+                            ))}
                           </div>
-                          <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                            {book.title}
-                          </p>
-                          {isSelected && <Check className="w-5 h-5 mx-auto mt-1 text-green-600" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                        )}
 
-                {/* Worst Book Selection */}
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
-                    💀 Pire lecture du mois
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {booksByMonth[selectedMonth].map(userBook => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      if (!book) return null;
-                      const isSelected = selectedWorstBook === book.id;
-                      return (
-                        <button
-                          key={userBook.id}
-                          onClick={() => setSelectedWorstBook(book.id)}
-                          className={`p-2 rounded-xl border-2 transition-all ${
-                            isSelected ? 'border-red-500 bg-red-50' : 'border-transparent hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-md mb-2 grayscale"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book.cover_url ? (
-                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Skull className="w-8 h-8 text-gray-600" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                            {book.title}
-                          </p>
-                          {isSelected && <Check className="w-5 h-5 mx-auto mt-1 text-red-600" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                        <div className="mt-4 px-4 py-3 rounded-xl font-bold text-white"
+                             style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
+                          Voter pour ce livre
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowMonthlyVoteDialog(false);
-                      setSelectedMonth(null);
-                      setSelectedBestBook(null);
-                      setSelectedWorstBook(null);
-                    }}
-                  >
-                    Annuler
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (selectedBestBook || selectedWorstBook) {
-                        saveMonthlyVoteMutation.mutate({
-                          month: selectedMonth + 1,
-                          bestBookId: selectedBestBook,
-                          worstBookId: selectedWorstBook
-                        });
-                      }
-                    }}
-                    disabled={!selectedBestBook && !selectedWorstBook}
-                    className="text-white"
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  >
-                    Enregistrer
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* Waiting for next round */
+          <div className="text-center py-20">
+            <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20 animate-pulse" style={{ color: accentColor }} />
+            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+              Préparation du tour suivant...
+            </h3>
+          </div>
         )}
 
         {/* History Dialog */}
@@ -642,69 +547,67 @@ export default function BookTournament() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
-              {yearlyWinners.length === 0 ? (
+              {allTournaments.length === 0 ? (
                 <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                  Aucun résultat enregistré pour le moment
+                  Aucun tournoi terminé
                 </p>
               ) : (
-                [...new Set(yearlyWinners.map(w => w.year))].sort((a, b) => b - a).map(year => {
-                  const bestBook = yearlyWinners.find(w => w.year === year && !w.is_worst);
-                  const worstBook = yearlyWinners.find(w => w.year === year && w.is_worst);
-                  
-                  return (
-                    <Card key={year} className="shadow-lg border-0">
-                      <CardHeader className="pb-3" style={{ backgroundColor: 'var(--cream)' }}>
-                        <CardTitle className="flex items-center gap-2">
-                          <Trophy className="w-6 h-6" style={{ color: 'var(--gold)' }} />
-                          {year}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="grid md:grid-cols-2 gap-6">
-                          {/* Best */}
-                          {bestBook && (() => {
-                            const book = allBooks.find(b => b.id === bestBook.book_id);
-                            return book ? (
-                              <div>
-                                <h4 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                                  <Sparkles className="w-5 h-5" style={{ color: 'var(--gold)' }} />
-                                  Meilleure lecture
-                                </h4>
-                                <div className="flex gap-3">
-                                  <img src={book.cover_url} alt={book.title} className="w-16 h-24 object-cover rounded-lg shadow-md" />
-                                  <div>
-                                    <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>{book.title}</p>
-                                    <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>{book.author}</p>
-                                  </div>
+                allTournaments
+                  .sort((a, b) => b.year - a.year)
+                  .map((tournament) => {
+                    const book = allBooks.find(b => b.id === tournament.winner_book_id);
+                    const isBest = tournament.type === "best";
+                    
+                    return (
+                      <Card key={tournament.id} className="shadow-lg border-0">
+                        <div className="h-2" style={{ 
+                          background: isBest 
+                            ? 'linear-gradient(90deg, var(--gold), var(--deep-pink))' 
+                            : 'linear-gradient(90deg, #666, #999)' 
+                        }} />
+                        <CardContent className="p-6">
+                          <div className="flex gap-4">
+                            <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              {book?.cover_url ? (
+                                <img 
+                                  src={book.cover_url} 
+                                  alt={book.title} 
+                                  className={`w-full h-full object-cover ${!isBest ? 'grayscale' : ''}`} 
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  {isBest ? <Trophy className="w-8 h-8" /> : <Skull className="w-8 h-8" />}
                                 </div>
-                              </div>
-                            ) : null;
-                          })()}
-
-                          {/* Worst */}
-                          {worstBook && (() => {
-                            const book = allBooks.find(b => b.id === worstBook.book_id);
-                            return book ? (
-                              <div>
-                                <h4 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                {isBest ? (
+                                  <Trophy className="w-5 h-5" style={{ color: 'var(--gold)' }} />
+                                ) : (
                                   <Skull className="w-5 h-5 text-gray-600" />
-                                  Pire lecture
-                                </h4>
-                                <div className="flex gap-3">
-                                  <img src={book.cover_url} alt={book.title} className="w-16 h-24 object-cover rounded-lg shadow-md grayscale" />
-                                  <div>
-                                    <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>{book.title}</p>
-                                    <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>{book.author}</p>
-                                  </div>
-                                </div>
+                                )}
+                                <h3 className="text-lg font-bold" style={{ color: 'var(--dark-text)' }}>
+                                  {isBest ? "Meilleure" : "Pire"} lecture {tournament.year}
+                                </h3>
                               </div>
-                            ) : null;
-                          })()}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                              {book && (
+                                <>
+                                  <p className="font-bold text-lg mb-1" style={{ color: 'var(--dark-text)' }}>
+                                    {book.title}
+                                  </p>
+                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                    {book.author}
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
               )}
             </div>
           </DialogContent>
