@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check } from "lucide-react";
+import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check, Upload, X, Loader2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -21,9 +21,11 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     message: "",
     chapter: "",
     is_spoiler: false,
+    photo_url: "",
   });
   const [inviteEmail, setInviteEmail] = useState(""); // This state is no longer directly used for inviting friends, but keeping it for now if other parts rely on it.
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
@@ -60,7 +62,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedReadingMessages', reading.id] });
-      setNewMessage({ message: "", chapter: "", is_spoiler: false });
+      setNewMessage({ message: "", chapter: "", is_spoiler: false, photo_url: "" });
       toast.success("Message envoyé !");
     },
   });
@@ -72,6 +74,23 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       toast.success("Message supprimé");
     },
   });
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      setNewMessage({ ...newMessage, photo_url: result.file_url });
+      toast.success("Photo uploadée !");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   // Replaced the old inviteFriendMutation with this one for inviting multiple friends
   const inviteFriendsMutation = useMutation({
@@ -216,6 +235,67 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     rows={3}
                   />
                 </div>
+
+                {/* Photo upload section */}
+                <div>
+                  <Label>Photo (optionnelle)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newMessage.photo_url}
+                      onChange={(e) => setNewMessage({...newMessage, photo_url: e.target.value})}
+                      placeholder="URL de la photo ou..."
+                      className="flex-1"
+                    />
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        disabled={uploadingPhoto}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        disabled={uploadingPhoto}
+                        className="w-24"
+                        asChild
+                      >
+                        <span>
+                          {uploadingPhoto ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Upload
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Photo
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                  {newMessage.photo_url && (
+                    <div className="relative mt-2 rounded-lg overflow-hidden">
+                      <img 
+                        src={newMessage.photo_url} 
+                        alt="Preview" 
+                        className="w-full h-48 object-cover" 
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => setNewMessage({...newMessage, photo_url: ""})}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Switch
@@ -259,6 +339,17 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         borderColor: 'var(--beige)'
                       }}
                     >
+                      {msg.photo_url && (
+                        <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
+                             onClick={() => window.open(msg.photo_url, '_blank')}>
+                          <img 
+                            src={msg.photo_url} 
+                            alt="Photo du message" 
+                            className="w-full h-48 object-cover hover:scale-105 transition-transform" 
+                          />
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <p className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>

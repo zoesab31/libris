@@ -19,14 +19,25 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+// New imports for Tabs and Wishlist features
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
+
 export default function SharedReadings() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showWishlistDialog, setShowWishlistDialog] = useState(false); // New state
   const [selectedReading, setSelectedReading] = useState(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedReadings, setSelectedReadings] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMode, setDeleteMode] = useState("leave");
+  const [activeTab, setActiveTab] = useState("active"); // New state
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -83,6 +94,12 @@ export default function SharedReadings() {
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
+  });
+
+  const { data: wishlists = [] } = useQuery({
+    queryKey: ['sharedReadingWishlists'],
+    queryFn: () => base44.entities.SharedReadingWishlist.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
   });
 
   const bulkDeleteMutation = useMutation({
@@ -203,116 +220,185 @@ export default function SharedReadings() {
           </div>
         </div>
 
-        {ongoingReadings.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-              <BookOpen className="w-5 h-5" />
-              En cours ({ongoingReadings.length})
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {ongoingReadings.map((reading) => {
-                const book = allBooks.find(b => b.id === reading.book_id);
-                return (
-                  <div key={reading.id} className="relative">
-                    {selectionMode && (
-                      <div className="absolute top-4 left-4 z-10">
-                        <Checkbox
-                          checked={selectedReadings.includes(reading.id)}
-                          onCheckedChange={() => toggleSelection(reading.id)}
-                          className="bg-white border-2"
+        {/* Tabs for Active Readings and Wishlists */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-8">
+          <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
+            <TabsTrigger
+              value="active"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              style={activeTab === "active" ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: '#FFFFFF'
+              } : { color: '#000000' }}
+            >
+              📚 Lectures actives ({sharedReadings.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="wishlist"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              style={activeTab === "wishlist" ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: '#FFFFFF'
+              } : { color: '#000000' }}
+            >
+              💭 Listes de souhaits ({wishlists.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            {ongoingReadings.length > 0 && (
+              <div className="mb-8 mt-6">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                  <BookOpen className="w-5 h-5" />
+                  En cours ({ongoingReadings.length})
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {ongoingReadings.map((reading) => {
+                    const book = allBooks.find(b => b.id === reading.book_id);
+                    return (
+                      <div key={reading.id} className="relative">
+                        {selectionMode && (
+                          <div className="absolute top-4 left-4 z-10">
+                            <Checkbox
+                              checked={selectedReadings.includes(reading.id)}
+                              onCheckedChange={() => toggleSelection(reading.id)}
+                              className="bg-white border-2"
+                            />
+                          </div>
+                        )}
+                        <SharedReadingCard 
+                          reading={reading}
+                          book={book}
+                          onClick={() => !selectionMode && setSelectedReading(reading)}
                         />
                       </div>
-                    )}
-                    <SharedReadingCard 
-                      reading={reading}
-                      book={book}
-                      onClick={() => !selectionMode && setSelectedReading(reading)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-        {upcomingReadings.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-              À venir ({upcomingReadings.length})
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {upcomingReadings.map((reading) => {
-                const book = allBooks.find(b => b.id === reading.book_id);
-                return (
-                  <div key={reading.id} className="relative">
-                    {selectionMode && (
-                      <div className="absolute top-4 left-4 z-10">
-                        <Checkbox
-                          checked={selectedReadings.includes(reading.id)}
-                          onCheckedChange={() => toggleSelection(reading.id)}
-                          className="bg-white border-2"
+            {upcomingReadings.length > 0 && (
+              <div className="mb-8 mt-6">
+                <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                  À venir ({upcomingReadings.length})
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {upcomingReadings.map((reading) => {
+                    const book = allBooks.find(b => b.id === reading.book_id);
+                    return (
+                      <div key={reading.id} className="relative">
+                        {selectionMode && (
+                          <div className="absolute top-4 left-4 z-10">
+                            <Checkbox
+                              checked={selectedReadings.includes(reading.id)}
+                              onCheckedChange={() => toggleSelection(reading.id)}
+                              className="bg-white border-2"
+                            />
+                          </div>
+                        )}
+                        <SharedReadingCard 
+                          reading={reading}
+                          book={book}
+                          onClick={() => !selectionMode && setSelectedReading(reading)}
                         />
                       </div>
-                    )}
-                    <SharedReadingCard 
-                      reading={reading}
-                      book={book}
-                      onClick={() => !selectionMode && setSelectedReading(reading)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-        {completedReadings.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
-              Terminées ({completedReadings.length})
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {completedReadings.map((reading) => {
-                const book = allBooks.find(b => b.id === reading.book_id);
-                return (
-                  <div key={reading.id} className="relative">
-                    {selectionMode && (
-                      <div className="absolute top-4 left-4 z-10">
-                        <Checkbox
-                          checked={selectedReadings.includes(reading.id)}
-                          onCheckedChange={() => toggleSelection(reading.id)}
-                          className="bg-white border-2"
+            {completedReadings.length > 0 && (
+              <div className="mb-8 mt-6">
+                <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                  Terminées ({completedReadings.length})
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {completedReadings.map((reading) => {
+                    const book = allBooks.find(b => b.id === reading.book_id);
+                    return (
+                      <div key={reading.id} className="relative">
+                        {selectionMode && (
+                          <div className="absolute top-4 left-4 z-10">
+                            <Checkbox
+                              checked={selectedReadings.includes(reading.id)}
+                              onCheckedChange={() => toggleSelection(reading.id)}
+                              className="bg-white border-2"
+                            />
+                          </div>
+                        )}
+                        <SharedReadingCard 
+                          reading={reading}
+                          book={book}
+                          onClick={() => !selectionMode && setSelectedReading(reading)}
                         />
                       </div>
-                    )}
-                    <SharedReadingCard 
-                      reading={reading}
-                      book={book}
-                      onClick={() => !selectionMode && setSelectedReading(reading)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-        {sharedReadings.length === 0 && (
-          <div className="text-center py-20">
-            <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Aucune lecture commune
-            </h3>
-            <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-              Créez votre première lecture commune avec vos amies
-            </p>
-          </div>
-        )}
+            {sharedReadings.length === 0 && (
+              <div className="text-center py-20">
+                <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune lecture commune
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Créez votre première lecture commune avec vos amies
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="wishlist">
+            <div className="flex justify-end mb-6 mt-6">
+              <Button 
+                onClick={() => setShowWishlistDialog(true)}
+                className="shadow-lg text-white font-medium px-6 rounded-xl"
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                <Plus className="w-5 h-5 mr-2" />
+                Nouvelle liste de souhaits
+              </Button>
+            </div>
+
+            {wishlists.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {wishlists.map((wishlist) => (
+                  <WishlistCard
+                    key={wishlist.id}
+                    wishlist={wishlist}
+                    books={allBooks}
+                    onEdit={() => {/* TODO: implement edit */}}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune liste de souhaits
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Créez des listes de livres à lire avec vos amies
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         <AddSharedReadingDialog 
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           books={allBooks}
+        />
+
+        <AddWishlistDialog
+          open={showWishlistDialog}
+          onOpenChange={setShowWishlistDialog}
+          user={user}
         />
 
         {selectedReading && (
@@ -385,5 +471,181 @@ export default function SharedReadings() {
         </Dialog>
       </div>
     </div>
+  );
+}
+
+// Wishlist Card Component
+function WishlistCard({ wishlist, books, onEdit }) {
+  const wishlistBooks = books.filter(b => wishlist.book_ids?.includes(b.id));
+  
+  return (
+    <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+          style={{ backgroundColor: 'white' }}
+          onClick={onEdit}>
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">{wishlist.icon || '📚'}</span>
+            <div>
+              <h3 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
+                {wishlist.title}
+              </h3>
+              {wishlist.description && (
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  {wishlist.description}
+                </p>
+              )}
+            </div>
+          </div>
+          {wishlist.is_public && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium"
+                  style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+              Publique
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 mb-4">
+          <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+          <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+            {wishlistBooks.length} livre{wishlistBooks.length > 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {wishlist.shared_with && wishlist.shared_with.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+              Partagée avec {wishlist.shared_with.length} amie{wishlist.shared_with.length > 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Add Wishlist Dialog Component
+function AddWishlistDialog({ open, onOpenChange, user }) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState("📚");
+  const [isPublic, setIsPublic] = useState(false);
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.SharedReadingWishlist.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("✨ Liste créée !");
+      handleClose();
+    },
+    onError: (error) => {
+      console.error("Error creating wishlist:", error);
+      toast.error("Erreur lors de la création de la liste.");
+    },
+  });
+
+  const handleClose = () => {
+    setTitle("");
+    setDescription("");
+    setIcon("📚");
+    setIsPublic(false);
+    onOpenChange(false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      toast.error("Le titre est requis.");
+      return;
+    }
+    createMutation.mutate({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      icon,
+      is_public: isPublic,
+      book_ids: [],
+      shared_with: [],
+      created_by: user?.email, // Set the creator of the wishlist
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
+            💭 Nouvelle liste de souhaits
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div>
+            <Label htmlFor="title">Titre *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Lectures d'été 2025"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez cette liste..."
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="icon">Emoji</Label>
+            <Select value={icon} onValueChange={setIcon}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["📚", "💭", "🌸", "☀️", "❄️", "🍂", "🌺", "💕", "✨", "🎀"].map(e => (
+                  <SelectItem key={e} value={e}>{e}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg"
+               style={{ backgroundColor: 'var(--cream)' }}>
+            <Label htmlFor="public">Liste publique (visible par toutes vos amies)</Label>
+            <Switch
+              id="public"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={!title.trim() || createMutation.isPending}
+              className="text-white font-medium"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+            >
+              {createMutation.isPending ? "Création..." : "Créer"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
