@@ -98,6 +98,29 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
   const { setOpen } = useSidebar();
 
+  // Update user's last_active_at every 2 minutes while they're using the app
+  useEffect(() => {
+    if (!user) return;
+
+    const updateActivity = async () => {
+      try {
+        await base44.auth.updateMe({
+          last_active_at: new Date().toISOString()
+        });
+      } catch (error) {
+        console.log('Could not update activity:', error);
+      }
+    };
+
+    // Update immediately
+    updateActivity();
+
+    // Then update every 2 minutes
+    const interval = setInterval(updateActivity, 2 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Close sidebar on mobile after navigation
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
@@ -232,7 +255,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <div className="flex items-center gap-1 md:gap-3">
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
-                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                  <MessageCircle className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
                 </Button>
               </Link>
               <NotificationBell user={user} />

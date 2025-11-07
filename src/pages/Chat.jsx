@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +55,26 @@ export default function Chat() {
     }),
     enabled: !!user,
   });
+
+  // Fetch all users to get their last_active_at status
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    refetchInterval: 60000, // Refetch every minute to update online status
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  // Function to check if a user is online (active in last 5 minutes)
+  const isUserOnline = (email) => {
+    const userProfile = allUsers.find(u => u.email === email);
+    if (!userProfile?.last_active_at) return false;
+    
+    const lastActive = new Date(userProfile.last_active_at);
+    const now = new Date();
+    const diffMinutes = (now - lastActive) / (1000 * 60);
+    
+    return diffMinutes < 5; // Online if active in last 5 minutes
+  };
 
   const { data: sharedReadings = [] } = useQuery({
     queryKey: ['sharedReadings'],
@@ -264,36 +285,39 @@ export default function Chat() {
                 {closeFriends
                   .filter(f => !searchQuery || 
                     f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((friend) => (
-                    <button
-                      key={friend.id}
-                      onClick={() => createChatMutation.mutate(friend.friend_email)}
-                      className="w-full p-3 rounded-2xl text-left friend-card"
-                      style={{ 
-                        backgroundColor: 'white',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                               style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
-                            {friend.friend_name?.[0]?.toUpperCase() || 'A'}
+                  .map((friend) => {
+                    const online = isUserOnline(friend.friend_email);
+                    return (
+                      <button
+                        key={friend.id}
+                        onClick={() => createChatMutation.mutate(friend.friend_email)}
+                        className="w-full p-3 rounded-2xl text-left friend-card"
+                        style={{ 
+                          backgroundColor: 'white',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                                 style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
+                              {friend.friend_name?.[0]?.toUpperCase() || 'A'}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                                 style={{ backgroundColor: online ? '#10B981' : '#9CA3AF' }} />
                           </div>
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
-                               style={{ backgroundColor: '#10B981' }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
+                              {friend.friend_name}
+                            </p>
+                            <p className="text-xs" style={{ color: online ? '#10B981' : '#9CA3AF' }}>
+                              {online ? 'En ligne' : 'Hors ligne'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
-                            {friend.friend_name}
-                          </p>
-                          <p className="text-xs" style={{ color: '#FF4DA6' }}>
-                            En ligne
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}
@@ -312,6 +336,7 @@ export default function Chat() {
                     const linkedReading = sharedReadings.find(sr => 
                       sr.participants?.includes(friend.friend_email)
                     );
+                    const online = isUserOnline(friend.friend_email);
                     return (
                       <button
                         key={friend.id}
@@ -329,7 +354,7 @@ export default function Chat() {
                               {friend.friend_name?.[0]?.toUpperCase() || 'A'}
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
-                                 style={{ backgroundColor: '#9CA3AF' }} />
+                                 style={{ backgroundColor: online ? '#10B981' : '#9CA3AF' }} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
