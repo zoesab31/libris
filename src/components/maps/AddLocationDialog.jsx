@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,6 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
     book_id: "",
     date: new Date().toISOString().split('T')[0],
     note: "",
-    // google_maps_url: "", // Removed new field
   });
 
   React.useEffect(() => {
@@ -35,10 +33,12 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
     enabled: !!user,
   });
 
-  // Filter to only show books that user has in their library
-  const availableBooks = books.filter(book => 
-    myBooks.some(ub => ub.book_id === book.id)
-  );
+  // Filter to only show books that are "En cours" (currently reading)
+  const currentlyReadingBooks = useMemo(() => {
+    return books.filter(book => 
+      myBooks.some(ub => ub.book_id === book.id && ub.status === "En cours")
+    );
+  }, [books, myBooks]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ReadingLocation.create(data),
@@ -53,7 +53,6 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
         book_id: "", 
         date: new Date().toISOString().split('T')[0], 
         note: "",
-        // google_maps_url: "", // Removed reset new field on success
       });
     },
   });
@@ -111,23 +110,6 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
             </Select>
           </div>
 
-          {/* New Google Maps URL input was here - REMOVED */}
-          {/*
-          <div>
-            <Label htmlFor="maps">Lien Google Maps (optionnel)</Label>
-            <Input
-              id="maps"
-              value={locationData.google_maps_url}
-              onChange={(e) => setLocationData({...locationData, google_maps_url: e.target.value})}
-              placeholder="https://maps.google.com/..."
-            />
-            <p className="text-xs mt-1" style={{ color: 'var(--deep-pink)' }}>
-              💡 Ouvrez Google Maps, trouvez votre lieu et copiez le lien ici
-            </p>
-          </div>
-          */}
-          {/* End of new Google Maps URL input - REMOVED */}
-
           <div>
             <Label>Photo du moment</Label>
             <div className="flex gap-3">
@@ -161,17 +143,23 @@ export default function AddLocationDialog({ open, onOpenChange, books }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="book">Livre lu</Label>
+              <Label htmlFor="book">Livre en cours de lecture</Label>
               <Select value={locationData.book_id} onValueChange={(value) => setLocationData({...locationData, book_id: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Optionnel" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableBooks.map((book) => (
-                    <SelectItem key={book.id} value={book.id}>
-                      {book.title}
+                  {currentlyReadingBooks.length > 0 ? (
+                    currentlyReadingBooks.map((book) => (
+                      <SelectItem key={book.id} value={book.id}>
+                        {book.title}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      Aucune lecture en cours
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

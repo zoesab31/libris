@@ -48,14 +48,20 @@ export default function SharedReadings() {
   const { data: sharedReadings = [], isLoading } = useQuery({
     queryKey: ['sharedReadings'],
     queryFn: async () => {
-      const readings = await base44.entities.SharedReading.filter({ created_by: user?.email }, '-created_date');
+      // Filter for readings created by user OR where user is a participant
+      const createdReadings = await base44.entities.SharedReading.filter({ created_by: user?.email }, '-created_date');
+      const participatedReadings = await base44.entities.SharedReading.filter({ participants: user?.email }, '-created_date');
+
+      // Combine and deduplicate
+      const allUserReadings = [...createdReadings, ...participatedReadings];
+      const uniqueReadings = Array.from(new Map(allUserReadings.map(reading => [reading.id, reading])).values());
       
       // Auto-update status based on current date
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Normalize to start of day
       
       const updatedReadings = await Promise.all(
-        readings.map(async (reading) => {
+        uniqueReadings.map(async (reading) => {
           let newStatus = reading.status;
           
           if (reading.start_date && reading.end_date) {
@@ -99,7 +105,15 @@ export default function SharedReadings() {
 
   const { data: wishlists = [] } = useQuery({
     queryKey: ['sharedReadingWishlists'],
-    queryFn: () => base44.entities.SharedReadingWishlist.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const createdWishlists = await base44.entities.SharedReadingWishlist.filter({ created_by: user.email }, '-created_date');
+      const sharedWishlists = await base44.entities.SharedReadingWishlist.filter({ shared_with: user.email }, '-created_date');
+      const pendingWishlists = await base44.entities.SharedReadingWishlist.filter({ pending_invitations: user.email }, '-created_date');
+
+      const allWishlists = [...createdWishlists, ...sharedWishlists, ...pendingWishlists];
+      return Array.from(new Map(allWishlists.map(w => [w.id, w])).values());
+    },
     enabled: !!user,
   });
 
@@ -487,6 +501,7 @@ export default function SharedReadings() {
 // Wishlist Card Component
 function WishlistCard({ wishlist, books, onEdit }) {
   const wishlistBooks = books.filter(b => wishlist.book_ids?.includes(b.id));
+  const totalCollaborators = (wishlist.shared_with?.length || 0) + (wishlist.pending_invitations?.length || 0);
   
   return (
     <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer"
@@ -522,11 +537,12 @@ function WishlistCard({ wishlist, books, onEdit }) {
           </p>
         </div>
 
-        {wishlist.shared_with && wishlist.shared_with.length > 0 && (
+        {totalCollaborators > 0 && (
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
             <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-              Partagée avec {wishlist.shared_with.length} amie{wishlist.shared_with.length > 1 ? 's' : ''}
+              {wishlist.shared_with?.length || 0} collaborat{(wishlist.shared_with?.length || 0) > 1 ? 'rices' : 'rice'}
+              {(wishlist.pending_invitations?.length || 0) > 0 && ` • ${wishlist.pending_invitations.length} en attente`}
             </p>
           </div>
         )}
@@ -620,6 +636,7 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
       is_public: isPublic,
       book_ids: selectedBooks,
       shared_with: [],
+      pending_invitations: [], // Initialize pending_invitations
       created_by: user?.email,
     });
   };
@@ -822,6 +839,8 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
   const [isPublic, setIsPublic] = useState(wishlist?.is_public || false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBooks, setSelectedBooks] = useState(wishlist?.book_ids || []);
+  const [friendSearchQuery, setFriendSearchQuery] = useState("");
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -847,6 +866,15 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
     enabled: !!user && open,
   });
 
+  const { data: myFriends = [] } = useQuery({
+    queryKey: ['myFriends'],
+    queryFn: () => base44.entities.Friendship.filter({ 
+      created_by: user?.email,
+      status: "Acceptée"
+    }),
+    enabled: !!user && open,
+  });
+
   const myLibraryBooks = useMemo(() => {
     if (!user) return [];
     const myBookIds = myBooks.map(ub => ub.book_id);
@@ -863,6 +891,17 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
       )
       .slice(0, 10);
   }, [searchQuery, myLibraryBooks]);
+
+  const filteredFriends = useMemo(() => {
+    if (!friendSearchQuery || friendSearchQuery.length < 2) return myFriends;
+    const query = friendSearchQuery.toLowerCase().trim();
+    return myFriends.filter(friend =>
+      (friend.friend_name?.toLowerCase().includes(query) ||
+      friend.friend_email?.toLowerCase().includes(query))
+      && !wishlist.shared_with?.includes(friend.friend_email)
+      && !wishlist.pending_invitations?.includes(friend.friend_email)
+    );
+  }, [friendSearchQuery, myFriends, wishlist]);
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.SharedReadingWishlist.update(wishlist.id, data),
@@ -888,6 +927,47 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
       console.error("Error deleting wishlist:", error);
       toast.error("Erreur lors de la suppression.");
     },
+  });
+
+  const inviteFriendMutation = useMutation({
+    mutationFn: async (friendEmail) => {
+      const currentWishlist = queryClient.getQueryData(['sharedReadingWishlists'])?.find(w => w.id === wishlist.id) || wishlist;
+      const pendingInvites = currentWishlist.pending_invitations || [];
+      if (pendingInvites.includes(friendEmail)) {
+        throw new Error("Cette amie a déjà été invitée");
+      }
+      return base44.entities.SharedReadingWishlist.update(currentWishlist.id, {
+        pending_invitations: [...pendingInvites, friendEmail]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("✉️ Invitation envoyée !");
+      setFriendSearchQuery("");
+      // setShowInviteDialog(false); // Keep dialog open for more invites
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de l'envoi de l'invitation.");
+    }
+  });
+
+  const removeCollaboratorMutation = useMutation({
+    mutationFn: async (email) => {
+      const currentWishlist = queryClient.getQueryData(['sharedReadingWishlists'])?.find(w => w.id === wishlist.id) || wishlist;
+      const sharedWith = (currentWishlist.shared_with || []).filter(e => e !== email);
+      const pendingInvites = (currentWishlist.pending_invitations || []).filter(e => e !== email);
+      return base44.entities.SharedReadingWishlist.update(currentWishlist.id, {
+        shared_with: sharedWith,
+        pending_invitations: pendingInvites
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("Collaborateur retiré");
+    },
+    onError: () => {
+      toast.error("Erreur lors du retrait du collaborateur.");
+    }
   });
 
   const toggleBookSelection = (bookId) => {
@@ -919,21 +999,25 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
     }
   };
 
+  const isOwner = wishlist.created_by === user?.email;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
-            <span>💭 Modifier la liste</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-5 h-5" />
-            </Button>
+            <span>💭 {isOwner ? 'Modifier la liste' : 'Liste de souhaits'}</span>
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -947,6 +1031,7 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Lectures d'été 2025"
               required
+              disabled={!isOwner}
             />
           </div>
 
@@ -958,12 +1043,13 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Décrivez cette liste..."
               rows={3}
+              disabled={!isOwner}
             />
           </div>
 
           <div>
             <Label htmlFor="icon">Emoji</Label>
-            <Select value={icon} onValueChange={setIcon}>
+            <Select value={icon} onValueChange={setIcon} disabled={!isOwner}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -975,23 +1061,104 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
             </Select>
           </div>
 
-          {/* Book search and selection - same as AddWishlistDialog */}
+          {/* Collaborators section - only for owner */}
+          {isOwner && (
+            <div className="border-t pt-4" style={{ borderColor: 'var(--beige)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <Label>Collaborateurs ({(wishlist.shared_with?.length || 0) + (wishlist.pending_invitations?.length || 0)})</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setShowInviteDialog(true)}
+                  style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Inviter une amie
+                </Button>
+              </div>
+
+              {/* List of collaborators */}
+              <div className="space-y-2">
+                {(wishlist.shared_with || []).map((email) => {
+                  const friend = myFriends.find(f => f.friend_email === email);
+                  return (
+                    <div key={email} className="flex items-center justify-between p-3 rounded-lg"
+                         style={{ backgroundColor: 'var(--cream)' }}>
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: 'var(--dark-text)' }}>
+                          {friend?.friend_name || email}
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                          ✅ Peut modifier
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeCollaboratorMutation.mutate(email)}
+                        disabled={removeCollaboratorMutation.isPending}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+
+                {(wishlist.pending_invitations || []).map((email) => {
+                  const friend = myFriends.find(f => f.friend_email === email);
+                  return (
+                    <div key={email} className="flex items-center justify-between p-3 rounded-lg"
+                         style={{ backgroundColor: 'var(--cream)', opacity: 0.7 }}>
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: 'var(--dark-text)' }}>
+                          {friend?.friend_name || email}
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                          ⏳ Invitation en attente
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => removeCollaboratorMutation.mutate(email)}
+                        disabled={removeCollaboratorMutation.isPending}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {(wishlist.shared_with?.length === 0 && wishlist.pending_invitations?.length === 0) && (
+                <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                  Aucun collaborateur pour le moment
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Book search and selection */}
           <div>
             <Label>Livres dans la liste</Label>
             <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
-              Recherchez et sélectionnez des livres de votre bibliothèque
+              {isOwner ? 'Recherchez et sélectionnez des livres de votre bibliothèque' : 'Livres de cette liste'}
             </p>
             
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
-                      style={{ color: 'var(--warm-pink)' }} />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un livre..."
-                className="pl-10"
-              />
-            </div>
+            {isOwner && (
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                        style={{ color: 'var(--warm-pink)' }} />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un livre..."
+                  className="pl-10"
+                />
+              </div>
+            )}
 
             {/* Selected books */}
             {selectedBooks.length > 0 && (
@@ -1010,22 +1177,30 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                         style={{ backgroundColor: 'var(--soft-pink)' }}
                       >
                         <span>{book.title}</span>
-                        <button
-                          type="button"
-                          onClick={() => toggleBookSelection(bookId)}
-                          className="hover:opacity-70"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        {isOwner && (
+                          <button
+                            type="button"
+                            onClick={() => toggleBookSelection(bookId)}
+                            className="hover:opacity-70"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
+             {(selectedBooks.length === 0 && !isOwner) && (
+                <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                  Cette liste ne contient pas encore de livres.
+                </p>
+              )}
 
-            {/* Search results */}
-            {searchQuery.length >= 2 && filteredBooks.length > 0 && (
+
+            {/* Search results - only for owner */}
+            {isOwner && searchQuery.length >= 2 && filteredBooks.length > 0 && (
               <div className="border rounded-lg max-h-64 overflow-y-auto" 
                    style={{ borderColor: 'var(--beige)' }}>
                 {filteredBooks.map((book) => {
@@ -1075,41 +1250,115 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                 })}
               </div>
             )}
-            {searchQuery.length >= 2 && filteredBooks.length === 0 && (
+            {isOwner && searchQuery.length >= 2 && filteredBooks.length === 0 && (
               <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
                 Aucun livre trouvé dans votre bibliothèque
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg"
-               style={{ backgroundColor: 'var(--cream)' }}>
-            <Label htmlFor="public">Liste publique</Label>
-            <Switch
-              id="public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
-            />
-          </div>
+          {isOwner && (
+            <>
+              <div className="flex items-center justify-between p-3 rounded-lg"
+                   style={{ backgroundColor: 'var(--cream)' }}>
+                <Label htmlFor="public">Liste publique</Label>
+                <Switch
+                  id="public"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                />
+              </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={!title.trim() || updateMutation.isPending}
-              className="text-white font-medium"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-            >
-              {updateMutation.isPending ? "Mise à jour..." : "Enregistrer"}
-            </Button>
-          </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!title.trim() || updateMutation.isPending}
+                  className="text-white font-medium"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                >
+                  {updateMutation.isPending ? "Mise à jour..." : "Enregistrer"}
+                </Button>
+              </div>
+            </>
+          )}
         </form>
+
+        {/* Invite Friend Dialog */}
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Inviter une amie</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Input
+                  value={friendSearchQuery}
+                  onChange={(e) => setFriendSearchQuery(e.target.value)}
+                  placeholder="Rechercher une amie..."
+                />
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {filteredFriends.length > 0 ? filteredFriends.map((friend) => {
+                  const isAlreadyInvited = wishlist.pending_invitations?.includes(friend.friend_email);
+                  const isAlreadyCollaborator = wishlist.shared_with?.includes(friend.friend_email);
+                  
+                  return (
+                    <button
+                      key={friend.id}
+                      type="button"
+                      onClick={() => inviteFriendMutation.mutate(friend.friend_email)}
+                      disabled={isAlreadyInvited || isAlreadyCollaborator || inviteFriendMutation.isPending}
+                      className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-pink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: 'var(--cream)' }}
+                    >
+                      <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                        {friend.friend_name}
+                      </p>
+                      {isAlreadyCollaborator && (
+                        <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                          ✅ Déjà collaborateur
+                        </span>
+                      )}
+                      {isAlreadyInvited && (
+                        <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                          ⏳ Invitation envoyée
+                        </span>
+                      )}
+                      {!(isAlreadyCollaborator || isAlreadyInvited) && (
+                        <span className="text-xs" style={{ color: 'var(--deep-pink)' }}>
+                          Inviter
+                        </span>
+                      )}
+                    </button>
+                  );
+                }) : (
+                  <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    {friendSearchQuery.length < 2 
+                    ? "Commencez à taper pour rechercher des amies"
+                    : "Aucune amie trouvée ou déjà collaboratrice/invitée"}
+                  </p>
+                )}
+              </div>
+              
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowInviteDialog(false)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

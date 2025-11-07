@@ -1,27 +1,21 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music, Sparkles, TrendingUp, Trophy, Map } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
+
+const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("library");
   const [shelfFilter, setShelfFilter] = useState("all");
-  const [showSharedReadings, setShowSharedReadings] = useState(false);
-  const [sharedReadingTab, setSharedReadingTab] = useState("in_progress");
   
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
@@ -107,14 +101,25 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'music',
   });
 
-  const { data: sharedReadings = [] } = useQuery({
-    queryKey: ['sharedReadingsWithFriend', userEmail],
-    queryFn: async () => {
-      if (!currentUser) return [];
-      const myReadings = await base44.entities.SharedReading.filter({ created_by: currentUser.email });
-      return myReadings.filter(sr => sr.participants?.includes(userEmail));
-    },
-    enabled: !!currentUser && !!userEmail,
+  const { data: userSeries = [] } = useQuery({
+    queryKey: ['userSeries', userEmail],
+    queryFn: () => base44.entities.BookSeries.filter({ created_by: userEmail }),
+    enabled: !!userEmail && activeTab === 'series',
+  });
+
+  const { data: userBingoChallenges = [] } = useQuery({
+    queryKey: ['userBingoChallenges', userEmail],
+    queryFn: () => base44.entities.BingoChallenge.filter({ 
+      created_by: userEmail,
+      year: new Date().getFullYear()
+    }),
+    enabled: !!userEmail && activeTab === 'bingo',
+  });
+
+  const { data: userLocations = [] } = useQuery({
+    queryKey: ['userLocations', userEmail],
+    queryFn: () => base44.entities.ReadingLocation.filter({ created_by: userEmail }, '-date'),
+    enabled: !!userEmail && activeTab === 'map',
   });
 
   const readBooks = userBooks.filter(b => b.status === "Lu");
@@ -122,6 +127,60 @@ export default function UserProfile() {
     const book = allBooks.find(b => b.id === ub.book_id);
     return sum + (book?.page_count || 0);
   }, 0);
+
+  // Stats calculations for stats tab
+  const currentYear = new Date().getFullYear();
+  const booksThisYear = useMemo(() => {
+    return userBooks.filter(b => {
+      if (b.status === "Lu" && b.end_date) {
+        return new Date(b.end_date).getFullYear() === currentYear;
+      }
+      return false;
+    });
+  }, [userBooks, currentYear]);
+
+  const genreStats = useMemo(() => {
+    const stats = {};
+    booksThisYear.forEach(userBook => {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (!book) return;
+
+      const genres = book.custom_genres && book.custom_genres.length > 0
+        ? book.custom_genres
+        : ['Non classé'];
+
+      genres.forEach(genre => {
+        stats[genre] = (stats[genre] || 0) + 1;
+      });
+    });
+
+    return Object.entries(stats)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [booksThisYear, allBooks]);
+
+  const booksPerMonth = useMemo(() => {
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      name: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'][i],
+      count: 0
+    }));
+
+    booksThisYear.forEach(userBook => {
+      if (userBook.end_date) {
+        const month = new Date(userBook.end_date).getMonth();
+        months[month].count++;
+      }
+    });
+
+    return months;
+  }, [booksThisYear]);
+
+  const avgRating = useMemo(() => {
+    const rated = booksThisYear.filter(b => b.rating);
+    if (rated.length === 0) return 0;
+    const sum = rated.reduce((acc, b) => acc + b.rating, 0);
+    return (sum / rated.length).toFixed(1);
+  }, [booksThisYear]);
 
   const handleChat = () => {
     navigate(createPageUrl("Chat"));
@@ -146,8 +205,7 @@ export default function UserProfile() {
   }
 
   const isOwnProfile = currentUser?.email === userEmail;
-  const accentColor = isOwnProfile ? 'var(--deep-pink)' : '#8B5CF6';
-  const secondaryColor = isOwnProfile ? 'var(--warm-pink)' : '#A78BFA';
+  const accentColor = 'var(--deep-pink)';
   const displayName = friendName || profileUser.display_name || profileUser.full_name || userEmail?.split('@')[0] || 'Amie';
 
   // Filter books by shelf
@@ -155,45 +213,31 @@ export default function UserProfile() {
     ? userBooks 
     : userBooks.filter(ub => ub.custom_shelf === shelfFilter);
 
-  // Group shared readings by status
-  const inProgressReadings = sharedReadings.filter(sr => sr.status === "En cours");
-  const upcomingReadings = sharedReadings.filter(sr => sr.status === "À venir");
-  const completedReadings = sharedReadings.filter(sr => sr.status === "Terminée");
-
-  const totalSharedReadings = sharedReadings.length;
+  const completedChallenges = userBingoChallenges.filter(c => c.is_completed).length;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      {/* Header with banner */}
-      <div className="relative h-48" style={{ background: `linear-gradient(135deg, ${accentColor}, ${secondaryColor})` }}>
-        <div className="absolute top-4 left-4">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Retour
-          </Button>
-        </div>
+      {/* Simple header with back button */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-4">
+        <Button variant="ghost" onClick={() => navigate(-1)} style={{ color: 'var(--deep-pink)' }}>
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Retour
+        </Button>
       </div>
 
       {/* Profile info */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 -mt-20">
-        <div className="flex flex-col md:flex-row gap-6 items-start md:items-end mb-8">
-          {/* Large centered profile picture */}
-          <div className="w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-white bg-white mx-auto md:mx-0"
-               style={{ 
-                 boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                 transition: 'transform 0.2s'
-               }}
-               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-8">
+        <div className="flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
+          {/* Large profile picture */}
+          <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white bg-white mx-auto md:mx-0 shadow-xl">
             {profileUser.profile_picture ? (
               <img 
                 src={profileUser.profile_picture} 
                 alt={displayName} 
-                className="w-full h-full object-cover object-center"
-                style={{ aspectRatio: '1 / 1' }}
+                className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl md:text-7xl font-bold text-white"
+              <div className="w-full h-full flex items-center justify-center text-5xl md:text-6xl font-bold text-white"
                    style={{ backgroundColor: accentColor }}>
                 {displayName[0]?.toUpperCase() || 'A'}
               </div>
@@ -201,7 +245,7 @@ export default function UserProfile() {
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {displayName}
             </h1>
             <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
@@ -221,20 +265,6 @@ export default function UserProfile() {
                 <Button variant="outline" style={{ borderColor: accentColor, color: accentColor }}>
                   <Users className="w-4 h-4 mr-2" />
                   Amie
-                </Button>
-                <Button 
-                  variant="outline" 
-                  style={{ borderColor: accentColor, color: accentColor }}
-                  onClick={() => setShowSharedReadings(true)}
-                >
-                  <UsersRound className="w-4 h-4 mr-2" />
-                  Lectures communes
-                  {totalSharedReadings > 0 && (
-                    <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                          style={{ backgroundColor: accentColor }}>
-                      {totalSharedReadings}
-                    </span>
-                  )}
                 </Button>
               </div>
             )}
@@ -270,7 +300,15 @@ export default function UserProfile() {
               style={activeTab === "library" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
               <BookOpen className="w-4 h-4 mr-2" />
-              Bibliothèque ({userBooks.length})
+              Bibliothèque
+            </TabsTrigger>
+            <TabsTrigger 
+              value="series" 
+              className="rounded-lg font-bold"
+              style={activeTab === "series" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Séries
             </TabsTrigger>
             <TabsTrigger 
               value="quotes" 
@@ -281,12 +319,28 @@ export default function UserProfile() {
               Citations
             </TabsTrigger>
             <TabsTrigger 
-              value="fanart" 
+              value="bingo" 
               className="rounded-lg font-bold"
-              style={activeTab === "fanart" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+              style={activeTab === "bingo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Image className="w-4 h-4 mr-2" />
-              Fan Art
+              <Sparkles className="w-4 h-4 mr-2" />
+              Bingo
+            </TabsTrigger>
+            <TabsTrigger 
+              value="stats" 
+              className="rounded-lg font-bold"
+              style={activeTab === "stats" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Stats
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tournament" 
+              className="rounded-lg font-bold"
+              style={activeTab === "tournament" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Tournoi
             </TabsTrigger>
             <TabsTrigger 
               value="nailinspo" 
@@ -311,6 +365,14 @@ export default function UserProfile() {
             >
               <Music className="w-4 h-4 mr-2" />
               Playlist
+            </TabsTrigger>
+            <TabsTrigger 
+              value="map" 
+              className="rounded-lg font-bold"
+              style={activeTab === "map" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <Map className="w-4 h-4 mr-2" />
+              Map
             </TabsTrigger>
           </TabsList>
 
@@ -368,20 +430,7 @@ export default function UserProfile() {
                         </div>
                       )}
                       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                        <p 
-                          className="text-white font-bold mb-2 book-title-display" 
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            overflowWrap: 'anywhere',
-                            wordBreak: 'break-word',
-                            fontSize: 'clamp(12px, 2.2vw, 14px)',
-                            lineHeight: '1.25'
-                          }}
-                          title={book.title}
-                        >
+                        <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
                           {book.title}
                         </p>
                         <div className="flex gap-1 flex-wrap">
@@ -407,6 +456,59 @@ export default function UserProfile() {
                 <p style={{ color: 'var(--warm-pink)' }}>
                   {shelfFilter === "all" ? "Aucun livre dans la bibliothèque" : `Aucun livre dans "${shelfFilter}"`}
                 </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="series">
+            <div className="grid md:grid-cols-3 gap-4">
+              {userSeries.map(series => {
+                const completedBooks = series.books_read?.length || 0;
+                const totalBooks = series.total_books || 0;
+                const progress = totalBooks > 0 ? (completedBooks / totalBooks) * 100 : 0;
+
+                return (
+                  <Card key={series.id} className="p-6 bg-white hover:shadow-lg transition-all">
+                    <div className="flex items-start gap-4">
+                      {series.cover_url && (
+                        <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0" 
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          <img src={series.cover_url} alt={series.series_name} 
+                               className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--dark-text)' }}>
+                          {series.series_name}
+                        </h3>
+                        <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                          {series.author}
+                        </p>
+                        <div className="mb-2">
+                          <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--warm-brown)' }}>
+                            <span>{completedBooks} / {totalBooks} livres</span>
+                            <span>{Math.round(progress)}%</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                            <div 
+                              className="h-full rounded-full transition-all"
+                              style={{ 
+                                width: `${progress}%`,
+                                backgroundColor: accentColor
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            {userSeries.length === 0 && (
+              <div className="text-center py-12">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucune série</p>
               </div>
             )}
           </TabsContent>
@@ -437,20 +539,108 @@ export default function UserProfile() {
             )}
           </TabsContent>
 
-          <TabsContent value="fanart">
-            <div className="grid md:grid-cols-3 gap-4">
-              {userFanArts.map(art => (
-                <Card key={art.id} className="overflow-hidden hover:shadow-lg transition-all">
-                  <img src={art.image_url} alt={art.folder_name} className="w-full h-64 object-cover" />
-                </Card>
+          <TabsContent value="bingo">
+            <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
+              {userBingoChallenges.map((challenge, index) => (
+                <div
+                  key={challenge.id}
+                  className="aspect-square rounded-xl p-2 flex flex-col items-center justify-center text-center transition-all"
+                  style={{
+                    backgroundColor: challenge.is_completed ? 'var(--gold)' : 'white',
+                    border: '2px solid var(--beige)',
+                    color: challenge.is_completed ? 'white' : 'var(--dark-text)'
+                  }}
+                >
+                  <p className="text-xs font-bold line-clamp-3">
+                    {challenge.title}
+                  </p>
+                  {challenge.is_completed && (
+                    <Sparkles className="w-4 h-4 mt-1" />
+                  )}
+                </div>
               ))}
             </div>
-            {userFanArts.length === 0 && (
-              <div className="text-center py-12">
-                <Image className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <p style={{ color: 'var(--warm-pink)' }}>Aucun fan art</p>
+            {userBingoChallenges.length > 0 && (
+              <div className="mt-6 text-center">
+                <p className="text-lg font-bold" style={{ color: 'var(--dark-text)' }}>
+                  {completedChallenges} / {userBingoChallenges.length} défis complétés
+                </p>
               </div>
             )}
+            {userBingoChallenges.length === 0 && (
+              <div className="text-center py-12">
+                <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun bingo pour cette année</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="stats">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-4">
+                  <p className="text-sm mb-2" style={{ color: 'var(--warm-brown)' }}>Livres lus ({currentYear})</p>
+                  <p className="text-3xl font-bold" style={{ color: accentColor }}>
+                    {booksThisYear.length}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-4">
+                  <p className="text-sm mb-2" style={{ color: 'var(--warm-brown)' }}>Note moyenne</p>
+                  <p className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>
+                    {avgRating} / 5
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold mb-4" style={{ color: 'var(--dark-text)' }}>Livres par mois</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <RechartsBarChart data={booksPerMonth}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill={accentColor} />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold mb-4" style={{ color: 'var(--dark-text)' }}>Répartition par genre</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={genreStats}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={(entry) => entry.value >= 2 ? `${entry.name} ${(entry.value / booksThisYear.length * 100).toFixed(0)}%` : null}
+                      >
+                        {genreStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tournament">
+            <div className="text-center py-12">
+              <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+              <p style={{ color: 'var(--warm-pink)' }}>Tournois à venir...</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="nailinspo">
@@ -599,130 +789,49 @@ export default function UserProfile() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="map">
+            <div className="grid md:grid-cols-3 gap-4">
+              {userLocations.map(location => {
+                const book = location.book_id ? allBooks.find(b => b.id === location.book_id) : null;
+                
+                return (
+                  <Card key={location.id} className="overflow-hidden hover:shadow-lg transition-all">
+                    {location.photo_url && (
+                      <img src={location.photo_url} alt={location.location_name} 
+                           className="w-full h-48 object-cover" />
+                    )}
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--dark-text)' }}>
+                        📍 {location.location_name}
+                      </h3>
+                      <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                        {location.category}
+                      </p>
+                      {book && (
+                        <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
+                          📚 {book.title}
+                        </p>
+                      )}
+                      {location.date && (
+                        <p className="text-xs mt-2" style={{ color: 'var(--warm-brown)' }}>
+                          {new Date(location.date).toLocaleDateString('fr-FR')}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            {userLocations.length === 0 && (
+              <div className="text-center py-12">
+                <Map className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun lieu de lecture</p>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
-
-      {/* Shared Readings Sheet */}
-      <Sheet open={showSharedReadings} onOpenChange={setShowSharedReadings}>
-        <SheetContent side="right" className="w-full sm:w-[540px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Lectures communes avec {displayName}</SheetTitle>
-          </SheetHeader>
-
-          <Tabs value={sharedReadingTab} onValueChange={setSharedReadingTab} className="mt-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="in_progress">En cours ({inProgressReadings.length})</TabsTrigger>
-              <TabsTrigger value="upcoming">À venir ({upcomingReadings.length})</TabsTrigger>
-              <TabsTrigger value="completed">Terminées ({completedReadings.length})</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="in_progress" className="space-y-4 mt-4">
-              {inProgressReadings.map(sr => {
-                const book = allBooks.find(b => b.id === sr.book_id);
-                return (
-                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
-                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
-                    <div className="flex gap-3">
-                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book?.cover_url && (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                          {sr.title}
-                        </h3>
-                        <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                          {book?.title}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(createPageUrl("Chat"));
-                          }}>
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                            Chat
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              {inProgressReadings.length === 0 && (
-                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                  Aucune lecture en cours
-                </p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="upcoming" className="space-y-4 mt-4">
-              {upcomingReadings.map(sr => {
-                const book = allBooks.find(b => b.id === sr.book_id);
-                return (
-                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
-                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
-                    <div className="flex gap-3">
-                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book?.cover_url && (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                          {sr.title}
-                        </h3>
-                        <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                          {book?.title}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              {upcomingReadings.length === 0 && (
-                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                  Aucune lecture à venir
-                </p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="completed" className="space-y-4 mt-4">
-              {completedReadings.map(sr => {
-                const book = allBooks.find(b => b.id === sr.book_id);
-                return (
-                  <Card key={sr.id} className="p-4 cursor-pointer hover:shadow-lg transition-all"
-                        onClick={() => navigate(createPageUrl("SharedReadings"))}>
-                    <div className="flex gap-3">
-                      <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book?.cover_url && (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                          {sr.title}
-                        </h3>
-                        <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                          {book?.title}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              {completedReadings.length === 0 && (
-                <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                  Aucune lecture terminée
-                </p>
-              )}
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

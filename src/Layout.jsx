@@ -33,11 +33,6 @@ const navigationItems = [
     icon: Library,
   },
   {
-    title: "Ma Bibli Virtuelle",
-    url: createPageUrl("VirtualLibrary"),
-    icon: Store,
-  },
-  {
     title: "Séries à compléter",
     url: createPageUrl("Series"),
     icon: BookOpen,

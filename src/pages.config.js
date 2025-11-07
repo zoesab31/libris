@@ -9,7 +9,6 @@ import Discover from './pages/Discover';
 import Maps from './pages/Maps';
 import Profile from './pages/Profile';
 import SharedReadings from './pages/SharedReadings';
-import VirtualLibrary from './pages/VirtualLibrary';
 import AccountSettings from './pages/AccountSettings';
 import Friends from './pages/Friends';
 import ShelfView from './pages/ShelfView';
@@ -33,7 +32,6 @@ export const PAGES = {
     "Maps": Maps,
     "Profile": Profile,
     "SharedReadings": SharedReadings,
-    "VirtualLibrary": VirtualLibrary,
     "AccountSettings": AccountSettings,
     "Friends": Friends,
     "ShelfView": ShelfView,
