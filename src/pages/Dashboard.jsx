@@ -21,7 +21,7 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const navigate = useNavigate();
 
-  useEffect(() => {
+  useEffec(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
