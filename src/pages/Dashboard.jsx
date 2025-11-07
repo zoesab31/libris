@@ -1,52 +1,37 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Sparkles, Target, ArrowRight, Calendar, Quote as QuoteIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import StatsCard from "../components/dashboard/StatsCard";
-import RecentActivity from "../components/dashboard/RecentActivity";
-import ReadingGoalCard from "../components/dashboard/ReadingGoalCard";
-import YearSelector from "../components/dashboard/YearSelector";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [animatedCount, setAnimatedCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: myBooks = [], isLoading: loadingBooks } = useQuery({
+  const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: comments = [] } = useQuery({
     queryKey: ['recentComments'],
     queryFn: () => base44.entities.ReadingComment.list('-created_date', 5),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: readingGoal } = useQuery({
@@ -59,18 +44,12 @@ export default function Dashboard() {
       return goals[0] || null;
     },
     enabled: !!user,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: myFriends = [] } = useQuery({
     queryKey: ['myFriends'],
     queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
     enabled: !!user,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: friendsBooks = [] } = useQuery({
@@ -88,66 +67,12 @@ export default function Dashboard() {
       return allFriendsBooks.flat();
     },
     enabled: myFriends.length > 0,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
-  });
-
-  const { data: friendsFinishedBooks = [] } = useQuery({
-    queryKey: ['friendsFinishedBooks', selectedYear],
-    queryFn: async () => {
-      const friendsEmails = myFriends.map(f => f.friend_email);
-      if (friendsEmails.length === 0) return [];
-      
-      const allFriendsFinishedBooks = await Promise.all(
-        friendsEmails.map(email => 
-          base44.entities.UserBook.filter({ created_by: email, status: "Lu" }, '-end_date', 50)
-        )
-      );
-      
-      return allFriendsFinishedBooks.flat()
-        .filter(userBook => {
-          if (!userBook.end_date) return false;
-          const endYear = new Date(userBook.end_date).getFullYear();
-          return endYear === selectedYear;
-        })
-        .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
-        .slice(0, 10);
-    },
-    enabled: myFriends.length > 0,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
-  });
-
-  const { data: friendsComments = [] } = useQuery({
-    queryKey: ['friendsComments'],
-    queryFn: async () => {
-      const friendsEmails = myFriends.map(f => f.friend_email);
-      if (friendsEmails.length === 0) return [];
-      
-      const allCommentsPromises = friendsEmails.map(email =>
-        base44.entities.ReadingComment.filter({ created_by: email }, '-created_date', 3)
-      );
-      
-      const allComments = await Promise.all(allCommentsPromises);
-      return allComments.flat().sort((a, b) => 
-        new Date(b.created_date) - new Date(a.created_date)
-      ).slice(0, 5);
-    },
-    enabled: myFriends.length > 0,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: allSharedReadings = [] } = useQuery({
     queryKey: ['sharedReadings'],
     queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000,
   });
 
   const { data: allQuotes = [] } = useQuery({
@@ -157,7 +82,6 @@ export default function Dashboard() {
   });
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
-  const readBooks = myBooks.filter(b => b.status === "Lu");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
   
   const abandonedBookCounts = (userBook) => {
@@ -212,70 +136,30 @@ export default function Dashboard() {
     return startYear <= selectedYear && selectedYear <= endYear;
   }).length;
 
-  const ratedBooks = readBooks.filter(b => b.rating !== undefined && b.rating !== null);
-  const avgRating = ratedBooks.length > 0 
-    ? (ratedBooks.reduce((sum, b) => sum + b.rating, 0) / ratedBooks.length).toFixed(1)
-    : 0;
-
-  const allRecentComments = [...comments, ...friendsComments]
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
-    .slice(0, 8);
-
-  // Last finished book
-  const lastFinishedBook = myBooks
+  // Recent activity
+  const recentActivity = myBooks
     .filter(b => b.status === "Lu" && b.end_date)
-    .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0];
-  
-  const lastFinishedBookData = lastFinishedBook ? allBooks.find(b => b.id === lastFinishedBook.book_id) : null;
+    .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
+    .slice(0, 5);
 
-  // Random quote from user's quotes
+  // Random quote
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
 
-  // Suggested book from wishlist
-  const wishlistBooks = myBooks.filter(b => b.status === "À lire" || b.status === "Wishlist");
-  const suggestedBook = wishlistBooks.length > 0 
-    ? allBooks.find(b => b.id === wishlistBooks[Math.floor(Math.random() * wishlistBooks.length)]?.book_id)
-    : null;
-
-  // Books with music for playlist
+  // Books with music
   const booksWithMusic = myBooks.filter(b => b.music && b.music_link).slice(0, 1);
 
-  // Animated counter effect
-  useEffect(() => {
-    if (booksReadThisYear > 0) {
-      let start = 0;
-      const duration = 1500;
-      const increment = booksReadThisYear / (duration / 16);
-      const timer = setInterval(() => {
-        start += increment;
-        if (start >= booksReadThisYear) {
-          setAnimatedCount(booksReadThisYear);
-          clearInterval(timer);
-        } else {
-          setAnimatedCount(Math.floor(start));
-        }
-      }, 16);
-      return () => clearInterval(timer);
-    }
-  }, [booksReadThisYear]);
+  const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
-  // Progress message
-  const getProgressMessage = () => {
-    if (!readingGoal) return "Aucun objectif défini pour cette année";
-    const remaining = readingGoal.goal_count - booksReadThisYear;
-    if (remaining <= 0) return `🎉 Objectif atteint ! ${booksReadThisYear} livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''} cette année !`;
-    if (remaining === 1) return "Plus qu'un seul livre pour atteindre ton objectif ! 📚";
-    return `${remaining} livres restants pour ton objectif 📖`;
-  };
+  const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF5F9 0%, #FFFFFF 100%)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
       <style>{`
         @keyframes fadeInUp {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(10px);
           }
           to {
             opacity: 1;
@@ -293,11 +177,7 @@ export default function Dashboard() {
         }
         
         .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out;
-        }
-        
-        .animate-pulse-slow {
-          animation: pulse 3s ease-in-out infinite;
+          animation: fadeInUp 0.5s ease-out;
         }
         
         .hover-lift {
@@ -305,473 +185,424 @@ export default function Dashboard() {
         }
         
         .hover-lift:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(255, 20, 147, 0.15);
+          transform: translateY(-4px) scale(1.02);
+          box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
         }
 
-        .gradient-text {
-          background: linear-gradient(135deg, var(--deep-pink), var(--warm-pink));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .card-glow {
-          box-shadow: 0 4px 20px rgba(255, 105, 180, 0.1);
-        }
-
-        .card-glow:hover {
-          box-shadow: 0 8px 32px rgba(255, 105, 180, 0.2);
+        .quick-action:hover {
+          transform: scale(1.05);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
       `}</style>
 
-      {/* Hero Section */}
-      <div className="p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 animate-fade-in-up">
-            <h1 className="text-4xl md:text-5xl font-bold mb-3 gradient-text">
-              Bonjour {user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice'} 🌸
-            </h1>
-            <p className="text-xl md:text-2xl mb-4" style={{ color: 'var(--warm-pink)' }}>
-              {getProgressMessage()}
-            </p>
-            <Link to={createPageUrl("MyLibrary")}>
-              <Button 
-                className="shadow-2xl text-white font-bold px-8 py-6 rounded-2xl transition-all hover:shadow-3xl hover:scale-105 text-lg"
-                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-              >
-                <Plus className="w-6 h-6 mr-2" />
-                Ajouter un livre
-              </Button>
-            </Link>
-          </div>
-
-          {/* Year Selector */}
-          <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            <YearSelector currentYear={selectedYear} onYearChange={setSelectedYear} />
-          </div>
-
-          {/* BLOC 1: MA PROGRESSION */}
-          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                  📊 Ma Progression
-                </h2>
-                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                  Suivi de mes lectures {selectedYear}
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <ReadingGoalCard 
-                  currentGoal={readingGoal}
-                  booksReadThisYear={booksReadThisYear}
-                  year={selectedYear}
-                  user={user}
-                />
-
-                {/* Last Finished Book */}
-                {lastFinishedBook && lastFinishedBookData && (
-                  <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                    <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--gold), var(--warm-pink))' }} />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                        <Sparkles className="w-5 h-5" />
-                        Dernier livre terminé
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-4">
-                        <div className="w-24 h-36 rounded-xl overflow-hidden shadow-lg flex-shrink-0 animate-pulse-slow"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {lastFinishedBookData.cover_url ? (
-                            <img src={lastFinishedBookData.cover_url} alt={lastFinishedBookData.title} 
-                                 className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                            {lastFinishedBookData.title}
-                          </h3>
-                          <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                            {lastFinishedBookData.author}
-                          </p>
-                          {lastFinishedBook.rating && (
-                            <div className="flex items-center gap-1 mb-2">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className="w-4 h-4"
-                                  style={{
-                                    fill: i < lastFinishedBook.rating ? 'var(--gold)' : 'none',
-                                    stroke: 'var(--gold)',
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          {lastFinishedBook.review && (
-                            <p className="text-sm italic line-clamp-2" style={{ color: 'var(--warm-brown)' }}>
-                              "{lastFinishedBook.review}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatsCard 
-                  title="Livres lus" 
-                  value={booksReadThisYear}
-                  icon={BookOpen}
-                  gradient="linear-gradient(135deg, #FF8FAB, #FFB6C8)"
-                />
-                <StatsCard 
-                  title="Pages lues" 
-                  value={totalPagesThisYear.toLocaleString()}
-                  icon={TrendingUp}
-                  gradient="linear-gradient(135deg, #FFB6C8, #F4C2C2)"
-                />
-                <StatsCard 
-                  title="Lectures communes" 
-                  value={sharedReadingsThisYear}
-                  icon={Users}
-                  gradient="linear-gradient(135deg, #F4C2C2, #FFD700)"
-                />
-                <StatsCard 
-                  title="À lire" 
-                  value={toReadCount}
-                  icon={Star}
-                  gradient="linear-gradient(135deg, #FFD700, #FFB6C8)"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* BLOC 2: MES AMIES & ACTIVITÉ SOCIALE */}
-          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                👭 Mes Amies & Activités
-              </h2>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                Suivez les lectures de votre communauté
+      {/* Header */}
+      <div className="px-6 md:px-12 py-6" style={{ backgroundColor: '#FFF7FA' }}>
+        <div className="max-w-[1600px] mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                Bonjour {displayName} 🌷
+              </h1>
+              <p className="text-lg" style={{ color: '#A0AEC0' }}>
+                Bienvenue dans ton univers littéraire
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              {/* Currently Reading - Me & Friends */}
-              <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--soft-pink), var(--lavender))' }} />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                    <BookOpen className="w-5 h-5" />
-                    Lectures en cours
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {currentlyReading.length > 0 || friendsBooks.length > 0 ? (
-                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {currentlyReading.slice(0, 2).map((userBook) => {
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="px-4 py-2 rounded-xl border-0 font-medium shadow-md"
+                style={{ backgroundColor: 'white', color: '#2D3748' }}
+              >
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+
+              <Link to={createPageUrl("MyLibrary")}>
+                <Button 
+                  className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
+                  style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter un livre
+                </Button>
+              </Link>
+
+              <Link to={createPageUrl("Statistics")}>
+                <Button 
+                  variant="outline"
+                  className="shadow-md font-medium px-6 rounded-xl hover-lift"
+                  style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
+                >
+                  📈 Voir mes stats
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Stats Keys */}
+          <div className="grid grid-cols-4 gap-6">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                   style={{ backgroundColor: '#FFE4EC' }}>
+                <BookOpen className="w-6 h-6" style={{ color: '#FF69B4' }} />
+              </div>
+              <div>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>Livres lus</p>
+                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                   style={{ backgroundColor: '#F0E6FF' }}>
+                <TrendingUp className="w-6 h-6" style={{ color: '#9B59B6' }} />
+              </div>
+              <div>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>Pages lues</p>
+                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                   style={{ backgroundColor: '#FFE8D9' }}>
+                <Users className="w-6 h-6" style={{ color: '#FF9F7F' }} />
+              </div>
+              <div>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>Lectures communes</p>
+                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                   style={{ backgroundColor: '#FFF9E6' }}>
+                <Star className="w-6 h-6" style={{ color: '#FFD700' }} />
+              </div>
+              <div>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>À lire</p>
+                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-6 md:px-12 py-8">
+        <div className="max-w-[1600px] mx-auto grid lg:grid-cols-3 gap-6">
+          {/* Left Column (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Lectures en cours */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  📖 Lectures en cours
+                </h2>
+                <div className="space-y-4">
+                  {currentlyReading.length > 0 ? (
+                    <>
+                      {currentlyReading.slice(0, 3).map((userBook) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
                         if (!book) return null;
+                        const daysReading = userBook.start_date 
+                          ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
+                          : 0;
+                        
                         return (
-                          <div key={userBook.id} className="flex gap-3 p-3 rounded-xl transition-all hover:shadow-md"
-                               style={{ backgroundColor: 'var(--cream)' }}>
-                            <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book.cover_url && (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs px-2 py-1 rounded-full font-bold mb-2 inline-block"
-                                    style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
-                                Vous 📖
+                          <div key={userBook.id} 
+                               className="flex gap-4 p-4 rounded-2xl hover-lift cursor-pointer"
+                               style={{ backgroundColor: '#FFF7FA' }}
+                               onClick={() => navigate(createPageUrl("MyLibrary"))}>
+                            <div className="relative">
+                              <div className="w-24 h-36 rounded-xl overflow-hidden shadow-lg"
+                                   style={{ backgroundColor: '#FFE4EC' }}>
+                                {book.cover_url && (
+                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                              <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                                    style={{ backgroundColor: '#FF69B4' }}>
+                                En cours
                               </span>
-                              <h3 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                              <p className="text-sm mb-2" style={{ color: '#A0AEC0' }}>
                                 {book.author}
                               </p>
+                              {userBook.start_date && (
+                                <p className="text-xs mb-3" style={{ color: '#9B59B6' }}>
+                                  Début : {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • {daysReading} jour{daysReading > 1 ? 's' : ''}
+                                </p>
+                              )}
+                              <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                                <div className="h-full rounded-full" 
+                                     style={{ 
+                                       width: '45%',
+                                       background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
+                                     }} />
+                              </div>
                             </div>
                           </div>
                         );
                       })}
-                      {friendsBooks.slice(0, 3).map((userBook) => {
+                      {friendsBooks.slice(0, 2).map((userBook) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
                         const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                         if (!book || !friend) return null;
+                        
                         return (
-                          <div key={userBook.id} className="flex gap-3 p-3 rounded-xl transition-all hover:shadow-md"
-                               style={{ backgroundColor: 'var(--cream)' }}>
-                            <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book.cover_url && (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-xs px-2 py-1 rounded-full font-bold mb-2 inline-block"
-                                    style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
-                                {friend.friend_name?.split(' ')[0]} 📖
+                          <div key={userBook.id} 
+                               className="flex gap-4 p-4 rounded-2xl hover-lift"
+                               style={{ backgroundColor: '#F0E6FF' }}>
+                            <div className="relative">
+                              <div className="w-24 h-36 rounded-xl overflow-hidden shadow-lg"
+                                   style={{ backgroundColor: '#E6B3E8' }}>
+                                {book.cover_url && (
+                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                              <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                                    style={{ backgroundColor: '#9B59B6' }}>
+                                {friend.friend_name?.split(' ')[0]}
                               </span>
-                              <h3 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                              <p className="text-sm" style={{ color: '#A0AEC0' }}>
                                 {book.author}
                               </p>
                             </div>
                           </div>
                         );
                       })}
-                    </div>
+                    </>
                   ) : (
-                    <div className="text-center py-8">
-                      <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                      <p style={{ color: 'var(--warm-pink)' }}>Aucune lecture en cours</p>
+                    <div className="text-center py-12">
+                      <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                      <p style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Recent Activity Timeline */}
-              <RecentActivity 
-                comments={allRecentComments}
-                allBooks={allBooks}
-                myFriends={myFriends}
-              />
-            </div>
-
-            {/* Friends finished books */}
-            {myFriends.length > 0 && friendsFinishedBooks.length > 0 && (
-              <Card className="shadow-2xl border-0 overflow-hidden mt-6 hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--lavender), var(--gold))' }} />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                    <Users className="w-5 h-5" />
-                    Livres terminés par mes amies ({selectedYear})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {friendsFinishedBooks.slice(0, 6).map((userBook) => {
+            {/* Activité récente */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  🕓 Activité récente
+                </h2>
+                <div className="space-y-4">
+                  {recentActivity.length > 0 ? (
+                    recentActivity.map((userBook) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
-                      const friend = myFriends.find(f => f.friend_email === userBook.created_by);
-                      if (!book || !friend) return null;
-
+                      if (!book) return null;
+                      
                       return (
-                        <div key={`${userBook.id}-${userBook.end_date}`}
-                             className="flex gap-3 p-3 rounded-xl transition-all hover:shadow-md"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <div className="w-12 h-18 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book.cover_url && (
-                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                            )}
+                        <div key={userBook.id} className="flex items-start gap-4 pb-4 border-b last:border-0"
+                             style={{ borderColor: '#F7FAFC' }}>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                               style={{ backgroundColor: '#FFE4EC' }}>
+                            <BookOpen className="w-5 h-5" style={{ color: '#FF69B4' }} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs mb-1 font-medium" style={{ color: 'var(--deep-pink)' }}>
-                              {friend.friend_name?.split(' ')[0]}
+                          <div className="flex-1">
+                            <p className="font-medium mb-1" style={{ color: '#2D3748' }}>
+                              <span className="font-bold" style={{ color: '#FF69B4' }}>{displayName}</span> a terminé {book.title}
                             </p>
-                            <h3 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </h3>
                             {userBook.rating && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 mb-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className="w-3 h-3"
-                                        style={{ fill: i < userBook.rating ? 'var(--gold)' : 'none', stroke: 'var(--gold)' }} />
+                                  <Star key={i} className="w-4 h-4"
+                                        style={{ fill: i < userBook.rating ? '#FFD700' : 'none', stroke: '#FFD700' }} />
                                 ))}
                               </div>
                             )}
+                            <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                              {format(new Date(userBook.end_date), 'dd MMM yyyy', { locale: fr })}
+                            </p>
                           </div>
                         </div>
                       );
-                    })}
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p style={{ color: '#A0AEC0' }}>Aucune activité récente</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Défi lecture annuel */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  🎯 Défi Lecture {selectedYear}
+                </h2>
+                {readingGoal ? (
+                  <div>
+                    <div className="text-center mb-6">
+                      <p className="text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                        {booksReadThisYear} / {readingGoal.goal_count}
+                      </p>
+                      <p className="text-lg" style={{ color: '#9B59B6' }}>
+                        {Math.round((booksReadThisYear / readingGoal.goal_count) * 100)}% complété
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <div className="w-full h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                        <div className="h-full rounded-full transition-all duration-500"
+                             style={{ 
+                               width: `${Math.min((booksReadThisYear / readingGoal.goal_count) * 100, 100)}%`,
+                               background: 'linear-gradient(90deg, #FF69B4, #9B59B6)'
+                             }} />
+                      </div>
+                    </div>
+                    <p className="text-center font-medium" style={{ color: '#2D3748' }}>
+                      Plus que {Math.max(readingGoal.goal_count - booksReadThisYear, 0)} livre{Math.max(readingGoal.goal_count - booksReadThisYear, 0) > 1 ? 's' : ''} à lire ! 📚
+                    </p>
                   </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Target className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                    <p className="mb-4" style={{ color: '#A0AEC0' }}>
+                      Aucun objectif défini pour {selectedYear}
+                    </p>
+                    <Button
+                      onClick={() => navigate(createPageUrl("Dashboard"))}
+                      className="text-white"
+                      style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                    >
+                      Définir mon objectif
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column (1/3) */}
+          <div className="space-y-6">
+            {/* Playlist littéraire */}
+            {booksWithMusic.length > 0 && (
+              <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+                <CardContent className="p-6" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+                    🎵 Ma Playlist Littéraire
+                  </h2>
+                  {booksWithMusic.map((userBook) => (
+                    <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
+                      <p className="font-bold text-lg text-white mb-1">
+                        {userBook.music}
+                      </p>
+                      <p className="text-sm text-white text-opacity-90 mb-4">
+                        {userBook.music_artist}
+                      </p>
+                      <a href={userBook.music_link} target="_blank" rel="noopener noreferrer">
+                        <Button className="w-full bg-white text-purple-600 hover:bg-opacity-90">
+                          ▶️ Écouter
+                        </Button>
+                      </a>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* BLOC 3: INSPIRATION & DÉCOUVERTE */}
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                ✨ Inspiration & Découverte
-              </h2>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                Musique, citations et suggestions
-              </p>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Playlist */}
-              {booksWithMusic.length > 0 && (
-                <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                  <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--gold))' }} />
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: 'var(--dark-text)' }}>
-                      <Music className="w-5 h-5" />
-                      Ma Playlist Littéraire
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {booksWithMusic.map((userBook) => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
-                      const platform = userBook.music_link?.includes('youtube') || userBook.music_link?.includes('youtu.be') 
-                        ? 'youtube' 
-                        : userBook.music_link?.includes('spotify') 
-                        ? 'spotify' 
-                        : 'deezer';
-                      
-                      return (
-                        <div key={userBook.id} className="rounded-xl overflow-hidden"
-                             style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--beige))' }}>
-                          <div className="p-4">
-                            <div className="flex items-center gap-3 mb-3">
-                              <Music className="w-10 h-10 p-2 rounded-full shadow-md" 
-                                     style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }} />
-                              <div className="flex-1">
-                                <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
-                                  🎵 {userBook.music}
-                                </p>
-                                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                                  {userBook.music_artist}
-                                </p>
-                              </div>
-                            </div>
-                            <a href={userBook.music_link} target="_blank" rel="noopener noreferrer">
-                              <Button className="w-full" style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
-                                ▶️ Écouter
-                              </Button>
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Random Quote */}
-              {randomQuote && quoteBook && (
-                <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                  <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--lavender), var(--rose-gold))' }} />
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: 'var(--dark-text)' }}>
-                      <QuoteIcon className="w-5 h-5" />
-                      Citation du moment
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                      <p className="text-lg italic mb-4 leading-relaxed" style={{ color: 'var(--dark-text)' }}>
-                        "{randomQuote.quote_text}"
-                      </p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--deep-pink)' }}>
-                        — {quoteBook.title}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Suggested Book */}
-              {suggestedBook && (
-                <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                  <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--gold), var(--soft-pink))' }} />
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg" style={{ color: 'var(--dark-text)' }}>
-                      <Sparkles className="w-5 h-5" />
-                      Suggestion du jour
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                      <div className="w-20 h-30 rounded-lg overflow-hidden shadow-lg flex-shrink-0"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {suggestedBook.cover_url && (
-                          <img src={suggestedBook.cover_url} alt={suggestedBook.title} 
-                               className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold mb-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {suggestedBook.title}
-                        </h3>
-                        <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                          {suggestedBook.author}
-                        </p>
-                        <Button 
-                          size="sm" 
-                          className="text-white"
-                          style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                          onClick={() => navigate(createPageUrl("MyLibrary"))}
-                        >
-                          Commencer <ArrowRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Quick Access */}
-              <Card className="shadow-2xl border-0 overflow-hidden hover-lift card-glow" style={{ backgroundColor: 'white' }}>
-                <div className="h-2" style={{ background: 'linear-gradient(90deg, var(--rose-gold), var(--soft-pink))' }} />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg" style={{ color: 'var(--dark-text)' }}>
-                    <Heart className="w-5 h-5" />
-                    Accès rapide
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start font-medium hover-lift"
-                    style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-                    onClick={() => navigate(createPageUrl("Friends"))}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Mes amies
-                  </Button>
+            {/* Accès rapide */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  ⚡ Accès rapide
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <Link to={createPageUrl("MyLibrary")}>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#FFE4EC' }}>
+                      <Library className="w-6 h-6 mx-auto mb-2" style={{ color: '#FF69B4' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Bibliothèque</p>
+                    </button>
+                  </Link>
+                  
                   <Link to={createPageUrl("SharedReadings")}>
-                    <Button variant="outline" className="w-full justify-start font-medium hover-lift" 
-                            style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-                      <Users className="w-4 h-4 mr-2" />
-                      Lectures communes
-                    </Button>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#F0E6FF' }}>
+                      <Users className="w-6 h-6 mx-auto mb-2" style={{ color: '#9B59B6' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Lectures communes</p>
+                    </button>
                   </Link>
+                  
                   <Link to={createPageUrl("Profile")}>
-                    <Button variant="outline" className="w-full justify-start font-medium hover-lift" 
-                            style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-                      <Heart className="w-4 h-4 mr-2" />
-                      Mes Personnages
-                    </Button>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#FFE8D9' }}>
+                      <Heart className="w-6 h-6 mx-auto mb-2" style={{ color: '#FF9F7F' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Personnages</p>
+                    </button>
                   </Link>
-                  <Link to={createPageUrl("Chat")}>
-                    <Button variant="outline" className="w-full justify-start font-medium hover-lift" 
-                            style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Chat
-                    </Button>
+                  
+                  <Link to={createPageUrl("BookTournament")}>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#FFF9E6' }}>
+                      <Trophy className="w-6 h-6 mx-auto mb-2" style={{ color: '#FFD700' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Tournoi</p>
+                    </button>
                   </Link>
-                </CardContent>
-              </Card>
-            </div>
+                  
+                  <Link to={createPageUrl("Maps")}>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#E8F4F8' }}>
+                      <Map className="w-6 h-6 mx-auto mb-2" style={{ color: '#4299E1' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Maps</p>
+                    </button>
+                  </Link>
+                  
+                  <Link to={createPageUrl("Quotes")}>
+                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                            style={{ backgroundColor: '#E6FFFA' }}>
+                      <QuoteIcon className="w-6 h-6 mx-auto mb-2" style={{ color: '#38B2AC' }} />
+                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Citations</p>
+                    </button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Citation & humeur du jour */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6 text-center" style={{ background: 'linear-gradient(135deg, #E0E7FF, #FCE7F3)' }}>
+                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                  💭 Citation du jour
+                </h2>
+                {randomQuote && quoteBook ? (
+                  <>
+                    <p className="text-lg italic mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
+                      "{randomQuote.quote_text}"
+                    </p>
+                    <p className="text-sm font-medium" style={{ color: '#9B59B6' }}>
+                      — {quoteBook.title}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-lg italic" style={{ color: '#A0AEC0' }}>
+                    "Lire, c'est vivre mille vies avant de mourir."
+                  </p>
+                )}
+                <div className="mt-6 pt-6 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+                  <p className="text-sm font-medium" style={{ color: '#2D3748' }}>
+                    🌤️ Humeur du jour : Paisible et inspirée ✨
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
