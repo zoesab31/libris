@@ -1,20 +1,55 @@
-
 import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, Music, Calendar, Plus, Trash2, AlertTriangle, Upload, Loader2, BookOpen, X, MessageSquare, Edit } from "lucide-react";
+import { 
+  Star, 
+  Music, 
+  Calendar, 
+  Trash2, 
+  Upload, 
+  Loader2, 
+  BookOpen, 
+  X, 
+  Edit,
+  Heart,
+  Users,
+  Globe,
+  Save,
+  ArrowLeft,
+  Sparkles,
+  FileText,
+  Tag,
+  Info
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
+const LANGUAGES = ["Français", "Anglais", "Espagnol", "Italien", "Allemand", "Portugais", "Japonais", "Coréen", "Chinois", "Autre"];
+
+const LANGUAGE_FLAGS = {
+  "Français": "🇫🇷",
+  "Anglais": "🇬🇧",
+  "Espagnol": "🇪🇸",
+  "Italien": "🇮🇹",
+  "Allemand": "🇩🇪",
+  "Portugais": "🇵🇹",
+  "Japonais": "🇯🇵",
+  "Coréen": "🇰🇷",
+  "Chinois": "🇨🇳",
+  "Autre": "🌍"
+};
 
 // Helper function to extract dominant color from image
 const getDominantColor = (imageUrl) => {
@@ -36,14 +71,12 @@ const getDominantColor = (imageUrl) => {
       let r = 0, g = 0, b = 0;
       const pixelCount = data.length / 4;
       
-      // Calculate sum of R, G, B components
       for (let i = 0; i < data.length; i += 4) {
         r += data[i];
         g += data[i + 1];
         b += data[i + 2];
       }
       
-      // Calculate average R, G, B
       r = Math.floor(r / pixelCount);
       g = Math.floor(g / pixelCount);
       b = Math.floor(b / pixelCount);
@@ -55,28 +88,15 @@ const getDominantColor = (imageUrl) => {
   });
 };
 
-const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
-
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState(userBook);
-  const [uploading, setUploading] = useState(false);
   const [editingCover, setEditingCover] = useState(false);
   const [newCoverUrl, setNewCoverUrl] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
-  const [newComment, setNewComment] = useState({
-    comment: "",
-    page_number: "",
-    chapter: "",
-    mood: "😊",
-    is_spoiler: false,
-    photo_url: "",
-  });
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const saveButtonRef = useRef(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [isEditingAuthor, setIsEditingAuthor] = useState(false);
   const [newAuthor, setNewAuthor] = useState("");
-  const [uploadingCover, setUploadingCover] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -92,11 +112,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user,
   });
 
-  const { data: comments = [] } = useQuery({
-    queryKey: ['comments', userBook.id],
-    queryFn: () => base44.entities.ReadingComment.filter({ user_book_id: userBook.id }, '-created_date'),
-  });
-
   const updateUserBookMutation = useMutation({
     mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
     onSuccess: async (data, variables) => {
@@ -105,7 +120,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       queryClient.invalidateQueries({ queryKey: ['friendsBooks'] });
       queryClient.invalidateQueries({ queryKey: ['friendsFinishedBooks'] });
       
-      // Force refetch immediately
       await queryClient.refetchQueries({ queryKey: ['myBooks'] });
       
       toast.success("✅ Modifications enregistrées !");
@@ -113,7 +127,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       const oldStatus = userBook.status;
       const newStatus = variables.status;
       
-      // Award points for Lu status OR Abandonné >50%
       const shouldAwardPoints = 
         (oldStatus !== "Lu" && newStatus === "Lu") || 
         (oldStatus !== "Abandonné" && newStatus === "Abandonné" && 
@@ -123,7 +136,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       if (shouldAwardPoints && user) {
         awardPointsForLuStatusMutation.mutate();
         
-        // Notify friends when book is finished or abandoned >50%
         const friends = await base44.entities.Friendship.filter({ 
           created_by: user.email, 
           status: "Acceptée" 
@@ -150,21 +162,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   });
 
-  const updateBookTagsMutation = useMutation({
-    mutationFn: async (tags) => {
-      return base44.entities.Book.update(book.id, { tags });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      toast.success("✅ Tags du livre mis à jour !");
-    },
-    onError: (error) => {
-      console.error("Error updating book tags:", error);
-      toast.error("Erreur lors de la mise à jour des tags.");
-    }
-  });
-  
   const updateBookMutation = useMutation({
     mutationFn: (data) => base44.entities.Book.update(book.id, data),
     onSuccess: () => {
@@ -195,17 +192,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
       toast.success("Livre marqué comme lu ! +50 points 🌟");
     },
-    onError: (error) => {
-      console.error("Error awarding points for 'Lu' status:", error);
-      toast.error("Erreur lors de l'attribution des points.");
-    }
   });
 
   const updateBookCoverMutation = useMutation({
     mutationFn: async (newCoverUrl) => {
       await base44.entities.Book.update(book.id, { cover_url: newCoverUrl });
       
-      // Extract and update color for virtual library
       try {
         const color = await getDominantColor(newCoverUrl);
         if (color) {
@@ -222,155 +214,30 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       setEditingCover(false);
       setNewCoverUrl("");
     },
-    onError: (error) => {
-        console.error("Error updating book cover:", error);
-        toast.error("Erreur lors de la mise à jour de la couverture.");
-    }
   });
 
-  // New mutation for author editing
   const updateBookAuthorMutation = useMutation({
     mutationFn: (newAuthor) => base44.entities.Book.update(book.id, { author: newAuthor }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] }); // Invalidate myBooks to reflect author change on user books
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("Auteur modifié !");
       setIsEditingAuthor(false);
     },
-    onError: (error) => {
-      console.error("Error updating book author:", error);
-      toast.error("Erreur lors de la modification de l'auteur.");
-    }
   });
 
   const deleteUserBookMutation = useMutation({
-    mutationFn: () => base44.entities.UserBook.delete(userBook.id),
+    mutationFn: async () => {
+      const relatedComments = await base44.entities.ReadingComment.filter({ user_book_id: userBook.id });
+      await Promise.all(relatedComments.map(c => base44.entities.ReadingComment.delete(c.id)));
+      await base44.entities.UserBook.delete(userBook.id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       toast.success("✅ Livre supprimé !");
       onOpenChange(false);
     },
-    onError: (error) => {
-      console.error("Error deleting user book:", error);
-      toast.error("Erreur lors de la suppression du livre.");
-    }
   });
-
-  const createCommentMutation = useMutation({
-    mutationFn: async (commentData) => {
-      return base44.entities.ReadingComment.create({
-        ...commentData,
-        user_book_id: userBook.id,
-        book_id: book.id,
-      });
-    },
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      toast.success("✅ Commentaire ajouté !");
-      setNewComment({ comment: "", page_number: "", chapter: "", mood: "😊", is_spoiler: false, photo_url: "" });
-      awardPointsForCommentMutation.mutate();
-      
-      // Notify friends about new comment
-      if (user) {
-        const friends = await base44.entities.Friendship.filter({ 
-          created_by: user.email, 
-          status: "Acceptée" 
-        });
-        
-        const notificationPromises = friends.map(friend =>
-          base44.entities.Notification.create({
-            type: "friend_comment",
-            title: "Nouveau commentaire",
-            message: `${user.display_name || user.full_name || 'Une amie'} a commenté "${book?.title}"`,
-            link_type: "book",
-            link_id: book.id,
-            created_by: friend.friend_email,
-            from_user: user.email,
-          })
-        );
-        
-        await Promise.all(notificationPromises);
-      }
-    },
-    onError: (error) => {
-      console.error("Error adding comment:", error);
-      toast.error("Erreur lors de l'ajout du commentaire.");
-    }
-  });
-
-  const awardPointsForCommentMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("User not loaded, cannot award points.");
-      const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-      if (existingPoints.length > 0) {
-        await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-          total_points: (existingPoints[0].total_points || 0) + 5
-        });
-      } else {
-        await base44.entities.ReadingPoints.create({ total_points: 5, points_spent: 0, created_by: user.email });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      toast.success("+5 points 🌟");
-    },
-    onError: (error) => {
-      console.error("Error awarding points for comment:", error);
-      toast.error("Erreur lors de l'attribution des points de commentaire.");
-    }
-  });
-
-  const deleteCommentMutation = useMutation({
-    mutationFn: (id) => base44.entities.ReadingComment.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', userBook.id] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      toast.success("Commentaire supprimé");
-    },
-    onError: (error) => {
-      console.error("Error deleting comment:", error);
-      toast.error("Erreur lors de la suppression du commentaire.");
-    }
-  });
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingPhoto(true);
-    try {
-      const result = await base44.integrations.Core.UploadFile({ file });
-      setNewComment({ ...newComment, photo_url: result.file_url });
-      toast.success("Photo uploadée !");
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Erreur lors de l'upload de l'image.");
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setNewComment({ ...newComment, photo_url: "" });
-  };
-
-  const toggleServicePress = () => {
-    const currentTags = book.tags || [];
-    const hasTag = currentTags.includes("Service Press");
-    
-    const newTags = hasTag 
-      ? currentTags.filter(t => t !== "Service Press")
-      : [...currentTags, "Service Press"];
-    
-    updateBookTagsMutation.mutate(newTags);
-  };
-
-  // New function to start author editing
-  const startEditingAuthor = () => {
-    setNewAuthor(book?.author || "");
-    setIsEditingAuthor(true);
-  };
 
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -388,810 +255,535 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     }
   };
 
+  const startEditingAuthor = () => {
+    setNewAuthor(book?.author || "");
+    setIsEditingAuthor(true);
+  };
+
+  const handleSave = () => {
+    updateUserBookMutation.mutate({
+      ...editedData,
+      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+    });
+  };
+
   if (!book) return null;
 
-  const isServicePress = book.tags?.includes("Service Press");
+  const statusColors = {
+    "Lu": "bg-green-100 text-green-800 border-green-300",
+    "En cours": "bg-blue-100 text-blue-800 border-blue-300",
+    "À lire": "bg-purple-100 text-purple-800 border-purple-300",
+    "Abandonné": "bg-red-100 text-red-800 border-red-300",
+    "Wishlist": "bg-pink-100 text-pink-800 border-pink-300",
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
-        <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-3xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                {book?.title}
-              </DialogTitle>
-              {isEditingAuthor ? (
-                <div className="flex items-center gap-2 mt-2">
-                  <Input
-                    value={newAuthor}
-                    onChange={(e) => setNewAuthor(e.target.value)}
-                    placeholder="Nom de l'auteur"
-                    className="flex-1"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => updateBookAuthorMutation.mutate(newAuthor)}
-                    disabled={!newAuthor || updateBookAuthorMutation.isPending}
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
-                  >
-                    Enregistrer
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setIsEditingAuthor(false)}
-                  >
-                    Annuler
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-lg flex items-center gap-2 mt-2" style={{ color: 'var(--warm-pink)' }}>
-                  {book?.author}
-                  <button
-                    onClick={startEditingAuthor}
-                    className="p-1 hover:bg-gray-100 rounded"
-                    title="Modifier l'auteur"
-                  >
-                    <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
-                  </button>
-                </p>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <style>{`
+          .focus-glow:focus {
+            box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
+            border-color: var(--warm-pink);
+          }
+          .section-divider {
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, var(--warm-pink), var(--lavender)) 1;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+          }
+        `}</style>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden bg-white">
-          <TabsList className="flex-shrink-0 bg-neutral-50 p-1 grid grid-cols-3 border-b border-neutral-200">
-            <TabsTrigger value="details" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
-              Détails
-            </TabsTrigger>
-            <TabsTrigger value="synopsis" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
-              Synopsis
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="text-neutral-900 data-[state=active]:bg-white data-[state=active]:text-rose-600">
-              Commentaires ({comments.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 overflow-y-auto bg-white">
-            <div className="p-6 bg-white">
-              <TabsContent value="details" className="space-y-6 py-4">
-                {userBook.status === "À lire" && (
-                  <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white"
-                       style={{ 
-                         backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
-                         borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
-                       }}
-                       onClick={toggleServicePress}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">📬</span>
-                        <div>
-                          <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
-                            Service Press
-                          </p>
-                          <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
-                            Marquer ce livre comme prioritaire
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`w-12 h-6 rounded-full transition-all ${
-                        isServicePress ? 'bg-white' : 'bg-gray-300'
-                      }`}>
-                        <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
-                          isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
-                        }`} />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Cover section */}
-                  <div className="md:w-64 flex-shrink-0">
-                    {editingCover ? (
-                      <div className="space-y-3">
-                        <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {newCoverUrl ? (
-                            <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
-                          ) : book?.cover_url ? (
-                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Input
-                            value={newCoverUrl}
-                            onChange={(e) => setNewCoverUrl(e.target.value)}
-                            placeholder="URL de la nouvelle couverture"
-                          />
-                          
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleCoverUpload}
-                              className="hidden"
-                              disabled={uploadingCover}
-                            />
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              className="w-full" 
-                              disabled={uploadingCover}
-                              asChild
-                            >
-                              <span>
-                                {uploadingCover ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Upload en cours...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Uploader une image
-                                  </>
-                                )}
-                              </span>
-                            </Button>
-                          </label>
-
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
-                              disabled={!newCoverUrl || updateBookCoverMutation.isPending}
-                              className="flex-1"
-                              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
-                            >
-                              Enregistrer
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setNewCoverUrl("");
-                                setEditingCover(false);
-                              }}
-                            >
-                              Annuler
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+        {/* HEADER - Couverture + Infos principales */}
+        <div className="p-8 bg-white/80 backdrop-blur-sm border-b-2 border-pink-200">
+          <div className="flex gap-8 items-start">
+            {/* Couverture avec badge langue */}
+            <div className="relative flex-shrink-0">
+              {editingCover ? (
+                <div className="space-y-3 w-48">
+                  <div className="w-48 h-72 rounded-2xl overflow-hidden shadow-2xl"
+                       style={{ backgroundColor: 'var(--beige)' }}>
+                    {newCoverUrl ? (
+                      <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : book?.cover_url ? (
+                      <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
-                      <div>
-                        <div className="relative group">
-                          <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book?.cover_url ? (
-                              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => setEditingCover(true)}
-                            className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
-                                      transition-opacity flex items-center justify-center rounded-xl"
-                          >
-                            <Edit className="w-8 h-8 text-white" />
-                          </button>
-                        </div>
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-1 grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 rounded-lg"
-                           style={{ backgroundColor: 'var(--cream)' }}>
-                        <span className="text-sm font-medium">Auteur</span>
-                        <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                          {book.author}
-                        </span>
-                      </div>
-
-                      {book.language && (
-                        <div className="flex items-center justify-between p-3 rounded-lg"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <span className="text-sm font-medium">Langue</span>
-                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                            {book.language === "Français" && "🇫🇷 "}
-                            {book.language === "Anglais" && "🇬🇧 "}
-                            {book.language === "Espagnol" && "🇪🇸 "}
-                            {book.language === "Italien" && "🇮🇹 "}
-                            {book.language === "Allemand" && "🇩🇪 "}
-                            {book.language}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                        <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                          🏷️ Genres personnalisés
-                        </Label>
-                        <GenreTagInput
-                          value={book.custom_genres || []}
-                          onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
-                        />
-                      </div>
-
-                      {book.genre && (
-                        <div className="flex items-center justify-between p-3 rounded-lg"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <span className="text-sm font-medium">Genre principal</span>
-                          <span className="px-3 py-1 rounded-full text-sm font-medium"
-                                style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
-                            {book.genre}
-                          </span>
-                        </div>
-                      )}
-
-                      {book.page_count && (
-                        <div className="flex items-center justify-between p-3 rounded-lg"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <span className="text-sm font-medium">Nombre de pages</span>
-                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                            {book.page_count}
-                          </span>
-                        </div>
-                      )}
-
-                      {book.publication_year && (
-                        <div className="flex items-center justify-between p-3 rounded-lg"
-                             style={{ backgroundColor: 'var(--cream)' }}>
-                          <span className="text-sm font-medium">Année de publication</span>
-                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                            {book.publication_year}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Format du livre (tags) */}
-                      <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                        <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                          📚 Format
-                        </Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => {
-                                const currentTags = book.tags || [];
-                                const newTags = currentTags.includes(tag)
-                                  ? currentTags.filter(t => t !== tag)
-                                  : [...currentTags, tag];
-                                updateBookMutation.mutate({ tags: newTags });
-                              }}
-                              className={`p-2 rounded-lg text-sm font-medium transition-all ${
-                                (book.tags || []).includes(tag) ? 'shadow-md scale-105' : 'hover:shadow-md'
-                              }`}
-                              style={{
-                                backgroundColor: (book.tags || []).includes(tag) ? 'var(--soft-pink)' : 'white',
-                                color: (book.tags || []).includes(tag) ? 'white' : 'var(--dark-text)',
-                                border: '2px solid',
-                                borderColor: (book.tags || []).includes(tag) ? 'var(--deep-pink)' : 'var(--beige)'
-                              }}
-                            >
-                              {tag === "Audio" && "🎧 "}
-                              {tag === "Numérique" && "📱 "}
-                              {tag === "Broché" && "📕 "}
-                              {tag === "Relié" && "📘 "}
-                              {tag === "Poche" && "📙 "}
-                              {tag === "Wattpad" && "🌟 "}
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="status">Statut</Label>
-                        <Select 
-                          value={editedData.status} 
-                          onValueChange={(value) => setEditedData({...editedData, status: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STATUSES.map(s => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {editedData.status === "Abandonné" && (
-                        <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-                          <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
-                            📖 Où avez-vous abandonné ?
-                          </Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label htmlFor="abandon-page" className="text-xs">Page d'abandon</Label>
-                              <Input
-                                id="abandon-page"
-                                type="number"
-                                value={editedData.abandon_page || ''}
-                                onChange={(e) => setEditedData({...editedData, abandon_page: parseInt(e.target.value) || undefined})}
-                                placeholder="150"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="abandon-percentage" className="text-xs">
-                                % d'avancement
-                              </Label>
-                              <Input
-                                id="abandon-percentage"
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={editedData.abandon_percentage || ''}
-                                onChange={(e) => setEditedData({...editedData, abandon_percentage: parseInt(e.target.value) || undefined})}
-                                placeholder="50"
-                              />
-                            </div>
-                          </div>
-                          <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                            💡 Si vous avez abandonné après 50%, le livre comptera dans votre objectif annuel
-                          </p>
-                        </div>
-                      )}
-
-                      {customShelves.length > 0 && (
-                        <div>
-                          <Label htmlFor="shelf">Étagère personnalisée</Label>
-                          <Select 
-                            value={editedData.custom_shelf || ""} 
-                            onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Aucune" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={null}>Aucune</SelectItem>
-                              {customShelves.map(s => (
-                                <SelectItem key={s.id} value={s.name}>
-                                  {s.icon} {s.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="rating">Note (sur 5)</Label>
-                          <Input
-                            id="rating"
-                            type="number"
-                            min="0"
-                            max="5"
-                            step="0.5"
-                            value={editedData.rating || ""}
-                            onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="character">Personnage préféré</Label>
-                          <Input
-                            id="character"
-                            value={editedData.favorite_character || ""}
-                            onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                            placeholder="Book boyfriend..."
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-white" 
-                           style={{ backgroundColor: 'var(--cream)' }}>
-                        <Label htmlFor="shared">Lecture commune</Label>
-                        <Switch
-                          id="shared"
-                          checked={editedData.is_shared_reading}
-                          onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {book.tags && book.tags.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                      Autres tags :
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {book.tags.map((tag, idx) => (
-                        // Only display tags that are not format tags to avoid redundancy, and not Service Press as it has its own section
-                        !["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad", "Service Press"].includes(tag) && (
-                          <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
-                                style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
-                            {tag}
-                          </span>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="review">Mon avis</Label>
-                  <Textarea
-                    id="review"
-                    value={editedData.review || ""}
-                    onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                    placeholder="Qu'avez-vous pensé de ce livre ?"
-                    rows={4}
-                  />
-                </div>
-
-                {/* Music */}
-                <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                  <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                    🎵 Musique associée
-                  </Label>
                   <div className="space-y-2">
-                    <div>
-                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Titre</Label>
-                      <Input
-                        value={editedData.music || ""}
-                        onChange={(e) => setEditedData({...editedData, music: e.target.value})}
-                        placeholder="Titre de la chanson"
-                        className="text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Artiste</Label>
-                      <Input
-                        value={editedData.music_artist || ""}
-                        onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
-                        placeholder="Nom de l'artiste"
-                        className="text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Lien (YouTube, Spotify, Deezer)</Label>
-                      <Input
-                        value={editedData.music_link || ""}
-                        onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
-                        placeholder="https://..."
-                        className="text-sm"
-                      />
-                      {editedData.music_link && (
-                        <a 
-                          href={editedData.music_link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs mt-1 inline-flex items-center gap-1 hover:underline"
-                          style={{ color: 'var(--deep-pink)' }}
-                        >
-                          🔗 Ouvrir le lien
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl space-y-3 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Dates de lecture (pour le défi annuel)
-                  </Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="start" className="text-xs">Date de début</Label>
-                      <Input
-                        id="start"
-                        type="date"
-                        value={editedData.start_date || ""}
-                        onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="end" className="text-xs">Date de fin</Label>
-                      <Input
-                        id="end"
-                        type="date"
-                        value={editedData.end_date || ""}
-                        onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  {editedData.status === "Lu" && !editedData.end_date && (
-                    <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                      ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => deleteUserBookMutation.mutate()}
-                    disabled={deleteUserBookMutation.isPending}
-                    className="text-white font-medium border-0"
-                    style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Supprimer
-                  </Button>
-                  <Button
-                    ref={saveButtonRef}
-                    onClick={() => {
-                      // Include ALL data including music fields
-                      updateUserBookMutation.mutate({
-                        ...editedData,
-                        rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
-                      });
-                    }}
-                    disabled={updateUserBookMutation.isPending}
-                    className="text-white font-medium relative"
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  >
-                    {updateUserBookMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Enregistrement...
-                      </>
-                    ) : (
-                      "Enregistrer"
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="synopsis">
-                <div className="space-y-4 py-4 bg-white">
-                  {book.synopsis ? (
-                    <p className="leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--dark-text)' }}>
-                      {book.synopsis}
-                    </p>
-                  ) : (
-                    <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
-                      Aucun synopsis disponible
-                    </p>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="comments">
-                <div className="space-y-4 py-4 bg-white">
-                  <div className="p-4 rounded-xl space-y-4 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                    <h3 className="font-semibold text-lg" style={{ color: 'var(--deep-brown)' }}>
-                      ✍️ Ajouter un commentaire
-                    </h3>
+                    <Input
+                      value={newCoverUrl}
+                      onChange={(e) => setNewCoverUrl(e.target.value)}
+                      placeholder="URL de la nouvelle couverture"
+                      className="focus-glow"
+                    />
                     
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <Label htmlFor="page">Page / %</Label>
-                        <Input
-                          id="page"
-                          type="text"
-                          value={newComment.page_number}
-                          onChange={(e) => setNewComment({...newComment, page_number: e.target.value})}
-                          placeholder="Ex: 150 ou 50%"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="chapter">Chapitre</Label>
-                        <Input
-                          id="chapter"
-                          value={newComment.chapter}
-                          onChange={(e) => setNewComment({...newComment, chapter: e.target.value})}
-                          placeholder="Ex: Ch. 5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="mood">Humeur</Label>
-                        <Select 
-                          value={newComment.mood} 
-                          onValueChange={(value) => setNewComment({...newComment, mood: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {["😊", "😍", "😢", "😱", "🤔", "😡", "🥰", "📖", "💔", "🔥"].map(m => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="comment">Votre commentaire, théorie, impression...</Label>
-                      <Textarea
-                        id="comment"
-                        value={newComment.comment}
-                        onChange={(e) => setNewComment({...newComment, comment: e.target.value})}
-                        placeholder="Partagez vos pensées, vos théories, vos émotions..."
-                        rows={4}
-                        className="resize-none"
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverUpload}
+                        className="hidden"
+                        disabled={uploadingCover}
                       />
-                    </div>
-
-                    <div>
-                      <Label>Photo du moment</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={newComment.photo_url}
-                          onChange={(e) => setNewComment({...newComment, photo_url: e.target.value})}
-                          placeholder="URL de la photo..."
-                          className="flex-1"
-                        />
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={handlePhotoUpload}
-                            className="hidden"
-                            disabled={uploadingPhoto}
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            disabled={uploadingPhoto}
-                            className="w-24"
-                            asChild
-                          >
-                            <span>
-                              {uploadingPhoto ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Upload
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="w-4 h-4 mr-2" />
-                                  Photo
-                                </>
-                              )}
-                            </span>
-                          </Button>
-                        </label>
-                      </div>
-                    </div>
-
-                    {newComment.photo_url && (
-                      <div className="relative rounded-xl overflow-hidden">
-                        <img 
-                          src={newComment.photo_url} 
-                          alt="Preview" 
-                          className="w-full h-64 object-cover" 
-                        />
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-2 right-2"
-                          onClick={handleRemovePhoto}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="spoiler"
-                          checked={newComment.is_spoiler}
-                          onCheckedChange={(checked) => setNewComment({...newComment, is_spoiler: checked})}
-                        />
-                        <Label htmlFor="spoiler" className="text-sm cursor-pointer flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
-                          Contient des spoilers
-                        </Label>
-                      </div>
-                      <Button
-                        onClick={() => createCommentMutation.mutate(newComment)}
-                        disabled={(!newComment.comment.trim() && !newComment.photo_url) || createCommentMutation.isPending}
-                        className="text-white font-medium"
-                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full" 
+                        disabled={uploadingCover}
+                        asChild
                       >
-                        {createCommentMutation.isPending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Envoi...
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Ajouter
-                          </>
-                        )}
+                        <span>
+                          {uploadingCover ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Upload...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Uploader
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
+                        disabled={!newCoverUrl}
+                        className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white"
+                      >
+                        ✓ OK
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setNewCoverUrl("");
+                          setEditingCover(false);
+                        }}
+                      >
+                        ✕
                       </Button>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    {comments.length > 0 ? (
-                      comments.map((comment) => (
-                        <div
-                          key={comment.id}
-                          className="p-4 rounded-xl border transition-all hover:shadow-md bg-white"
-                          style={{ 
-                            borderColor: 'var(--beige)'
-                          }}
-                        >
-                          {comment.photo_url && (
-                            <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
-                                 onClick={() => window.open(comment.photo_url, '_blank')}>
-                              <img 
-                                src={comment.photo_url} 
-                                alt="Moment de lecture" 
-                                className="w-full h-48 object-cover hover:scale-105 transition-transform" 
-                              />
-                            </div>
-                          )}
-                          
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-3xl">{comment.mood || '📖'}</span>
-                              <div>
-                                <p className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                                  {comment.chapter ? comment.chapter : comment.page_number ? `Page ${comment.page_number}` : 'Commentaire'}
-                                </p>
-                                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                                  {format(new Date(comment.created_date), 'dd MMM yyyy à HH:mm', { locale: fr })}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {comment.is_spoiler && (
-                                <span className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                                      style={{ backgroundColor: 'var(--rose-gold)', color: 'var(--dark-text)' }}>
-                                  <AlertTriangle className="w-3 h-3" />
-                                  Spoiler
-                                </span>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => deleteCommentMutation.mutate(comment.id)}
-                                className="hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm leading-relaxed" style={{ color: 'var(--dark-text)' }}>
-                            {comment.comment}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-12 rounded-xl bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                        <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                        <p className="text-lg font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
-                          Aucun commentaire pour ce livre
-                        </p>
-                        <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                          Partagez vos impressions, théories et émotions !
-                        </p>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </TabsContent>
+              ) : (
+                <>
+                  <div className="absolute -top-3 -left-3 z-10 px-3 py-1 rounded-full shadow-lg text-2xl bg-white border-2 border-pink-200">
+                    {LANGUAGE_FLAGS[editedData.reading_language || "Français"]}
+                  </div>
+                  <div className="relative group w-48">
+                    <div className="w-48 h-72 rounded-2xl overflow-hidden shadow-2xl transform transition-transform duration-300 group-hover:scale-105"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {book?.cover_url ? (
+                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setEditingCover(true)}
+                      className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
+                                transition-opacity flex items-center justify-center rounded-2xl"
+                    >
+                      <Edit className="w-8 h-8 text-white" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Infos principales */}
+            <div className="flex-1 space-y-4">
+              <div>
+                <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  {book.title}
+                </h1>
+                
+                {isEditingAuthor ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={newAuthor}
+                      onChange={(e) => setNewAuthor(e.target.value)}
+                      placeholder="Nom de l'auteur"
+                      className="flex-1 focus-glow"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => updateBookAuthorMutation.mutate(newAuthor)}
+                      className="bg-gradient-to-r from-pink-500 to-purple-500 text-white"
+                    >
+                      ✓
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsEditingAuthor(false)}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={startEditingAuthor}
+                    className="text-xl flex items-center gap-2 hover:underline transition-all"
+                    style={{ color: 'var(--warm-pink)' }}
+                  >
+                    par {book.author}
+                    <Edit className="w-4 h-4 opacity-50 hover:opacity-100" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className={`px-4 py-2 rounded-full font-semibold text-sm border-2 ${statusColors[editedData.status]}`}>
+                  {editedData.status}
+                </div>
+                
+                <Select 
+                  value={editedData.reading_language || "Français"} 
+                  onValueChange={(value) => setEditedData({...editedData, reading_language: value})}
+                >
+                  <SelectTrigger className="w-48 focus-glow">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        {LANGUAGE_FLAGS[editedData.reading_language || "Français"]} {editedData.reading_language || "Français"}
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map(lang => (
+                      <SelectItem key={lang} value={lang}>
+                        <div className="flex items-center gap-2">
+                          <span>{LANGUAGE_FLAGS[lang]}</span>
+                          <span>{lang}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                  Statut du livre
+                </Label>
+                <Select 
+                  value={editedData.status} 
+                  onValueChange={(value) => setEditedData({...editedData, status: value})}
+                >
+                  <SelectTrigger className="focus-glow">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </Tabs>
+        </div>
+
+        {/* CORPS PRINCIPAL - 2 colonnes */}
+        <div className="p-8 grid md:grid-cols-2 gap-6">
+          {/* COLONNE GAUCHE */}
+          <div className="space-y-6">
+            {/* Card: Genres & Tags */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <Tag className="w-5 h-5" />
+                Genres personnalisés
+              </h3>
+              <GenreTagInput
+                value={book.custom_genres || []}
+                onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
+              />
+            </div>
+
+            {/* Card: Format */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <FileText className="w-5 h-5" />
+                Format de lecture
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      const currentTags = book.tags || [];
+                      const newTags = currentTags.includes(tag)
+                        ? currentTags.filter(t => t !== tag)
+                        : [...currentTags, tag];
+                      updateBookMutation.mutate({ tags: newTags });
+                    }}
+                    className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 ${
+                      (book.tags || []).includes(tag) 
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg' 
+                        : 'bg-pink-50 text-pink-800 border-2 border-pink-200'
+                    }`}
+                  >
+                    {tag === "Audio" && "🎧"}
+                    {tag === "Numérique" && "📱"}
+                    {tag === "Broché" && "📕"}
+                    {tag === "Relié" && "📘"}
+                    {tag === "Poche" && "📙"}
+                    {tag === "Wattpad" && "🌟"}
+                    {" "}{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Card: Personnage préféré */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <Heart className="w-5 h-5" />
+                Personnage préféré
+              </h3>
+              <Input
+                value={editedData.favorite_character || ""}
+                onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                placeholder="Votre book boyfriend/girlfriend..."
+                className="focus-glow"
+              />
+            </div>
+          </div>
+
+          {/* COLONNE DROITE */}
+          <div className="space-y-6">
+            {/* Card: Lecture */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <Sparkles className="w-5 h-5" />
+                Ma lecture
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <Star className="w-4 h-4" />
+                    Note /5
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.5"
+                    value={editedData.rating || ""}
+                    onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                    placeholder="4.5"
+                    className="focus-glow"
+                  />
+                </div>
+
+                {customShelves.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">Étagère personnalisée</Label>
+                    <Select 
+                      value={editedData.custom_shelf || ""} 
+                      onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                    >
+                      <SelectTrigger className="focus-glow">
+                        <SelectValue placeholder="Aucune" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>Aucune</SelectItem>
+                        {customShelves.map(s => (
+                          <SelectItem key={s.id} value={s.name}>
+                            {s.icon} {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border-2 border-pink-200">
+                  <Label className="flex items-center gap-2 cursor-pointer">
+                    <Users className="w-4 h-4" />
+                    Lecture commune
+                  </Label>
+                  <Switch
+                    checked={editedData.is_shared_reading}
+                    onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Début
+                    </Label>
+                    <Input
+                      type="date"
+                      value={editedData.start_date || ""}
+                      onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                      className="focus-glow"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Fin
+                    </Label>
+                    <Input
+                      type="date"
+                      value={editedData.end_date || ""}
+                      onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                      className="focus-glow"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Musique */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <Music className="w-5 h-5" />
+                Musique associée
+              </h3>
+              <div className="space-y-3">
+                <Input
+                  value={editedData.music || ""}
+                  onChange={(e) => setEditedData({...editedData, music: e.target.value})}
+                  placeholder="Titre de la chanson"
+                  className="focus-glow"
+                />
+                <Input
+                  value={editedData.music_artist || ""}
+                  onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
+                  placeholder="Nom de l'artiste"
+                  className="focus-glow"
+                />
+                <Input
+                  value={editedData.music_link || ""}
+                  onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
+                  placeholder="Lien YouTube, Spotify, Deezer..."
+                  className="focus-glow"
+                />
+                {editedData.music_link && (
+                  <a 
+                    href={editedData.music_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium hover:scale-105 transition-transform"
+                  >
+                    ▶️ Écouter
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION INFÉRIEURE */}
+        <div className="p-8 space-y-6 bg-white/50">
+          {/* Avis */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+            <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+              💭 Mon avis
+            </h3>
+            <Textarea
+              value={editedData.review || ""}
+              onChange={(e) => setEditedData({...editedData, review: e.target.value})}
+              placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
+              rows={5}
+              className="focus-glow resize-none"
+            />
+          </div>
+
+          {/* Infos techniques */}
+          <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+            <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+              <Info className="w-5 h-5" />
+              Informations techniques
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              {book.page_count && (
+                <div className="text-center p-3 bg-white rounded-xl shadow">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {book.page_count}
+                  </p>
+                  <p className="text-sm text-gray-600">pages</p>
+                </div>
+              )}
+              {book.publication_year && (
+                <div className="text-center p-3 bg-white rounded-xl shadow">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {book.publication_year}
+                  </p>
+                  <p className="text-sm text-gray-600">année</p>
+                </div>
+              )}
+              {book.genre && (
+                <div className="text-center p-3 bg-white rounded-xl shadow">
+                  <p className="text-lg font-bold" style={{ color: 'var(--deep-pink)' }}>
+                    {book.genre}
+                  </p>
+                  <p className="text-sm text-gray-600">genre</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Boutons d'action */}
+          <div className="flex justify-center gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Retour
+            </Button>
+            
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
+                  deleteUserBookMutation.mutate();
+                }
+              }}
+              disabled={deleteUserBookMutation.isPending}
+              className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
+            >
+              <Trash2 className="w-5 h-5 mr-2" />
+              Supprimer
+            </Button>
+            
+            <Button
+              onClick={handleSave}
+              disabled={updateUserBookMutation.isPending}
+              className="px-8 py-6 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-lg"
+            >
+              {updateUserBookMutation.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  💾 Enregistrer
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
