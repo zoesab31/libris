@@ -59,7 +59,7 @@ export default function Series() {
   // Completed: all books in reading_order are read
   const completedSeriesCount = allSeries.filter(s => isSeriesCompleted(s)).length;
   
-  // In progress: ALL non-completed and non-abandoned series
+  // In progress: ALL non-completed and non-abandoned series (any series that's not finished)
   const inProgressSeriesCount = allSeries.filter(s => {
     if (s.is_abandoned) return false;
     return !isSeriesCompleted(s); // If not completed and not abandoned = in progress
@@ -120,6 +120,10 @@ export default function Series() {
     }
     return 0;
   });
+
+  // Abandoned series at the bottom
+  const abandonedSeries = allSeries.filter(s => s.is_abandoned);
+  const sortedSeriesWithAbandoned = [...sortedSeries, ...abandonedSeries];
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -294,9 +298,9 @@ export default function Series() {
         </div>
 
         {/* Series List */}
-        {sortedSeries.length > 0 ? (
+        {sortedSeriesWithAbandoned.length > 0 ? (
           <div className="space-y-4">
-            {sortedSeries.map((series) => (
+            {sortedSeriesWithAbandoned.map((series) => (
               <div key={series.id} className="relative">
                 <Button
                   variant="ghost"
