@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2 } from "lucide-react"; // Added Trash2
-import { formatDistanceToNow, format } from "date-fns"; // Added format
+import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2, Plus, Bell, Paperclip, Image as ImageIcon } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -33,8 +32,8 @@ export default function Chat() {
       );
     },
     enabled: !!user,
-    refetchInterval: 30000, // 30 seconds instead of 5
-    staleTime: 15 * 1000, // 15 seconds
+    refetchInterval: 30000,
+    staleTime: 15 * 1000,
   });
 
   const { data: messages = [] } = useQuery({
@@ -43,8 +42,8 @@ export default function Chat() {
       chat_room_id: selectedChat?.id 
     }, 'created_date'),
     enabled: !!selectedChat,
-    refetchInterval: 5000, // 5 seconds instead of 2
-    staleTime: 2 * 1000, // 2 seconds
+    refetchInterval: 5000,
+    staleTime: 2 * 1000,
   });
 
   const { data: myFriends = [] } = useQuery({
@@ -52,6 +51,15 @@ export default function Chat() {
     queryFn: () => base44.entities.Friendship.filter({ 
       created_by: user?.email, 
       status: "Acceptée" 
+    }),
+    enabled: !!user,
+  });
+
+  const { data: sharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadings'],
+    queryFn: () => base44.entities.SharedReading.filter({ 
+      participants: user?.email,
+      status: "En cours"
     }),
     enabled: !!user,
   });
@@ -79,11 +87,8 @@ export default function Chat() {
 
   const deleteChatMutation = useMutation({
     mutationFn: async (chatRoomId) => {
-      // Delete all messages first
       const messagesToDelete = await base44.entities.ChatMessage.filter({ chat_room_id: chatRoomId });
       await Promise.all(messagesToDelete.map(msg => base44.entities.ChatMessage.delete(msg.id)));
-      
-      // Then delete the chat room
       await base44.entities.ChatRoom.delete(chatRoomId);
     },
     onSuccess: () => {
@@ -99,7 +104,6 @@ export default function Chat() {
 
   const createChatMutation = useMutation({
     mutationFn: async (friendEmail) => {
-      // Check if chat already exists
       const existingChat = chatRooms.find(room => 
         room.type === "PRIVATE" && 
         room.participants.includes(friendEmail)
@@ -161,171 +165,336 @@ export default function Chat() {
     return '👥';
   };
 
+  // Get linked shared reading for a chat
+  const getLinkedReading = (room) => {
+    if (room.type !== "PRIVATE") return null;
+    const otherEmail = room.participants.find(p => p !== user?.email);
+    return sharedReadings.find(sr => 
+      sr.participants?.includes(otherEmail)
+    );
+  };
+
+  // Categorize friends
+  const recentChats = chatRooms.filter(r => r.last_message_at).slice(0, 5);
+  const friendsWithSharedReadings = myFriends.filter(f => 
+    sharedReadings.some(sr => sr.participants?.includes(f.friend_email))
+  );
+  const closeFriends = myFriends.filter(f => 
+    !friendsWithSharedReadings.includes(f)
+  );
+
+  const filteredFriends = myFriends.filter(f =>
+    f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.friend_email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="h-[calc(100vh-4rem)] flex" style={{ backgroundColor: 'var(--cream)' }}>
-      {/* Sidebar - Chat list */}
-      <div className="w-full md:w-96 border-r flex flex-col bg-white" style={{ borderColor: 'var(--beige)' }}>
+    <div className="h-[calc(100vh-4rem)] flex" style={{ backgroundColor: '#FDFBFE' }}>
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .message-bubble {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .friend-card:hover {
+          transform: translateX(4px);
+          transition: transform 0.2s ease;
+        }
+
+        .chat-gradient {
+          background: linear-gradient(180deg, #FFF3F7 0%, #FCE7FF 100%);
+        }
+
+        .message-input:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(255, 77, 166, 0.2);
+        }
+      `}</style>
+
+      {/* Sidebar - Friends list */}
+      <div className="w-full md:w-80 border-r flex flex-col chat-gradient" 
+           style={{ borderColor: '#FFE9F3' }}>
         {/* Header */}
-        <div className="p-4 border-b" style={{ borderColor: 'var(--beige)' }}>
+        <div className="p-4 border-b" style={{ borderColor: '#FFE9F3', backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Link to={createPageUrl("Dashboard")}>
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="w-5 h-5" />
+              <Link to={createPageUrl("Dashboard")} className="md:hidden">
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <ArrowLeft className="w-5 h-5" style={{ color: '#FF4DA6' }} />
                 </Button>
               </Link>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Messages
+              <h2 className="text-xl font-bold" style={{ color: '#333' }}>
+                💌 Messages
               </h2>
             </div>
-            <Button
-              size="icon"
-              className="rounded-full"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
-            >
-              <Users className="w-5 h-5" />
-            </Button>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                    style={{ color: '#FF4DA6' }} />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher..."
-              className="pl-10 bg-neutral-50"
+              placeholder="Rechercher une amie..."
+              className="pl-10 rounded-2xl border-0 shadow-sm"
+              style={{ backgroundColor: 'white' }}
             />
           </div>
         </div>
 
-        {/* Friends quick access */}
-        <div className="p-4 border-b" style={{ borderColor: 'var(--beige)' }}>
-          <p className="text-xs font-medium mb-3" style={{ color: 'var(--warm-pink)' }}>
-            MES AMIES
-          </p>
-          <div className="flex gap-2 overflow-x-auto">
-            {myFriends.map((friend) => (
-              <button
-                key={friend.id}
-                onClick={() => createChatMutation.mutate(friend.friend_email)}
-                className="flex flex-col items-center gap-2 min-w-[60px]"
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                     style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--warm-pink))' }}>
-                  {friend.friend_name?.[0]?.toUpperCase() || 'A'}
-                </div>
-                <span className="text-xs text-center line-clamp-1" style={{ color: 'var(--dark-text)' }}>
-                  {friend.friend_name?.split(' ')[0] || 'Amie'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Chat list */}
-        <div className="flex-1 overflow-y-auto">
-          {chatRooms.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                Aucune conversation
+        {/* Friends sections */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Close Friends */}
+          {closeFriends.length > 0 && (
+            <div>
+              <p className="text-xs font-bold mb-3" style={{ color: '#FF4DA6' }}>
+                ❤️ AMIES PROCHES
               </p>
-            </div>
-          ) : (
-            chatRooms.map((room) => (
-              <div key={room.id} className="group relative">
-                <button
-                  onClick={() => setSelectedChat(room)}
-                  className={`w-full p-4 flex items-start gap-3 hover:bg-neutral-50 transition-colors ${
-                    selectedChat?.id === room.id ? 'bg-neutral-100' : ''
-                  }`}
-                >
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                       style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--warm-pink))' }}>
-                    {getChatAvatar(room)}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium truncate" style={{ color: 'var(--dark-text)' }}>
-                        {getChatName(room)}
-                      </p>
-                      {room.last_message_at && (
-                        <span className="text-xs text-neutral-400 flex-shrink-0 ml-2">
-                          {formatDistanceToNow(new Date(room.last_message_at), { addSuffix: true, locale: fr })}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-neutral-500 truncate">
-                      {room.type === "PRIVATE" ? "Chat privé" : "Groupe"}
-                    </p>
-                  </div>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteChat(room.id);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>
+              <div className="space-y-2">
+                {closeFriends
+                  .filter(f => !searchQuery || 
+                    f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((friend) => (
+                    <button
+                      key={friend.id}
+                      onClick={() => createChatMutation.mutate(friend.friend_email)}
+                      className="w-full p-3 rounded-2xl text-left friend-card"
+                      style={{ 
+                        backgroundColor: 'white',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                               style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
+                            {friend.friend_name?.[0]?.toUpperCase() || 'A'}
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                               style={{ backgroundColor: '#10B981' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
+                            {friend.friend_name}
+                          </p>
+                          <p className="text-xs" style={{ color: '#FF4DA6' }}>
+                            En ligne
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
               </div>
-            ))
+            </div>
+          )}
+
+          {/* Shared Readings Friends */}
+          {friendsWithSharedReadings.length > 0 && (
+            <div>
+              <p className="text-xs font-bold mb-3" style={{ color: '#FF4DA6' }}>
+                📚 LECTURES COMMUNES
+              </p>
+              <div className="space-y-2">
+                {friendsWithSharedReadings
+                  .filter(f => !searchQuery || 
+                    f.friend_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((friend) => {
+                    const linkedReading = sharedReadings.find(sr => 
+                      sr.participants?.includes(friend.friend_email)
+                    );
+                    return (
+                      <button
+                        key={friend.id}
+                        onClick={() => createChatMutation.mutate(friend.friend_email)}
+                        className="w-full p-3 rounded-2xl text-left friend-card"
+                        style={{ 
+                          backgroundColor: 'white',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                                 style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
+                              {friend.friend_name?.[0]?.toUpperCase() || 'A'}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                                 style={{ backgroundColor: '#9CA3AF' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
+                              {friend.friend_name}
+                            </p>
+                            {linkedReading && (
+                              <p className="text-xs truncate" style={{ color: '#9B59B6' }}>
+                                📖 {linkedReading.title}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Chats */}
+          {recentChats.length > 0 && (
+            <div>
+              <p className="text-xs font-bold mb-3" style={{ color: '#FF4DA6' }}>
+                💬 DISCUSSIONS RÉCENTES
+              </p>
+              <div className="space-y-2">
+                {recentChats.map((room) => (
+                  <button
+                    key={room.id}
+                    onClick={() => setSelectedChat(room)}
+                    className={`w-full p-3 rounded-2xl text-left friend-card ${
+                      selectedChat?.id === room.id ? 'ring-2' : ''
+                    }`}
+                    style={{ 
+                      backgroundColor: selectedChat?.id === room.id ? '#FFF3F7' : 'white',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      ringColor: '#FF4DA6'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                           style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
+                        {getChatAvatar(room)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate" style={{ color: '#333' }}>
+                          {getChatName(room)}
+                        </p>
+                        <p className="text-xs" style={{ color: '#999' }}>
+                          {formatDistanceToNow(new Date(room.last_message_at), { 
+                            addSuffix: true, 
+                            locale: fr 
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {myFriends.length === 0 && (
+            <div className="text-center py-12 px-4">
+              <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-20" 
+                            style={{ color: '#FF4DA6' }} />
+              <p className="text-sm" style={{ color: '#999' }}>
+                Aucune amie pour le moment
+              </p>
+              <Link to={createPageUrl("Friends")}>
+                <Button className="mt-4 rounded-full text-white"
+                        style={{ background: 'linear-gradient(135deg, #FF4DA6, #E9D9FF)' }}>
+                  Ajouter des amies
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#FDFBFE' }}>
         {selectedChat ? (
           <>
             {/* Chat header */}
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--beige)' }}>
+            <div className="p-4 border-b flex items-center justify-between"
+                 style={{ 
+                   borderColor: '#FFE9F3',
+                   backgroundColor: '#FFF7FB',
+                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                 }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                     style={{ background: 'linear-gradient(135deg, var(--soft-pink), var(--warm-pink))' }}>
+                <button 
+                  onClick={() => setSelectedChat(null)}
+                  className="md:hidden"
+                >
+                  <ArrowLeft className="w-5 h-5" style={{ color: '#FF4DA6' }} />
+                </button>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                     style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
                   {getChatAvatar(selectedChat)}
                 </div>
                 <div>
-                  <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                  <p className="font-bold text-lg" style={{ color: '#333' }}>
                     {getChatName(selectedChat)}
                   </p>
-                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    {selectedChat.participants.length} participant{selectedChat.participants.length > 1 ? 's' : ''}
+                  <p className="text-xs flex items-center gap-2" style={{ color: '#999' }}>
+                    <span>{selectedChat.participants.length} participant{selectedChat.participants.length > 1 ? 's' : ''}</span>
+                    {getLinkedReading(selectedChat) && (
+                      <>
+                        <span>•</span>
+                        <span style={{ color: '#9B59B6' }}>
+                          📚 Lecture commune active
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDeleteChat(selectedChat.id)}
-              >
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                >
+                  <Bell className="w-5 h-5" style={{ color: '#FF4DA6' }} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteChat(selectedChat.id)}
+                  className="rounded-full"
+                >
+                  <Trash2 className="w-5 h-5" style={{ color: '#FF4DA6' }} />
+                </Button>
+              </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.map((message) => {
                 const isMe = message.sender_email === user?.email;
                 const messageDate = new Date(message.created_date);
                 
                 return (
-                  <div key={message.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div key={message.id} 
+                       className={`flex ${isMe ? 'justify-end' : 'justify-start'} message-bubble`}>
                     <div className={`max-w-[70%] ${
                       isMe 
-                        ? 'bg-gradient-to-br from-pink-400 to-pink-500 text-white rounded-2xl rounded-br-md' 
-                        : 'bg-neutral-100 text-neutral-900 rounded-2xl rounded-bl-md'
-                    } px-4 py-2 shadow-sm`}>
+                        ? 'rounded-[22px] rounded-br-md' 
+                        : 'rounded-[22px] rounded-bl-md'
+                    } px-5 py-3 shadow-sm`}
+                    style={{
+                      backgroundColor: isMe ? '#FFB7D5' : '#E9D9FF'
+                    }}>
                       {!isMe && (
-                        <p className="text-xs font-medium mb-1 opacity-70">
+                        <p className="text-xs font-bold mb-1" style={{ color: '#333' }}>
                           {message.sender_email?.split('@')[0]}
                         </p>
                       )}
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                      <p className={`text-xs mt-1 ${isMe ? 'text-white/70' : 'text-neutral-400'}`}>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words"
+                         style={{ color: '#333' }}>
+                        {message.content}
+                      </p>
+                      <p className="text-xs mt-2 opacity-70" style={{ color: '#666' }}>
                         {format(messageDate, 'HH:mm', { locale: fr })}
                       </p>
                     </div>
@@ -336,8 +505,23 @@ export default function Chat() {
             </div>
 
             {/* Input area */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t" style={{ borderColor: 'var(--beige)' }}>
-              <div className="flex gap-2">
+            <form onSubmit={handleSendMessage} 
+                  className="p-4 border-t"
+                  style={{ 
+                    borderColor: '#FFD8E8',
+                    backgroundColor: 'white'
+                  }}>
+              <div className="flex gap-3 items-end">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full flex-shrink-0"
+                  style={{ color: '#FF4DA6' }}
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+                
                 <Textarea
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
@@ -348,16 +532,35 @@ export default function Chat() {
                     }
                   }}
                   placeholder="Écrivez votre message..."
-                  className="flex-1 min-h-[44px] max-h-[120px] resize-none"
+                  className="flex-1 min-h-[48px] max-h-[120px] resize-none rounded-2xl border-0 message-input"
+                  style={{ 
+                    backgroundColor: '#F9F9FB',
+                    color: '#333'
+                  }}
                   rows={1}
                 />
+
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full flex-shrink-0"
+                  style={{ color: '#FF4DA6' }}
+                >
+                  <Paperclip className="w-5 h-5" />
+                </Button>
+                
                 <Button
                   type="submit"
                   disabled={!messageInput.trim() || sendMessageMutation.isPending}
-                  className="rounded-xl px-6"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                  size="icon"
+                  className="rounded-full w-12 h-12 flex-shrink-0 shadow-lg"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #FF4DA6, #E9D9FF)',
+                    color: 'white'
+                  }}
                 >
-                  <Send className="w-5 h-5" />
+                  💌
                 </Button>
               </div>
             </form>
@@ -365,12 +568,15 @@ export default function Chat() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <MessageCircle className="w-20 h-20 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-              <p className="text-lg font-medium" style={{ color: 'var(--dark-text)' }}>
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
+                   style={{ background: 'linear-gradient(135deg, #FFB7D5, #E9D9FF)' }}>
+                <MessageCircle className="w-12 h-12 text-white" />
+              </div>
+              <p className="text-xl font-bold mb-2" style={{ color: '#333' }}>
                 Sélectionnez une conversation
               </p>
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                Choisissez un ami ou une lecture commune
+              <p className="text-sm" style={{ color: '#999' }}>
+                Choisissez une amie pour commencer à discuter
               </p>
             </div>
           </div>
