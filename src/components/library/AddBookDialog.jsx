@@ -62,7 +62,7 @@ const getDominantColor = (imageUrl) => {
   });
 };
 
-const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain",
+const GENRES = ["Romance", "Romantasy", "Dark Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction", "Contemporain",
                 "Historique", "Young Adult", "New Adult", "Dystopie", "Paranormal", "Autre"];
 
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];

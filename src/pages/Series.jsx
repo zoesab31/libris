@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -129,28 +130,19 @@ export default function Series() {
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, #B8E6D5, #A8D5E5)' }}>
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Séries à compléter 🌿
-              </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                Suivez vos sagas, tomes lus et à venir
-              </p>
-            </div>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+               style={{ background: 'linear-gradient(135deg, #B8E6D5, #A8D5E5)' }}>
+            <BookOpen className="w-7 h-7 text-white" />
           </div>
-          <Button 
-            onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
-            className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}>
-            <Plus className="w-5 h-5 mr-2" />
-            Ajouter une série
-          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              Séries à compléter 🌿
+            </h1>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              Suivez vos sagas, tomes lus et à venir
+            </p>
+          </div>
         </div>
 
         {/* Legend */}
@@ -253,7 +245,7 @@ export default function Series() {
           </div>
         )}
 
-        {/* Search and Sort */}
+        {/* Search, Sort and Add Button - ALL ON ONE LINE */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
@@ -294,6 +286,13 @@ export default function Series() {
               <TrendingUp className="w-4 h-4 mr-2" />
               Progression
             </Button>
+            <Button 
+              onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
+              className="shadow-lg text-white font-medium px-6 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              Ajouter une série
+            </Button>
           </div>
         </div>
 
@@ -301,27 +300,17 @@ export default function Series() {
         {sortedSeriesWithAbandoned.length > 0 ? (
           <div className="space-y-4">
             {sortedSeriesWithAbandoned.map((series) => (
-              <div key={series.id} className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingSeries(series);
-                    setShowAddDialog(true);
-                  }}
-                  className="absolute top-4 right-16 z-10 text-xs"
-                  style={{ color: 'var(--deep-pink)' }}
-                >
-                  Modifier
-                </Button>
-                <SeriesCard
-                  series={series}
-                  myBooks={myBooks}
-                  allBooks={allBooks}
-                  onClick={() => setSelectedSeries(series)}
-                />
-              </div>
+              <SeriesCard
+                key={series.id}
+                series={series}
+                myBooks={myBooks}
+                allBooks={allBooks}
+                onClick={() => setSelectedSeries(series)}
+                onEdit={(s) => {
+                  setEditingSeries(s);
+                  setShowAddDialog(true);
+                }}
+              />
             ))}
           </div>
         ) : (

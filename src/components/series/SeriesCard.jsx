@@ -1,13 +1,12 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Trash2, Ban } from 'lucide-react';
+import { BookOpen, Trash2, Ban, Edit } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
+export default function SeriesCard({ series, myBooks, allBooks, onClick, onEdit }) {
   const queryClient = useQueryClient();
 
   const deleteSeriesMutation = useMutation({
@@ -41,7 +40,7 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
   });
 
   const handleDelete = (e) => {
-    e.stopPropagation(); // Prevent card onClick from firing
+    e.stopPropagation();
     if (window.confirm(`Êtes-vous sûre de vouloir supprimer la série "${series.series_name}" ?`)) {
       deleteSeriesMutation.mutate();
     }
@@ -49,7 +48,16 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
 
   const handleToggleAbandon = (e) => {
     e.stopPropagation();
-    toggleAbandonMutation.mutate();
+    if (window.confirm(series.is_abandoned 
+      ? `Voulez-vous réactiver la série "${series.series_name}" ?`
+      : `Voulez-vous marquer la série "${series.series_name}" comme abandonnée ?`)) {
+      toggleAbandonMutation.mutate();
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    onEdit(series);
   };
 
   // Calculate books read based on actual user books status
@@ -57,7 +65,7 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
     if (!series.reading_order) return 0;
     
     return series.reading_order.filter(item => {
-      if (!item.book_id) return false; // Not released books don't count
+      if (!item.book_id) return false;
       const userBook = myBooks.find(ub => ub.book_id === item.book_id);
       return userBook && userBook.status === 'Lu';
     }).length;
@@ -94,9 +102,8 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
   };
 
   const totalBooks = series.total_books;
-  const booksRead = calculateBooksRead(); // Use calculated value
+  const booksRead = calculateBooksRead();
   const progressPercent = (totalBooks > 0) ? (booksRead / totalBooks) * 100 : 0;
-
 
   // Generate dots for each book
   const bookDots = Array.from({ length: totalBooks }, (_, i) => {
@@ -111,53 +118,33 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
     };
   });
 
+  // Get gradient based on status
+  const getGradient = () => {
+    if (series.is_abandoned) {
+      return 'linear-gradient(90deg, #9CA3AF, #6B7280)';
+    }
+    if (progressPercent === 100) {
+      return 'linear-gradient(90deg, #B8E6D5, #98D8C8)'; // Completed - green
+    }
+    if (progressPercent > 0) {
+      return 'linear-gradient(90deg, #E0B3FF, #C084FC)'; // In progress - purple
+    }
+    // To buy / not started
+    return 'linear-gradient(90deg, #FBBF24, #F59E0B)'; // Gold
+  };
+
   return (
     <Card
       onClick={onClick}
-      className={`cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg overflow-hidden relative group ${
+      className={`cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg overflow-hidden ${
         series.is_abandoned ? 'opacity-50 grayscale' : ''
       }`}
-      style={{ backgroundColor: 'white' }}
+      style={{ backgroundColor: 'white', height: '180px' }}
     >
-      {/* Action buttons - visible on hover */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={handleToggleAbandon}
-          disabled={toggleAbandonMutation.isPending}
-          className={`w-8 h-8 rounded-full ${
-            series.is_abandoned 
-              ? 'bg-green-500 hover:bg-green-600' 
-              : 'bg-orange-500 hover:bg-orange-600'
-          } text-white shadow-lg`}
-          title={series.is_abandoned ? "Réactiver la série" : "Marquer comme abandonnée"}
-        >
-          <Ban className="w-4 h-4" />
-        </Button>
-        
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={handleDelete}
-          disabled={deleteSeriesMutation.isPending}
-          className="w-8 h-8 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg"
-          title="Supprimer la série"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <div className="h-2" style={{ 
-        background: series.is_abandoned 
-          ? 'linear-gradient(90deg, #9CA3AF, #6B7280)'
-          : progressPercent === 100 
-          ? 'linear-gradient(90deg, #B8E6D5, #98D8C8)' 
-          : 'linear-gradient(90deg, #A8D5E5, #B8E6D5)' 
-      }} />
+      <div className="h-1.5" style={{ background: getGradient() }} />
       
-      <CardContent className="p-6">
-        <div className="flex gap-4">
+      <CardContent className="p-4 h-full">
+        <div className="flex gap-4 h-full">
           {/* Cover */}
           <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md flex-shrink-0"
                style={{ backgroundColor: 'var(--beige)' }}>
@@ -171,40 +158,34 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1 min-w-0">
-                <h3 className={`text-xl font-bold mb-1 truncate ${series.is_abandoned ? 'line-through' : ''}`} 
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Title and Author */}
+            <div className="mb-2">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className={`text-lg font-bold truncate flex-1 ${series.is_abandoned ? 'line-through' : ''}`} 
                     style={{ color: 'var(--dark-text)' }}>
                   {series.series_name}
                 </h3>
-                {series.author && (
-                  <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                    {series.author}
-                  </p>
-                )}
-                {series.is_abandoned && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-gray-400 text-white font-medium">
-                    Abandonnée
-                  </span>
+                {!series.is_abandoned && (
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-bold" style={{ color: progressPercent === 100 ? '#4ADE80' : '#A8D5E5' }}>
+                      {booksRead}/{totalBooks}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                      {Math.round(progressPercent)}%
+                    </div>
+                  </div>
                 )}
               </div>
-              
-              {/* Progress Badge */}
-              {!series.is_abandoned && (
-                <div className="flex flex-col items-end ml-4">
-                  <div className="text-sm font-bold mb-1" style={{ color: progressPercent === 100 ? '#4ADE80' : '#A8D5E5' }}>
-                    {booksRead}/{totalBooks}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    {Math.round(progressPercent)}%
-                  </div>
-                </div>
+              {series.author && (
+                <p className="text-sm truncate" style={{ color: 'var(--warm-pink)' }}>
+                  {series.author}
+                </p>
               )}
             </div>
 
             {/* Book dots */}
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {bookDots.map((dot) => {
                 const book = dot.bookId ? allBooks.find(b => b.id === dot.bookId) : null;
                 
@@ -215,7 +196,7 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
                     title={dot.title}
                   >
                     <div
-                      className="w-8 h-8 rounded-full transition-transform hover:scale-110 flex items-center justify-center text-xs font-bold"
+                      className="w-7 h-7 rounded-full transition-transform hover:scale-110 flex items-center justify-center text-xs font-bold"
                       style={{
                         backgroundColor: getStatusColor(dot.status),
                         border: getStatusBorder(dot.status),
@@ -240,18 +221,78 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick }) {
 
             {/* Progress bar */}
             {!series.is_abandoned && (
-              <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
-                <div
-                  className="h-full transition-all duration-500"
-                  style={{
-                    width: `${progressPercent}%`,
-                    background: progressPercent === 100 
-                      ? 'linear-gradient(90deg, #B8E6D5, #98D8C8)' 
-                      : 'linear-gradient(90deg, #A8D5E5, #B8E6D5)'
-                  }}
-                />
+              <div className="mb-3">
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+                  <div
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${progressPercent}%`,
+                      background: progressPercent === 100 
+                        ? 'linear-gradient(90deg, #B8E6D5, #98D8C8)' 
+                        : 'linear-gradient(90deg, #A8D5E5, #B8E6D5)'
+                    }}
+                  />
+                </div>
               </div>
             )}
+
+            {/* Status badge */}
+            {series.is_abandoned && (
+              <span className="text-xs px-2 py-1 rounded-full bg-gray-400 text-white font-medium inline-block mb-2 w-fit">
+                Abandonnée
+              </span>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-auto justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleEdit}
+                className="h-8 px-3 rounded-lg transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: '#f78fb3',
+                  color: 'white'
+                }}
+                title="Modifier"
+              >
+                <Edit className="w-3.5 h-3.5 mr-1.5" />
+                <span className="text-xs font-medium">Modifier</span>
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleToggleAbandon}
+                disabled={toggleAbandonMutation.isPending}
+                className="h-8 px-3 rounded-lg transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: series.is_abandoned ? '#10b981' : '#ddd',
+                  color: series.is_abandoned ? 'white' : '#666'
+                }}
+                title={series.is_abandoned ? "Réactiver la série" : "Marquer comme abandonnée"}
+              >
+                <Ban className="w-3.5 h-3.5 mr-1.5" />
+                <span className="text-xs font-medium">
+                  {series.is_abandoned ? "Réactiver" : "Abandonner"}
+                </span>
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDelete}
+                disabled={deleteSeriesMutation.isPending}
+                className="h-8 w-8 p-0 rounded-lg transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: '#ff5b5b',
+                  color: 'white'
+                }}
+                title="Supprimer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
