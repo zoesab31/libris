@@ -394,7 +394,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="px-6 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -456,48 +456,120 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
           <div className="flex-1 overflow-y-auto bg-white">
             <div className="p-6 bg-white">
-              <TabsContent value="details">
-                <div className="space-y-4 py-4 bg-white">
-                  {userBook.status === "À lire" && (
-                    <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white"
-                         style={{ 
-                           backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
-                           borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
-                         }}
-                         onClick={toggleServicePress}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">📬</span>
-                          <div>
-                            <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
-                              Service Press
-                            </p>
-                            <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
-                              Marquer ce livre comme prioritaire
-                            </p>
-                          </div>
-                        </div>
-                        <div className={`w-12 h-6 rounded-full transition-all ${
-                          isServicePress ? 'bg-white' : 'bg-gray-300'
-                        }`}>
-                          <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
-                            isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
-                          }`} />
+              <TabsContent value="details" className="space-y-6 py-4">
+                {userBook.status === "À lire" && (
+                  <div className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md bg-white"
+                       style={{ 
+                         backgroundColor: isServicePress ? 'var(--soft-pink)' : 'var(--cream)',
+                         borderColor: isServicePress ? 'var(--deep-pink)' : 'var(--beige)'
+                       }}
+                       onClick={toggleServicePress}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">📬</span>
+                        <div>
+                          <p className="font-bold" style={{ color: isServicePress ? 'white' : 'var(--dark-text)' }}>
+                            Service Press
+                          </p>
+                          <p className="text-xs" style={{ color: isServicePress ? 'white' : 'var(--warm-pink)' }}>
+                            Marquer ce livre comme prioritaire
+                          </p>
                         </div>
                       </div>
+                      <div className={`w-12 h-6 rounded-full transition-all ${
+                        isServicePress ? 'bg-white' : 'bg-gray-300'
+                      }`}>
+                        <div className={`w-6 h-6 rounded-full shadow-md transition-all ${
+                          isServicePress ? 'translate-x-6 bg-pink-600' : 'translate-x-0 bg-white'
+                        }`} />
+                      </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Cover section */}
-                    <div className="md:w-64 flex-shrink-0">
-                      {editingCover ? (
-                        <div className="space-y-3">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Cover section */}
+                  <div className="md:w-64 flex-shrink-0">
+                    {editingCover ? (
+                      <div className="space-y-3">
+                        <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {newCoverUrl ? (
+                            <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
+                          ) : book?.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Input
+                            value={newCoverUrl}
+                            onChange={(e) => setNewCoverUrl(e.target.value)}
+                            placeholder="URL de la nouvelle couverture"
+                          />
+                          
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleCoverUpload}
+                              className="hidden"
+                              disabled={uploadingCover}
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              className="w-full" 
+                              disabled={uploadingCover}
+                              asChild
+                            >
+                              <span>
+                                {uploadingCover ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Upload en cours...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Uploader une image
+                                  </>
+                                )}
+                              </span>
+                            </Button>
+                          </label>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
+                              disabled={!newCoverUrl || updateBookCoverMutation.isPending}
+                              className="flex-1"
+                              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
+                            >
+                              Enregistrer
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setNewCoverUrl("");
+                                setEditingCover(false);
+                              }}
+                            >
+                              Annuler
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="relative group">
                           <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
                                style={{ backgroundColor: 'var(--beige)' }}>
-                            {newCoverUrl ? (
-                              <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
-                            ) : book?.cover_url ? (
+                            {book?.cover_url ? (
                               <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -505,96 +577,46 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                               </div>
                             )}
                           </div>
-
-                          <div className="space-y-2">
-                            <Input
-                              value={newCoverUrl}
-                              onChange={(e) => setNewCoverUrl(e.target.value)}
-                              placeholder="URL de la nouvelle couverture"
-                            />
-                            
-                            <label className="cursor-pointer">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleCoverUpload}
-                                className="hidden"
-                                disabled={uploadingCover}
-                              />
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                className="w-full" 
-                                disabled={uploadingCover}
-                                asChild
-                              >
-                                <span>
-                                  {uploadingCover ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Upload en cours...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Upload className="w-4 h-4 mr-2" />
-                                      Uploader une image
-                                    </>
-                                  )}
-                                </span>
-                              </Button>
-                            </label>
-
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => updateBookCoverMutation.mutate(newCoverUrl)}
-                                disabled={!newCoverUrl || updateBookCoverMutation.isPending}
-                                className="flex-1"
-                                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))', color: 'white' }}
-                              >
-                                Enregistrer
-                              </Button>
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingCover(false);
-                                  setNewCoverUrl("");
-                                }}
-                              >
-                                Annuler
-                              </Button>
-                            </div>
-                          </div>
+                          <button
+                            onClick={() => setEditingCover(true)}
+                            className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
+                                      transition-opacity flex items-center justify-center rounded-xl"
+                          >
+                            <Edit className="w-8 h-8 text-white" />
+                          </button>
                         </div>
-                      ) : (
-                        <div>
-                          <div className="relative group">
-                            <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {book?.cover_url ? (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => setEditingCover(true)}
-                              className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
-                                       transition-opacity flex items-center justify-center rounded-xl"
-                            >
-                              <Edit className="w-8 h-8 text-white" />
-                            </button>
-                          </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 rounded-lg"
+                           style={{ backgroundColor: 'var(--cream)' }}>
+                        <span className="text-sm font-medium">Auteur</span>
+                        <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                          {book.author}
+                        </span>
+                      </div>
+
+                      {book.language && (
+                        <div className="flex items-center justify-between p-3 rounded-lg"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <span className="text-sm font-medium">Langue</span>
+                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                            {book.language === "Français" && "🇫🇷 "}
+                            {book.language === "Anglais" && "🇬🇧 "}
+                            {book.language === "Espagnol" && "🇪🇸 "}
+                            {book.language === "Italien" && "🇮🇹 "}
+                            {book.language === "Allemand" && "🇩🇪 "}
+                            {book.language}
+                          </span>
                         </div>
                       )}
-                    </div>
 
-                    <div className="flex-1 space-y-4">
-                      {/* Genres personnalisés */}
                       <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
                         <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                          🏷️ Genres
+                          🏷️ Genres personnalisés
                         </Label>
                         <GenreTagInput
                           value={book.custom_genres || []}
@@ -602,6 +624,39 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                         />
                       </div>
 
+                      {book.genre && (
+                        <div className="flex items-center justify-between p-3 rounded-lg"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <span className="text-sm font-medium">Genre principal</span>
+                          <span className="px-3 py-1 rounded-full text-sm font-medium"
+                                style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
+                            {book.genre}
+                          </span>
+                        </div>
+                      )}
+
+                      {book.page_count && (
+                        <div className="flex items-center justify-between p-3 rounded-lg"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <span className="text-sm font-medium">Nombre de pages</span>
+                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                            {book.page_count}
+                          </span>
+                        </div>
+                      )}
+
+                      {book.publication_year && (
+                        <div className="flex items-center justify-between p-3 rounded-lg"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <span className="text-sm font-medium">Année de publication</span>
+                          <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                            {book.publication_year}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
                       {/* Format du livre (tags) */}
                       <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
                         <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
@@ -752,131 +807,150 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       </div>
                     </div>
                   </div>
+                </div>
 
+                {book.tags && book.tags.length > 0 && (
                   <div>
-                    <Label htmlFor="review">Mon avis</Label>
-                    <Textarea
-                      id="review"
-                      value={editedData.review || ""}
-                      onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                      placeholder="Qu'avez-vous pensé de ce livre ?"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Music */}
-                  <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                    <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                      🎵 Musique associée
-                    </Label>
-                    <div className="space-y-2">
-                      <div>
-                        <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Titre</Label>
-                        <Input
-                          value={editedData.music || ""}
-                          onChange={(e) => setEditedData({...editedData, music: e.target.value})}
-                          placeholder="Titre de la chanson"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Artiste</Label>
-                        <Input
-                          value={editedData.music_artist || ""}
-                          onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
-                          placeholder="Nom de l'artiste"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Lien (YouTube, Spotify, Deezer)</Label>
-                        <Input
-                          value={editedData.music_link || ""}
-                          onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
-                          placeholder="https://..."
-                          className="text-sm"
-                        />
-                        {editedData.music_link && (
-                          <a 
-                            href={editedData.music_link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs mt-1 inline-flex items-center gap-1 hover:underline"
-                            style={{ color: 'var(--deep-pink)' }}
-                          >
-                            🔗 Ouvrir le lien
-                          </a>
-                        )}
-                      </div>
+                    <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                      Autres tags :
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {book.tags.map((tag, idx) => (
+                        // Only display tags that are not format tags to avoid redundancy, and not Service Press as it has its own section
+                        !["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad", "Service Press"].includes(tag) && (
+                          <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
+                                style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
+                            {tag}
+                          </span>
+                        )
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  <div className="p-4 rounded-xl space-y-3 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Dates de lecture (pour le défi annuel)
-                    </Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="start" className="text-xs">Date de début</Label>
-                        <Input
-                          id="start"
-                          type="date"
-                          value={editedData.start_date || ""}
-                          onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="end" className="text-xs">Date de fin</Label>
-                        <Input
-                          id="end"
-                          type="date"
-                          value={editedData.end_date || ""}
-                          onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                        />
-                      </div>
+                <div>
+                  <Label htmlFor="review">Mon avis</Label>
+                  <Textarea
+                    id="review"
+                    value={editedData.review || ""}
+                    onChange={(e) => setEditedData({...editedData, review: e.target.value})}
+                    placeholder="Qu'avez-vous pensé de ce livre ?"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Music */}
+                <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                  <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                    🎵 Musique associée
+                  </Label>
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Titre</Label>
+                      <Input
+                        value={editedData.music || ""}
+                        onChange={(e) => setEditedData({...editedData, music: e.target.value})}
+                        placeholder="Titre de la chanson"
+                        className="text-sm"
+                      />
                     </div>
-                    {editedData.status === "Lu" && !editedData.end_date && (
-                      <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
-                        ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => deleteUserBookMutation.mutate()}
-                      disabled={deleteUserBookMutation.isPending}
-                      className="text-white font-medium border-0"
-                      style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
-                    </Button>
-                    <Button
-                      ref={saveButtonRef}
-                      onClick={() => {
-                        // Include ALL data including music fields
-                        updateUserBookMutation.mutate({
-                          ...editedData,
-                          rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
-                        });
-                      }}
-                      disabled={updateUserBookMutation.isPending}
-                      className="text-white font-medium relative"
-                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                    >
-                      {updateUserBookMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Enregistrement...
-                        </>
-                      ) : (
-                        "Enregistrer"
+                    <div>
+                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Artiste</Label>
+                      <Input
+                        value={editedData.music_artist || ""}
+                        onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
+                        placeholder="Nom de l'artiste"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs" style={{ color: 'var(--dark-text)' }}>Lien (YouTube, Spotify, Deezer)</Label>
+                      <Input
+                        value={editedData.music_link || ""}
+                        onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
+                        placeholder="https://..."
+                        className="text-sm"
+                      />
+                      {editedData.music_link && (
+                        <a 
+                          href={editedData.music_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs mt-1 inline-flex items-center gap-1 hover:underline"
+                          style={{ color: 'var(--deep-pink)' }}
+                        >
+                          🔗 Ouvrir le lien
+                        </a>
                       )}
-                    </Button>
+                    </div>
                   </div>
+                </div>
+
+                <div className="p-4 rounded-xl space-y-3 bg-white" style={{ backgroundColor: 'var(--cream)' }}>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Dates de lecture (pour le défi annuel)
+                  </Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start" className="text-xs">Date de début</Label>
+                      <Input
+                        id="start"
+                        type="date"
+                        value={editedData.start_date || ""}
+                        onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end" className="text-xs">Date de fin</Label>
+                      <Input
+                        id="end"
+                        type="date"
+                        value={editedData.end_date || ""}
+                        onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  {editedData.status === "Lu" && !editedData.end_date && (
+                    <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                      ⚠️ Ajoutez une date de fin pour que ce livre compte dans votre objectif annuel
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => deleteUserBookMutation.mutate()}
+                    disabled={deleteUserBookMutation.isPending}
+                    className="text-white font-medium border-0"
+                    style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer
+                  </Button>
+                  <Button
+                    ref={saveButtonRef}
+                    onClick={() => {
+                      // Include ALL data including music fields
+                      updateUserBookMutation.mutate({
+                        ...editedData,
+                        rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+                      });
+                    }}
+                    disabled={updateUserBookMutation.isPending}
+                    className="text-white font-medium relative"
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  >
+                    {updateUserBookMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      "Enregistrer"
+                    )}
+                  </Button>
                 </div>
               </TabsContent>
 
@@ -890,62 +964,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     <p className="text-center py-8" style={{ color: 'var(--warm-pink)' }}>
                       Aucun synopsis disponible
                     </p>
-                  )}
-                  {book.genre && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                        Genre :
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-sm font-medium"
-                            style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
-                        {book.genre}
-                      </span>
-                    </div>
-                  )}
-
-                  {book.page_count && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                        Nombre de pages :
-                      </span>
-                      <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                        {book.page_count}
-                      </span>
-                    </div>
-                  )}
-
-                  {book.publication_year && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                        Année de publication :
-                      </span>
-                      <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
-                        {book.publication_year}
-                      </span>
-                    </div>
-                  )}
-
-                  {book.tags && book.tags.length > 0 && (
-                    <div>
-                      <span className="text-sm font-medium mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                        Tags :
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {book.tags.map((tag, idx) => (
-                          <span key={idx} className="px-3 py-1 rounded-full text-xs font-medium"
-                                style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
-                            {tag === "Service Press" && "📬 "}
-                            {tag === "Audio" && "🎧 "}
-                            {tag === "Numérique" && "📱 "}
-                            {tag === "Broché" && "📕 "}
-                            {tag === "Relié" && "📘 "}
-                            {tag === "Poche" && "📙 "}
-                            {tag === "Wattpad" && "🌟 "}
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
                   )}
                 </div>
               </TabsContent>

@@ -66,6 +66,7 @@ const GENRES = ["Romance", "Fantasy", "Thriller", "Policier", "Science-Fiction",
                 "Historique", "Young Adult", "New Adult", "Dystopie", "Paranormal", "Autre"];
 
 const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
+const LANGUAGES = ["Français", "Anglais", "Espagnol", "Italien", "Allemand", "Autre"];
 
 export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
@@ -86,6 +87,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     author: "",
     cover_url: "",
     genre: "",
+    language: "Français",
     page_count: "",
     synopsis: "",
     tags: [],
@@ -368,6 +370,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       author: "",
       cover_url: "",
       genre: "",
+      language: "Français",
       page_count: "",
       synopsis: "",
       tags: [],
@@ -707,15 +710,29 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   </div>
 
                   <div>
-                    <Label htmlFor="pages">Nombre de pages</Label>
-                    <Input
-                      id="pages"
-                      type="number"
-                      value={bookData.page_count}
-                      onChange={(e) => setBookData({...bookData, page_count: e.target.value})}
-                      placeholder="300"
-                    />
+                    <Label htmlFor="language">Langue</Label>
+                    <Select value={bookData.language} onValueChange={(value) => setBookData({...bookData, language: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Langue" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map(lang => (
+                          <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="pages">Nombre de pages</Label>
+                  <Input
+                    id="pages"
+                    type="number"
+                    value={bookData.page_count}
+                    onChange={(e) => setBookData({...bookData, page_count: e.target.value})}
+                    placeholder="300"
+                  />
                 </div>
 
                 <div>

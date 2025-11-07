@@ -12,11 +12,11 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
-import PALManager from "../components/library/PALManager"; // Added import for PALManager
+import PALManager from "../components/library/PALManager";
 
 export default function MyLibrary() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient(); // Initialize queryClient
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tous");
   const [showAddBook, setShowAddBook] = useState(false);
@@ -25,9 +25,9 @@ export default function MyLibrary() {
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
   const [selectedUserBook, setSelectedUserBook] = useState(null);
-  const [expandedPALYears, setExpandedPALYears] = useState({}); // New state
-  const [showPALs, setShowPALs] = useState(false); // New state
-  const [selectedPAL, setSelectedPAL] = useState(null); // New state
+  const [expandedPALYears, setExpandedPALYears] = useState({});
+  const [showPALs, setShowPALs] = useState(false);
+  const [selectedPAL, setSelectedPAL] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -161,6 +161,37 @@ export default function MyLibrary() {
     ? [] // No books shown directly in PAL tab, only organized view
     : myBooks.filter(b => b.status === activeTab);
 
+  // Calculate book counts per tab
+  const bookCounts = useMemo(() => {
+    return {
+      tous: myBooks.length,
+      custom: customShelves.reduce((sum, shelf) => 
+        sum + myBooks.filter(b => b.custom_shelf === shelf.name).length, 0
+      ),
+      "En cours": myBooks.filter(b => b.status === "En cours").length,
+      "Lu": myBooks.filter(b => b.status === "Lu").length,
+      "À lire": myBooks.filter(b => b.status === "À lire").length,
+      "Wishlist": myBooks.filter(b => b.status === "Wishlist").length,
+      "Abandonné": myBooks.filter(b => b.status === "Abandonné").length,
+      "pal": (() => {
+        const uniquePalBookIds = new Set();
+        readingLists.forEach(pal => {
+          pal.book_ids?.forEach(bookId => {
+            if (myBooks.some(ub => ub.book_id === bookId && ub.status === "À lire")) {
+              uniquePalBookIds.add(bookId);
+            }
+          });
+        });
+        return uniquePalBookIds.size;
+      })(),
+      "historique": years.reduce((sum, year) => {
+        const yearData = readBooksByYearMonth[year];
+        return sum + Object.values(yearData || {}).reduce((s, books) => s + books.length, 0);
+      }, 0)
+    };
+  }, [myBooks, customShelves, readingLists, years, readBooksByYearMonth]);
+
+
   const getBookDetails = (userBook) => {
     return allBooks.find(b => b.id === userBook.book_id);
   };
@@ -259,7 +290,7 @@ export default function MyLibrary() {
                     color: '#FFFFFF'
                   } : { color: '#000000' }}
                 >
-                  Étagères perso
+                  Étagères perso ({bookCounts.custom})
                 </TabsTrigger>
               )}
               <TabsTrigger
@@ -270,7 +301,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                Tous
+                Tous ({bookCounts.tous})
               </TabsTrigger>
               <TabsTrigger
                 value="En cours"
@@ -280,7 +311,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                En cours
+                En cours ({bookCounts["En cours"]})
               </TabsTrigger>
               <TabsTrigger
                 value="Lu"
@@ -290,7 +321,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                Lus
+                Lus ({bookCounts.Lu})
               </TabsTrigger>
               <TabsTrigger
                 value="À lire"
@@ -300,7 +331,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                À lire
+                À lire ({bookCounts["À lire"]})
               </TabsTrigger>
               <TabsTrigger
                 value="Wishlist"
@@ -310,7 +341,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                Wishlist
+                Wishlist ({bookCounts.Wishlist})
               </TabsTrigger>
               <TabsTrigger
                 value="Abandonné"
@@ -320,7 +351,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                Abandonnés
+                Abandonnés ({bookCounts.Abandonné})
               </TabsTrigger>
               <TabsTrigger
                 value="pal"
@@ -330,7 +361,7 @@ export default function MyLibrary() {
                   color: '#FFFFFF'
                 } : { color: '#000000' }}
               >
-                PAL
+                PAL ({bookCounts.pal})
               </TabsTrigger>
               <TabsTrigger
                 value="historique"
@@ -341,7 +372,7 @@ export default function MyLibrary() {
                 } : { color: '#000000' }}
               >
                 <Calendar className="w-4 h-4" />
-                Historique
+                Historique ({bookCounts.historique})
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -831,8 +862,8 @@ export default function MyLibrary() {
               setSelectionMode(false);
               setSelectedBooks([]);
             }}
-            showPALSelector={activeTab === "À lire"} // Pass prop for PAL selector
-            readingLists={readingLists} // Pass reading lists to BookGrid
+            showPALSelector={activeTab === "À lire"}
+            readingLists={readingLists}
           />
         )}
 

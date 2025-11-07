@@ -18,10 +18,20 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Only show books read in the current year (same year as the challenge)
   const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooks'],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email, status: "Lu" }),
-    enabled: !!user,
+    queryKey: ['myBooks', user?.email, challenge?.year],
+    queryFn: async () => {
+      const allMyBooks = await base44.entities.UserBook.filter({ created_by: user?.email, status: "Lu" });
+      
+      // Filter books read in the challenge year
+      return allMyBooks.filter(ub => {
+        if (!ub.end_date) return false;
+        const bookYear = new Date(ub.end_date).getFullYear();
+        return bookYear === challenge.year;
+      });
+    },
+    enabled: !!user && !!challenge,
   });
 
   const updateMutation = useMutation({
@@ -36,7 +46,7 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             total_points: (existingPoints[0].total_points || 0) + 20
           });
         } else {
-          await base44.entities.ReadingPoints.create({ total_points: 20, points_spent: 0 });
+          await base44.entities.ReadingPoints.create({ created_by: user.email, total_points: 20, points_spent: 0 });
         }
       }
     },
@@ -89,17 +99,31 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
                 <Label htmlFor="book">Quel livre valide ce défi ?</Label>
                 <Select value={selectedBookId} onValueChange={setSelectedBookId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisir un livre lu" />
+                    <SelectValue placeholder={`Choisir un livre lu en ${challenge.year}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    {readBooks.map((book) => (
-                      <SelectItem key={book.id} value={book.id}>
-                        {book.title} - {book.author}
+                    {readBooks.length > 0 ? (
+                      readBooks.map((book) => (
+                        <SelectItem key={book.id} value={book.id}>
+                          {book.title} - {book.author}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        Aucun livre lu en {challenge.year}
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+
+              {readBooks.length === 0 && (
+                <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
+                  <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                    💡 Vous devez avoir lu au moins un livre en {challenge.year} pour valider ce défi
+                  </p>
+                </div>
+              )}
 
               {selectedBook && (
                 <div className="flex gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
