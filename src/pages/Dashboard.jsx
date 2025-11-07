@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -84,6 +85,37 @@ export default function Dashboard() {
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
   
+  // Calculate average reading duration for time-based progress estimation
+  const avgReadingDays = React.useMemo(() => {
+    const completedBooks = myBooks.filter(b => 
+      b.status === "Lu" && b.start_date && b.end_date
+    );
+    
+    if (completedBooks.length === 0) return 14; // Default 14 days if no data
+    
+    const totalDays = completedBooks.reduce((sum, book) => {
+      const start = new Date(book.start_date);
+      const end = new Date(book.end_date);
+      const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+      return sum + Math.max(days, 1); // At least 1 day
+    }, 0);
+    
+    return Math.round(totalDays / completedBooks.length);
+  }, [myBooks]);
+
+  // Calculate time-based progress for a book
+  const getTimeBasedProgress = (userBook) => {
+    if (!userBook.start_date) return 0;
+    
+    const start = new Date(userBook.start_date);
+    const now = new Date();
+    const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    
+    // Calculate percentage based on average reading time
+    const progress = Math.min((daysReading / avgReadingDays) * 100, 95); // Max 95% until finished
+    return Math.round(progress);
+  };
+
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
     if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
@@ -434,6 +466,7 @@ export default function Dashboard() {
                         const daysReading = userBook.start_date 
                           ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
                           : 0;
+                        const progress = getTimeBasedProgress(userBook);
                         
                         return (
                           <div key={userBook.id} 
@@ -461,15 +494,20 @@ export default function Dashboard() {
                               </p>
                               {userBook.start_date && (
                                 <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
-                                  {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • {daysReading}j
+                                  {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
                                 </p>
                               )}
-                              <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                                <div className="h-full rounded-full" 
-                                     style={{ 
-                                       width: '45%',
-                                       background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
-                                     }} />
+                              <div className="relative">
+                                <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                                  <div className="h-full rounded-full transition-all duration-500" 
+                                       style={{ 
+                                         width: `${progress}%`,
+                                         background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
+                                       }} />
+                                </div>
+                                <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
+                                  ⏱️ ~{progress}% (estimation temporelle)
+                                </p>
                               </div>
                             </div>
                           </div>
