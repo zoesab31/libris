@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -60,7 +61,7 @@ export default function Dashboard() {
       
       const allFriendsBooks = await Promise.all(
         friendsEmails.map(email => 
-          base44.entities.UserBook.filter({ created_by: email, status: "En cours" })
+          base44.entities.UserBook.filter({ created_by: email })
         )
       );
       
@@ -136,11 +137,33 @@ export default function Dashboard() {
     return startYear <= selectedYear && selectedYear <= endYear;
   }).length;
 
-  // Recent activity
-  const recentActivity = myBooks
-    .filter(b => b.status === "Lu" && b.end_date)
-    .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
-    .slice(0, 5);
+  // Combined recent activity from user and friends
+  const recentActivity = React.useMemo(() => {
+    const myActivity = myBooks
+      .filter(b => b.status === "Lu" && b.end_date)
+      .map(b => ({
+        userBook: b,
+        userName: displayName,
+        userEmail: user?.email,
+        isFriend: false
+      }));
+
+    const friendsActivity = friendsBooks
+      .filter(b => b.status === "Lu" && b.end_date)
+      .map(b => {
+        const friend = myFriends.find(f => f.friend_email === b.created_by);
+        return {
+          userBook: b,
+          userName: friend?.friend_name?.split(' ')[0] || friend?.friend_email,
+          userEmail: b.created_by,
+          isFriend: true
+        };
+      });
+
+    return [...myActivity, ...friendsActivity]
+      .sort((a, b) => new Date(b.userBook.end_date) - new Date(a.userBook.end_date))
+      .slice(0, 8);
+  }, [myBooks, friendsBooks, myFriends, displayName, user]);
 
   // Random quote
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
@@ -303,7 +326,7 @@ export default function Dashboard() {
                   📖 Lectures en cours
                 </h2>
                 <div className="space-y-4">
-                  {currentlyReading.length > 0 ? (
+                  {currentlyReading.length > 0 || friendsBooks.filter(b => b.status === "En cours").length > 0 ? (
                     <>
                       {currentlyReading.slice(0, 3).map((userBook) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
@@ -344,7 +367,7 @@ export default function Dashboard() {
                               <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
                                 <div className="h-full rounded-full" 
                                      style={{ 
-                                       width: '45%',
+                                       width: '45%', // Placeholder, actual progress would be calculated
                                        background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                      }} />
                               </div>
@@ -352,7 +375,7 @@ export default function Dashboard() {
                           </div>
                         );
                       })}
-                      {friendsBooks.slice(0, 2).map((userBook) => {
+                      {friendsBooks.filter(b => b.status === "En cours").slice(0, 2).map((userBook) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
                         const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                         if (!book || !friend) return null;
@@ -403,31 +426,39 @@ export default function Dashboard() {
                 </h2>
                 <div className="space-y-4">
                   {recentActivity.length > 0 ? (
-                    recentActivity.map((userBook) => {
-                      const book = allBooks.find(b => b.id === userBook.book_id);
+                    recentActivity.map((activity) => {
+                      const book = allBooks.find(b => b.id === activity.userBook.book_id);
                       if (!book) return null;
                       
                       return (
-                        <div key={userBook.id} className="flex items-start gap-4 pb-4 border-b last:border-0"
+                        <div key={`${activity.userEmail}-${activity.userBook.id}`} 
+                             className="flex items-start gap-4 pb-4 border-b last:border-0"
                              style={{ borderColor: '#F7FAFC' }}>
                           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                               style={{ backgroundColor: '#FFE4EC' }}>
-                            <BookOpen className="w-5 h-5" style={{ color: '#FF69B4' }} />
+                               style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
+                            <BookOpen className="w-5 h-5" 
+                                     style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
                           </div>
                           <div className="flex-1">
                             <p className="font-medium mb-1" style={{ color: '#2D3748' }}>
-                              <span className="font-bold" style={{ color: '#FF69B4' }}>{displayName}</span> a terminé {book.title}
+                              <span className="font-bold" 
+                                    style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
+                                {activity.userName}
+                              </span> a terminé {book.title}
                             </p>
-                            {userBook.rating && (
+                            {activity.userBook.rating && (
                               <div className="flex items-center gap-1 mb-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star key={i} className="w-4 h-4"
-                                        style={{ fill: i < userBook.rating ? '#FFD700' : 'none', stroke: '#FFD700' }} />
+                                        style={{ 
+                                          fill: i < activity.userBook.rating ? '#FFD700' : 'none', 
+                                          stroke: '#FFD700' 
+                                        }} />
                                 ))}
                               </div>
                             )}
                             <p className="text-xs" style={{ color: '#A0AEC0' }}>
-                              {format(new Date(userBook.end_date), 'dd MMM yyyy', { locale: fr })}
+                              {format(new Date(activity.userBook.end_date), 'dd MMM yyyy', { locale: fr })}
                             </p>
                           </div>
                         </div>
