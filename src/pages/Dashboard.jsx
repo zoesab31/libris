@@ -420,6 +420,53 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* Défi lecture annuel */}
+            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  🎯 Défi Lecture {selectedYear}
+                </h2>
+                {readingGoal ? (
+                  <div>
+                    <div className="text-center mb-6">
+                      <p className="text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                        {booksReadThisYear} / {readingGoal.goal_count}
+                      </p>
+                      <p className="text-lg" style={{ color: '#9B59B6' }}>
+                        {Math.round((booksReadThisYear / readingGoal.goal_count) * 100)}% complété
+                      </p>
+                    </div>
+                    <div className="mb-4">
+                      <div className="w-full h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                        <div className="h-full rounded-full transition-all duration-500"
+                             style={{ 
+                               width: `${Math.min((booksReadThisYear / readingGoal.goal_count) * 100, 100)}%`,
+                               background: 'linear-gradient(90deg, #FF69B4, #9B59B6)'
+                             }} />
+                      </div>
+                    </div>
+                    <p className="text-center font-medium" style={{ color: '#2D3748' }}>
+                      Plus que {Math.max(readingGoal.goal_count - booksReadThisYear, 0)} livre{Math.max(readingGoal.goal_count - booksReadThisYear, 0) > 1 ? 's' : ''} à lire ! 📚
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Target className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                    <p className="mb-4" style={{ color: '#A0AEC0' }}>
+                      Aucun objectif défini pour {selectedYear}
+                    </p>
+                    <Button
+                      onClick={() => navigate(createPageUrl("Dashboard"))}
+                      className="text-white"
+                      style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                    >
+                      Définir mon objectif
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
               <CardContent className="p-6">
@@ -472,53 +519,6 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Défi lecture annuel */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
-                  🎯 Défi Lecture {selectedYear}
-                </h2>
-                {readingGoal ? (
-                  <div>
-                    <div className="text-center mb-6">
-                      <p className="text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
-                        {booksReadThisYear} / {readingGoal.goal_count}
-                      </p>
-                      <p className="text-lg" style={{ color: '#9B59B6' }}>
-                        {Math.round((booksReadThisYear / readingGoal.goal_count) * 100)}% complété
-                      </p>
-                    </div>
-                    <div className="mb-4">
-                      <div className="w-full h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                        <div className="h-full rounded-full transition-all duration-500"
-                             style={{ 
-                               width: `${Math.min((booksReadThisYear / readingGoal.goal_count) * 100, 100)}%`,
-                               background: 'linear-gradient(90deg, #FF69B4, #9B59B6)'
-                             }} />
-                      </div>
-                    </div>
-                    <p className="text-center font-medium" style={{ color: '#2D3748' }}>
-                      Plus que {Math.max(readingGoal.goal_count - booksReadThisYear, 0)} livre{Math.max(readingGoal.goal_count - booksReadThisYear, 0) > 1 ? 's' : ''} à lire ! 📚
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Target className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
-                    <p className="mb-4" style={{ color: '#A0AEC0' }}>
-                      Aucun objectif défini pour {selectedYear}
-                    </p>
-                    <Button
-                      onClick={() => navigate(createPageUrl("Dashboard"))}
-                      className="text-white"
-                      style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
-                    >
-                      Définir mon objectif
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
