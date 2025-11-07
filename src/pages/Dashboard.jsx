@@ -137,6 +137,9 @@ export default function Dashboard() {
     return startYear <= selectedYear && selectedYear <= endYear;
   }).length;
 
+  // Define displayName BEFORE using it in recentActivity
+  const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
+
   // Combined recent activity from user and friends
   const recentActivity = React.useMemo(() => {
     const myActivity = myBooks
@@ -174,7 +177,6 @@ export default function Dashboard() {
 
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
-  const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
