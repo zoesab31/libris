@@ -20,7 +20,11 @@ export default function Quotes() {
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      const allQuotes = await base44.entities.Quote.filter({ created_by: user?.email });
+      // Sort quotes by page_number in descending order (highest first)
+      return allQuotes.sort((a, b) => (b.page_number || 0) - (a.page_number || 0));
+    },
     enabled: !!user,
   });
 

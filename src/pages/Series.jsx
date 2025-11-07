@@ -50,24 +50,73 @@ export default function Series() {
     if (sortBy === "name") {
       return a.series_name.localeCompare(b.series_name);
     } else if (sortBy === "progress") {
-      const progressA = (a.books_read?.length || 0) / a.total_books;
-      const progressB = (b.books_read?.length || 0) / b.total_books;
-      return progressB - progressA;
+      // This progress calculation for sorting should align with the new stats
+      const getProgress = (series) => {
+        if (!series.reading_order || series.reading_order.length === 0) return 0;
+        const booksWithId = series.reading_order.filter(ro => ro.book_id);
+        if (booksWithId.length === 0) return 0;
+        const readCount = booksWithId.filter(ro => {
+          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
+          return userBook && userBook.status === 'Lu';
+        }).length;
+        return readCount / booksWithId.length;
+      };
+      const progressA = getProgress(a);
+      const progressB = getProgress(b);
+      return progressB - progressA; // Sort descending by progress
     }
     return 0;
   });
 
-  // Statistics
-  const totalSeries = allSeries.length;
-  const completedSeries = allSeries.filter(s => 
-    (s.books_read?.length || 0) === s.total_books
-  ).length;
-  const inProgressSeries = allSeries.filter(s => 
-    (s.books_read?.length || 0) > 0 && (s.books_read?.length || 0) < s.total_books
-  ).length;
-  const toBuySeries = allSeries.filter(s => 
-    (s.books_wishlist?.length || 0) > 0
-  ).length;
+  // Statistics - CORRECTED LOGIC
+  const totalSeries = allSeries.filter(s => !s.is_abandoned).length;
+  
+  // Completed: all books in reading_order are read
+  const completedSeries = allSeries.filter(s => {
+    if (s.is_abandoned) return false;
+    if (!s.reading_order || s.reading_order.length === 0) return false;
+    
+    const booksWithId = s.reading_order.filter(ro => ro.book_id);
+    if (booksWithId.length === 0) return false; // Series with no actual books can't be completed
+    
+    return booksWithId.every(ro => {
+      const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
+      return userBook && userBook.status === 'Lu';
+    });
+  }).length;
+  
+  // In progress: at least one book read but not all
+  const inProgressSeries = allSeries.filter(s => {
+    if (s.is_abandoned) return false;
+    if (!s.reading_order || s.reading_order.length === 0) return false;
+    
+    const booksWithId = s.reading_order.filter(ro => ro.book_id);
+    if (booksWithId.length === 0) return false;
+    
+    const readCount = booksWithId.filter(ro => {
+      const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
+      return userBook && userBook.status === 'Lu';
+    }).length;
+    
+    return readCount > 0 && readCount < booksWithId.length;
+  }).length;
+  
+  // To buy: total books we don't own from all non-abandoned series
+  const toBuySeries = allSeries.reduce((total, s) => {
+    if (s.is_abandoned) return total;
+    if (!s.reading_order) return total;
+    
+    const booksNotOwned = s.reading_order.filter(ro => {
+      if (!ro.book_id) return false;
+      const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
+      return !userBook || userBook.status === 'Wishlist';
+    }).length;
+    
+    return total + booksNotOwned;
+  }, 0);
+
+  // Abandoned series
+  const abandonedSeries = allSeries.filter(s => s.is_abandoned).length;
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>

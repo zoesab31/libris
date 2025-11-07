@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, Link as LinkIcon, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,6 +110,24 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   });
 
   const [uploadingCover, setUploadingCover] = useState(false); // New state for manual cover upload
+
+  // Query for custom genres
+  const { data: customGenresData = [] } = useQuery({
+    queryKey: ['customGenres', user?.email], // Add user.email to queryKey to refetch if user changes
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const result = await base44.entities.CustomGenre.filter({ created_by: user.email }, 'order');
+      return result || [];
+    },
+    enabled: !!user?.email && open && activeTab === 'manual',
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+  });
+
+  // Create a list of available genres (custom genres + default ones if no custom genres)
+  const availableGenres = customGenresData.length > 0
+    ? customGenresData.map(g => g.name)
+    : GENRES;
 
   // Debounced search with Google Books API - IMPROVED IMAGE QUALITY
   useEffect(() => {
@@ -245,7 +263,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
           else if (category.includes("science fiction")) genre = "Science-Fiction";
           else if (category.includes("historique")) genre = "Historique";
         }
-        if (!GENRES.includes(genre)) {
+        if (!GENRES.includes(genre)) { // This still uses the hardcoded GENRES for mapping Google Books categories
           genre = "Autre";
         }
 
@@ -369,7 +387,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       title: "",
       author: "",
       cover_url: "",
-      genre: "",
+      genre: "", // Reset to empty string to show placeholder
       language: "Français",
       page_count: "",
       synopsis: "",
@@ -702,7 +720,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                         <SelectValue placeholder="Choisir un genre" />
                       </SelectTrigger>
                       <SelectContent>
-                        {GENRES.map(g => (
+                        {availableGenres.map(g => (
                           <SelectItem key={g} value={g}>{g}</SelectItem>
                         ))}
                       </SelectContent>
