@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -137,10 +136,8 @@ export default function Dashboard() {
     return startYear <= selectedYear && selectedYear <= endYear;
   }).length;
 
-  // Define displayName BEFORE using it in recentActivity
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
-  // Combined recent activity from user and friends
   const recentActivity = React.useMemo(() => {
     const myActivity = myBooks
       .filter(b => b.status === "Lu" && b.end_date)
@@ -168,15 +165,22 @@ export default function Dashboard() {
       .slice(0, 8);
   }, [myBooks, friendsBooks, myFriends, displayName, user]);
 
-  // Random quote
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
 
-  // Books with music
   const booksWithMusic = myBooks.filter(b => b.music && b.music_link).slice(0, 1);
 
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
+  // Quick access items
+  const quickAccessItems = [
+    { name: "Bibliothèque", icon: Library, color: '#FFE4EC', iconColor: '#FF69B4', url: "MyLibrary" },
+    { name: "Lectures communes", icon: Users, color: '#F0E6FF', iconColor: '#9B59B6', url: "SharedReadings" },
+    { name: "Personnages", icon: Heart, color: '#FFE8D9', iconColor: '#FF9F7F', url: "Profile" },
+    { name: "Tournoi", icon: Trophy, color: '#FFF9E6', iconColor: '#FFD700', url: "BookTournament" },
+    { name: "Maps", icon: Map, color: '#E8F4F8', iconColor: '#4299E1', url: "Maps" },
+    { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
+  ];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
@@ -192,19 +196,6 @@ export default function Dashboard() {
           }
         }
         
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-        }
-        
-        .animate-fade-in-up {
-          animation: fadeInUp 0.5s ease-out;
-        }
-        
         .hover-lift {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -218,26 +209,47 @@ export default function Dashboard() {
           transform: scale(1.05);
           box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
+
+        /* Hide scrollbar but keep functionality */
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* Smooth scroll snap */
+        .scroll-snap-x {
+          scroll-snap-type: x mandatory;
+          scroll-behavior: smooth;
+        }
+        
+        .scroll-snap-start {
+          scroll-snap-align: start;
+        }
       `}</style>
 
       {/* Header */}
-      <div className="px-6 md:px-12 py-6" style={{ backgroundColor: '#FFF7FA' }}>
+      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ backgroundColor: '#FFF7FA' }}>
         <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          {/* Mobile Header */}
+          <div className="flex flex-col gap-3 md:hidden">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+              <h1 className="text-2xl font-bold" style={{ color: '#2D3748' }}>
                 Bonjour {displayName} 🌷
               </h1>
-              <p className="text-lg" style={{ color: '#A0AEC0' }}>
+              <p className="text-sm" style={{ color: '#A0AEC0' }}>
                 Bienvenue dans ton univers littéraire
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-4 py-2 rounded-xl border-0 font-medium shadow-md"
+                className="flex-1 px-3 py-2 rounded-xl border-0 font-medium shadow-md text-sm"
                 style={{ backgroundColor: 'white', color: '#2D3748' }}
               >
                 {years.map(year => (
@@ -247,87 +259,173 @@ export default function Dashboard() {
 
               <Link to={createPageUrl("MyLibrary")}>
                 <Button 
-                  className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
+                  size="sm"
+                  className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
                   style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                 >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Ajouter un livre
-                </Button>
-              </Link>
-
-              <Link to={createPageUrl("Statistics")}>
-                <Button 
-                  variant="outline"
-                  className="shadow-md font-medium px-6 rounded-xl hover-lift"
-                  style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
-                >
-                  📈 Voir mes stats
+                  <Plus className="w-4 h-4" />
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* Stats Keys */}
-          <div className="grid grid-cols-4 gap-6">
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                   style={{ backgroundColor: '#FFE4EC' }}>
-                <BookOpen className="w-6 h-6" style={{ color: '#FF69B4' }} />
-              </div>
+          {/* Desktop Header */}
+          <div className="hidden md:block">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-sm" style={{ color: '#A0AEC0' }}>Livres lus</p>
-                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                  Bonjour {displayName} 🌷
+                </h1>
+                <p className="text-lg" style={{ color: '#A0AEC0' }}>
+                  Bienvenue dans ton univers littéraire
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-4 py-2 rounded-xl border-0 font-medium shadow-md"
+                  style={{ backgroundColor: 'white', color: '#2D3748' }}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+
+                <Link to={createPageUrl("MyLibrary")}>
+                  <Button 
+                    className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
+                    style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Ajouter un livre
+                  </Button>
+                </Link>
+
+                <Link to={createPageUrl("Statistics")}>
+                  <Button 
+                    variant="outline"
+                    className="shadow-md font-medium px-6 rounded-xl hover-lift"
+                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
+                  >
+                    📈 Voir mes stats
+                  </Button>
+                </Link>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                   style={{ backgroundColor: '#F0E6FF' }}>
-                <TrendingUp className="w-6 h-6" style={{ color: '#9B59B6' }} />
+            {/* Desktop Stats Grid */}
+            <div className="grid grid-cols-4 gap-6">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                     style={{ backgroundColor: '#FFE4EC' }}>
+                  <BookOpen className="w-6 h-6" style={{ color: '#FF69B4' }} />
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Livres lus</p>
+                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm" style={{ color: '#A0AEC0' }}>Pages lues</p>
-                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                   style={{ backgroundColor: '#FFE8D9' }}>
-                <Users className="w-6 h-6" style={{ color: '#FF9F7F' }} />
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                     style={{ backgroundColor: '#F0E6FF' }}>
+                  <TrendingUp className="w-6 h-6" style={{ color: '#9B59B6' }} />
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Pages lues</p>
+                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm" style={{ color: '#A0AEC0' }}>Lectures communes</p>
-                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                   style={{ backgroundColor: '#FFF9E6' }}>
-                <Star className="w-6 h-6" style={{ color: '#FFD700' }} />
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                     style={{ backgroundColor: '#FFE8D9' }}>
+                  <Users className="w-6 h-6" style={{ color: '#FF9F7F' }} />
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Lectures communes</p>
+                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm" style={{ color: '#A0AEC0' }}>À lire</p>
-                <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
+
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
+                     style={{ backgroundColor: '#FFF9E6' }}>
+                  <Star className="w-6 h-6" style={{ color: '#FFD700' }} />
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: '#A0AEC0' }}>À lire</p>
+                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Mobile Stats Carousel - Scrollable horizontally */}
+      <div className="md:hidden px-4 pb-4">
+        <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
+          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
+            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
+                   style={{ backgroundColor: '#FFE4EC' }}>
+                <BookOpen className="w-5 h-5" style={{ color: '#FF69B4' }} />
+              </div>
+              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Livres lus</p>
+              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
+            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
+                   style={{ backgroundColor: '#F0E6FF' }}>
+                <TrendingUp className="w-5 h-5" style={{ color: '#9B59B6' }} />
+              </div>
+              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Pages lues</p>
+              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
+            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
+                   style={{ backgroundColor: '#FFE8D9' }}>
+                <Users className="w-5 h-5" style={{ color: '#FF9F7F' }} />
+              </div>
+              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Communes</p>
+              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
+            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
+                   style={{ backgroundColor: '#FFF9E6' }}>
+                <Star className="w-5 h-5" style={{ color: '#FFD700' }} />
+              </div>
+              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>À lire</p>
+              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="px-6 md:px-12 py-8">
-        <div className="max-w-[1600px] mx-auto grid lg:grid-cols-3 gap-6">
-          {/* Left Column (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="px-4 md:px-12 py-4 md:py-8">
+        <div className="max-w-[1600px] mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Left Column (2/3 on desktop, full width on mobile) */}
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Lectures en cours */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   📖 Lectures en cours
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {currentlyReading.length > 0 || friendsBooks.filter(b => b.status === "En cours").length > 0 ? (
                     <>
                       {currentlyReading.slice(0, 3).map((userBook) => {
@@ -339,37 +437,37 @@ export default function Dashboard() {
                         
                         return (
                           <div key={userBook.id} 
-                               className="flex gap-4 p-4 rounded-2xl hover-lift cursor-pointer"
+                               className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
                                style={{ backgroundColor: '#FFF7FA' }}
                                onClick={() => navigate(createPageUrl("MyLibrary"))}>
-                            <div className="relative">
-                              <div className="w-24 h-36 rounded-xl overflow-hidden shadow-lg"
+                            <div className="relative flex-shrink-0">
+                              <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                    style={{ backgroundColor: '#FFE4EC' }}>
                                 {book.cover_url && (
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                 )}
                               </div>
-                              <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                              <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
                                     style={{ backgroundColor: '#FF69B4' }}>
                                 En cours
                               </span>
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-sm mb-2" style={{ color: '#A0AEC0' }}>
+                              <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
                                 {book.author}
                               </p>
                               {userBook.start_date && (
-                                <p className="text-xs mb-3" style={{ color: '#9B59B6' }}>
-                                  Début : {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • {daysReading} jour{daysReading > 1 ? 's' : ''}
+                                <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
+                                  {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • {daysReading}j
                                 </p>
                               )}
-                              <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                              <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
                                 <div className="h-full rounded-full" 
                                      style={{ 
-                                       width: '45%', // Placeholder, actual progress would be calculated
+                                       width: '45%',
                                        background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                      }} />
                               </div>
@@ -384,25 +482,25 @@ export default function Dashboard() {
                         
                         return (
                           <div key={userBook.id} 
-                               className="flex gap-4 p-4 rounded-2xl hover-lift"
+                               className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
                                style={{ backgroundColor: '#F0E6FF' }}>
-                            <div className="relative">
-                              <div className="w-24 h-36 rounded-xl overflow-hidden shadow-lg"
+                            <div className="relative flex-shrink-0">
+                              <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                    style={{ backgroundColor: '#E6B3E8' }}>
                                 {book.cover_url && (
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                 )}
                               </div>
-                              <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                              <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
                                     style={{ backgroundColor: '#9B59B6' }}>
                                 {friend.friend_name?.split(' ')[0]}
                               </span>
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-sm" style={{ color: '#A0AEC0' }}>
+                              <p className="text-xs md:text-sm" style={{ color: '#A0AEC0' }}>
                                 {book.author}
                               </p>
                             </div>
@@ -411,9 +509,9 @@ export default function Dashboard() {
                       })}
                     </>
                   ) : (
-                    <div className="text-center py-12">
-                      <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
-                      <p style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
+                    <div className="text-center py-8 md:py-12">
+                      <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                      <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
                     </div>
                   )}
                 </div>
@@ -421,23 +519,23 @@ export default function Dashboard() {
             </Card>
 
             {/* Défi lecture annuel */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   🎯 Défi Lecture {selectedYear}
                 </h2>
                 {readingGoal ? (
                   <div>
-                    <div className="text-center mb-6">
-                      <p className="text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                    <div className="text-center mb-4 md:mb-6">
+                      <p className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
                         {booksReadThisYear} / {readingGoal.goal_count}
                       </p>
-                      <p className="text-lg" style={{ color: '#9B59B6' }}>
+                      <p className="text-base md:text-lg" style={{ color: '#9B59B6' }}>
                         {Math.round((booksReadThisYear / readingGoal.goal_count) * 100)}% complété
                       </p>
                     </div>
-                    <div className="mb-4">
-                      <div className="w-full h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                    <div className="mb-3 md:mb-4">
+                      <div className="w-full h-3 md:h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
                         <div className="h-full rounded-full transition-all duration-500"
                              style={{ 
                                width: `${Math.min((booksReadThisYear / readingGoal.goal_count) * 100, 100)}%`,
@@ -445,19 +543,19 @@ export default function Dashboard() {
                              }} />
                       </div>
                     </div>
-                    <p className="text-center font-medium" style={{ color: '#2D3748' }}>
+                    <p className="text-center font-medium text-sm md:text-base" style={{ color: '#2D3748' }}>
                       Plus que {Math.max(readingGoal.goal_count - booksReadThisYear, 0)} livre{Math.max(readingGoal.goal_count - booksReadThisYear, 0) > 1 ? 's' : ''} à lire ! 📚
                     </p>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Target className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
-                    <p className="mb-4" style={{ color: '#A0AEC0' }}>
+                  <div className="text-center py-6 md:py-8">
+                    <Target className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                    <p className="mb-4 text-sm md:text-base" style={{ color: '#A0AEC0' }}>
                       Aucun objectif défini pour {selectedYear}
                     </p>
                     <Button
                       onClick={() => navigate(createPageUrl("Dashboard"))}
-                      className="text-white"
+                      className="text-white text-sm md:text-base"
                       style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                     >
                       Définir mon objectif
@@ -468,12 +566,12 @@ export default function Dashboard() {
             </Card>
 
             {/* Activité récente */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardContent className="p-4 md:p-6">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   🕓 Activité récente
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {recentActivity.length > 0 ? (
                     recentActivity.map((activity) => {
                       const book = allBooks.find(b => b.id === activity.userBook.book_id);
@@ -481,15 +579,15 @@ export default function Dashboard() {
                       
                       return (
                         <div key={`${activity.userEmail}-${activity.userBook.id}`} 
-                             className="flex items-start gap-4 pb-4 border-b last:border-0"
+                             className="flex items-start gap-3 pb-3 border-b last:border-0"
                              style={{ borderColor: '#F7FAFC' }}>
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
                                style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
-                            <BookOpen className="w-5 h-5" 
+                            <BookOpen className="w-4 h-4 md:w-5 md:h-5" 
                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
                           </div>
-                          <div className="flex-1">
-                            <p className="font-medium mb-1" style={{ color: '#2D3748' }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
                               <span className="font-bold" 
                                     style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
                                 {activity.userName}
@@ -498,7 +596,7 @@ export default function Dashboard() {
                             {activity.userBook.rating && (
                               <div className="flex items-center gap-1 mb-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className="w-4 h-4"
+                                  <Star key={i} className="w-3 h-3 md:w-4 md:h-4"
                                         style={{ 
                                           fill: i < activity.userBook.rating ? '#FFD700' : 'none', 
                                           stroke: '#FFD700' 
@@ -514,8 +612,8 @@ export default function Dashboard() {
                       );
                     })
                   ) : (
-                    <div className="text-center py-8">
-                      <p style={{ color: '#A0AEC0' }}>Aucune activité récente</p>
+                    <div className="text-center py-6 md:py-8">
+                      <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune activité récente</p>
                     </div>
                   )}
                 </div>
@@ -523,11 +621,49 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Right Column (1/3) */}
-          <div className="space-y-6">
-            {/* Playlist littéraire */}
+          {/* Right Column (1/3 on desktop, full width on mobile) */}
+          <div className="space-y-4 md:space-y-6">
+            {/* Playlist + Quick Access - Combined on mobile */}
+            <div className="md:hidden">
+              <h2 className="text-lg font-bold mb-3 px-1" style={{ color: '#2D3748' }}>
+                ⚡ Accès rapide
+              </h2>
+              <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
+                {booksWithMusic.length > 0 && booksWithMusic.map((userBook) => (
+                  <div key={userBook.id} className="flex-shrink-0 w-[160px] scroll-snap-start">
+                    <div className="p-4 rounded-2xl h-full" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                      <div className="text-xl mb-2">🎵</div>
+                      <p className="font-bold text-sm text-white mb-1 line-clamp-2">
+                        {userBook.music}
+                      </p>
+                      <p className="text-xs text-white text-opacity-90 mb-3">
+                        {userBook.music_artist}
+                      </p>
+                      <a href={userBook.music_link} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
+                          ▶️ Écouter
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+
+                {quickAccessItems.map((item) => (
+                  <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
+                    <button 
+                      className="w-full p-4 rounded-2xl text-center transition-all quick-action h-full"
+                      style={{ backgroundColor: item.color }}>
+                      <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
+                      <p className="text-xs font-medium leading-tight" style={{ color: '#2D3748' }}>{item.name}</p>
+                    </button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop - Playlist littéraire */}
             {booksWithMusic.length > 0 && (
-              <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+              <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
                 <CardContent className="p-6" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
                   <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                     🎵 Ma Playlist Littéraire
@@ -551,73 +687,35 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Accès rapide */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
+            {/* Desktop - Accès rapide */}
+            <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   ⚡ Accès rapide
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link to={createPageUrl("MyLibrary")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#FFE4EC' }}>
-                      <Library className="w-6 h-6 mx-auto mb-2" style={{ color: '#FF69B4' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Bibliothèque</p>
-                    </button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("SharedReadings")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#F0E6FF' }}>
-                      <Users className="w-6 h-6 mx-auto mb-2" style={{ color: '#9B59B6' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Lectures communes</p>
-                    </button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("Profile")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#FFE8D9' }}>
-                      <Heart className="w-6 h-6 mx-auto mb-2" style={{ color: '#FF9F7F' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Personnages</p>
-                    </button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("BookTournament")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#FFF9E6' }}>
-                      <Trophy className="w-6 h-6 mx-auto mb-2" style={{ color: '#FFD700' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Tournoi</p>
-                    </button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("Maps")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#E8F4F8' }}>
-                      <Map className="w-6 h-6 mx-auto mb-2" style={{ color: '#4299E1' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Maps</p>
-                    </button>
-                  </Link>
-                  
-                  <Link to={createPageUrl("Quotes")}>
-                    <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                            style={{ backgroundColor: '#E6FFFA' }}>
-                      <QuoteIcon className="w-6 h-6 mx-auto mb-2" style={{ color: '#38B2AC' }} />
-                      <p className="text-sm font-medium" style={{ color: '#2D3748' }}>Citations</p>
-                    </button>
-                  </Link>
+                  {quickAccessItems.map((item) => (
+                    <Link key={item.name} to={createPageUrl(item.url)}>
+                      <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
+                              style={{ backgroundColor: item.color }}>
+                        <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
+                        <p className="text-sm font-medium" style={{ color: '#2D3748' }}>{item.name}</p>
+                      </button>
+                    </Link>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
             {/* Citation & humeur du jour */}
-            <Card className="shadow-lg border-0 rounded-3xl overflow-hidden">
-              <CardContent className="p-6 text-center" style={{ background: 'linear-gradient(135deg, #E0E7FF, #FCE7F3)' }}>
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardContent className="p-6 md:p-6 text-center" style={{ background: 'linear-gradient(135deg, #E0E7FF, #FCE7F3)' }}>
+                <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4" style={{ color: '#2D3748' }}>
                   💭 Citation du jour
                 </h2>
                 {randomQuote && quoteBook ? (
                   <>
-                    <p className="text-lg italic mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
+                    <p className="text-base md:text-lg italic mb-3 md:mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
                       "{randomQuote.quote_text}"
                     </p>
                     <p className="text-sm font-medium" style={{ color: '#9B59B6' }}>
@@ -625,11 +723,11 @@ export default function Dashboard() {
                     </p>
                   </>
                 ) : (
-                  <p className="text-lg italic" style={{ color: '#A0AEC0' }}>
+                  <p className="text-base md:text-lg italic" style={{ color: '#A0AEC0' }}>
                     "Lire, c'est vivre mille vies avant de mourir."
                   </p>
                 )}
-                <div className="mt-6 pt-6 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+                <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
                   <p className="text-sm font-medium" style={{ color: '#2D3748' }}>
                     🌤️ Humeur du jour : Paisible et inspirée ✨
                   </p>
