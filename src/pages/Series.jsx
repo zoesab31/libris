@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +16,7 @@ export default function Series() {
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [sortBy, setSortBy] = useState("name");
   const [editingSeries, setEditingSeries] = useState(null);
+  const [filterType, setFilterType] = useState(null); // null, 'completed', 'inProgress', 'toBuy'
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -39,70 +39,34 @@ export default function Series() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  // Filter series
-  const filteredSeries = allSeries.filter(series =>
-    series.series_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    series.author?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Sort series
-  const sortedSeries = [...filteredSeries].sort((a, b) => {
-    if (sortBy === "name") {
-      return a.series_name.localeCompare(b.series_name);
-    } else if (sortBy === "progress") {
-      // This progress calculation for sorting should align with the new stats
-      const getProgress = (series) => {
-        if (!series.reading_order || series.reading_order.length === 0) return 0;
-        const booksWithId = series.reading_order.filter(ro => ro.book_id);
-        if (booksWithId.length === 0) return 0;
-        const readCount = booksWithId.filter(ro => {
-          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
-          return userBook && userBook.status === 'Lu';
-        }).length;
-        return readCount / booksWithId.length;
-      };
-      const progressA = getProgress(a);
-      const progressB = getProgress(b);
-      return progressB - progressA; // Sort descending by progress
-    }
-    return 0;
-  });
-
-  // Statistics - CORRECTED LOGIC
-  const totalSeries = allSeries.filter(s => !s.is_abandoned).length;
-  
-  // Completed: all books in reading_order are read
-  const completedSeries = allSeries.filter(s => {
-    if (s.is_abandoned) return false;
-    if (!s.reading_order || s.reading_order.length === 0) return false;
+  // Helper function to check if series is completed
+  const isSeriesCompleted = (series) => {
+    if (series.is_abandoned) return false;
+    if (!series.reading_order || series.reading_order.length === 0) return false;
     
-    const booksWithId = s.reading_order.filter(ro => ro.book_id);
-    if (booksWithId.length === 0) return false; // Series with no actual books can't be completed
+    const booksWithId = series.reading_order.filter(ro => ro.book_id);
+    if (booksWithId.length === 0) return false;
     
     return booksWithId.every(ro => {
       const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
       return userBook && userBook.status === 'Lu';
     });
-  }).length;
+  };
+
+  // Statistics - CORRECTED LOGIC
+  const totalSeries = allSeries.filter(s => !s.is_abandoned).length;
   
-  // In progress: at least one book read but not all
-  const inProgressSeries = allSeries.filter(s => {
+  // Completed: all books in reading_order are read
+  const completedSeriesCount = allSeries.filter(s => isSeriesCompleted(s)).length;
+  
+  // In progress: ALL non-completed and non-abandoned series
+  const inProgressSeriesCount = allSeries.filter(s => {
     if (s.is_abandoned) return false;
-    if (!s.reading_order || s.reading_order.length === 0) return false;
-    
-    const booksWithId = s.reading_order.filter(ro => ro.book_id);
-    if (booksWithId.length === 0) return false;
-    
-    const readCount = booksWithId.filter(ro => {
-      const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
-      return userBook && userBook.status === 'Lu';
-    }).length;
-    
-    return readCount > 0 && readCount < booksWithId.length;
+    return !isSeriesCompleted(s); // If not completed and not abandoned = in progress
   }).length;
   
   // To buy: total books we don't own from all non-abandoned series
-  const toBuySeries = allSeries.reduce((total, s) => {
+  const toBuyCount = allSeries.reduce((total, s) => {
     if (s.is_abandoned) return total;
     if (!s.reading_order) return total;
     
@@ -115,8 +79,47 @@ export default function Series() {
     return total + booksNotOwned;
   }, 0);
 
-  // Abandoned series
-  const abandonedSeries = allSeries.filter(s => s.is_abandoned).length;
+  // Filter series based on active filter
+  let displayedSeries = allSeries.filter(s => !s.is_abandoned);
+
+  if (filterType === 'completed') {
+    displayedSeries = displayedSeries.filter(s => isSeriesCompleted(s));
+  } else if (filterType === 'inProgress') {
+    displayedSeries = displayedSeries.filter(s => !isSeriesCompleted(s));
+  }
+
+  // Apply search filter
+  const filteredSeries = displayedSeries.filter(series =>
+    series.series_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    series.author?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort series - abandoned ones go to the bottom
+  const sortedSeries = [...filteredSeries].sort((a, b) => {
+    // Abandoned series always go to the bottom
+    if (a.is_abandoned && !b.is_abandoned) return 1;
+    if (!a.is_abandoned && b.is_abandoned) return -1;
+    
+    // For non-abandoned series, apply normal sorting
+    if (sortBy === "name") {
+      return a.series_name.localeCompare(b.series_name);
+    } else if (sortBy === "progress") {
+      const getProgress = (series) => {
+        if (!series.reading_order || series.reading_order.length === 0) return 0;
+        const booksWithId = series.reading_order.filter(ro => ro.book_id);
+        if (booksWithId.length === 0) return 0;
+        const readCount = booksWithId.filter(ro => {
+          const userBook = myBooks.find(ub => ub.book_id === ro.book_id);
+          return userBook && userBook.status === 'Lu';
+        }).length;
+        return readCount / booksWithId.length;
+      };
+      const progressA = getProgress(a);
+      const progressB = getProgress(b);
+      return progressB - progressA;
+    }
+    return 0;
+  });
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -176,9 +179,14 @@ export default function Series() {
           </div>
         </div>
 
-        {/* Statistics */}
+        {/* Statistics - Now clickable for filtering */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-0 shadow-lg overflow-hidden">
+          <Card 
+            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
+              filterType === null ? 'ring-4 ring-purple-300' : ''
+            }`}
+            onClick={() => setFilterType(null)}
+          >
             <div className="h-2" style={{ background: 'linear-gradient(90deg, #A8D5E5, #B8E6D5)' }} />
             <CardContent className="p-4">
               <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>Total</p>
@@ -186,19 +194,29 @@ export default function Series() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg overflow-hidden">
+          <Card 
+            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
+              filterType === 'completed' ? 'ring-4 ring-green-300' : ''
+            }`}
+            onClick={() => setFilterType(filterType === 'completed' ? null : 'completed')}
+          >
             <div className="h-2" style={{ background: 'linear-gradient(90deg, #B8E6D5, #98D8C8)' }} />
             <CardContent className="p-4">
               <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>Complètes</p>
-              <p className="text-3xl font-bold" style={{ color: '#4ADE80' }}>{completedSeries}</p>
+              <p className="text-3xl font-bold" style={{ color: '#4ADE80' }}>{completedSeriesCount}</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg overflow-hidden">
+          <Card 
+            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
+              filterType === 'inProgress' ? 'ring-4 ring-blue-300' : ''
+            }`}
+            onClick={() => setFilterType(filterType === 'inProgress' ? null : 'inProgress')}
+          >
             <div className="h-2" style={{ background: 'linear-gradient(90deg, #E0E7FF, #C7D2FE)' }} />
             <CardContent className="p-4">
               <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>En cours</p>
-              <p className="text-3xl font-bold" style={{ color: '#A8D5E5' }}>{inProgressSeries}</p>
+              <p className="text-3xl font-bold" style={{ color: '#A8D5E5' }}>{inProgressSeriesCount}</p>
             </CardContent>
           </Card>
 
@@ -206,10 +224,30 @@ export default function Series() {
             <div className="h-2" style={{ background: 'linear-gradient(90deg, #FFB6C8, #FFA6B8)' }} />
             <CardContent className="p-4">
               <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>À acheter</p>
-              <p className="text-3xl font-bold" style={{ color: '#FF8FAB' }}>{toBuySeries}</p>
+              <p className="text-3xl font-bold" style={{ color: '#FF8FAB' }}>{toBuyCount}</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Active filter indicator */}
+        {filterType && (
+          <div className="mb-6 flex items-center justify-between p-4 rounded-xl shadow-md" 
+               style={{ backgroundColor: 'white' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+              Filtre actif : <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
+                {filterType === 'completed' ? 'Séries complètes' : 'Séries en cours'}
+              </span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFilterType(null)}
+              style={{ borderColor: 'var(--deep-pink)', color: 'var(--deep-pink)' }}
+            >
+              Réinitialiser
+            </Button>
+          </div>
+        )}
 
         {/* Search and Sort */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -287,12 +325,12 @@ export default function Series() {
             <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" 
                       style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {searchQuery ? "Aucune série trouvée" : "Aucune série ajoutée"}
+              {searchQuery ? "Aucune série trouvée" : filterType ? "Aucune série dans cette catégorie" : "Aucune série ajoutée"}
             </h3>
             <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-              {searchQuery ? "Essayez une autre recherche" : "Commencez à suivre vos sagas préférées"}
+              {searchQuery ? "Essayez une autre recherche" : filterType ? "Changez de filtre ou ajoutez des séries" : "Commencez à suivre vos sagas préférées"}
             </p>
-            {!searchQuery && (
+            {!searchQuery && !filterType && (
               <Button
                 onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
                 className="text-white font-medium"
