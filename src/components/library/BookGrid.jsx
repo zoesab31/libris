@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Library, Star, ArrowUpDown, Trash2, X, Check, Grid3x3, Layers, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Library, Star, ArrowUpDown, Trash2, X, Check, Grid3x3, Layers, Calendar, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import BookDetailsDialog from "./BookDetailsDialog";
@@ -34,6 +35,8 @@ export default function BookGrid({
   const [batchStatus, setBatchStatus] = useState("");
   const [batchPAL, setBatchPAL] = useState("");
   const [batchSeries, setBatchSeries] = useState("");
+  const [seriesSearchQuery, setSeriesSearchQuery] = useState("");
+  const [showSeriesSuggestions, setShowSeriesSuggestions] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -46,6 +49,17 @@ export default function BookGrid({
     queryFn: () => base44.entities.BookSeries.filter({ created_by: user?.email }),
     enabled: !!user,
   });
+
+  // Filter series based on search
+  const filteredSeries = useMemo(() => {
+    if (!seriesSearchQuery.trim()) return bookSeries;
+    
+    const query = seriesSearchQuery.toLowerCase();
+    return bookSeries.filter(series =>
+      series.series_name.toLowerCase().includes(query) ||
+      series.author?.toLowerCase().includes(query)
+    );
+  }, [bookSeries, seriesSearchQuery]);
 
   const sortedBooks = useMemo(() => {
     const sorted = [...userBooks];
@@ -178,6 +192,7 @@ export default function BookGrid({
       queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
       setShowBatchSeriesDialog(false);
       setBatchSeries("");
+      setSeriesSearchQuery("");
       toast.success("✅ Livres ajoutés à la saga !");
     },
   });
@@ -210,6 +225,12 @@ export default function BookGrid({
       return;
     }
     batchAddToSeriesMutation.mutate({ bookIds: selectedBooks, seriesId: batchSeries });
+  };
+
+  const handleSelectSeries = (series) => {
+    setBatchSeries(series.id);
+    setSeriesSearchQuery(series.series_name);
+    setShowSeriesSuggestions(false);
   };
 
   if (isLoading) {
@@ -548,7 +569,7 @@ export default function BookGrid({
         </DialogContent>
       </Dialog>
 
-      {/* Batch Series Dialog */}
+      {/* Batch Series Dialog with Smart Search */}
       <Dialog open={showBatchSeriesDialog} onOpenChange={setShowBatchSeriesDialog}>
         <DialogContent>
           <DialogHeader>
@@ -556,25 +577,85 @@ export default function BookGrid({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Sélectionner une saga</Label>
-              <Select value={batchSeries} onValueChange={setBatchSeries}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir une saga..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {bookSeries.map(series => (
-                    <SelectItem key={series.id} value={series.id}>
-                      {series.series_name} ({(series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)} livres)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">Rechercher une saga</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                        style={{ color: 'var(--warm-pink)' }} />
+                <Input
+                  value={seriesSearchQuery}
+                  onChange={(e) => {
+                    setSeriesSearchQuery(e.target.value);
+                    setShowSeriesSuggestions(true);
+                    if (!e.target.value.trim()) {
+                      setBatchSeries("");
+                    }
+                  }}
+                  onFocus={() => setShowSeriesSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSeriesSuggestions(false), 200)}
+                  placeholder="Tapez le nom d'une saga..."
+                  className="pl-10 focus-glow"
+                />
+              </div>
+
+              {/* Suggestions dropdown */}
+              {showSeriesSuggestions && seriesSearchQuery.trim() && (
+                <div className="absolute z-50 w-full mt-1 bg-white rounded-xl shadow-xl border-2 max-h-64 overflow-y-auto"
+                     style={{ borderColor: 'var(--beige)' }}>
+                  {filteredSeries.length > 0 ? (
+                    <>
+                      <div className="p-2 border-b" style={{ borderColor: 'var(--beige)' }}>
+                        <p className="text-xs font-bold px-2" style={{ color: 'var(--warm-pink)' }}>
+                          📚 Sagas trouvées
+                        </p>
+                      </div>
+                      {filteredSeries.map(series => (
+                        <button
+                          key={series.id}
+                          onMouseDown={() => handleSelectSeries(series)}
+                          className="w-full text-left px-4 py-3 hover:bg-pink-50 transition-colors border-b last:border-b-0"
+                          style={{ borderColor: 'var(--beige)' }}
+                        >
+                          <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                            {series.series_name}
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                            {series.author} • {(series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)} livre{((series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                          </p>
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="p-4 text-center">
+                      <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                        Aucune saga trouvée
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Selected series preview */}
+              {batchSeries && bookSeries.find(s => s.id === batchSeries) && (
+                <div className="mt-3 p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layers className="w-5 h-5 text-white" />
+                    <span className="font-bold text-white">
+                      {bookSeries.find(s => s.id === batchSeries)?.series_name}
+                    </span>
+                  </div>
+                  <p className="text-sm text-white opacity-90">
+                    {bookSeries.find(s => s.id === batchSeries)?.author} • {((bookSeries.find(s => s.id === batchSeries)?.books_read?.length || 0) + (bookSeries.find(s => s.id === batchSeries)?.books_in_pal?.length || 0) + (bookSeries.find(s => s.id === batchSeries)?.books_wishlist?.length || 0))} livre{((bookSeries.find(s => s.id === batchSeries)?.books_read?.length || 0) + (bookSeries.find(s => s.id === batchSeries)?.books_in_pal?.length || 0) + (bookSeries.find(s => s.id === batchSeries)?.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
             </div>
+
             {bookSeries.length === 0 && (
               <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
                 Aucune saga créée. Créez-en une depuis la page Séries.
               </p>
             )}
+
             <div className="flex gap-2">
               <Button
                 onClick={handleBatchAddToSeries}
@@ -584,7 +665,11 @@ export default function BookGrid({
               >
                 Ajouter
               </Button>
-              <Button variant="outline" onClick={() => setShowBatchSeriesDialog(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowBatchSeriesDialog(false);
+                setSeriesSearchQuery("");
+                setBatchSeries("");
+              }}>
                 Annuler
               </Button>
             </div>
