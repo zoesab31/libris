@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle, TrendingUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -97,6 +97,38 @@ const navigationItems = [
 function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
   const { setOpen } = useSidebar();
+
+  // Fetch unread messages count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['unreadMessagesCount', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return 0;
+      
+      // Get all chat rooms where user is a participant
+      const allRooms = await base44.entities.ChatRoom.list();
+      const userRooms = allRooms.filter(room => 
+        room.participants?.includes(user.email)
+      );
+      
+      if (userRooms.length === 0) return 0;
+      
+      // Get all messages from those rooms
+      const roomIds = userRooms.map(r => r.id);
+      const allMessages = await base44.entities.ChatMessage.list();
+      
+      // Count messages where user's email is NOT in seen_by
+      const unread = allMessages.filter(msg => 
+        roomIds.includes(msg.chat_room_id) &&
+        msg.sender_email !== user.email && // Not sent by the user
+        (!msg.seen_by || !msg.seen_by.includes(user.email)) // Not seen by user
+      );
+      
+      return unread.length;
+    },
+    enabled: !!user?.email,
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
+  });
 
   // Update user's last_active_at every 2 minutes while they're using the app
   useEffect(() => {
@@ -256,6 +288,12 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
                   <MessageCircle className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
+                          style={{ backgroundColor: '#FF0000' }}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </Button>
               </Link>
               <NotificationBell user={user} />
