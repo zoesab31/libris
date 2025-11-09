@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,25 +91,6 @@ const getDominantColor = (imageUrl) => {
   });
 };
 
-// Helper function to extract series name from book title
-const extractSeriesName = (title) => {
-  if (!title) return null;
-
-  // Remove common volume/tome patterns
-  const cleaned = title
-    .replace(/\s*-\s*Tome\s+\d+.*$/i, '')
-    .replace(/\s*-\s*Volume\s+\d+.*$/i, '')
-    .replace(/\s*-\s*T\d+.*$/i, '')
-    .replace(/\s*Tome\s+\d+.*$/i, '')
-    .replace(/\s*Volume\s+\d+.*$/i, '')
-    .replace(/\s*\(Tome\s+\d+\).*$/i, '')
-    .replace(/\s*\d+\/\d+$/i, '')
-    .replace(/\s*#\d+$/i, '')
-    .trim();
-
-  return cleaned.length > 2 ? cleaned : null;
-};
-
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -188,13 +169,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user && open,
   });
 
-  // Fetch all books to detect series by name similarity
-  const { data: allBooks = [] } = useQuery({
-    queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
-    enabled: open,
-  });
-
   // Fetch all user books to find other books in the same series
   const { data: allUserBooks = [] } = useQuery({
     queryKey: ['allUserBooks', user?.email],
@@ -202,7 +176,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user && open,
   });
 
-  // Find series containing this book (from BookSeries entity)
+  // Find series containing this book
   const currentSeries = useMemo(() => {
     if (!book || !bookSeries) return null;
     return bookSeries.find(series =>
@@ -212,56 +186,19 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     );
   }, [bookSeries, book?.id]);
 
-  // Detect series by title similarity
-  const detectedSeries = useMemo(() => {
-    if (!book?.title) return null;
-
-    const baseName = extractSeriesName(book.title);
-    if (!baseName) return null;
-
-    // Find all books with similar base name
-    const similarBooks = allBooks.filter(b => {
-      if (b.id === book.id) return false;
-      const otherBaseName = extractSeriesName(b.title);
-      return otherBaseName && otherBaseName.toLowerCase() === baseName.toLowerCase();
-    });
-
-    if (similarBooks.length > 0) {
-      return {
-        name: baseName,
-        bookIds: [book.id, ...similarBooks.map(b => b.id)]
-      };
-    }
-
-    return null;
-  }, [book?.title, book?.id, allBooks]);
-
-  // Use either explicit series or detected series
-  const effectiveSeries = currentSeries ? { name: currentSeries.series_name, type: 'explicit' } : (detectedSeries ? { name: detectedSeries.name, type: 'detected' } : null);
-
-
   // Get all books in the same series (excluding the current one)
   const seriesBookIds = useMemo(() => {
-    if (!effectiveSeries) return [];
-
-    if (currentSeries) {
-      // From BookSeries entity
-      return [
-        ...(currentSeries.books_read || []),
-        ...(currentSeries.books_in_pal || []),
-        ...(currentSeries.books_wishlist || [])
-      ].filter(id => id !== book?.id);
-    } else if (detectedSeries) {
-      // From detected series
-      return detectedSeries.bookIds.filter(id => id !== book?.id);
-    }
-
-    return [];
-  }, [effectiveSeries, currentSeries, detectedSeries, book?.id]);
+    if (!currentSeries) return [];
+    return [
+      ...(currentSeries.books_read || []),
+      ...(currentSeries.books_in_pal || []),
+      ...(currentSeries.books_wishlist || [])
+    ].filter(id => id !== book?.id);
+  }, [currentSeries, book?.id]);
 
   // Function to sync playlists across series (adding a single music item)
   const syncPlaylistAcrossSeries = async (musicToSync) => {
-    if (!effectiveSeries || seriesBookIds.length === 0) return;
+    if (!currentSeries || seriesBookIds.length === 0) return;
 
     try {
       // Find all UserBook entries for books in this series
@@ -289,7 +226,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       });
 
       await Promise.all(updatePromises);
-      toast.success(`🎵 Musique ajoutée et synchronisée avec la saga ${effectiveSeries.name}`);
+      toast.success(`🎵 Musique ajoutée et synchronisée avec la saga ${currentSeries.series_name}`);
     } catch (error) {
       console.error('Error syncing playlist across series:', error);
       toast.error("Erreur lors de la synchronisation de la playlist avec la saga.");
@@ -298,7 +235,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   // Function to remove music from all books in series
   const removeMusicFromSeries = async (musicToRemove) => {
-    if (!effectiveSeries || seriesBookIds.length === 0) return;
+    if (!currentSeries || seriesBookIds.length === 0) return;
 
     try {
       // Find all UserBook entries for books in this series
@@ -320,7 +257,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       });
 
       await Promise.all(updatePromises);
-      toast.success(`🎵 Musique retirée et synchronisée avec la saga ${effectiveSeries.name}`);
+      toast.success(`🎵 Musique retirée et synchronisée avec la saga ${currentSeries.series_name}`);
     } catch (error) {
       console.error('Error removing music from series:', error);
       toast.error("Erreur lors de la suppression de la musique de la saga.");
@@ -461,7 +398,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     });
 
     // Sync with series immediately
-    if (effectiveSeries && seriesBookIds.length > 0) {
+    if (currentSeries && seriesBookIds.length > 0) {
       await syncPlaylistAcrossSeries(musicToAdd);
       queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
     }
@@ -474,7 +411,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     const musicToRemove = editedData.music_playlist[index];
 
     // Remove from series first
-    if (effectiveSeries && seriesBookIds.length > 0) {
+    if (currentSeries && seriesBookIds.length > 0) {
       await removeMusicFromSeries(musicToRemove);
       queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
     }
@@ -908,18 +845,18 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
                 <Music className="w-5 h-5" />
                 Playlist musicale ({editedData.music_playlist.length})
-                {effectiveSeries && (
+                {currentSeries && (
                   <span className="text-xs px-2 py-1 rounded-full ml-auto"
                         style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                    🔗 Saga : {effectiveSeries.name}
+                    🔗 Saga : {currentSeries.series_name}
                   </span>
                 )}
               </h3>
 
-              {effectiveSeries && (
+              {currentSeries && (
                 <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
                   <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
-                    💡 Cette playlist est partagée avec tous les tomes de la saga "{effectiveSeries.name}"
+                    💡 Cette playlist est partagée avec tous les tomes de la saga "{currentSeries.series_name}"
                   </p>
                 </div>
               )}

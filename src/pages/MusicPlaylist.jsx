@@ -7,30 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Helper function to extract series name from book title
-const extractSeriesName = (title) => {
-  if (!title) return null;
-
-  // Remove common volume/tome patterns
-  const cleaned = title
-    .replace(/\s*-\s*Tome\s+\d+.*$/i, '')
-    .replace(/\s*-\s*Volume\s+\d+.*$/i, '')
-    .replace(/\s*-\s*T\d+.*$/i, '')
-    .replace(/\s*Tome\s+\d+.*$/i, '')
-    .replace(/\s*Volume\s+\d+.*$/i, '')
-    .replace(/\s*\(Tome\s+\d+\).*$/i, '')
-    .replace(/\s*\d+\/\d+$/i, '')
-    .replace(/\s*#\d+$/i, '')
-    .trim();
-
-  // Ensure the cleaned string is not too short (e.g., just "The" or "A")
-  // and is different from the original title (to ensure something was actually removed)
-  if (cleaned.length > 2 && cleaned.toLowerCase() !== title.toLowerCase()) {
-    return cleaned;
-  }
-  return null;
-};
-
 export default function MusicPlaylist() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,20 +33,22 @@ export default function MusicPlaylist() {
     enabled: !!user,
   });
 
-  // Group music entries by series (explicit or detected) or standalone books
+  // Group music entries by series or standalone books
   const musicBySeries = useMemo(() => {
     const grouped = {};
-    const processedBookIds = new Set(); // To track books already grouped
+    const seriesBookIds = new Set(); // To track book IDs already part of an explicit series
 
     // First, process explicit series from BookSeries entity
     bookSeries.forEach(series => {
-      const seriesBookIds = [
+      const currentSeriesBookIds = [
         ...(series.books_read || []),
         ...(series.books_in_pal || []),
         ...(series.books_wishlist || [])
       ];
 
-      const seriesBooks = myBooks.filter(ub => seriesBookIds.includes(ub.book_id));
+      currentSeriesBookIds.forEach(id => seriesBookIds.add(id)); // Mark books as part of a series
+
+      const seriesBooks = myBooks.filter(ub => currentSeriesBookIds.includes(ub.book_id));
       const allSeriesMusic = [];
       const booksInSeries = [];
 
@@ -78,7 +56,6 @@ export default function MusicPlaylist() {
         const book = allBooks.find(b => b.id === ub.book_id);
         if (!book) return;
 
-        processedBookIds.add(ub.book_id);
         booksInSeries.push({ book, userBook: ub });
 
         // Collect all music from this book
@@ -116,10 +93,9 @@ export default function MusicPlaylist() {
       });
 
       if (allSeriesMusic.length > 0) {
-        grouped[`series_${series.id}`] = {
-          id: `series_${series.id}`, // Unique ID for key prop
+        grouped[series.id] = { // Use series.id as the key for the grouped entry
           type: 'series',
-          series: series,
+          series: series, // Keep original series object
           books: booksInSeries,
           musicList: allSeriesMusic,
           // Use the most recently read book for cover
@@ -129,91 +105,14 @@ export default function MusicPlaylist() {
               const dateB = b.userBook.end_date || b.userBook.start_date || '';
               return dateB.localeCompare(dateA);
             })[0]?.book,
-          name: series.series_name
         };
       }
     });
 
-    // Then, detect series by title similarity for unprocessed books
-    const unprocessedBooks = myBooks.filter(ub => !processedBookIds.has(ub.book_id));
-    const detectedSeries = {}; // Temporary object to group detected series
-
-    unprocessedBooks.forEach(ub => {
-      const book = allBooks.find(b => b.id === ub.book_id);
-      if (!book) return;
-
-      const baseName = extractSeriesName(book.title);
-      if (!baseName) return;
-
-      // Check if this book has music
-      const bookMusic = [];
-      if (ub.music_playlist && ub.music_playlist.length > 0) {
-        bookMusic.push(...ub.music_playlist.map(m => ({ ...m, fromBook: book })));
-      }
-      if (ub.music && ub.music_link && !bookMusic.some(m => m.title === ub.music)) {
-        musicList.push({
-          title: ub.music,
-          artist: ub.music_artist || "",
-          link: ub.music_link,
-          fromBook: book
-        });
-      }
-
-      // Only consider books with music for detected series
-      if (bookMusic.length === 0) return;
-
-      const key = baseName.toLowerCase();
-      if (!detectedSeries[key]) {
-        detectedSeries[key] = {
-          name: baseName,
-          books: [],
-          musicList: []
-        };
-      }
-
-      detectedSeries[key].books.push({ book, userBook: ub });
-
-      // Add music avoiding duplicates
-      bookMusic.forEach(music => {
-        const exists = detectedSeries[key].musicList.some(m =>
-          m.title === music.title &&
-          m.artist === music.artist &&
-          m.link === music.link
-        );
-        if (!exists) {
-          detectedSeries[key].musicList.push(music);
-        }
-      });
-    });
-
-    // Add detected series to grouped (only if multiple books or has music)
-    Object.entries(detectedSeries).forEach(([key, seriesData]) => {
-      // Only create a detected series entry if it has multiple books or has music (which is already filtered)
-      // or if it has music and the books are not already accounted for
-      if (seriesData.books.length > 1 || seriesData.musicList.length > 0) {
-        const detectedKey = `detected_${key.replace(/\s+/g, '_')}`; // Create a valid unique key
-        grouped[detectedKey] = {
-          id: detectedKey, // Unique ID for key prop
-          type: 'detected',
-          books: seriesData.books,
-          musicList: seriesData.musicList,
-          coverBook: seriesData.books
-            .sort((a, b) => {
-              const dateA = a.userBook.end_date || a.userBook.start_date || '';
-              const dateB = b.userBook.end_date || b.userBook.start_date || '';
-              return dateB.localeCompare(dateA);
-            })[0]?.book,
-          name: seriesData.name
-        };
-
-        // Mark these books as processed
-        seriesData.books.forEach(({ userBook }) => processedBookIds.add(userBook.book_id));
-      }
-    });
-
-    // Finally, process standalone books (not in any series, explicit or detected)
+    // Then, process standalone books (not in any explicit series)
     myBooks.forEach(ub => {
-      if (processedBookIds.has(ub.book_id)) return;
+      // Skip if book is already in an explicit series
+      if (seriesBookIds.has(ub.book_id)) return;
 
       const book = allBooks.find(b => b.id === ub.book_id);
       if (!book) return;
@@ -237,14 +136,12 @@ export default function MusicPlaylist() {
       }
 
       if (musicList.length > 0) {
-        grouped[`standalone_${book.id}`] = {
-          id: `standalone_${book.id}`, // Unique ID for key prop
+        grouped[`standalone_${book.id}`] = { // Unique key for standalone books
           type: 'standalone',
           book,
           userBook: ub,
           musicList,
-          coverBook: book,
-          name: book.title
+          coverBook: book
         };
       }
     });
@@ -256,13 +153,14 @@ export default function MusicPlaylist() {
   const sortedEntries = useMemo(() => {
     return Object.values(musicBySeries).sort((a, b) => {
       const getDate = (entry) => {
-        if (entry.type === 'standalone') {
-          return entry.userBook.end_date || entry.userBook.start_date || entry.userBook.updated_date || '';
-        } else { // 'series' or 'detected'
+        if (entry.type === 'series') {
+          // Get the most recent date from all books in series
           return entry.books.reduce((latest, { userBook }) => {
             const date = userBook.end_date || userBook.start_date || userBook.updated_date || '';
             return date > latest ? date : latest;
           }, '');
+        } else { // 'standalone'
+          return entry.userBook.end_date || entry.userBook.start_date || entry.userBook.updated_date || '';
         }
       };
 
@@ -285,19 +183,19 @@ export default function MusicPlaylist() {
 
     const query = searchQuery.toLowerCase().trim();
     return sortedEntries.filter(entry => {
-      if (entry.type === 'standalone') {
-        return entry.book.title.toLowerCase().includes(query) ||
-               entry.book.author.toLowerCase().includes(query) ||
-               entry.musicList.some(m =>
-                 m.title.toLowerCase().includes(query) ||
-                 m.artist?.toLowerCase().includes(query)
-               );
-      } else { // 'series' or 'detected'
-        return entry.name.toLowerCase().includes(query) ||
+      if (entry.type === 'series') {
+        return entry.series.series_name.toLowerCase().includes(query) ||
                entry.books.some(({ book }) =>
                  book.title.toLowerCase().includes(query) ||
                  book.author.toLowerCase().includes(query)
                ) ||
+               entry.musicList.some(m =>
+                 m.title.toLowerCase().includes(query) ||
+                 m.artist?.toLowerCase().includes(query)
+               );
+      } else { // 'standalone'
+        return entry.book.title.toLowerCase().includes(query) ||
+               entry.book.author.toLowerCase().includes(query) ||
                entry.musicList.some(m =>
                  m.title.toLowerCase().includes(query) ||
                  m.artist?.toLowerCase().includes(query)
@@ -362,12 +260,14 @@ export default function MusicPlaylist() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              {selectedSeries ? selectedSeries.name : '🎵 Ma Playlist Littéraire'}
+              {selectedSeries
+                ? (selectedSeries.type === 'series' ? selectedSeries.series.series_name : selectedSeries.book.title)
+                : '🎵 Ma Playlist Littéraire'}
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               {selectedSeries
                 ? `${selectedSeries.musicList.length} musique${selectedSeries.musicList.length > 1 ? 's' : ''}${selectedSeries.type !== 'standalone' ? ` • ${selectedSeries.books.length} tome${selectedSeries.books.length > 1 ? 's' : ''}` : ''}`
-                : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${sortedEntries.filter(e => e.type !== 'standalone').length} saga${sortedEntries.filter(e => e.type !== 'standalone').length > 1 ? 's' : ''} et ${sortedEntries.filter(e => e.type === 'standalone').length} livre${sortedEntries.filter(e => e.type === 'standalone').length > 1 ? 's' : ''}`
+                : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${sortedEntries.filter(e => e.type === 'series').length} saga${sortedEntries.filter(e => e.type === 'series').length > 1 ? 's' : ''} et ${sortedEntries.filter(e => e.type === 'standalone').length} livre${sortedEntries.filter(e => e.type === 'standalone').length > 1 ? 's' : ''}`
               }
             </p>
           </div>
@@ -412,23 +312,21 @@ export default function MusicPlaylist() {
                     )}
                   </div>
                   <div className="flex-1">
-                    {selectedSeries.type !== 'standalone' ? (
+                    {selectedSeries.type === 'series' ? (
                       <>
                         <div className="flex items-center gap-2 mb-2">
                           <Layers className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
                           <span className="text-sm font-bold px-3 py-1 rounded-full"
                                 style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                            {selectedSeries.type === 'series' ? 'Saga' : 'Série détectée'} • {selectedSeries.books.length} tome{selectedSeries.books.length > 1 ? 's' : ''}
+                            Saga • {selectedSeries.books.length} tome{selectedSeries.books.length > 1 ? 's' : ''}
                           </span>
                         </div>
                         <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                          {selectedSeries.name}
+                          {selectedSeries.series.series_name}
                         </h2>
-                        {selectedSeries.type === 'series' && selectedSeries.series?.author && (
-                          <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                            {selectedSeries.series.author}
-                          </p>
-                        )}
+                        <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                          {selectedSeries.series.author}
+                        </p>
                       </>
                     ) : (
                       <>
@@ -545,7 +443,7 @@ export default function MusicPlaylist() {
               <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {filteredEntries.map((entry) => (
                   <Card
-                    key={entry.id} // Use the unique ID from the entry object
+                    key={entry.type === 'series' ? entry.series.id : `standalone_${entry.book.id}`}
                     className="cursor-pointer shadow-lg border-0 overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2"
                     onClick={() => setSelectedSeries(entry)}
                   >
@@ -573,7 +471,7 @@ export default function MusicPlaylist() {
                             <Music className="w-4 h-4 text-white" />
                             <span className="text-white font-bold text-sm">{entry.musicList.length}</span>
                           </div>
-                          {entry.type !== 'standalone' && (
+                          {entry.type === 'series' && (
                             <div className="px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
                                  style={{ backgroundColor: 'rgba(230, 179, 232, 0.95)' }}>
                               <Layers className="w-3 h-3 text-white" />
@@ -588,23 +486,21 @@ export default function MusicPlaylist() {
 
                       {/* Info */}
                       <div className="p-4">
-                        {entry.type !== 'standalone' ? (
+                        {entry.type === 'series' ? (
                           <>
                             <div className="flex items-center gap-2 mb-2">
                               <Layers className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
                               <span className="text-xs px-2 py-0.5 rounded-full font-bold"
                                     style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                                {entry.type === 'series' ? 'Saga' : 'Série'}
+                                Saga
                               </span>
                             </div>
                             <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {entry.name}
+                              {entry.series.series_name}
                             </h3>
-                            {entry.type === 'series' && entry.series?.author && (
-                              <p className="text-sm line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
-                                {entry.series.author}
-                              </p>
-                            )}
+                            <p className="text-sm line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                              {entry.series.author}
+                            </p>
                           </>
                         ) : (
                           <>
