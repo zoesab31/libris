@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Music, BookOpen, Play, ExternalLink, Search } from "lucide-react";
+import { Music, BookOpen, Play, ExternalLink, Search, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export default function MusicPlaylist() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBookId, setSelectedBookId] = useState("all");
+  const [selectedBook, setSelectedBook] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -77,27 +77,36 @@ export default function MusicPlaylist() {
   const booksWithMusic = Object.values(musicByBook);
   const totalMusicCount = booksWithMusic.reduce((sum, b) => sum + b.musicList.length, 0);
 
-  // Get music to display based on selected book
-  const displayedMusic = useMemo(() => {
-    if (selectedBookId === "all") {
-      return booksWithMusic.flatMap(b => b.musicList);
-    }
-    const bookData = musicByBook[selectedBookId];
-    return bookData ? bookData.musicList : [];
-  }, [selectedBookId, musicByBook, booksWithMusic]);
-
-  // Apply search filter
-  const filteredMusic = useMemo(() => {
-    if (!searchQuery) return displayedMusic;
+  // Filter books by search
+  const filteredBooks = useMemo(() => {
+    if (!searchQuery) return booksWithMusic;
     
     const query = searchQuery.toLowerCase().trim();
-    return displayedMusic.filter(entry =>
-      entry.book.title.toLowerCase().includes(query) ||
-      entry.book.author.toLowerCase().includes(query) ||
-      entry.title.toLowerCase().includes(query) ||
-      entry.artist?.toLowerCase().includes(query)
+    return booksWithMusic.filter(({ book, musicList }) =>
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query) ||
+      musicList.some(m => 
+        m.title.toLowerCase().includes(query) ||
+        m.artist?.toLowerCase().includes(query)
+      )
     );
-  }, [displayedMusic, searchQuery]);
+  }, [booksWithMusic, searchQuery]);
+
+  // Filter music within selected book
+  const filteredMusicInBook = useMemo(() => {
+    if (!selectedBook) return [];
+    
+    const bookData = musicByBook[selectedBook.id];
+    if (!bookData) return [];
+
+    if (!searchQuery) return bookData.musicList;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return bookData.musicList.filter(m =>
+      m.title.toLowerCase().includes(query) ||
+      m.artist?.toLowerCase().includes(query)
+    );
+  }, [selectedBook, musicByBook, searchQuery]);
 
   // Detect platform from link
   const getPlatform = (link) => {
@@ -119,28 +128,37 @@ export default function MusicPlaylist() {
     }
   };
 
-  // Auto-select first book on load
-  useEffect(() => {
-    if (booksWithMusic.length > 0 && selectedBookId === "all") {
-      setSelectedBookId(booksWithMusic[0].book.id);
-    }
-  }, [booksWithMusic.length]);
-
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
+          {selectedBook && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setSelectedBook(null);
+                setSearchQuery("");
+              }}
+              className="rounded-full"
+            >
+              <ArrowLeft className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+            </Button>
+          )}
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
                style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
             <Music className="w-7 h-7 text-white" />
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              🎵 Ma Playlist Littéraire
+              {selectedBook ? selectedBook.title : '🎵 Ma Playlist Littéraire'}
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {totalMusicCount} musique{totalMusicCount > 1 ? 's' : ''} • {booksWithMusic.length} livre{booksWithMusic.length > 1 ? 's' : ''}
+              {selectedBook 
+                ? `${musicByBook[selectedBook.id]?.musicList.length || 0} musique${musicByBook[selectedBook.id]?.musicList.length > 1 ? 's' : ''}`
+                : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${booksWithMusic.length} livre${booksWithMusic.length > 1 ? 's' : ''}`
+              }
             </p>
           </div>
         </div>
@@ -153,272 +171,217 @@ export default function MusicPlaylist() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une musique, un livre ou un artiste..."
+              placeholder={selectedBook ? "Rechercher une musique..." : "Rechercher un livre, une musique ou un artiste..."}
               className="pl-10 py-6 text-lg bg-white shadow-md rounded-xl border-0"
             />
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-48 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--beige)' }} />
+          <div className="grid md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-80 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--beige)' }} />
             ))}
           </div>
-        ) : booksWithMusic.length > 0 ? (
-          <Tabs value={selectedBookId} onValueChange={setSelectedBookId} className="w-full">
-            {/* Book Tabs */}
-            <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 flex-wrap h-auto mb-6 overflow-x-auto">
-              <TabsTrigger
-                value="all"
-                className="rounded-lg font-bold data-[state=active]:text-white whitespace-nowrap"
-                style={selectedBookId === "all" ? {
-                  background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)',
-                  color: '#FFFFFF'
-                } : { color: '#000000' }}
-              >
-                📚 Tous ({totalMusicCount})
-              </TabsTrigger>
-              {booksWithMusic.map(({ book, musicList }) => (
-                <TabsTrigger
-                  key={book.id}
-                  value={book.id}
-                  className="rounded-lg font-bold data-[state=active]:text-white whitespace-nowrap"
-                  style={selectedBookId === book.id ? {
-                    background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)',
-                    color: '#FFFFFF'
-                  } : { color: '#000000' }}
-                >
-                  {book.title} ({musicList.length})
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {/* All Books Tab Content */}
-            <TabsContent value="all">
-              {filteredMusic.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {filteredMusic.map((entry, index) => {
-                    const platform = getPlatform(entry.link);
-                    const platformColor = getPlatformColor(platform);
-
-                    return (
-                      <Card key={`${entry.userBook.id}-${index}`} className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                        <div className="h-3" style={{ background: `linear-gradient(90deg, ${platformColor}, ${platformColor}88)` }} />
-                        <CardContent className="p-6">
-                          <div className="flex gap-4 mb-4">
-                            {/* Book Cover */}
-                            <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                                 style={{ backgroundColor: 'var(--beige)' }}>
-                              {entry.book.cover_url ? (
-                                <img 
-                                  src={entry.book.cover_url} 
-                                  alt={entry.book.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Book Info */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                                {entry.book.title}
-                              </h3>
-                              <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                                {entry.book.author}
-                              </p>
-                              {entry.userBook.rating && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-lg">⭐</span>
-                                  <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
-                                    {entry.userBook.rating}/5
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Music Info */}
-                          <div className="p-4 rounded-xl mb-4" 
-                               style={{ 
-                                 background: `linear-gradient(135deg, ${platformColor}15, ${platformColor}08)`,
-                                 borderLeft: `4px solid ${platformColor}`
-                               }}>
-                            <div className="flex items-start gap-3">
-                              <Music className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: platformColor }} />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-lg mb-1" style={{ color: 'var(--dark-text)' }}>
-                                  {entry.title}
-                                </p>
-                                {entry.artist && (
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {entry.artist}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Play Button */}
-                          {entry.link ? (
-                            <a 
-                              href={entry.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block"
-                            >
-                              <button
-                                className="w-full py-3 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                                style={{ backgroundColor: platformColor }}
-                              >
-                                <Play className="w-5 h-5" />
-                                Écouter sur {platform}
-                                <ExternalLink className="w-4 h-4" />
-                              </button>
-                            </a>
-                          ) : (
-                            <div className="w-full py-3 rounded-xl font-bold text-center"
-                                 style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-pink)' }}>
-                              Aucun lien disponible
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-20">
-                  <Music className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                  <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                    Aucune musique trouvée
-                  </h3>
-                  <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                    Essayez une autre recherche
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Individual Book Tabs Content */}
-            {booksWithMusic.map(({ book, userBook, musicList }) => (
-              <TabsContent key={book.id} value={book.id}>
-                {/* Book Header */}
-                <div className="mb-6 p-6 rounded-2xl shadow-lg bg-white">
-                  <div className="flex gap-4">
-                    <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+        ) : selectedBook ? (
+          /* Music List View */
+          <div>
+            {/* Book Info Card */}
+            <Card className="mb-6 shadow-xl border-0 overflow-hidden">
+              <div className="h-2" style={{ background: 'linear-gradient(90deg, #E6B3E8, #FFB6C8)' }} />
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  <div className="w-32 h-48 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
+                       style={{ backgroundColor: 'var(--beige)' }}>
+                    {selectedBook.cover_url ? (
+                      <img src={selectedBook.cover_url} alt={selectedBook.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      {selectedBook.title}
+                    </h2>
+                    <p className="text-xl mb-3" style={{ color: 'var(--warm-pink)' }}>
+                      {selectedBook.author}
+                    </p>
+                    {musicByBook[selectedBook.id]?.userBook.rating && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-2xl">⭐</span>
+                        <span className="text-xl font-bold" style={{ color: 'var(--gold)' }}>
+                          {musicByBook[selectedBook.id].userBook.rating}/5
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 p-3 rounded-xl"
                          style={{ backgroundColor: 'var(--beige)' }}>
-                      {book.cover_url ? (
-                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                        {book.title}
-                      </h2>
-                      <p className="text-lg mb-2" style={{ color: 'var(--warm-pink)' }}>
-                        {book.author}
-                      </p>
-                      {userBook.rating && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">⭐</span>
-                          <span className="text-lg font-bold" style={{ color: 'var(--gold)' }}>
-                            {userBook.rating}/5
-                          </span>
-                        </div>
-                      )}
-                      <p className="text-sm mt-2" style={{ color: 'var(--warm-pink)' }}>
-                        {musicList.length} musique{musicList.length > 1 ? 's' : ''} associée{musicList.length > 1 ? 's' : ''}
-                      </p>
+                      <Music className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                      <span className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                        {filteredMusicInBook.length} musique{filteredMusicInBook.length > 1 ? 's' : ''}
+                      </span>
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Music List for this book */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  {musicList.filter(entry => {
-                    if (!searchQuery) return true;
-                    const query = searchQuery.toLowerCase().trim();
-                    return entry.title.toLowerCase().includes(query) ||
-                           entry.artist?.toLowerCase().includes(query);
-                  }).map((entry, index) => {
-                    const platform = getPlatform(entry.link);
-                    const platformColor = getPlatformColor(platform);
+            {/* Music Cards */}
+            {filteredMusicInBook.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredMusicInBook.map((entry, index) => {
+                  const platform = getPlatform(entry.link);
+                  const platformColor = getPlatformColor(platform);
 
-                    return (
-                      <Card key={index} className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                        <div className="h-3" style={{ background: `linear-gradient(90deg, ${platformColor}, ${platformColor}88)` }} />
-                        <CardContent className="p-6">
-                          {/* Music Info */}
-                          <div className="p-4 rounded-xl mb-4" 
-                               style={{ 
-                                 background: `linear-gradient(135deg, ${platformColor}15, ${platformColor}08)`,
-                                 borderLeft: `4px solid ${platformColor}`
-                               }}>
-                            <div className="flex items-start gap-3">
-                              <Music className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: platformColor }} />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-xl mb-1" style={{ color: 'var(--dark-text)' }}>
-                                  {entry.title}
+                  return (
+                    <Card key={index} className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
+                      <div className="h-3" style={{ background: `linear-gradient(90deg, ${platformColor}, ${platformColor}88)` }} />
+                      <CardContent className="p-6">
+                        {/* Music Info */}
+                        <div className="p-5 rounded-xl mb-4" 
+                             style={{ 
+                               background: `linear-gradient(135deg, ${platformColor}15, ${platformColor}08)`,
+                               borderLeft: `4px solid ${platformColor}`
+                             }}>
+                          <div className="flex items-start gap-3">
+                            <Music className="w-6 h-6 flex-shrink-0 mt-1" style={{ color: platformColor }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xl mb-2" style={{ color: 'var(--dark-text)' }}>
+                                {entry.title}
+                              </p>
+                              {entry.artist && (
+                                <p className="text-base" style={{ color: 'var(--warm-pink)' }}>
+                                  {entry.artist}
                                 </p>
-                                {entry.artist && (
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {entry.artist}
-                                  </p>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
+                        </div>
 
-                          {/* Play Button */}
-                          {entry.link ? (
-                            <a 
-                              href={entry.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="block"
+                        {/* Play Button */}
+                        {entry.link ? (
+                          <a 
+                            href={entry.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            <button
+                              className="w-full py-3 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                              style={{ backgroundColor: platformColor }}
                             >
-                              <button
-                                className="w-full py-3 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                                style={{ backgroundColor: platformColor }}
-                              >
-                                <Play className="w-5 h-5" />
-                                Écouter sur {platform}
-                                <ExternalLink className="w-4 h-4" />
-                              </button>
-                            </a>
-                          ) : (
-                            <div className="w-full py-3 rounded-xl font-bold text-center"
-                                 style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-pink)' }}>
-                              Aucun lien disponible
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <div className="text-center py-20">
-            <Music className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Aucune musique associée
-            </h3>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              Ajoutez des musiques à vos livres pour créer votre playlist littéraire
-            </p>
+                              <Play className="w-5 h-5" />
+                              Écouter sur {platform}
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                          </a>
+                        ) : (
+                          <div className="w-full py-3 rounded-xl font-bold text-center"
+                               style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-pink)' }}>
+                            Aucun lien disponible
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <Music className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucune musique trouvée
+                </h3>
+                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                  Essayez une autre recherche
+                </p>
+              </div>
+            )}
           </div>
+        ) : (
+          /* Books Grid View */
+          booksWithMusic.length > 0 ? (
+            filteredBooks.length > 0 ? (
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredBooks.map(({ book, userBook, musicList }) => (
+                  <Card 
+                    key={book.id}
+                    className="cursor-pointer shadow-lg border-0 overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2"
+                    onClick={() => setSelectedBook(book)}
+                  >
+                    <div className="h-2" style={{ background: 'linear-gradient(90deg, #E6B3E8, #FFB6C8)' }} />
+                    <CardContent className="p-0">
+                      {/* Book Cover */}
+                      <div className="relative w-full aspect-[2/3] overflow-hidden"
+                           style={{ backgroundColor: 'var(--beige)' }}>
+                        {book.cover_url ? (
+                          <img 
+                            src={book.cover_url} 
+                            alt={book.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <BookOpen className="w-16 h-16" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                        
+                        {/* Music Count Badge */}
+                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
+                             style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                          <Music className="w-4 h-4 text-white" />
+                          <span className="text-white font-bold text-sm">{musicList.length}</span>
+                        </div>
+
+                        {/* Gradient overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+                      </div>
+
+                      {/* Book Info */}
+                      <div className="p-4">
+                        <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                          {book.title}
+                        </h3>
+                        <p className="text-sm mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                          {book.author}
+                        </p>
+                        {userBook.rating && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-lg">⭐</span>
+                            <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
+                              {userBook.rating}/5
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <Search className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucun livre trouvé
+                </h3>
+                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                  Essayez une autre recherche
+                </p>
+              </div>
+            )
+          ) : (
+            <div className="text-center py-20">
+              <Music className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+              <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                Aucune musique associée
+              </h3>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                Ajoutez des musiques à vos livres pour créer votre playlist littéraire
+              </p>
+            </div>
+          )
         )}
       </div>
     </div>
