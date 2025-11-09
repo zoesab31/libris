@@ -85,7 +85,26 @@ export default function Dashboard() {
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
   
-  // Calculate average reading duration for time-based progress estimation
+  // Calculate average reading duration for any user
+  const calculateAvgReadingDays = (userEmail) => {
+    const userBooks = friendsBooks.filter(fb => fb.created_by === userEmail);
+    const completedBooks = userBooks.filter(b => 
+      b.status === "Lu" && b.start_date && b.end_date
+    );
+    
+    if (completedBooks.length === 0) return 14; // Default 14 days if no data
+    
+    const totalDays = completedBooks.reduce((sum, book) => {
+      const start = new Date(book.start_date);
+      const end = new Date(book.end_date);
+      const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+      return sum + Math.max(days, 1); // At least 1 day
+    }, 0);
+    
+    return Math.round(totalDays / completedBooks.length);
+  };
+
+  // Calculate average reading duration for current user
   const avgReadingDays = React.useMemo(() => {
     const completedBooks = myBooks.filter(b => 
       b.status === "Lu" && b.start_date && b.end_date
@@ -104,7 +123,7 @@ export default function Dashboard() {
   }, [myBooks]);
 
   // Calculate time-based progress for a book
-  const getTimeBasedProgress = (userBook) => {
+  const getTimeBasedProgress = (userBook, userAvgDays = avgReadingDays) => {
     if (!userBook.start_date) return 0;
     
     const start = new Date(userBook.start_date);
@@ -112,7 +131,7 @@ export default function Dashboard() {
     const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
     
     // Calculate percentage based on average reading time
-    const progress = Math.min((daysReading / avgReadingDays) * 100, 95); // Max 95% until finished
+    const progress = Math.min((daysReading / userAvgDays) * 100, 95); // Max 95% until finished
     return Math.round(progress);
   };
 
@@ -518,6 +537,13 @@ export default function Dashboard() {
                         const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                         if (!book || !friend) return null;
                         
+                        // Calculate friend's average reading days and progress
+                        const friendAvgDays = calculateAvgReadingDays(userBook.created_by);
+                        const daysReading = userBook.start_date 
+                          ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
+                          : 0;
+                        const progress = getTimeBasedProgress(userBook, friendAvgDays);
+                        
                         return (
                           <div key={userBook.id} 
                                className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
@@ -538,9 +564,28 @@ export default function Dashboard() {
                               <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-xs md:text-sm" style={{ color: '#A0AEC0' }}>
+                              <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
                                 {book.author}
                               </p>
+                              {userBook.start_date && (
+                                <>
+                                  <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
+                                    {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
+                                  </p>
+                                  <div className="relative">
+                                    <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
+                                      <div className="h-full rounded-full transition-all duration-500" 
+                                           style={{ 
+                                             width: `${progress}%`,
+                                             background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
+                                           }} />
+                                    </div>
+                                    <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
+                                      ⏱️ ~{progress}% (estimation temporelle)
+                                    </p>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         );
