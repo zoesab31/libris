@@ -85,6 +85,41 @@ export default function Chat() {
     enabled: !!user,
   });
 
+  // Mark messages as seen when viewing a chat
+  useEffect(() => {
+    if (!selectedChat || !user?.email || messages.length === 0) return;
+
+    const markMessagesAsSeen = async () => {
+      // Find messages that haven't been seen by current user
+      const unseenMessages = messages.filter(msg => 
+        msg.sender_email !== user.email &&
+        (!msg.seen_by || !msg.seen_by.includes(user.email))
+      );
+
+      if (unseenMessages.length === 0) return;
+
+      // Mark each unseen message as seen
+      await Promise.all(
+        unseenMessages.map(async (msg) => {
+          const seenBy = msg.seen_by || [];
+          if (!seenBy.includes(user.email)) {
+            await base44.entities.ChatMessage.update(msg.id, {
+              seen_by: [...seenBy, user.email]
+            });
+          }
+        })
+      );
+
+      // Invalidate queries to update UI
+      queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadMessagesCount'] });
+    };
+
+    // Small delay to ensure smooth UI
+    const timer = setTimeout(markMessagesAsSeen, 500);
+    return () => clearTimeout(timer);
+  }, [selectedChat, messages, user, queryClient]);
+
   const sendMessageMutation = useMutation({
     mutationFn: async (content) => {
       await base44.entities.ChatMessage.create({
@@ -114,6 +149,7 @@ export default function Chat() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadMessagesCount'] });
       setSelectedChat(null);
       toast.success("Conversation supprimée");
     },

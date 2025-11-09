@@ -262,7 +262,7 @@ export default function Dashboard() {
   const quickAccessItems = [
     { name: "Bibliothèque", icon: Library, color: '#FFE4EC', iconColor: '#FF69B4', url: "MyLibrary" },
     { name: "Lectures communes", icon: Users, color: '#F0E6FF', iconColor: '#9B59B6', url: "SharedReadings" },
-    { name: "Personnages", icon: Heart, color: '#FFE8D9', iconColor: '#FF9F7F', url: "Profile" },
+    { name: "Mes Amies", icon: Heart, color: '#FFE8D9', iconColor: '#FF9F7F', url: "Friends" },
     { name: "Tournoi", icon: Trophy, color: '#FFF9E6', iconColor: '#FFD700', url: "BookTournament" },
     { name: "Maps", icon: Map, color: '#E8F4F8', iconColor: '#4299E1', url: "Maps" },
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
