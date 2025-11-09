@@ -504,11 +504,11 @@ export default function Statistics() {
                       <XAxis dataKey="name" stroke="var(--warm-pink)" />
                       <YAxis stroke="var(--warm-pink)" />
                       <Tooltip />
-                      <Bar 
-                        dataKey="value" 
-                        fill={(entry, index) => index === 0 ? 'var(--deep-pink)' : 'var(--lavender)'} 
-                        radius={[8, 8, 0, 0]} 
-                      />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                        {comparisonData.books.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index === 0 ? '#FF69B4' : '#FFB6C8'} />
+                        ))}
+                      </Bar>
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </CardContent>
