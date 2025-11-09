@@ -26,7 +26,7 @@ export default function MusicPlaylist() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  // Group music entries by book
+  // Group music entries by book and sort by reading order
   const musicByBook = useMemo(() => {
     const grouped = {};
 
@@ -74,7 +74,21 @@ export default function MusicPlaylist() {
     return grouped;
   }, [myBooks, allBooks]);
 
-  const booksWithMusic = Object.values(musicByBook);
+  // Sort books by reading order (end_date)
+  const booksWithMusic = useMemo(() => {
+    return Object.values(musicByBook).sort((a, b) => {
+      const dateA = a.userBook.end_date || a.userBook.start_date || a.userBook.updated_date || '';
+      const dateB = b.userBook.end_date || b.userBook.start_date || b.userBook.updated_date || '';
+      
+      // Sort by most recent first (descending order)
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      
+      return new Date(dateB) - new Date(dateA);
+    });
+  }, [musicByBook]);
+
   const totalMusicCount = booksWithMusic.reduce((sum, b) => sum + b.musicList.length, 0);
 
   // Filter books by search
@@ -166,13 +180,13 @@ export default function MusicPlaylist() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
                     style={{ color: 'var(--warm-pink)' }} />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={selectedBook ? "Rechercher une musique..." : "Rechercher un livre, une musique ou un artiste..."}
-              className="pl-10 py-6 text-lg bg-white shadow-md rounded-xl border-0"
+              className="pl-12 py-6 text-lg bg-white shadow-md rounded-xl border-0"
             />
           </div>
         </div>
