@@ -34,8 +34,8 @@ import {
   Search // Added Search icon
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } = "date-fns";
-import { fr } = "date-fns/locale";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
