@@ -1,21 +1,16 @@
-
-import React, { useState } from 'react';
-import { BookOpen, Star, Music, Users, Check, FolderPlus, X } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import BookDetailsDialog from "./BookDetailsDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import React, { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Library, Star, ArrowUpDown, Trash2, X, Check, Grid3x3, Layers, Calendar } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import BookDetailsDialog from "./BookDetailsDialog";
+import { toast } from "sonner";
+
+const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
 
 export default function BookGrid({
   userBooks,
@@ -26,405 +21,418 @@ export default function BookGrid({
   selectedBooks,
   onSelectionChange,
   onExitSelectionMode,
-  showPALSelector = false,
-  readingLists = [],
-  palMode = null,
-  onRemoveFromPAL = null
+  showPALSelector,
+  readingLists,
+  palMode,
+  onRemoveFromPAL
 }) {
-  const [selectedUserBook, setSelectedUserBook] = useState(null);
   const [sortBy, setSortBy] = useState("recent");
-  const [showShelfDialog, setShowShelfDialog] = useState(false);
-  const [selectedShelf, setSelectedShelf] = useState("");
-  const [showPALDialog, setShowPALDialog] = useState(false);
-  const [bookToAddToPAL, setBookToAddToPAL] = useState(null);
+  const [selectedUserBook, setSelectedUserBook] = useState(null);
+  const [showBatchStatusDialog, setShowBatchStatusDialog] = useState(false);
+  const [showBatchPALDialog, setShowBatchPALDialog] = useState(false);
+  const [showBatchSeriesDialog, setShowBatchSeriesDialog] = useState(false);
+  const [batchStatus, setBatchStatus] = useState("");
+  const [batchPAL, setBatchPAL] = useState("");
+  const [batchSeries, setBatchSeries] = useState("");
   const queryClient = useQueryClient();
 
-  // Helper to get first author only
-  const getFirstAuthor = (authorString) => {
-    if (!authorString) return "Auteur inconnu";
-    const authors = authorString.split(',');
-    return authors[0].trim();
+  const { data: user } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: bookSeries = [] } = useQuery({
+    queryKey: ['bookSeries', user?.email],
+    queryFn: () => base44.entities.BookSeries.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const sortedBooks = useMemo(() => {
+    const sorted = [...userBooks];
+    switch (sortBy) {
+      case "recent":
+        return sorted.sort((a, b) => {
+          const dateA = a.updated_date || a.created_date || "";
+          const dateB = b.updated_date || b.created_date || "";
+          return dateB.localeCompare(dateA);
+        });
+      case "rating":
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      case "title":
+        return sorted.sort((a, b) => {
+          const bookA = allBooks.find(book => book.id === a.book_id);
+          const bookB = allBooks.find(book => book.id === b.book_id);
+          return (bookA?.title || "").localeCompare(bookB?.title || "");
+        });
+      default:
+        return sorted;
+    }
+  }, [userBooks, sortBy, allBooks]);
+
+  const getBookDetails = (userBook) => {
+    return allBooks.find(b => b.id === userBook.book_id);
   };
 
-  const deleteMultipleMutation = useMutation({
-    mutationFn: async (bookIds) => {
-      for (const bookId of bookIds) {
-        const userBook = userBooks.find(ub => ub.id === bookId);
-        if (!userBook) continue;
-
-        const book = allBooks.find(b => b.id === userBook.book_id);
-        if (!book) continue;
-
-        // Delete associated data
-        const relatedComments = await base44.entities.ReadingComment.filter({ user_book_id: userBook.id });
-        await Promise.all(relatedComments.map(c => base44.entities.ReadingComment.delete(c.id)));
-
-        // Delete user book
-        await base44.entities.UserBook.delete(userBook.id);
+  const handleBookClick = (userBook) => {
+    if (selectionMode) {
+      // Toggle selection
+      const isSelected = selectedBooks.includes(userBook.id);
+      if (isSelected) {
+        onSelectionChange(selectedBooks.filter(id => id !== userBook.id));
+      } else {
+        onSelectionChange([...selectedBooks, userBook.id]);
       }
+    } else {
+      // Open details
+      setSelectedUserBook(userBook);
+    }
+  };
+
+  const deleteBooksMutation = useMutation({
+    mutationFn: async (bookIds) => {
+      await Promise.all(bookIds.map(id => base44.entities.UserBook.delete(id)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      toast.success(`${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} supprimé${selectedBooks.length > 1 ? 's' : ''}`);
+      onSelectionChange([]);
       onExitSelectionMode();
+      toast.success("✅ Livres supprimés !");
     },
-    onError: (error) => {
-      console.error("Error deleting books:", error);
-      toast.error("Erreur lors de la suppression des livres.");
-    }
   });
 
-  const addToShelfMutation = useMutation({
-    mutationFn: async ({ bookIds, shelfName }) => {
-      const updatePromises = bookIds.map(bookId =>
-        base44.entities.UserBook.update(bookId, {
-          custom_shelf: shelfName || undefined
-        })
+  const batchUpdateStatusMutation = useMutation({
+    mutationFn: async ({ bookIds, status }) => {
+      await Promise.all(
+        bookIds.map(id => base44.entities.UserBook.update(id, { status }))
       );
-      await Promise.all(updatePromises);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      const shelfName = variables.shelfName || "Aucune étagère";
-      toast.success(`${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ajouté${selectedBooks.length > 1 ? 's' : ''} à "${shelfName}"`);
-      setShowShelfDialog(false);
-      setSelectedShelf("");
-      onExitSelectionMode();
+      setShowBatchStatusDialog(false);
+      setBatchStatus("");
+      toast.success("✅ Statut mis à jour !");
     },
-    onError: (error) => {
-      console.error("Error adding to shelf:", error);
-      toast.error("Erreur lors de l'ajout à l'étagère");
-    }
   });
 
-  // New mutation for adding to PAL
-  const addToPALMutation = useMutation({
-    mutationFn: async ({ palId, bookId }) => {
+  const batchAddToPALMutation = useMutation({
+    mutationFn: async ({ bookIds, palId }) => {
       const pal = readingLists.find(p => p.id === palId);
       if (!pal) return;
 
-      const updatedBookIds = [...new Set([...(pal.book_ids || []), bookId])]; // Use Set to avoid duplicates
+      const userBooksToAdd = userBooks.filter(ub => bookIds.includes(ub.id));
+      const bookIdsToAdd = userBooksToAdd.map(ub => ub.book_id);
+      const updatedBookIds = [...new Set([...(pal.book_ids || []), ...bookIdsToAdd])];
+
       await base44.entities.ReadingList.update(palId, { book_ids: updatedBookIds });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-      toast.success("✅ Livre ajouté à la PAL !");
-      setShowPALDialog(false);
-      setBookToAddToPAL(null);
+      setShowBatchPALDialog(false);
+      setBatchPAL("");
+      toast.success("✅ Livres ajoutés à la PAL !");
     },
-    onError: (error) => {
-      console.error("Error adding to PAL:", error);
-      toast.error("Erreur lors de l'ajout à la PAL.");
-    }
   });
 
-  const toggleBookSelection = (bookId) => {
-    if (selectedBooks.includes(bookId)) {
-      onSelectionChange(selectedBooks.filter(id => id !== bookId));
-    } else {
-      onSelectionChange([...selectedBooks, bookId]);
-    }
-  };
+  const batchAddToSeriesMutation = useMutation({
+    mutationFn: async ({ bookIds, seriesId }) => {
+      const series = bookSeries.find(s => s.id === seriesId);
+      if (!series) return;
 
-  const handleAddToShelf = () => {
-    if (selectedBooks.length === 0) return;
-    setShowShelfDialog(true);
-  };
+      const userBooksToAdd = userBooks.filter(ub => bookIds.includes(ub.id));
 
-  const confirmAddToShelf = () => {
-    addToShelfMutation.mutate({
-      bookIds: selectedBooks,
-      shelfName: selectedShelf
-    });
-  };
+      let updatedBooksRead = [...(series.books_read || [])];
+      let updatedBooksInPal = [...(series.books_in_pal || [])];
+      let updatedBooksWishlist = [...(series.books_wishlist || [])];
 
-  // Handle delete when selection mode and books selected - MUST BE BEFORE ANY RETURN
-  React.useEffect(() => {
-    if (selectionMode && selectedBooks.length > 0) {
-      const handleKeyPress = (e) => {
-        if (e.key === 'Delete' && selectedBooks.length > 0) {
-          if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-            deleteMultipleMutation.mutate(selectedBooks);
-          }
+      userBooksToAdd.forEach(ub => {
+        const bookId = ub.book_id;
+        
+        // Remove from all lists first
+        updatedBooksRead = updatedBooksRead.filter(id => id !== bookId);
+        updatedBooksInPal = updatedBooksInPal.filter(id => id !== bookId);
+        updatedBooksWishlist = updatedBooksWishlist.filter(id => id !== bookId);
+
+        // Add to correct list based on status
+        if (ub.status === "Lu") {
+          updatedBooksRead.push(bookId);
+        } else if (ub.status === "À lire") {
+          updatedBooksInPal.push(bookId);
+        } else {
+          updatedBooksWishlist.push(bookId);
         }
-      };
-      window.addEventListener('keydown', handleKeyPress);
-      return () => window.removeEventListener('keydown', handleKeyPress);
+      });
+
+      await base44.entities.BookSeries.update(seriesId, {
+        books_read: [...new Set(updatedBooksRead)],
+        books_in_pal: [...new Set(updatedBooksInPal)],
+        books_wishlist: [...new Set(updatedBooksWishlist)],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
+      setShowBatchSeriesDialog(false);
+      setBatchSeries("");
+      toast.success("✅ Livres ajoutés à la saga !");
+    },
+  });
+
+  const handleBatchDelete = () => {
+    if (window.confirm(`Supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+      deleteBooksMutation.mutate(selectedBooks);
     }
-  }, [selectionMode, selectedBooks, deleteMultipleMutation]);
+  };
+
+  const handleBatchStatusChange = () => {
+    if (!batchStatus) {
+      toast.error("Veuillez sélectionner un statut");
+      return;
+    }
+    batchUpdateStatusMutation.mutate({ bookIds: selectedBooks, status: batchStatus });
+  };
+
+  const handleBatchAddToPAL = () => {
+    if (!batchPAL) {
+      toast.error("Veuillez sélectionner une PAL");
+      return;
+    }
+    batchAddToPALMutation.mutate({ bookIds: selectedBooks, palId: batchPAL });
+  };
+
+  const handleBatchAddToSeries = () => {
+    if (!batchSeries) {
+      toast.error("Veuillez sélectionner une saga");
+      return;
+    }
+    batchAddToSeriesMutation.mutate({ bookIds: selectedBooks, seriesId: batchSeries });
+  };
 
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {Array(10).fill(0).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="w-full aspect-[2/3] rounded-xl" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
+        {[...Array(10)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="w-full aspect-[2/3] rounded-xl mb-3" style={{ backgroundColor: 'var(--beige)' }} />
+            <div className="h-4 rounded mb-2" style={{ backgroundColor: 'var(--beige)' }} />
+            <div className="h-3 rounded w-3/4" style={{ backgroundColor: 'var(--beige)' }} />
           </div>
         ))}
       </div>
     );
   }
 
-  if (userBooks.length === 0) {
+  if (sortedBooks.length === 0) {
     return (
       <div className="text-center py-20">
-        <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+        <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
         <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-          Aucun livre ici
+          Aucun livre
         </h3>
         <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-          Ajoutez votre premier livre pour commencer votre collection
+          Commencez à construire votre bibliothèque
         </p>
       </div>
     );
   }
 
-  // Sort books
-  const sortedBooks = [...userBooks].sort((a, b) => {
-    const bookA = allBooks.find(book => book.id === a.book_id);
-    const bookB = allBooks.find(book => book.id === b.book_id);
-
-    if (a.status === "En cours" && b.status !== "En cours") return -1;
-    if (b.status === "En cours" && a.status !== "En cours") return 1;
-
-    if (a.status === "À lire" && b.status === "À lire") {
-      const aIsServicePress = bookA?.tags?.includes("Service Press");
-      const bIsServicePress = bookB?.tags?.includes("Service Press");
-      if (aIsServicePress && !bIsServicePress) return -1;
-      if (!aIsServicePress && bIsServicePress) return 1;
-    }
-
-    if (sortBy === "rating") {
-      return (b.rating || 0) - (a.rating || 0);
-    } else if (sortBy === "title") {
-      return (bookA?.title || "").localeCompare(bookB?.title || "");
-    }
-    return new Date(b.updated_date) - new Date(a.updated_date);
-  });
-
   return (
     <>
-      {!selectionMode && (
-        <div className="mb-4 flex justify-end">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Trier par" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recent">Plus récents</SelectItem>
-              <SelectItem value="rating">Note (meilleure d'abord)</SelectItem>
-              <SelectItem value="title">Titre (A-Z)</SelectItem>
+              <SelectItem value="rating">Mieux notés</SelectItem>
+              <SelectItem value="title">Par titre</SelectItem>
             </SelectContent>
           </Select>
         </div>
-      )}
-
-      {selectionMode && selectedBooks.length > 0 && (
-        <div className="mb-4 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3"
-             style={{ backgroundColor: 'var(--soft-pink)', color: 'white' }}>
-          <span className="font-bold">
-            {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={handleAddToShelf}
-              disabled={addToShelfMutation.isPending}
-              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600 flex items-center gap-2"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              <FolderPlus className="w-4 h-4" />
-              Ajouter à une étagère
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-                  deleteMultipleMutation.mutate(selectedBooks);
-                }
-              }}
-              disabled={deleteMultipleMutation.isPending}
-              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-white hover:text-pink-600"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              {deleteMultipleMutation.isPending ? "Suppression..." : "Supprimer"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-        {sortedBooks.map((userBook) => {
-          const book = allBooks.find(b => b.id === userBook.book_id);
-          if (!book) return null;
-
-          const shelf = customShelves.find(s => s.name === userBook.custom_shelf);
-          const isCurrentlyReading = userBook.status === "En cours";
-          const isServicePress = book.tags?.includes("Service Press");
-          const isSelected = selectedBooks.includes(userBook.id);
-
-          return (
-            <div
-              key={userBook.id}
-              className={`group cursor-pointer relative ${
-                selectionMode && isSelected ? 'ring-4 ring-pink-500' : ''
-              }`}
-            >
-              {selectionMode && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleBookSelection(userBook.id);
-                  }}
-                  className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center z-20 bg-white"
-                  style={{
-                    borderColor: isSelected ? 'var(--deep-pink)' : 'var(--beige)',
-                    backgroundColor: isSelected ? 'var(--deep-pink)' : 'white'
-                  }}
-                >
-                  {isSelected && <Check className="w-4 h-4 text-white" />}
-                </div>
-              )}
-
-              <div
-                onClick={() => {
-                  if (!selectionMode) {
-                    setSelectedUserBook(userBook);
-                  }
-                }}
-                className="relative mb-3 w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg
-                              transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
-                style={{ backgroundColor: 'var(--beige)' }}
-              >
-                {isCurrentlyReading && (
-                  <div
-                    className="absolute -top-1 -left-1 z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-br-xl shadow-lg animate-pulse"
-                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% 75%, 75% 100%, 0 100%)' }}
-                  >
-                    En cours
-                  </div>
-                )}
-
-                {isServicePress && userBook.status === "À lire" && !isCurrentlyReading && (
-                  <div className="absolute -top-2 -left-2 z-10 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg"
-                       style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                    📬 Service Press
-                  </div>
-                )}
-
-                <div className="w-full h-full">
-                  {book.cover_url ? (
-                    <img
-                      src={book.cover_url}
-                      alt={book.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="absolute top-2 right-2 flex flex-col gap-2">
-                  {userBook.is_shared_reading && (
-                    <div className="bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-md">
-                      <Users className="w-4 h-4" style={{ color: 'var(--warm-brown)' }} />
-                    </div>
-                  )}
-                  {userBook.music && (
-                    <div className="bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-md">
-                      <Music className="w-4 h-4" style={{ color: 'var(--warm-brown)' }} />
-                    </div>
-                  )}
-                  {userBook.rating && (
-                    <div className="bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-md
-                                  flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-current" style={{ color: 'var(--gold)' }} />
-                      <span className="text-xs font-bold" style={{ color: 'var(--deep-brown)' }}>
-                        {userBook.rating}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {shelf && (
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 text-xs font-medium text-center"
-                         style={{ color: 'var(--deep-brown)' }}>
-                      {shelf.icon} {shelf.name}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <h3
-                className="font-bold mt-2 mb-1 group-hover:underline book-title-display"
-                style={{
-                  color: 'var(--dark-text)',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  overflowWrap: 'anywhere',
-                  wordBreak: 'break-word',
-                  fontSize: 'clamp(13px, 2.2vw, 15px)',
-                  lineHeight: '1.25',
-                  minHeight: '2.5em'
-                }}
-                title={book.title}
-              >
-                {book.title}
-              </h3>
-              <p
-                className="mb-1 book-author-display"
-                style={{
-                  color: 'var(--warm-pink)',
-                  overflowWrap: 'anywhere',
-                  whiteSpace: 'normal',
-                  fontSize: 'clamp(11px, 1.8vw, 13px)',
-                  lineHeight: '1.2',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  minHeight: '1.4em'
-                }}
-                title={book.author}
-              >
-                {getFirstAuthor(book.author)}
-              </p>
-
-              {book.genre && (
-                <p className="text-xs mt-1" style={{ color: 'var(--soft-brown)' }}>
-                  {book.genre}
-                </p>
-              )}
-              {showPALSelector && !palMode && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setBookToAddToPAL(userBook.book_id);
-                    setShowPALDialog(true);
-                  }}
-                  className="w-full mt-2 text-xs"
-                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-                >
-                  Ajouter à une PAL
-                </Button>
-              )}
-            </div>
-          );
-        })}
       </div>
 
-      {selectedUserBook && !selectionMode && (
+      <div className="relative">
+        {/* Main grid */}
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 ${
+          selectionMode && selectedBooks.length > 0 ? 'mr-80' : ''
+        }`}>
+          {sortedBooks.map((userBook) => {
+            const book = getBookDetails(userBook);
+            if (!book) return null;
+
+            const isSelected = selectedBooks.includes(userBook.id);
+
+            return (
+              <div key={userBook.id} className="relative group">
+                <Card
+                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-2 ${
+                    isSelected ? 'ring-4 ring-pink-500' : ''
+                  }`}
+                  onClick={() => handleBookClick(userBook)}
+                >
+                  <div className="relative w-full aspect-[2/3] overflow-hidden"
+                       style={{ backgroundColor: 'var(--beige)' }}>
+                    {book.cover_url ? (
+                      <img
+                        src={book.cover_url}
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Library className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                      </div>
+                    )}
+
+                    {/* Selection indicator - only shows when selected */}
+                    {isSelected && (
+                      <div className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                           style={{ backgroundColor: '#FF1493' }}>
+                        <Check className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+
+                    {userBook.rating && (
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-full shadow-md flex items-center gap-1"
+                           style={{ backgroundColor: 'rgba(255, 215, 0, 0.95)' }}>
+                        <Star className="w-3 h-3 fill-current text-white" />
+                        <span className="text-xs font-bold text-white">{userBook.rating}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <CardContent className="p-4">
+                    <h3 className="font-bold line-clamp-2 mb-1 book-title-display" 
+                        style={{ color: 'var(--dark-text)' }}
+                        title={book.title}>
+                      {book.title}
+                    </h3>
+                    <p className="text-sm line-clamp-1 book-author-display" 
+                       style={{ color: 'var(--warm-pink)' }}
+                       title={book.author}>
+                      {book.author}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selection sidebar */}
+        {selectionMode && selectedBooks.length > 0 && (
+          <div className="fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl border-l-4 p-6 overflow-y-auto z-50"
+               style={{ borderColor: '#FF1493' }}>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b-2"
+                   style={{ borderColor: 'var(--beige)' }}>
+                <div>
+                  <h3 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                    Sélection
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onExitSelectionMode}
+                  className="rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => setShowBatchStatusDialog(true)}
+                  className="w-full justify-start text-white"
+                  style={{ background: 'linear-gradient(135deg, #9B59B6, #E6B3E8)' }}
+                >
+                  <Grid3x3 className="w-5 h-5 mr-2" />
+                  Changer le statut
+                </Button>
+
+                <Button
+                  onClick={() => setShowBatchPALDialog(true)}
+                  className="w-full justify-start text-white"
+                  style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                >
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Ajouter à une PAL
+                </Button>
+
+                <Button
+                  onClick={() => setShowBatchSeriesDialog(true)}
+                  className="w-full justify-start text-white"
+                  style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
+                >
+                  <Layers className="w-5 h-5 mr-2" />
+                  Ajouter à une saga
+                </Button>
+
+                <Button
+                  onClick={handleBatchDelete}
+                  variant="destructive"
+                  className="w-full justify-start"
+                >
+                  <Trash2 className="w-5 h-5 mr-2" />
+                  Supprimer
+                </Button>
+              </div>
+
+              {/* Preview of selected books */}
+              <div className="pt-4 border-t-2" style={{ borderColor: 'var(--beige)' }}>
+                <p className="text-xs font-bold mb-3" style={{ color: 'var(--warm-pink)' }}>
+                  LIVRES SÉLECTIONNÉS
+                </p>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {selectedBooks.map(bookId => {
+                    const userBook = userBooks.find(ub => ub.id === bookId);
+                    const book = userBook ? getBookDetails(userBook) : null;
+                    if (!book) return null;
+
+                    return (
+                      <div key={bookId} className="flex items-center gap-2 p-2 rounded-lg"
+                           style={{ backgroundColor: 'var(--cream)' }}>
+                        <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {book.cover_url && (
+                            <img src={book.cover_url} alt={book.title} 
+                                 className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+                            {book.title}
+                          </p>
+                          <p className="text-xs line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                            {book.author}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectionChange(selectedBooks.filter(id => id !== bookId));
+                          }}
+                          className="flex-shrink-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {selectedUserBook && (
         <BookDetailsDialog
           userBook={selectedUserBook}
           book={allBooks.find(b => b.id === selectedUserBook.book_id)}
@@ -433,108 +441,128 @@ export default function BookGrid({
         />
       )}
 
-      {/* Add to Shelf Dialog */}
-      <Dialog open={showShelfDialog} onOpenChange={setShowShelfDialog}>
-        <DialogContent className="bg-white border border-neutral-200 rounded-2xl">
+      {/* Batch Status Dialog */}
+      <Dialog open={showBatchStatusDialog} onOpenChange={setShowBatchStatusDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-neutral-900 flex items-center gap-2">
-              <FolderPlus className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-              Ajouter à une étagère
-            </DialogTitle>
+            <DialogTitle>Changer le statut de {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}</DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
-            <p className="text-sm text-neutral-600">
-              Sélectionnez l'étagère où ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
-            </p>
-
             <div>
-              <Label htmlFor="shelf-select">Étagère</Label>
-              <Select value={selectedShelf} onValueChange={setSelectedShelf}>
-                <SelectTrigger id="shelf-select">
-                  <SelectValue placeholder="Choisir une étagère..." />
+              <Label>Nouveau statut</Label>
+              <Select value={batchStatus} onValueChange={setBatchStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un statut..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Aucune étagère</SelectItem>
-                  {customShelves.map(shelf => (
-                    <SelectItem key={shelf.id} value={shelf.name}>
-                      {shelf.icon} {shelf.name}
+                  {STATUSES.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBatchStatusChange}
+                disabled={!batchStatus || batchUpdateStatusMutation.isPending}
+                className="flex-1 text-white"
+                style={{ background: 'linear-gradient(135deg, #9B59B6, #E6B3E8)' }}
+              >
+                Appliquer
+              </Button>
+              <Button variant="outline" onClick={() => setShowBatchStatusDialog(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch PAL Dialog */}
+      <Dialog open={showBatchPALDialog} onOpenChange={setShowBatchPALDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter à une PAL</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Sélectionner une PAL</Label>
+              <Select value={batchPAL} onValueChange={setBatchPAL}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une PAL..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {readingLists?.map(pal => (
+                    <SelectItem key={pal.id} value={pal.id}>
+                      {pal.icon} {pal.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {customShelves.length === 0 && (
-              <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                  💡 Vous n'avez pas encore d'étagère personnalisée. Créez-en une depuis le bouton "Gérer mes étagères" !
-                </p>
-              </div>
+            {readingLists?.length === 0 && (
+              <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                Aucune PAL créée. Créez-en une depuis l'onglet PAL.
+              </p>
             )}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBatchAddToPAL}
+                disabled={!batchPAL || batchAddToPALMutation.isPending}
+                className="flex-1 text-white"
+                style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+              >
+                Ajouter
+              </Button>
+              <Button variant="outline" onClick={() => setShowBatchPALDialog(false)}>
+                Annuler
+              </Button>
+            </div>
           </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowShelfDialog(false);
-                setSelectedShelf("");
-              }}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={confirmAddToShelf}
-              disabled={addToShelfMutation.isPending}
-              className="text-white"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-            >
-              {addToShelfMutation.isPending ? (
-                <>Ajout...</>
-              ) : (
-                <>Confirmer</>
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* PAL Selection Dialog */}
-      <Dialog open={showPALDialog} onOpenChange={setShowPALDialog}>
-        <DialogContent className="bg-white border border-neutral-200 rounded-2xl">
+      {/* Batch Series Dialog */}
+      <Dialog open={showBatchSeriesDialog} onOpenChange={setShowBatchSeriesDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-neutral-900">
-              Ajouter à une PAL
-            </DialogTitle>
+            <DialogTitle>Ajouter à une saga</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            {readingLists.length > 0 ? (
-              readingLists.map((pal) => (
-                <Button
-                  key={pal.id}
-                  variant="outline"
-                  className="w-full justify-start text-neutral-700 hover:bg-neutral-100"
-                  onClick={() => addToPALMutation.mutate({ palId: pal.id, bookId: bookToAddToPAL })}
-                  disabled={pal.book_ids?.includes(bookToAddToPAL) || addToPALMutation.isPending}
-                >
-                  <span className="flex items-center gap-2">
-                    {pal.icon} {pal.name}
-                  </span>
-                  {pal.book_ids?.includes(bookToAddToPAL) && " (déjà ajouté)"}
-                </Button>
-              ))
-            ) : (
-              <p className="text-center py-4" style={{ color: 'var(--warm-brown)' }}>
-                Aucune PAL créée. Créez-en une d'abord !
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Sélectionner une saga</Label>
+              <Select value={batchSeries} onValueChange={setBatchSeries}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une saga..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {bookSeries.map(series => (
+                    <SelectItem key={series.id} value={series.id}>
+                      {series.series_name} ({(series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)} livres)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {bookSeries.length === 0 && (
+              <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                Aucune saga créée. Créez-en une depuis la page Séries.
               </p>
             )}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBatchAddToSeries}
+                disabled={!batchSeries || batchAddToSeriesMutation.isPending}
+                className="flex-1 text-white"
+                style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
+              >
+                Ajouter
+              </Button>
+              <Button variant="outline" onClick={() => setShowBatchSeriesDialog(false)}>
+                Annuler
+              </Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPALDialog(false)}>
-              Annuler
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
