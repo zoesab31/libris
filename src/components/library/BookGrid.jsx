@@ -73,6 +73,12 @@ export default function BookGrid({
     return allBooks.find(b => b.id === userBook.book_id);
   };
 
+  // Get shelf info for a book
+  const getShelfInfo = (userBook) => {
+    if (!userBook.custom_shelf) return null;
+    return customShelves.find(s => s.name === userBook.custom_shelf);
+  };
+
   const handleBookClick = (userBook) => {
     if (selectionMode) {
       // Toggle selection
@@ -254,7 +260,7 @@ export default function BookGrid({
 
       <div className="relative">
         {/* Main grid */}
-        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 ${
+        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 transition-all ${
           selectionMode && selectedBooks.length > 0 ? 'mr-80' : ''
         }`}>
           {sortedBooks.map((userBook) => {
@@ -262,6 +268,7 @@ export default function BookGrid({
             if (!book) return null;
 
             const isSelected = selectedBooks.includes(userBook.id);
+            const shelfInfo = getShelfInfo(userBook);
 
             return (
               <div key={userBook.id} className="relative group">
@@ -287,12 +294,31 @@ export default function BookGrid({
 
                     {/* Selection indicator - only shows when selected */}
                     {isSelected && (
-                      <div className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                      <div className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-10"
                            style={{ backgroundColor: '#FF1493' }}>
                         <Check className="w-5 h-5 text-white" />
                       </div>
                     )}
 
+                    {/* Custom shelf badge - shows at top left when NOT selected, or below selection badge when selected */}
+                    {shelfInfo && (
+                      <div className={`absolute ${isSelected ? 'top-12 left-2' : 'top-2 left-2'} px-2 py-1 rounded-lg shadow-lg flex items-center gap-1 transition-all z-10`}
+                           style={{ 
+                             backgroundColor: shelfInfo.color === 'rose' ? '#FFB7D5' :
+                                             shelfInfo.color === 'bleu' ? '#A7C7E7' :
+                                             shelfInfo.color === 'vert' ? '#98D8C8' :
+                                             shelfInfo.color === 'violet' ? '#E6B3E8' :
+                                             shelfInfo.color === 'orange' ? '#FFB89C' :
+                                             shelfInfo.color === 'rouge' ? '#FF8FAB' : '#FFB7D5'
+                           }}>
+                        <span className="text-sm">{shelfInfo.icon}</span>
+                        <span className="text-xs font-bold text-white line-clamp-1">
+                          {shelfInfo.name}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Rating badge - always at top right */}
                     {userBook.rating && (
                       <div className="absolute top-2 right-2 px-2 py-1 rounded-full shadow-md flex items-center gap-1"
                            style={{ backgroundColor: 'rgba(255, 215, 0, 0.95)' }}>
