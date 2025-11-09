@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check, Upload, X, Loader2, Heart, Smile, Music } from "lucide-react";
+import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check, Upload, X, Loader2, Heart, Smile, Music, BookOpen } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -25,7 +24,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     is_spoiler: false,
     photo_url: "",
   });
-  const [inviteEmail, setInviteEmail] = useState(""); // This state is no longer directly used for inviting friends, but keeping it for now if other parts rely on it.
+  const [inviteEmail, setInviteEmail] = useState("");
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +87,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     if (numberOfDays > 0 && !selectedDay) {
       setSelectedDay(getCurrentDay());
     }
-  }, [numberOfDays, selectedDay]);
+  }, [numberOfDays]);
 
   // Get day status
   const getDayStatus = (day) => {
@@ -129,20 +128,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
         ? userReactions.filter(e => e !== emoji)
         : [...userReactions, emoji];
       
-      // Remove reactions from other emojis if user is adding a new one
-      const finalUserReactions = newUserReactions.length > 0 && !userReactions.includes(emoji) 
-        ? [emoji] // Only allow one reaction emoji type per user per message
-        : newUserReactions;
-
       await base44.entities.SharedReadingMessage.update(messageId, {
         reactions: {
           ...reactions,
-          [user.email]: finalUserReactions
+          [user.email]: newUserReactions
         }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sharedReadingMessages', reading.id] });
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingMessages'] });
       setShowEmojiPicker(null);
     },
   });
@@ -167,24 +161,21 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const inviteFriendsMutation = useMutation({
     mutationFn: async (friendsToInvite) => {
       const currentParticipants = reading.participants || [];
-      const currentPendingInvitations = reading.pending_invitations || [];
-      
-      // Add new friends to pending_invitations first
-      const newPendingInvitations = [...new Set([...currentPendingInvitations, ...friendsToInvite])];
+      const newParticipants = [...new Set([...currentParticipants, ...friendsToInvite])];
       
       await base44.entities.SharedReading.update(reading.id, {
-        pending_invitations: newPendingInvitations
+        participants: newParticipants
       });
       
       const notificationPromises = friendsToInvite.map(friendEmail =>
         base44.entities.Notification.create({
-          type: "shared_reading_invite", // Changed type for invite
+          type: "shared_reading_update",
           title: "Invitation à une lecture commune",
           message: `${user?.display_name || user?.full_name || 'Une amie'} vous a invitée à lire "${book?.title}"`,
           link_type: "shared_reading",
           link_id: reading.id,
-          created_by: friendEmail, // Recipient
-          from_user: user?.email, // Sender
+          created_by: friendEmail,
+          from_user: user?.email,
         })
       );
 
@@ -222,7 +213,6 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     );
   };
 
-  // Filter friends to only show those not already in participants or pending invitations
   const availableFriends = myFriends.filter(f => 
     !(reading.participants || []).includes(f.friend_email) &&
     !(reading.pending_invitations || []).includes(f.friend_email)
@@ -236,7 +226,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   // Get user info helper
   const getUserInfo = (email) => {
     const userProfile = allUsers.find(u => u.email === email);
-    const friend = myFriends.find(f => f.friend_email === email); // This might find the friend entry, not the user profile directly
+    const friend = myFriends.find(f => f.friend_email === email);
     return {
       name: friend?.friend_name || userProfile?.display_name || userProfile?.full_name || email.split('@')[0],
       picture: userProfile?.profile_picture,
@@ -252,8 +242,6 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     return acc;
   }, {});
 
-  const sortedDays = Object.keys(groupedMessages).sort((a, b) => parseInt(a) - parseInt(b));
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -266,7 +254,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           </p>
         </DialogHeader>
 
-        <Tabs value={open ? "discussion" : "dummy"} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="discussion" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="discussion" style={{ color: '#000000' }}>💬 Discussion</TabsTrigger>
             <TabsTrigger value="program" style={{ color: '#000000' }}>📅 Programme</TabsTrigger>
@@ -312,7 +300,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                           ringColor: '#FF69B4'
                         }}
                       >
-                        {status === 'completed' && <span className="absolute -top-1 -right-1 text-xs">✓</span>}
+                        {status === 'completed' && <span className="absolute -top-1 -right-1">✓</span>}
                         J{day}
                       </Button>
                     );
@@ -320,7 +308,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                 </div>
                 {reading.chapters_per_day && (
                   <p className="text-xs mt-2 text-center" style={{ color: 'var(--warm-pink)' }}>
-                    📖 {reading.chapters_per_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} par jour
+                    📖 {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} par jour
                   </p>
                 )}
               </div>
@@ -359,7 +347,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
             {/* Messages area */}
             <div className="flex-1 overflow-y-auto px-4 space-y-4 mb-4">
-              {sortedDays.map(day => (
+              {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
                 <div key={day}>
                   {/* Day separator */}
                   <div className="flex items-center gap-3 my-4">
@@ -378,18 +366,10 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     const userInfo = getUserInfo(msg.created_by);
                     const allReactions = msg.reactions || {};
                     const reactionCounts = {};
-                    let hasUserReactedWithEmoji = false;
-
-                    // Aggregate reactions from all users
                     Object.values(allReactions).flat().forEach(emoji => {
                       reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
                     });
                     
-                    // Check if current user has reacted to this message with any emoji
-                    if (user && allReactions[user.email] && allReactions[user.email].length > 0) {
-                      hasUserReactedWithEmoji = true;
-                    }
-
                     return (
                       <div
                         key={msg.id}
@@ -410,7 +390,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         )}
 
                         {/* Message bubble */}
-                        <div className={`max-w-[70%] flex flex-col ${isMyMessage ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[70%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
                           {!isMyMessage && (
                             <span className="text-xs font-medium mb-1 px-3" style={{ color: 'var(--warm-pink)' }}>
                               {userInfo.name}
@@ -418,7 +398,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                           )}
 
                           <div
-                            className="rounded-2xl px-4 py-3 shadow-md relative"
+                            className="rounded-2xl px-4 py-3 shadow-md"
                             style={{
                               backgroundColor: isMyMessage ? '#FF1493' : 'white',
                               color: isMyMessage ? 'white' : '#333',
@@ -464,52 +444,52 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             <p className="text-xs mt-2 opacity-70">
                               {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
                             </p>
+                          </div>
 
-                            {/* Reactions */}
-                            <div className={`flex items-center gap-1 ${isMyMessage ? 'justify-end' : 'justify-start'} absolute -bottom-2 ${isMyMessage ? 'left-0' : 'right-0'}`}>
-                              {Object.entries(reactionCounts).map(([emoji, count]) => (
+                          {/* Reactions */}
+                          <div className="flex items-center gap-1 mt-1 px-2">
+                            {Object.entries(reactionCounts).map(([emoji, count]) => (
+                              <button
+                                key={emoji}
+                                onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
+                                className="px-2 py-0.5 rounded-full text-xs flex items-center gap-1 hover:scale-110 transition-transform"
+                                style={{ 
+                                  backgroundColor: (allReactions[user?.email] || []).includes(emoji) ? '#FFE1F0' : '#F5F5F5'
+                                }}
+                              >
+                                <span>{emoji}</span>
+                                <span className="font-bold">{count}</span>
+                              </button>
+                            ))}
+                            <button
+                              onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
+                              className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-gray-100"
+                            >
+                              <Smile className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                            </button>
+                          </div>
+
+                          {/* Emoji picker */}
+                          {showEmojiPicker === msg.id && (
+                            <div className="flex gap-1 mt-1 p-2 rounded-lg bg-white shadow-lg border"
+                                 style={{ borderColor: '#FFE1F0' }}>
+                              {EMOJI_REACTIONS.map(emoji => (
                                 <button
                                   key={emoji}
                                   onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                                  className="px-2 py-0.5 rounded-full text-xs flex items-center gap-1 hover:scale-110 transition-transform"
-                                  style={{ 
-                                    backgroundColor: (allReactions[user?.email] || []).includes(emoji) ? '#FFE1F0' : '#F5F5F5'
-                                  }}
+                                  className="text-lg hover:scale-125 transition-transform"
                                 >
-                                  <span>{emoji}</span>
-                                  <span className="font-bold">{count}</span>
+                                  {emoji}
                                 </button>
                               ))}
-                              <button
-                                onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
-                                className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-gray-100"
-                              >
-                                <Smile className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-                              </button>
                             </div>
-
-                            {/* Emoji picker */}
-                            {showEmojiPicker === msg.id && (
-                              <div className={`absolute z-10 flex gap-1 p-2 rounded-lg bg-white shadow-lg border ${isMyMessage ? 'right-0' : 'left-0'} ${Object.keys(reactionCounts).length > 0 ? '-top-10' : 'top-0'}`}
-                                   style={{ borderColor: '#FFE1F0' }}>
-                                {EMOJI_REACTIONS.map(emoji => (
-                                  <button
-                                    key={emoji}
-                                    onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                                    className="text-lg hover:scale-125 transition-transform"
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          )}
 
                           {/* Delete button for own messages */}
                           {isMyMessage && (
                             <button
                               onClick={() => deleteMessageMutation.mutate(msg.id)}
-                              className="text-xs mt-2 px-2 py-1 rounded hover:bg-red-50 transition-colors self-end"
+                              className="text-xs mt-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
                               style={{ color: '#FF0000' }}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -780,7 +760,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     return (
                       <div key={idx} className="flex items-center gap-3 p-2 rounded-lg"
                            style={{ backgroundColor: 'white' }}>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white font-bold"
                              style={{ backgroundColor: 'var(--deep-pink)' }}>
                           {userInfo.picture ? (
                             <img src={userInfo.picture} alt={userInfo.name} className="w-full h-full object-cover" />
@@ -804,25 +784,18 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     ⏳ Invitations en attente ({reading.pending_invitations.length})
                   </h3>
                   <div className="space-y-2">
-                    {reading.pending_invitations.map((email, idx) => {
-                      const userInfo = getUserInfo(email);
-                      return (
-                        <div key={idx} className="flex items-center gap-3 p-2 rounded-lg"
-                             style={{ backgroundColor: 'white' }}>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-                               style={{ backgroundColor: 'var(--warm-pink)' }}>
-                            {userInfo.picture ? (
-                                <img src={userInfo.picture} alt={userInfo.name} className="w-full h-full object-cover" />
-                              ) : (
-                                userInfo.name[0]?.toUpperCase()
-                              )}
-                          </div>
-                          <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                            {userInfo.name}
-                          </span>
+                    {reading.pending_invitations.map((email, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-2 rounded-lg"
+                           style={{ backgroundColor: 'white' }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                             style={{ backgroundColor: 'var(--warm-pink)' }}>
+                          {email[0].toUpperCase()}
                         </div>
-                      );
-                    })}
+                        <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                          {email}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
