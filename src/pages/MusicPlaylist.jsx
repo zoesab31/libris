@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Music, BookOpen, Play, ExternalLink, Search, ArrowLeft } from "lucide-react";
+import { Music, BookOpen, Play, ExternalLink, Search, ArrowLeft, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export default function MusicPlaylist() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedSeries, setSelectedSeries] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -26,103 +26,200 @@ export default function MusicPlaylist() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  // Group music entries by book and sort by reading order
-  const musicByBook = useMemo(() => {
+  const { data: bookSeries = [] } = useQuery({
+    queryKey: ['bookSeries'],
+    queryFn: () => base44.entities.BookSeries.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Group music entries by series or standalone books
+  const musicBySeries = useMemo(() => {
     const grouped = {};
 
+    // First, process series
+    bookSeries.forEach(series => {
+      const seriesBookIds = [
+        ...(series.books_read || []),
+        ...(series.books_in_pal || []),
+        ...(series.books_wishlist || [])
+      ];
+
+      const seriesBooks = myBooks.filter(ub => seriesBookIds.includes(ub.book_id));
+      const allSeriesMusic = [];
+      const booksInSeries = [];
+
+      seriesBooks.forEach(ub => {
+        const book = allBooks.find(b => b.id === ub.book_id);
+        if (!book) return;
+
+        booksInSeries.push({ book, userBook: ub });
+
+        // Collect all music from this book
+        if (ub.music_playlist && ub.music_playlist.length > 0) {
+          ub.music_playlist.forEach(music => {
+            // Avoid duplicates
+            const exists = allSeriesMusic.some(m =>
+              m.title === music.title &&
+              m.artist === music.artist &&
+              m.link === music.link
+            );
+            if (!exists) {
+              allSeriesMusic.push({
+                ...music,
+                fromBook: book
+              });
+            }
+          });
+        }
+
+        // Old format compatibility
+        if (ub.music && ub.music_link) {
+          const exists = allSeriesMusic.some(m =>
+            m.title === ub.music && m.link === ub.music_link
+          );
+          if (!exists) {
+            allSeriesMusic.push({
+              title: ub.music,
+              artist: ub.music_artist || "",
+              link: ub.music_link,
+              fromBook: book
+            });
+          }
+        }
+      });
+
+      if (allSeriesMusic.length > 0) {
+        grouped[series.id] = {
+          type: 'series',
+          series: series,
+          books: booksInSeries,
+          musicList: allSeriesMusic,
+          // Use the most recently read book for cover
+          coverBook: booksInSeries
+            .sort((a, b) => {
+              const dateA = a.userBook.end_date || a.userBook.start_date || '';
+              const dateB = b.userBook.end_date || b.userBook.start_date || '';
+              return dateB.localeCompare(dateA);
+            })[0]?.book
+        };
+      }
+    });
+
+    // Then, process standalone books (not in any series)
+    const seriesBookIds = new Set();
+    bookSeries.forEach(series => {
+      [...(series.books_read || []), ...(series.books_in_pal || []), ...(series.books_wishlist || [])].forEach(id => {
+        seriesBookIds.add(id);
+      });
+    });
+
     myBooks.forEach(ub => {
+      // Skip if book is already in a series
+      if (seriesBookIds.has(ub.book_id)) return;
+
       const book = allBooks.find(b => b.id === ub.book_id);
       if (!book) return;
 
       const musicList = [];
 
-      // New format: music_playlist array
       if (ub.music_playlist && ub.music_playlist.length > 0) {
         musicList.push(...ub.music_playlist.map(music => ({
           ...music,
-          userBook: ub,
-          book: book
+          fromBook: book
         })));
       }
 
-      // Old format: single music field (only if not already in playlist)
-      if (ub.music && ub.music_link) {
-        const alreadyInPlaylist = ub.music_playlist?.some(m => 
-          m.title === ub.music && m.link === ub.music_link
-        );
-        
-        if (!alreadyInPlaylist) {
-          musicList.push({
-            title: ub.music,
-            artist: ub.music_artist || "",
-            link: ub.music_link,
-            userBook: ub,
-            book: book
-          });
-        }
+      if (ub.music && ub.music_link && !musicList.some(m => m.title === ub.music)) {
+        musicList.push({
+          title: ub.music,
+          artist: ub.music_artist || "",
+          link: ub.music_link,
+          fromBook: book
+        });
       }
 
       if (musicList.length > 0) {
-        grouped[book.id] = {
+        grouped[`standalone_${book.id}`] = {
+          type: 'standalone',
           book,
           userBook: ub,
-          musicList
+          musicList,
+          coverBook: book
         };
       }
     });
 
     return grouped;
-  }, [myBooks, allBooks]);
+  }, [myBooks, allBooks, bookSeries]);
 
-  // Sort books by reading order (end_date)
-  const booksWithMusic = useMemo(() => {
-    return Object.values(musicByBook).sort((a, b) => {
-      const dateA = a.userBook.end_date || a.userBook.start_date || a.userBook.updated_date || '';
-      const dateB = b.userBook.end_date || b.userBook.start_date || b.userBook.updated_date || '';
-      
-      // Sort by most recent first (descending order)
+  // Sort entries by reading order (most recent first)
+  const sortedEntries = useMemo(() => {
+    return Object.values(musicBySeries).sort((a, b) => {
+      const getDate = (entry) => {
+        if (entry.type === 'series') {
+          // Get the most recent date from all books in series
+          return entry.books.reduce((latest, { userBook }) => {
+            const date = userBook.end_date || userBook.start_date || userBook.updated_date || '';
+            return date > latest ? date : latest;
+          }, '');
+        } else {
+          return entry.userBook.end_date || entry.userBook.start_date || entry.userBook.updated_date || '';
+        }
+      };
+
+      const dateA = getDate(a);
+      const dateB = getDate(b);
+
       if (!dateA && !dateB) return 0;
       if (!dateA) return 1;
       if (!dateB) return -1;
-      
-      return new Date(dateB) - new Date(dateA);
+
+      return dateB.localeCompare(dateA);
     });
-  }, [musicByBook]);
+  }, [musicBySeries]);
 
-  const totalMusicCount = booksWithMusic.reduce((sum, b) => sum + b.musicList.length, 0);
+  const totalMusicCount = sortedEntries.reduce((sum, entry) => sum + entry.musicList.length, 0);
 
-  // Filter books by search
-  const filteredBooks = useMemo(() => {
-    if (!searchQuery) return booksWithMusic;
-    
+  // Filter entries by search
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery) return sortedEntries;
+
     const query = searchQuery.toLowerCase().trim();
-    return booksWithMusic.filter(({ book, musicList }) =>
-      book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query) ||
-      musicList.some(m => 
-        m.title.toLowerCase().includes(query) ||
-        m.artist?.toLowerCase().includes(query)
-      )
-    );
-  }, [booksWithMusic, searchQuery]);
+    return sortedEntries.filter(entry => {
+      if (entry.type === 'series') {
+        return entry.series.series_name.toLowerCase().includes(query) ||
+               entry.books.some(({ book }) =>
+                 book.title.toLowerCase().includes(query) ||
+                 book.author.toLowerCase().includes(query)
+               ) ||
+               entry.musicList.some(m =>
+                 m.title.toLowerCase().includes(query) ||
+                 m.artist?.toLowerCase().includes(query)
+               );
+      } else {
+        return entry.book.title.toLowerCase().includes(query) ||
+               entry.book.author.toLowerCase().includes(query) ||
+               entry.musicList.some(m =>
+                 m.title.toLowerCase().includes(query) ||
+                 m.artist?.toLowerCase().includes(query)
+               );
+      }
+    });
+  }, [sortedEntries, searchQuery]);
 
-  // Filter music within selected book
-  const filteredMusicInBook = useMemo(() => {
-    if (!selectedBook) return [];
-    
-    const bookData = musicByBook[selectedBook.id];
-    if (!bookData) return [];
+  // Filter music within selected series/book
+  const filteredMusicInSelection = useMemo(() => {
+    if (!selectedSeries) return [];
 
-    if (!searchQuery) return bookData.musicList;
-    
+    if (!searchQuery) return selectedSeries.musicList;
+
     const query = searchQuery.toLowerCase().trim();
-    return bookData.musicList.filter(m =>
+    return selectedSeries.musicList.filter(m =>
       m.title.toLowerCase().includes(query) ||
       m.artist?.toLowerCase().includes(query)
     );
-  }, [selectedBook, musicByBook, searchQuery]);
+  }, [selectedSeries, searchQuery]);
 
-  // Detect platform from link
   const getPlatform = (link) => {
     if (!link) return 'Lien externe';
     if (link.includes('youtube.com') || link.includes('youtu.be')) return 'YouTube';
@@ -147,12 +244,12 @@ export default function MusicPlaylist() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          {selectedBook && (
+          {selectedSeries && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => {
-                setSelectedBook(null);
+                setSelectedSeries(null);
                 setSearchQuery("");
               }}
               className="rounded-full"
@@ -166,12 +263,16 @@ export default function MusicPlaylist() {
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              {selectedBook ? selectedBook.title : '🎵 Ma Playlist Littéraire'}
+              {selectedSeries ? (
+                selectedSeries.type === 'series' 
+                  ? selectedSeries.series.series_name 
+                  : selectedSeries.book.title
+              ) : '🎵 Ma Playlist Littéraire'}
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {selectedBook 
-                ? `${musicByBook[selectedBook.id]?.musicList.length || 0} musique${musicByBook[selectedBook.id]?.musicList.length > 1 ? 's' : ''}`
-                : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${booksWithMusic.length} livre${booksWithMusic.length > 1 ? 's' : ''}`
+              {selectedSeries 
+                ? `${selectedSeries.musicList.length} musique${selectedSeries.musicList.length > 1 ? 's' : ''}${selectedSeries.type === 'series' ? ` • ${selectedSeries.books.length} tome${selectedSeries.books.length > 1 ? 's' : ''}` : ''}`
+                : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${sortedEntries.length} ${sortedEntries.filter(e => e.type === 'series').length > 0 ? 'saga' : 'livre'}${sortedEntries.length > 1 ? 's' : ''}`
               }
             </p>
           </div>
@@ -185,7 +286,7 @@ export default function MusicPlaylist() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={selectedBook ? "Rechercher une musique..." : "Rechercher un livre, une musique ou un artiste..."}
+              placeholder={selectedSeries ? "Rechercher une musique..." : "Rechercher une saga, un livre, une musique..."}
               className="pl-12 py-6 text-lg bg-white shadow-md rounded-xl border-0"
             />
           </div>
@@ -197,18 +298,18 @@ export default function MusicPlaylist() {
               <div key={i} className="h-80 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--beige)' }} />
             ))}
           </div>
-        ) : selectedBook ? (
+        ) : selectedSeries ? (
           /* Music List View */
           <div>
-            {/* Book Info Card */}
+            {/* Series/Book Info Card */}
             <Card className="mb-6 shadow-xl border-0 overflow-hidden">
               <div className="h-2" style={{ background: 'linear-gradient(90deg, #E6B3E8, #FFB6C8)' }} />
               <CardContent className="p-6">
                 <div className="flex gap-4">
                   <div className="w-32 h-48 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
                        style={{ backgroundColor: 'var(--beige)' }}>
-                    {selectedBook.cover_url ? (
-                      <img src={selectedBook.cover_url} alt={selectedBook.title} className="w-full h-full object-cover" />
+                    {selectedSeries.coverBook?.cover_url ? (
+                      <img src={selectedSeries.coverBook.cover_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
@@ -216,25 +317,45 @@ export default function MusicPlaylist() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                      {selectedBook.title}
-                    </h2>
-                    <p className="text-xl mb-3" style={{ color: 'var(--warm-pink)' }}>
-                      {selectedBook.author}
-                    </p>
-                    {musicByBook[selectedBook.id]?.userBook.rating && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-2xl">⭐</span>
-                        <span className="text-xl font-bold" style={{ color: 'var(--gold)' }}>
-                          {musicByBook[selectedBook.id].userBook.rating}/5
-                        </span>
-                      </div>
+                    {selectedSeries.type === 'series' ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Layers className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                          <span className="text-sm font-bold px-3 py-1 rounded-full"
+                                style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                            Saga • {selectedSeries.books.length} tome{selectedSeries.books.length > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                          {selectedSeries.series.series_name}
+                        </h2>
+                        <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                          {selectedSeries.series.author}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                          {selectedSeries.book.title}
+                        </h2>
+                        <p className="text-xl mb-3" style={{ color: 'var(--warm-pink)' }}>
+                          {selectedSeries.book.author}
+                        </p>
+                        {selectedSeries.userBook.rating && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-2xl">⭐</span>
+                            <span className="text-xl font-bold" style={{ color: 'var(--gold)' }}>
+                              {selectedSeries.userBook.rating}/5
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="flex items-center gap-2 p-3 rounded-xl"
                          style={{ backgroundColor: 'var(--beige)' }}>
                       <Music className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
                       <span className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                        {filteredMusicInBook.length} musique{filteredMusicInBook.length > 1 ? 's' : ''}
+                        {filteredMusicInSelection.length} musique{filteredMusicInSelection.length > 1 ? 's' : ''}
                       </span>
                     </div>
                   </div>
@@ -243,9 +364,9 @@ export default function MusicPlaylist() {
             </Card>
 
             {/* Music Cards */}
-            {filteredMusicInBook.length > 0 ? (
+            {filteredMusicInSelection.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-6">
-                {filteredMusicInBook.map((entry, index) => {
+                {filteredMusicInSelection.map((entry, index) => {
                   const platform = getPlatform(entry.link);
                   const platformColor = getPlatformColor(platform);
 
@@ -266,8 +387,14 @@ export default function MusicPlaylist() {
                                 {entry.title}
                               </p>
                               {entry.artist && (
-                                <p className="text-base" style={{ color: 'var(--warm-pink)' }}>
+                                <p className="text-base mb-2" style={{ color: 'var(--warm-pink)' }}>
                                   {entry.artist}
+                                </p>
+                              )}
+                              {selectedSeries.type === 'series' && entry.fromBook && (
+                                <p className="text-xs px-2 py-1 rounded-full inline-block"
+                                   style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-brown)' }}>
+                                  📚 {entry.fromBook.title}
                                 </p>
                               )}
                             </div>
@@ -315,25 +442,25 @@ export default function MusicPlaylist() {
             )}
           </div>
         ) : (
-          /* Books Grid View */
-          booksWithMusic.length > 0 ? (
-            filteredBooks.length > 0 ? (
+          /* Series/Books Grid View */
+          sortedEntries.length > 0 ? (
+            filteredEntries.length > 0 ? (
               <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {filteredBooks.map(({ book, userBook, musicList }) => (
+                {filteredEntries.map((entry) => (
                   <Card 
-                    key={book.id}
+                    key={entry.type === 'series' ? entry.series.id : entry.book.id}
                     className="cursor-pointer shadow-lg border-0 overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-2"
-                    onClick={() => setSelectedBook(book)}
+                    onClick={() => setSelectedSeries(entry)}
                   >
                     <div className="h-2" style={{ background: 'linear-gradient(90deg, #E6B3E8, #FFB6C8)' }} />
                     <CardContent className="p-0">
-                      {/* Book Cover */}
+                      {/* Cover */}
                       <div className="relative w-full aspect-[2/3] overflow-hidden"
                            style={{ backgroundColor: 'var(--beige)' }}>
-                        {book.cover_url ? (
+                        {entry.coverBook?.cover_url ? (
                           <img 
-                            src={book.cover_url} 
-                            alt={book.title}
+                            src={entry.coverBook.cover_url} 
+                            alt=""
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -342,32 +469,61 @@ export default function MusicPlaylist() {
                           </div>
                         )}
                         
-                        {/* Music Count Badge */}
-                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
-                             style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
-                          <Music className="w-4 h-4 text-white" />
-                          <span className="text-white font-bold text-sm">{musicList.length}</span>
+                        {/* Badges */}
+                        <div className="absolute top-3 right-3 flex flex-col gap-2">
+                          <div className="px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
+                               style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                            <Music className="w-4 h-4 text-white" />
+                            <span className="text-white font-bold text-sm">{entry.musicList.length}</span>
+                          </div>
+                          {entry.type === 'series' && (
+                            <div className="px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
+                                 style={{ backgroundColor: 'rgba(230, 179, 232, 0.95)' }}>
+                              <Layers className="w-3 h-3 text-white" />
+                              <span className="text-white font-bold text-xs">{entry.books.length}</span>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Gradient overlay on hover */}
+                        {/* Gradient overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity" />
                       </div>
 
-                      {/* Book Info */}
+                      {/* Info */}
                       <div className="p-4">
-                        <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {book.title}
-                        </h3>
-                        <p className="text-sm mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
-                          {book.author}
-                        </p>
-                        {userBook.rating && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-lg">⭐</span>
-                            <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
-                              {userBook.rating}/5
-                            </span>
-                          </div>
+                        {entry.type === 'series' ? (
+                          <>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Layers className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                              <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                                    style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                                Saga
+                              </span>
+                            </div>
+                            <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                              {entry.series.series_name}
+                            </h3>
+                            <p className="text-sm line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                              {entry.series.author}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                              {entry.book.title}
+                            </h3>
+                            <p className="text-sm mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+                              {entry.book.author}
+                            </p>
+                            {entry.userBook.rating && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-lg">⭐</span>
+                                <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
+                                  {entry.userBook.rating}/5
+                                </span>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </CardContent>
@@ -378,7 +534,7 @@ export default function MusicPlaylist() {
               <div className="text-center py-20">
                 <Search className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                  Aucun livre trouvé
+                  Aucun résultat trouvé
                 </h3>
                 <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                   Essayez une autre recherche

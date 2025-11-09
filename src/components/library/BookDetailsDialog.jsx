@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   Star, 
-  Music, // Changed to Music from MusicIcon in outline for consistency
+  Music, 
   Calendar, 
   Trash2, 
   Upload, 
@@ -28,8 +28,8 @@ import {
   FileText,
   Tag,
   Info,
-  Plus, // New import
-  Play // New import
+  Plus, 
+  Play 
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -162,6 +162,106 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user,
   });
 
+  // Fetch series data to detect if this book is part of a series
+  const { data: bookSeries = [] } = useQuery({
+    queryKey: ['bookSeries', user?.email],
+    queryFn: () => base44.entities.BookSeries.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  // Find series containing this book
+  const currentSeries = useMemo(() => {
+    if (!book || !bookSeries) return null;
+    return bookSeries.find(series => 
+      series.books_read?.includes(book.id) ||
+      series.books_in_pal?.includes(book.id) ||
+      series.books_wishlist?.includes(book.id)
+    );
+  }, [bookSeries, book?.id]);
+
+  // Fetch all user books to find other books in the same series
+  const { data: allUserBooks = [] } = useQuery({
+    queryKey: ['allUserBooks', user?.email],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  // Get all books in the same series
+  const seriesBookIds = useMemo(() => {
+    if (!currentSeries || !book) return [];
+    return [
+      ...(currentSeries.books_read || []),
+      ...(currentSeries.books_in_pal || []),
+      ...(currentSeries.books_wishlist || [])
+    ].filter(id => id !== book.id); // Exclude current book
+  }, [currentSeries, book?.id]);
+
+  // Function to sync playlists across series
+  const syncPlaylistAcrossSeries = async (musicToSync) => {
+    if (!currentSeries || seriesBookIds.length === 0) return;
+
+    try {
+      // Find all UserBook entries for books in this series
+      const seriesUserBooks = allUserBooks.filter(ub => 
+        seriesBookIds.includes(ub.book_id)
+      );
+
+      // Update each book's playlist
+      const updatePromises = seriesUserBooks.map(ub => {
+        const existingPlaylist = ub.music_playlist || [];
+        const mergedPlaylist = [...existingPlaylist];
+        
+        // Add musicToSync if not already present
+        if (!mergedPlaylist.some(m => 
+              m.title === musicToSync.title && 
+              m.artist === musicToSync.artist &&
+              m.link === musicToSync.link
+            )) {
+          mergedPlaylist.push(musicToSync);
+        }
+
+        return base44.entities.UserBook.update(ub.id, {
+          music_playlist: mergedPlaylist
+        });
+      });
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error syncing playlist across series:', error);
+      toast.error("Erreur lors de la synchronisation de la playlist avec la saga.");
+    }
+  };
+
+  // Function to remove music from all books in series
+  const removeMusicFromSeries = async (musicToRemove) => {
+    if (!currentSeries || seriesBookIds.length === 0) return;
+
+    try {
+      // Find all UserBook entries for books in this series
+      const seriesUserBooks = allUserBooks.filter(ub => 
+        seriesBookIds.includes(ub.book_id)
+      );
+
+      // Remove from each book's playlist
+      const updatePromises = seriesUserBooks.map(ub => {
+        const updatedPlaylist = (ub.music_playlist || []).filter(m =>
+          !(m.title === musicToRemove.title && 
+            m.artist === musicToRemove.artist &&
+            m.link === musicToRemove.link)
+        );
+
+        return base44.entities.UserBook.update(ub.id, {
+          music_playlist: updatedPlaylist
+        });
+      });
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error removing music from series:', error);
+      toast.error("Erreur lors de la suppression de la musique de la saga.");
+    }
+  };
+
   const updateUserBookMutation = useMutation({
     mutationFn: async (data) => {
       await base44.entities.UserBook.update(userBook.id, data);
@@ -173,6 +273,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate all user books to reflect series sync
       toast.success("Modifications enregistrées !");
       onOpenChange(false);
     },
@@ -280,21 +381,41 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     setIsEditingAuthor(true);
   };
 
-  const handleAddMusic = () => {
+  const handleAddMusic = async () => {
     if (!newMusic.title.trim()) {
       toast.error("Le titre de la chanson est requis");
       return;
     }
 
+    const musicToAdd = { ...newMusic };
+    const updatedPlaylist = [...editedData.music_playlist, musicToAdd];
+    
     setEditedData({
       ...editedData,
-      music_playlist: [...editedData.music_playlist, { ...newMusic }]
+      music_playlist: updatedPlaylist
     });
+    
+    // Sync with series immediately
+    if (currentSeries && seriesBookIds.length > 0) {
+      await syncPlaylistAcrossSeries(musicToAdd);
+      queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
+      toast.success(`🎵 Musique ajoutée et synchronisée avec la saga ${currentSeries.series_name}`);
+    }
+    
     setNewMusic({ title: "", artist: "", link: "" });
     setIsAddingMusic(false);
   };
 
-  const handleRemoveMusic = (index) => {
+  const handleRemoveMusic = async (index) => {
+    const musicToRemove = editedData.music_playlist[index];
+    
+    // Remove from series first
+    if (currentSeries && seriesBookIds.length > 0) {
+      await removeMusicFromSeries(musicToRemove);
+      queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
+      toast.success(`🎵 Musique retirée et synchronisée avec la saga ${currentSeries.series_name}`);
+    }
+    
     setEditedData({
       ...editedData,
       music_playlist: editedData.music_playlist.filter((_, i) => i !== index)
@@ -724,7 +845,22 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
                 <Music className="w-5 h-5" />
                 Playlist musicale ({editedData.music_playlist.length})
+                {currentSeries && (
+                  <span className="text-xs px-2 py-1 rounded-full ml-auto font-medium" 
+                        style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
+                    🔗 Saga : {currentSeries.series_name}
+                  </span>
+                )}
               </h3>
+              
+              {currentSeries && (
+                <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--deep-pink)' }}>
+                    💡 Cette playlist est synchronisée avec tous les tomes de la saga "{currentSeries.series_name}".
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {/* Add Music Form */}
                 {isAddingMusic && (
@@ -733,16 +869,19 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       value={newMusic.title}
                       onChange={(e) => setNewMusic({ ...newMusic, title: e.target.value })}
                       placeholder="Titre de la chanson *"
+                      className="focus-glow"
                     />
                     <Input
                       value={newMusic.artist}
                       onChange={(e) => setNewMusic({ ...newMusic, artist: e.target.value })}
                       placeholder="Artiste"
+                      className="focus-glow"
                     />
                     <Input
                       value={newMusic.link}
                       onChange={(e) => setNewMusic({ ...newMusic, link: e.target.value })}
                       placeholder="Lien (YouTube, Spotify, Deezer...)"
+                      className="focus-glow"
                     />
                     <div className="flex gap-2">
                       <Button
