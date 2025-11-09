@@ -151,6 +151,21 @@ export default function MyLibrary() {
     }));
   };
 
+  // Calculate PAL progress (books read from the PAL)
+  const calculatePALProgress = (pal) => {
+    if (!pal.book_ids || pal.book_ids.length === 0) {
+      return { total: 0, completed: 0, percentage: 0 };
+    }
+
+    const total = pal.book_ids.length;
+    const completed = myBooks.filter(ub => 
+      pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
+    ).length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return { total, completed, percentage };
+  };
+
   const filteredBooks = activeTab === "tous"
     ? myBooks
     : activeTab === "custom"
@@ -424,14 +439,48 @@ export default function MyLibrary() {
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
                       {selectedPAL.icon} {selectedPAL.name}
                     </h2>
-                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                      {(selectedPAL.book_ids?.length || 0)} livre{(selectedPAL.book_ids?.length || 0) > 1 ? 's' : ''}
-                    </p>
+                    {(() => {
+                      const progress = calculatePALProgress(selectedPAL);
+                      return (
+                        <div className="flex items-center gap-3 mt-2">
+                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                            {progress.total} livre{progress.total > 1 ? 's' : ''}
+                          </p>
+                          {progress.total > 0 && (
+                            <>
+                              <span style={{ color: 'var(--warm-pink)' }}>•</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-32 h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                  <div 
+                                    className="h-full rounded-full transition-all"
+                                    style={{ 
+                                      width: `${progress.percentage}%`,
+                                      background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                  {progress.completed}/{progress.total}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPALs(true)}
+                    className="font-medium"
+                    style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                  >
+                    Modifier
+                  </Button>
                 </div>
                 
                 <BookGrid
@@ -451,7 +500,6 @@ export default function MyLibrary() {
                     base44.entities.ReadingList.update(selectedPAL.id, { book_ids: updatedBookIds })
                       .then(() => {
                         queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-                        // Update selectedPAL immediately to reflect the change
                         setSelectedPAL({ ...selectedPAL, book_ids: updatedBookIds });
                         toast.success("Livre retiré de la PAL");
                       })
@@ -506,6 +554,7 @@ export default function MyLibrary() {
                               );
                               const previewBooks = palBooks.slice(0, 3);
                               const monthName = pal.month ? monthNames[pal.month - 1] : "";
+                              const progress = calculatePALProgress(pal);
 
                               return (
                                 <div
@@ -561,9 +610,36 @@ export default function MyLibrary() {
                                         {monthName} {pal.year}
                                       </p>
                                     )}
-                                    <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
-                                      {palBooks.length} livre{palBooks.length > 1 ? 's' : ''}
-                                    </p>
+                                    
+                                    {/* Progress Bar and Counter */}
+                                    {progress.total > 0 && (
+                                      <div className="mt-3 space-y-2">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <span className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
+                                            {palBooks.length} à lire
+                                          </span>
+                                          <span style={{ color: 'var(--warm-pink)' }}>•</span>
+                                          <span className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                            {progress.completed}/{progress.total} lus
+                                          </span>
+                                        </div>
+                                        <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                          <div 
+                                            className="h-full rounded-full transition-all duration-500"
+                                            style={{ 
+                                              width: `${progress.percentage}%`,
+                                              background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                            }}
+                                          />
+                                        </div>
+                                        {progress.percentage > 0 && (
+                                          <p className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                            {progress.percentage}% complété
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                    
                                     {pal.description && (
                                       <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                                         {pal.description}

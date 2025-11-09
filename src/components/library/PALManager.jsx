@@ -1,333 +1,430 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, FolderOpen, Edit, Calendar } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-const MONTHS = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-];
+import { Plus, Trash2, Edit, BookOpen, Calendar, Search, X, Check } from "lucide-react";
 
 export default function PALManager({ open, onOpenChange, pals }) {
-  const queryClient = useQueryClient();
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
-  
-  const [newPAL, setNewPAL] = useState({
-    name: "",
-    month: currentMonth,
-    year: currentYear,
-    description: "",
-    icon: "📚",
-  });
+  const [name, setName] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState("📚");
+  const [selectedBookIds, setSelectedBookIds] = useState([]);
   const [editingPAL, setEditingPAL] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
+
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooks'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user && open,
+  });
+
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
+  });
+
+  // Filter books that are "À lire"
+  const toReadBooks = myBooks.filter(ub => ub.status === "À lire");
+  const toReadBookIds = toReadBooks.map(ub => ub.book_id);
+  const availableBooks = allBooks.filter(b => toReadBookIds.includes(b.id));
+
+  // Filter books by search query
+  const filteredBooks = searchQuery.length >= 2
+    ? availableBooks.filter(book =>
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  useEffect(() => {
+    if (editingPAL) {
+      setName(editingPAL.name || "");
+      setMonth(editingPAL.month?.toString() || "");
+      setYear(editingPAL.year || new Date().getFullYear());
+      setDescription(editingPAL.description || "");
+      setIcon(editingPAL.icon || "📚");
+      setSelectedBookIds(editingPAL.book_ids || []);
+    }
+  }, [editingPAL]);
 
   const createPALMutation = useMutation({
     mutationFn: (data) => base44.entities.ReadingList.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-      toast.success("✅ PAL créée !");
-      setNewPAL({ name: "", month: currentMonth, year: currentYear, description: "", icon: "📚" });
+      toast.success("PAL créée !");
+      resetForm();
     },
+    onError: (error) => {
+      console.error("Error creating PAL:", error);
+      toast.error("Erreur lors de la création de la PAL");
+    }
   });
 
   const updatePALMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ReadingList.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-      toast.success("✅ PAL modifiée !");
+      toast.success("PAL mise à jour !");
+      resetForm();
       setEditingPAL(null);
     },
+    onError: (error) => {
+      console.error("Error updating PAL:", error);
+      toast.error("Erreur lors de la mise à jour");
+    }
   });
 
   const deletePALMutation = useMutation({
-    mutationFn: (palId) => base44.entities.ReadingList.delete(palId),
+    mutationFn: (id) => base44.entities.ReadingList.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-      toast.success("✅ PAL supprimée !");
+      toast.success("PAL supprimée");
     },
+    onError: (error) => {
+      console.error("Error deleting PAL:", error);
+      toast.error("Erreur lors de la suppression");
+    }
   });
 
+  const resetForm = () => {
+    setName("");
+    setMonth("");
+    setYear(new Date().getFullYear());
+    setDescription("");
+    setIcon("📚");
+    setSelectedBookIds([]);
+    setSearchQuery("");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Le nom est requis");
+      return;
+    }
+
+    const data = {
+      name: name.trim(),
+      month: month ? parseInt(month) : undefined,
+      year,
+      description: description.trim() || undefined,
+      icon,
+      book_ids: selectedBookIds,
+    };
+
+    if (editingPAL) {
+      updatePALMutation.mutate({ id: editingPAL.id, data });
+    } else {
+      createPALMutation.mutate(data);
+    }
+  };
+
+  const handleDelete = (palId) => {
+    if (window.confirm("Êtes-vous sûre de vouloir supprimer cette PAL ?")) {
+      deletePALMutation.mutate(palId);
+    }
+  };
+
   const handleEdit = (pal) => {
-    setEditingPAL({
-      id: pal.id,
-      name: pal.name,
-      month: pal.month || currentMonth,
-      year: pal.year || currentYear,
-      description: pal.description || "",
-      icon: pal.icon || "📚",
-    });
+    setEditingPAL(pal);
   };
 
-  const handleSaveEdit = () => {
-    if (!editingPAL.name) return;
-    const { id, ...data } = editingPAL;
-    updatePALMutation.mutate({ id, data });
+  const toggleBookSelection = (bookId) => {
+    setSelectedBookIds(prev =>
+      prev.includes(bookId)
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
   };
 
-  const handleCreate = () => {
-    if (!newPAL.name) return;
-    createPALMutation.mutate(newPAL);
+  const handleClose = () => {
+    resetForm();
+    setEditingPAL(null);
+    onOpenChange(false);
   };
+
+  const monthNames = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+  ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2" style={{ color: 'var(--deep-brown)' }}>
-            <FolderOpen className="w-6 h-6" />
-            Gérer mes PAL (Piles À Lire)
+          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
+            {editingPAL ? "✏️ Modifier la PAL" : "📚 Gérer mes PAL"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {!editingPAL ? (
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-              <h3 className="font-semibold mb-4" style={{ color: 'var(--deep-brown)' }}>
-                Créer une nouvelle PAL
-              </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Nom de la PAL *</Label>
-                    <Input
-                      id="name"
-                      value={newPAL.name}
-                      onChange={(e) => setNewPAL({...newPAL, name: e.target.value})}
-                      placeholder="Ex: PAL Novembre 2025"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="icon">Emoji</Label>
-                    <Input
-                      id="icon"
-                      value={newPAL.icon}
-                      onChange={(e) => setNewPAL({...newPAL, icon: e.target.value})}
-                      placeholder="📚"
-                      maxLength={2}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="month">Mois</Label>
-                    <Select 
-                      value={newPAL.month?.toString()} 
-                      onValueChange={(value) => setNewPAL({...newPAL, month: parseInt(value)})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MONTHS.map((m, idx) => (
-                          <SelectItem key={idx + 1} value={(idx + 1).toString()}>
-                            {m}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="year">Année</Label>
-                    <Input
-                      id="year"
-                      type="number"
-                      value={newPAL.year}
-                      onChange={(e) => setNewPAL({...newPAL, year: parseInt(e.target.value)})}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                    id="description"
-                    value={newPAL.description}
-                    onChange={(e) => setNewPAL({...newPAL, description: e.target.value})}
-                    placeholder="Pour mes lectures du mois..."
-                  />
-                </div>
-
-                <Button
-                  onClick={handleCreate}
-                  disabled={!newPAL.name || createPALMutation.isPending}
-                  className="w-full font-medium"
-                  style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Créer la PAL
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-              <h3 className="font-semibold mb-4" style={{ color: 'var(--deep-brown)' }}>
-                Modifier la PAL
-              </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-name">Nom de la PAL *</Label>
-                    <Input
-                      id="edit-name"
-                      value={editingPAL.name}
-                      onChange={(e) => setEditingPAL({...editingPAL, name: e.target.value})}
-                      placeholder="Ex: PAL Novembre 2025"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-icon">Emoji</Label>
-                    <Input
-                      id="edit-icon"
-                      value={editingPAL.icon}
-                      onChange={(e) => setEditingPAL({...editingPAL, icon: e.target.value})}
-                      placeholder="📚"
-                      maxLength={2}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-month">Mois</Label>
-                    <Select 
-                      value={editingPAL.month?.toString()} 
-                      onValueChange={(value) => setEditingPAL({...editingPAL, month: parseInt(value)})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MONTHS.map((m, idx) => (
-                          <SelectItem key={idx + 1} value={(idx + 1).toString()}>
-                            {m}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-year">Année</Label>
-                    <Input
-                      id="edit-year"
-                      type="number"
-                      value={editingPAL.year}
-                      onChange={(e) => setEditingPAL({...editingPAL, year: parseInt(e.target.value)})}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit-description">Description</Label>
-                  <Input
-                    id="edit-description"
-                    value={editingPAL.description}
-                    onChange={(e) => setEditingPAL({...editingPAL, description: e.target.value})}
-                    placeholder="Pour mes lectures du mois..."
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditingPAL(null)}
-                    className="flex-1"
-                  >
-                    Annuler
-                  </Button>
-                  <Button
-                    onClick={handleSaveEdit}
-                    disabled={!editingPAL.name || updatePALMutation.isPending}
-                    className="flex-1 font-medium"
-                    style={{ background: 'linear-gradient(135deg, var(--warm-brown), var(--soft-brown))', color: '#000000' }}
-                  >
-                    Enregistrer
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <h3 className="font-semibold mb-4" style={{ color: 'var(--deep-brown)' }}>
-              Mes PAL ({pals.length})
+          {/* Create/Edit Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 p-4 rounded-xl" 
+                style={{ backgroundColor: 'var(--cream)' }}>
+            <h3 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
+              {editingPAL ? "Modifier cette PAL" : "Créer une nouvelle PAL"}
             </h3>
-            {pals.length > 0 ? (
-              <div className="space-y-2">
-                {pals.map((pal) => {
-                  const monthName = pal.month ? MONTHS[pal.month - 1] : "";
-                  const bookCount = pal.book_ids?.length || 0;
-                  
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label>Nom de la PAL *</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: PAL Novembre 2025"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Mois</Label>
+                <Select value={month} onValueChange={setMonth}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un mois" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>Aucun mois</SelectItem>
+                    {monthNames.map((m, idx) => (
+                      <SelectItem key={idx} value={(idx + 1).toString()}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Année</Label>
+                <Input
+                  type="number"
+                  value={year}
+                  onChange={(e) => setYear(parseInt(e.target.value))}
+                  min={2020}
+                  max={2050}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez cette PAL..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label>Emoji</Label>
+                <Select value={icon} onValueChange={setIcon}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["📚", "📖", "📕", "📗", "📘", "📙", "🎯", "⭐", "💫", "✨", "🌟", "🔖"].map(e => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Book Selection */}
+            <div>
+              <Label>Livres dans cette PAL ({selectedBookIds.length})</Label>
+              <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
+                Recherchez et sélectionnez des livres marqués "À lire"
+              </p>
+
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                        style={{ color: 'var(--warm-pink)' }} />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un livre..."
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Selected Books */}
+              {selectedBookIds.length > 0 && (
+                <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: 'white' }}>
+                  <p className="text-sm font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                    {selectedBookIds.length} livre{selectedBookIds.length > 1 ? 's' : ''} sélectionné{selectedBookIds.length > 1 ? 's' : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBookIds.map(bookId => {
+                      const book = allBooks.find(b => b.id === bookId);
+                      if (!book) return null;
+                      return (
+                        <div
+                          key={bookId}
+                          className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-white"
+                          style={{ backgroundColor: 'var(--soft-pink)' }}
+                        >
+                          <span>{book.title}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleBookSelection(bookId)}
+                            className="hover:opacity-70"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Search Results */}
+              {searchQuery.length >= 2 && filteredBooks.length > 0 && (
+                <div className="border rounded-lg max-h-64 overflow-y-auto" 
+                     style={{ borderColor: 'var(--beige)' }}>
+                  {filteredBooks.map(book => {
+                    const isSelected = selectedBookIds.includes(book.id);
+                    return (
+                      <button
+                        key={book.id}
+                        type="button"
+                        onClick={() => toggleBookSelection(book.id)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left border-b last:border-b-0"
+                        style={{
+                          backgroundColor: isSelected ? 'var(--cream)' : 'white',
+                          borderColor: 'var(--beige)'
+                        }}
+                      >
+                        <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0" 
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} 
+                                 className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <BookOpen className="w-5 h-5" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm line-clamp-1" 
+                             style={{ color: 'var(--dark-text)' }}>
+                            {book.title}
+                          </p>
+                          <p className="text-xs line-clamp-1" 
+                             style={{ color: 'var(--warm-pink)' }}>
+                            {book.author}
+                          </p>
+                        </div>
+
+                        {isSelected && (
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                               style={{ backgroundColor: 'var(--deep-pink)' }}>
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {searchQuery.length >= 2 && filteredBooks.length === 0 && (
+                <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  Aucun livre "À lire" trouvé
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              {editingPAL && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPAL(null);
+                    resetForm();
+                  }}
+                >
+                  Annuler
+                </Button>
+              )}
+              <Button
+                type="submit"
+                disabled={!name.trim() || createPALMutation.isPending || updatePALMutation.isPending}
+                className="flex-1 text-white font-medium"
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+              >
+                {editingPAL ? "Mettre à jour" : "Créer la PAL"}
+              </Button>
+            </div>
+          </form>
+
+          {/* Existing PALs List */}
+          {!editingPAL && pals.length > 0 && (
+            <div>
+              <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--dark-text)' }}>
+                Mes PAL existantes ({pals.length})
+              </h3>
+              <div className="space-y-3">
+                {pals.map(pal => {
+                  const monthName = pal.month ? monthNames[pal.month - 1] : "";
                   return (
                     <div
                       key={pal.id}
-                      className="flex items-center justify-between p-4 rounded-lg border"
-                      style={{ 
-                        backgroundColor: 'var(--cream)',
-                        borderColor: 'var(--beige)'
-                      }}
+                      className="flex items-center justify-between p-4 rounded-xl"
+                      style={{ backgroundColor: 'var(--cream)' }}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <span className="text-2xl">{pal.icon}</span>
-                        <div>
-                          <p className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
-                            {pal.icon} {pal.name}
+                        <div className="flex-1">
+                          <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
+                            {pal.name}
                           </p>
-                          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--warm-brown)' }}>
-                            {monthName && pal.year && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {monthName} {pal.year}
-                              </span>
-                            )}
-                            <span>• {bookCount} livre{bookCount > 1 ? 's' : ''}</span>
-                          </div>
-                          {pal.description && (
-                            <p className="text-xs mt-1" style={{ color: 'var(--warm-brown)' }}>
-                              {pal.description}
-                            </p>
-                          )}
+                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                            {monthName && `${monthName} `}{pal.year} • {pal.book_ids?.length || 0} livre{(pal.book_ids?.length || 0) > 1 ? 's' : ''}
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Button
+                          size="sm"
                           variant="ghost"
-                          size="icon"
                           onClick={() => handleEdit(pal)}
-                          disabled={updatePALMutation.isPending}
                         >
-                          <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                          <Edit className="w-4 h-4" />
                         </Button>
                         <Button
+                          size="sm"
                           variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (window.confirm(`Supprimer la PAL "${pal.name}" ?`)) {
-                              deletePALMutation.mutate(pal.id);
-                            }
-                          }}
-                          disabled={deletePALMutation.isPending}
+                          onClick={() => handleDelete(pal.id)}
+                          className="text-red-500 hover:text-red-700"
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <div className="text-center py-8" style={{ color: 'var(--warm-brown)' }}>
-                Aucune PAL pour le moment
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
