@@ -668,7 +668,7 @@ export default function Dashboard() {
               </h2>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
                 {booksWithMusic.length > 0 && booksWithMusic.map((userBook) => (
-                  <div key={userBook.id} className="flex-shrink-0 w-[160px] scroll-snap-start">
+                  <Link key={userBook.id} to={createPageUrl("MusicPlaylist")} className="flex-shrink-0 w-[160px] scroll-snap-start">
                     <div className="p-4 rounded-2xl h-full" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
                       <div className="text-xl mb-2">🎵</div>
                       <p className="font-bold text-sm text-white mb-1 line-clamp-2">
@@ -677,13 +677,11 @@ export default function Dashboard() {
                       <p className="text-xs text-white text-opacity-90 mb-3">
                         {userBook.music_artist}
                       </p>
-                      <a href={userBook.music_link} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
-                          ▶️ Écouter
-                        </Button>
-                      </a>
+                      <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
+                        🎵 Playlist
+                      </Button>
                     </div>
-                  </div>
+                  </Link>
                 ))}
 
                 {quickAccessItems.map((item) => (
@@ -702,26 +700,27 @@ export default function Dashboard() {
             {/* Desktop - Playlist littéraire */}
             {booksWithMusic.length > 0 && (
               <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
-                <CardContent className="p-6" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
-                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                    🎵 Ma Playlist Littéraire
-                  </h2>
-                  {booksWithMusic.map((userBook) => (
-                    <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
-                      <p className="font-bold text-lg text-white mb-1">
-                        {userBook.music}
-                      </p>
-                      <p className="text-sm text-white text-opacity-90 mb-4">
-                        {userBook.music_artist}
-                      </p>
-                      <a href={userBook.music_link} target="_blank" rel="noopener noreferrer">
+                <Link to={createPageUrl("MusicPlaylist")}>
+                  <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity" 
+                               style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                    <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+                      🎵 Ma Playlist Littéraire
+                    </h2>
+                    {booksWithMusic.map((userBook) => (
+                      <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
+                        <p className="font-bold text-lg text-white mb-1">
+                          {userBook.music}
+                        </p>
+                        <p className="text-sm text-white text-opacity-90 mb-4">
+                          {userBook.music_artist}
+                        </p>
                         <Button className="w-full bg-white text-purple-600 hover:bg-opacity-90">
-                          ▶️ Écouter
+                          🎵 Voir toute ma playlist
                         </Button>
-                      </a>
-                    </div>
-                  ))}
-                </CardContent>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Link>
               </Card>
             )}
 
