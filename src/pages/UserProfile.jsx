@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -15,7 +16,10 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("library");
-  const [shelfFilter, setShelfFilter] = useState("all");
+  const [libraryView, setLibraryView] = useState("shelves"); // "shelves", "read", "toread", "wishlist", "abandoned", "history", "pal"
+  const [selectedShelf, setSelectedShelf] = useState(null);
+  const [expandedYears, setExpandedYears] = useState({});
+  const [selectedPAL, setSelectedPAL] = useState(null);
   
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
@@ -65,7 +69,7 @@ export default function UserProfile() {
   const { data: userCustomShelves = [] } = useQuery({
     queryKey: ['userCustomShelves', userEmail],
     queryFn: () => base44.entities.CustomShelf.filter({ created_by: userEmail }),
-    enabled: !!userEmail && activeTab === 'library',
+    enabled: !!userEmail && activeTab === 'library' && libraryView === 'shelves',
   });
 
   const { data: userQuotes = [] } = useQuery({
@@ -122,7 +126,101 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'map',
   });
 
+  const { data: userPALs = [] } = useQuery({
+    queryKey: ['userPALs', userEmail],
+    queryFn: () => base44.entities.ReadingList.filter({ created_by: userEmail }),
+    enabled: !!userEmail && activeTab === 'library' && libraryView === 'pal',
+  });
+
   const readBooks = userBooks.filter(b => b.status === "Lu");
+  const toReadBooks = userBooks.filter(b => b.status === "À lire");
+  const wishlistBooks = userBooks.filter(b => b.status === "Wishlist");
+  const abandonedBooks = userBooks.filter(b => b.status === "Abandonné");
+
+  // Helper function to check if abandoned book counts (>50%)
+  const abandonedBookCounts = (userBook) => {
+    if (userBook.status !== "Abandonné") return false;
+    if (userBook.abandon_percentage >= 50) return true;
+    if (userBook.abandon_page) {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Get effective date for history
+  const getEffectiveDate = (userBook) => {
+    if (userBook.status === "Lu" && userBook.end_date) {
+      return userBook.end_date;
+    }
+    if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+      return userBook.end_date || userBook.updated_date; // Use end_date if available, else updated_date for abandoned
+    }
+    return null;
+  };
+
+  // Organize books by year/month for history
+  const readBooksByYearMonth = useMemo(() => {
+    const booksToOrganize = userBooks.filter(b => {
+      const effectiveDate = getEffectiveDate(b);
+      return effectiveDate !== null;
+    });
+    
+    const organized = {};
+    booksToOrganize.forEach(userBook => {
+      const effectiveDate = getEffectiveDate(userBook);
+      if (!effectiveDate) return;
+
+      const dateObj = new Date(effectiveDate);
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth() + 1; // getMonth() is 0-indexed
+
+      if (!organized[year]) organized[year] = {};
+      if (!organized[year][month]) organized[year][month] = [];
+      organized[year][month].push(userBook);
+    });
+
+    return organized;
+  }, [userBooks, allBooks]);
+
+  const years = Object.keys(readBooksByYearMonth).sort((a, b) => b - a);
+  const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+  // Group PALs by year
+  const palsByYear = useMemo(() => {
+    const grouped = {};
+    userPALs.forEach(pal => {
+      const year = pal.year || new Date().getFullYear();
+      if (!grouped[year]) grouped[year] = [];
+      grouped[year].push(pal);
+    });
+    
+    Object.keys(grouped).forEach(year => {
+      grouped[year].sort((a, b) => (b.month || 0) - (a.month || 0));
+    });
+    
+    return grouped;
+  }, [userPALs]);
+
+  const palYears = Object.keys(palsByYear).sort((a, b) => b - a);
+
+  // Calculate PAL progress
+  const calculatePALProgress = (pal) => {
+    if (!pal.book_ids || pal.book_ids.length === 0) {
+      return { total: 0, completed: 0, percentage: 0 };
+    }
+
+    const total = pal.book_ids.length;
+    const completed = userBooks.filter(ub => 
+      pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
+    ).length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return { total, completed, percentage };
+  };
+
   const totalPages = readBooks.reduce((sum, ub) => {
     const book = allBooks.find(b => b.id === ub.book_id);
     return sum + (book?.page_count || 0);
@@ -208,12 +306,24 @@ export default function UserProfile() {
   const accentColor = 'var(--deep-pink)';
   const displayName = friendName || profileUser.display_name || profileUser.full_name || userEmail?.split('@')[0] || 'Amie';
 
-  // Filter books by shelf
-  const filteredBooks = shelfFilter === "all" 
-    ? userBooks 
-    : userBooks.filter(ub => ub.custom_shelf === shelfFilter);
-
   const completedChallenges = userBingoChallenges.filter(c => c.is_completed).length;
+
+  // Library view filtering
+  const getLibraryBooks = () => {
+    if (libraryView === "shelves") {
+      return selectedShelf 
+        ? userBooks.filter(ub => ub.custom_shelf === selectedShelf.name)
+        : userBooks; // When "shelves" is selected but no specific shelf, show all books
+    }
+    if (libraryView === "read") return readBooks;
+    if (libraryView === "toread") return toReadBooks;
+    if (libraryView === "wishlist") return wishlistBooks;
+    if (libraryView === "abandoned") return abandonedBooks;
+    // For "history" and "pal" views, books are rendered differently, so no need to return a simple list here.
+    return []; 
+  };
+
+  const libraryBooks = getLibraryBooks();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -377,85 +487,509 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="library">
-            {/* Shelf filters */}
-            {userCustomShelves.length > 0 && (
-              <div className="mb-6 flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setShelfFilter("all")}
-                  className="px-4 py-2 rounded-full text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: shelfFilter === "all" ? accentColor : 'white',
-                    color: shelfFilter === "all" ? 'white' : accentColor,
-                    border: `2px solid ${accentColor}`
-                  }}
+            {/* Library sub-navigation */}
+            <div className="mb-6 flex gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setLibraryView("shelves");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "shelves" && !selectedShelf ? accentColor : 'white',
+                  color: libraryView === "shelves" && !selectedShelf ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                📚 Étagères perso ({userCustomShelves.length})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("read");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "read" ? accentColor : 'white',
+                  color: libraryView === "read" ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                ✅ Lus ({readBooks.length})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("toread");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "toread" ? accentColor : 'white',
+                  color: libraryView === "toread" ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                📖 À lire ({toReadBooks.length})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("wishlist");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "wishlist" ? accentColor : 'white',
+                  color: libraryView === "wishlist" ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                💭 Wishlist ({wishlistBooks.length})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("abandoned");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "abandoned" ? accentColor : 'white',
+                  color: libraryView === "abandoned" ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                💀 Abandonnés ({abandonedBooks.length})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("history");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "history" ? accentColor : 'white',
+                  color: libraryView === "history" ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                📅 Historique ({years.reduce((sum, year) => sum + Object.values(readBooksByYearMonth[year] || {}).reduce((s, books) => s + books.length, 0), 0)})
+              </button>
+              <button
+                onClick={() => {
+                  setLibraryView("pal");
+                  setSelectedShelf(null);
+                  setSelectedPAL(null);
+                }}
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                style={{
+                  backgroundColor: libraryView === "pal" && !selectedPAL ? accentColor : 'white',
+                  color: libraryView === "pal" && !selectedPAL ? 'white' : accentColor,
+                  border: `2px solid ${accentColor}`
+                }}
+              >
+                📚 PAL ({userPALs.length})
+              </button>
+            </div>
+
+            {/* Shelves view */}
+            {libraryView === "shelves" && !selectedShelf && (
+              <div>
+                {userCustomShelves.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+                    {userCustomShelves.map(shelf => {
+                      const shelfBooks = userBooks.filter(b => b.custom_shelf === shelf.name);
+                      const avgRating = shelfBooks.filter(b => b.rating).length > 0
+                        ? shelfBooks.filter(b => b.rating).reduce((sum, b) => sum + b.rating, 0) / shelfBooks.filter(b => b.rating).length
+                        : 0;
+
+                      return (
+                        <div
+                          key={shelf.id}
+                          onClick={() => setSelectedShelf(shelf)}
+                          className="cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                          style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                        >
+                          <div className="text-center">
+                            <span className="text-5xl mb-3 block">{shelf.icon}</span>
+                            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                              {shelf.name}
+                            </h3>
+                            <p className="text-sm font-medium mb-2" style={{ color: 'var(--warm-pink)' }}>
+                              {shelfBooks.length} livre{shelfBooks.length > 1 ? 's' : ''}
+                            </p>
+                            {avgRating > 0 && (
+                              <div className="flex items-center justify-center gap-1">
+                                <span className="text-lg">⭐</span>
+                                <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
+                                  {avgRating.toFixed(1)}/5
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p style={{ color: 'var(--warm-pink)' }}>Aucune étagère personnalisée</p>
+                  </div>
+                )}
+
+                {/* All books below shelves */}
+                <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                  Tous les livres ({userBooks.length})
+                </h3>
+                <div className="grid md:grid-cols-4 gap-4">
+                  {userBooks.map(ub => {
+                    const book = allBooks.find(b => b.id === ub.book_id);
+                    if (!book) return null;
+                    return (
+                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                        <div className="aspect-[2/3] relative">
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
+                              {book.title}
+                            </p>
+                            <span className="text-xs px-2 py-1 rounded-full"
+                                  style={{ backgroundColor: accentColor, color: 'white' }}>
+                              {ub.status}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Shelf detail view */}
+            {libraryView === "shelves" && selectedShelf && (
+              <div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedShelf(null)}
+                  className="mb-4"
+                  style={{ color: accentColor }}
                 >
-                  Tous ({userBooks.length})
-                </button>
-                {userCustomShelves.map(shelf => {
-                  const count = userBooks.filter(b => b.custom_shelf === shelf.name).length;
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Retour aux étagères
+                </Button>
+                <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>
+                  {selectedShelf.icon} {selectedShelf.name}
+                </h2>
+                <div className="grid md:grid-cols-4 gap-4">
+                  {libraryBooks.map(ub => {
+                    const book = allBooks.find(b => b.id === ub.book_id);
+                    if (!book) return null;
+                    return (
+                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                        <div className="aspect-[2/3] relative">
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
+                              {book.title}
+                            </p>
+                            <span className="text-xs px-2 py-1 rounded-full"
+                                  style={{ backgroundColor: accentColor, color: 'white' }}>
+                              {ub.status}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* History view */}
+            {libraryView === "history" && (
+              <div className="space-y-6">
+                {years.map(year => {
+                  const yearData = readBooksByYearMonth[year];
+                  const months = Object.keys(yearData).sort((a, b) => b - a);
+                  const isExpanded = expandedYears[year];
+
                   return (
-                    <button
-                      key={shelf.id}
-                      onClick={() => setShelfFilter(shelf.name)}
-                      className="px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2"
-                      style={{
-                        backgroundColor: shelfFilter === shelf.name ? accentColor : 'white',
-                        color: shelfFilter === shelf.name ? 'white' : accentColor,
-                        border: `2px solid ${accentColor}`
-                      }}
-                    >
-                      <span>{shelf.icon}</span>
-                      {shelf.name} ({count})
-                    </button>
+                    <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                      <button
+                        onClick={() => setExpandedYears(prev => ({ ...prev, [year]: !prev[year] }))}
+                        className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                        style={{ backgroundColor: 'var(--cream)' }}
+                      >
+                        <div>
+                          <h2 className="text-2xl font-bold text-left" style={{ color: 'var(--dark-text)' }}>
+                            {year}
+                          </h2>
+                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                            {months.reduce((sum, m) => sum + yearData[m].length, 0)} livre{months.reduce((sum, m) => sum + yearData[m].length, 0) > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <span style={{ color: accentColor }}>{isExpanded ? '▲' : '▼'}</span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="p-6 space-y-8">
+                          {months.map(month => (
+                            <div key={month}>
+                              <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                                {monthNames[month - 1]}
+                              </h3>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {yearData[month].map(ub => {
+                                  const book = allBooks.find(b => b.id === ub.book_id);
+                                  if (!book) return null;
+                                  const isDNF = ub.status === "Abandonné";
+                                  return (
+                                    <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all relative">
+                                      {isDNF && (
+                                        <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black flex items-center justify-center z-10">
+                                          <span className="text-lg">💀</span>
+                                        </div>
+                                      )}
+                                      <div className="aspect-[2/3] relative">
+                                        {book.cover_url ? (
+                                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center"
+                                               style={{ backgroundColor: 'var(--beige)' }}>
+                                            <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="p-2">
+                                        <p className="font-bold text-sm line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                                          {book.title}
+                                        </p>
+                                        {ub.rating && (
+                                          <p className="text-xs mt-1" style={{ color: 'var(--gold)' }}>
+                                            ⭐ {ub.rating}/5
+                                          </p>
+                                        )}
+                                      </div>
+                                    </Card>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {years.length === 0 && (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p style={{ color: 'var(--warm-pink)' }}>Aucune lecture terminée ou abandonnée pour l'historique.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PAL view */}
+            {libraryView === "pal" && !selectedPAL && (
+              <div className="space-y-6">
+                {palYears.map(year => (
+                  <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden p-6">
+                    <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                      PAL {year}
+                    </h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {palsByYear[year].map(pal => {
+                        const palBooksToReadCount = userBooks.filter(ub => 
+                          pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+                        ).length;
+                        const progress = calculatePALProgress(pal);
+
+                        return (
+                          <div
+                            key={pal.id}
+                            onClick={() => setSelectedPAL(pal)}
+                            className="cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                            style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                          >
+                            <div className="text-center">
+                              <span className="text-4xl mb-3 block">{pal.icon}</span>
+                              <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                                {pal.name}
+                              </h3>
+                              {pal.month && (
+                                <p className="text-xs mb-2" style={{ color: 'var(--warm-brown)' }}>
+                                  {monthNames[pal.month - 1]} {pal.year}
+                                </p>
+                              )}
+                              {progress.total > 0 && (
+                                <div className="mt-3 space-y-2">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <span className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
+                                      {palBooksToReadCount} à lire
+                                    </span>
+                                    <span style={{ color: 'var(--warm-pink)' }}>•</span>
+                                    <span className="text-xs font-bold" style={{ color: accentColor }}>
+                                      {progress.completed}/{progress.total} lus
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                    <div 
+                                      className="h-full rounded-full transition-all"
+                                      style={{ 
+                                        width: `${progress.percentage}%`,
+                                        backgroundColor: accentColor
+                                      }}
+                                    />
+                                  </div>
+                                  {progress.percentage > 0 && (
+                                    <p className="text-xs font-bold" style={{ color: accentColor }}>
+                                      {progress.percentage}% complété
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {palYears.length === 0 && (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p style={{ color: 'var(--warm-pink)' }}>Aucune PAL créée</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PAL detail view */}
+            {libraryView === "pal" && selectedPAL && (
+              <div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedPAL(null)}
+                  className="mb-4"
+                  style={{ color: accentColor }}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Retour aux PAL
+                </Button>
+                <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>
+                  {selectedPAL.icon} {selectedPAL.name}
+                </h2>
+                {(() => {
+                  const progress = calculatePALProgress(selectedPAL);
+                  return progress.total > 0 && (
+                    <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: 'white' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-2">
+                            <span style={{ color: 'var(--dark-text)' }}>{progress.completed}/{progress.total} lus</span>
+                            <span style={{ color: accentColor }}>{progress.percentage}%</span>
+                          </div>
+                          <div className="w-full h-3 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                            <div 
+                              className="h-full rounded-full transition-all"
+                              style={{ 
+                                width: `${progress.percentage}%`,
+                                backgroundColor: accentColor
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="grid md:grid-cols-4 gap-4">
+                  {userBooks.filter(ub => 
+                    selectedPAL.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+                  ).map(ub => {
+                    const book = allBooks.find(b => b.id === ub.book_id);
+                    if (!book) return null;
+                    return (
+                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                        <div className="aspect-[2/3] relative">
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center"
+                                 style={{ backgroundColor: 'var(--beige)' }}>
+                              <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
+                              {book.title}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Other simple views (read, toread, wishlist, abandoned) */}
+            {["read", "toread", "wishlist", "abandoned"].includes(libraryView) && (
+              <div className="grid md:grid-cols-4 gap-4">
+                {libraryBooks.map(ub => {
+                  const book = allBooks.find(b => b.id === ub.book_id);
+                  if (!book) return null;
+                  return (
+                    <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                      <div className="aspect-[2/3] relative">
+                        {book.cover_url ? (
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center"
+                               style={{ backgroundColor: 'var(--beige)' }}>
+                            <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                          <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
+                            {book.title}
+                          </p>
+                          {ub.rating && (
+                            <p className="text-xs text-white">⭐ {ub.rating}/5</p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
                   );
                 })}
               </div>
             )}
 
-            <div className="grid md:grid-cols-4 gap-4">
-              {filteredBooks.map(ub => {
-                const book = allBooks.find(b => b.id === ub.book_id);
-                const shelf = ub.custom_shelf ? userCustomShelves.find(s => s.name === ub.custom_shelf) : null;
-                
-                if (!book) return null;
-                return (
-                  <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
-                    <div className="aspect-[2/3] relative">
-                      {book.cover_url ? (
-                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                      )}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-                        <p className="text-white font-bold mb-2 book-title-display line-clamp-2">
-                          {book.title}
-                        </p>
-                        <div className="flex gap-1 flex-wrap">
-                          <span className="text-xs px-2 py-1 rounded-full"
-                                style={{ backgroundColor: accentColor, color: 'white' }}>
-                            {ub.status}
-                          </span>
-                          {shelf && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-white/90 text-gray-800">
-                              {shelf.icon} {shelf.name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-            {filteredBooks.length === 0 && (
+            {libraryBooks.length === 0 && !["shelves", "history", "pal"].includes(libraryView) && (
               <div className="text-center py-12">
                 <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                <p style={{ color: 'var(--warm-pink)' }}>
-                  {shelfFilter === "all" ? "Aucun livre dans la bibliothèque" : `Aucun livre dans "${shelfFilter}"`}
-                </p>
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun livre dans cette catégorie</p>
               </div>
             )}
           </TabsContent>
