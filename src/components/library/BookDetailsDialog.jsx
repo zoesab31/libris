@@ -30,7 +30,8 @@ import {
   Info,
   Plus,
   Play,
-  Layers
+  Layers,
+  Search // Added Search icon
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -1134,10 +1135,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
 // New component for adding book to series
 function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries }) {
-  const [selectedSeriesId, setSelectedSeriesId] = useState(currentSeries?.id || "");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSeriesId, setSelectedSeriesId] = useState(""); // Initialize as empty
   const [creatingNew, setCreatingNew] = useState(false);
   const [newSeriesName, setNewSeriesName] = useState("");
   const [newSeriesAuthor, setNewSeriesAuthor] = useState(book?.author || "");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -1145,13 +1148,35 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
     queryFn: () => base44.auth.me(),
   });
 
-  // Effect to reset state when dialog opens or book changes
+  // Filter series based on search query
+  const filteredSeries = useMemo(() => {
+    if (!searchQuery.trim()) return allSeries;
+    
+    const query = searchQuery.toLowerCase();
+    return allSeries.filter(series =>
+      series.series_name.toLowerCase().includes(query) ||
+      series.author?.toLowerCase().includes(query)
+    );
+  }, [allSeries, searchQuery]);
+
+  // Get selected series info
+  const selectedSeries = useMemo(() => {
+    return allSeries.find(s => s.id === selectedSeriesId);
+  }, [allSeries, selectedSeriesId]);
+
   useEffect(() => {
-    if (open) {
-      setSelectedSeriesId(currentSeries?.id || "");
+    if (open) { // Only reset when dialog opens
+      if (currentSeries) {
+        setSearchQuery(currentSeries.series_name);
+        setSelectedSeriesId(currentSeries.id);
+      } else {
+        setSearchQuery("");
+        setSelectedSeriesId("");
+      }
       setCreatingNew(false);
       setNewSeriesName("");
       setNewSeriesAuthor(book?.author || "");
+      setShowSuggestions(false); // Hide suggestions on dialog open
     }
   }, [open, currentSeries, book]);
 
@@ -1159,8 +1184,16 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
   const addToSeriesMutation = useMutation({
     mutationFn: async (seriesId) => {
       if (!user) throw new Error("User not loaded.");
+      const series = allSeries.find(s => s.id === seriesId);
+      if (!series) return;
 
-      // First, remove the book from its current series if it's different from the target series
+      const userBooks = await base44.entities.UserBook.filter({ 
+        book_id: book.id, 
+        created_by: user.email 
+      });
+      const userBook = userBooks[0];
+
+      // If the book is currently in a different series, remove it first
       if (currentSeries && currentSeries.id !== seriesId) {
         const updateDataCurrent = {
           books_read: (currentSeries.books_read || []).filter(id => id !== book.id),
@@ -1170,19 +1203,9 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
         await base44.entities.BookSeries.update(currentSeries.id, updateDataCurrent);
       }
 
-      // Now, add the book to the selected series
-      const targetSeries = allSeries.find(s => s.id === seriesId);
-      if (!targetSeries) return; // Should not happen if selectedSeriesId is valid
-
-      const userBookData = await base44.entities.UserBook.filter({
-        book_id: book.id,
-        created_by: user.email
-      });
-      const userBookStatus = userBookData[0]?.status;
-
-      let booksRead = [...(targetSeries.books_read || [])];
-      let booksInPal = [...(targetSeries.books_in_pal || [])];
-      let booksWishlist = [...(targetSeries.books_wishlist || [])];
+      let booksRead = [...(series.books_read || [])];
+      let booksInPal = [...(series.books_in_pal || [])];
+      let booksWishlist = [...(series.books_wishlist || [])];
 
       // Remove book from all lists in the target series first (to ensure it's only in one)
       booksRead = booksRead.filter(id => id !== book.id);
@@ -1190,19 +1213,21 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
       booksWishlist = booksWishlist.filter(id => id !== book.id);
 
       // Add book to the correct list based on its status
-      if (userBookStatus === "Lu") {
+      if (userBook?.status === "Lu") {
         booksRead.push(book.id);
-      } else if (userBookStatus === "À lire") {
+      } else if (userBook?.status === "À lire") {
         booksInPal.push(book.id);
       } else { // Covers "Abandonné", "Wishlist", and default
         booksWishlist.push(book.id);
       }
-
-      await base44.entities.BookSeries.update(seriesId, {
+      
+      const updateData = {
         books_read: Array.from(new Set(booksRead)),
         books_in_pal: Array.from(new Set(booksInPal)),
         books_wishlist: Array.from(new Set(booksWishlist)),
-      });
+      };
+
+      await base44.entities.BookSeries.update(seriesId, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
@@ -1220,7 +1245,7 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
     mutationFn: async () => {
       if (!user) throw new Error("User not loaded.");
 
-      // If the book is currently in a series, remove it first
+      // If the book is currently in *any* series, remove it first
       if (currentSeries) {
         const updateDataCurrent = {
           books_read: (currentSeries.books_read || []).filter(id => id !== book.id),
@@ -1230,31 +1255,19 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
         await base44.entities.BookSeries.update(currentSeries.id, updateDataCurrent);
       }
 
-      const userBookData = await base44.entities.UserBook.filter({
-        book_id: book.id,
-        created_by: user.email
+      const userBooks = await base44.entities.UserBook.filter({ 
+        book_id: book.id, 
+        created_by: user.email 
       });
-      const userBookStatus = userBookData[0]?.status;
-
-      let booksRead = [];
-      let booksInPal = [];
-      let booksWishlist = [];
-
-      if (userBookStatus === "Lu") {
-        booksRead.push(book.id);
-      } else if (userBookStatus === "À lire") {
-        booksInPal.push(book.id);
-      } else { // Covers "Abandonné", "Wishlist", and default
-        booksWishlist.push(book.id);
-      }
+      const userBook = userBooks[0];
 
       const newSeries = {
         series_name: newSeriesName,
         author: newSeriesAuthor,
         total_books: 1, // Will be dynamically calculated later, or adjusted
-        books_read: booksRead,
-        books_in_pal: booksInPal,
-        books_wishlist: booksWishlist,
+        books_read: userBook?.status === "Lu" ? [book.id] : [],
+        books_in_pal: userBook?.status === "À lire" ? [book.id] : [],
+        books_wishlist: userBook?.status === "Wishlist" ? [book.id] : [],
         created_by: user.email,
       };
 
@@ -1267,6 +1280,8 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
       setCreatingNew(false);
       setNewSeriesName("");
       setNewSeriesAuthor(book?.author || "");
+      setSearchQuery("");
+      setSelectedSeriesId("");
       onOpenChange(false);
     },
     onError: (error) => {
@@ -1291,6 +1306,8 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
       queryClient.invalidateQueries({ queryKey: ['bookSeries'] });
       queryClient.invalidateQueries({ queryKey: ['allUserBooks'] });
       toast.success("✅ Livre retiré de la saga !");
+      setSearchQuery("");
+      setSelectedSeriesId("");
       onOpenChange(false);
     },
     onError: (error) => {
@@ -1298,6 +1315,18 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
       toast.error("Échec du retrait de la saga.");
     }
   });
+
+  const handleSelectSeries = (series) => {
+    setSelectedSeriesId(series.id);
+    setSearchQuery(series.series_name);
+    setShowSuggestions(false);
+  };
+
+  const handleCreateFromSearch = () => {
+    setNewSeriesName(searchQuery);
+    setCreatingNew(true);
+    setShowSuggestions(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1312,51 +1341,115 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
         <div className="space-y-4 py-4">
           {!creatingNew ? (
             <>
-              <div>
-                <Label>Sélectionner une saga</Label>
-                <Select value={selectedSeriesId} onValueChange={setSelectedSeriesId}>
-                  <SelectTrigger className="focus-glow">
-                    <SelectValue placeholder="Choisir une saga..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allSeries.map(series => (
-                      <SelectItem key={series.id} value={series.id}>
-                        {series.series_name} ({(series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)} livres)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="relative">
+                <Label className="mb-2 block">Rechercher ou créer une saga</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
+                          style={{ color: 'var(--warm-pink)' }} />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                      if (!e.target.value.trim()) {
+                        setSelectedSeriesId("");
+                      } else {
+                        // If user types, clear selected series if it no longer matches the search
+                        if (selectedSeries && selectedSeries.series_name.toLowerCase() !== e.target.value.toLowerCase()) {
+                          setSelectedSeriesId("");
+                        }
+                      }
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click on suggestions
+                    placeholder="Tapez le nom d'une saga..."
+                    className="pl-10 focus-glow"
+                  />
+                </div>
+
+                {/* Suggestions dropdown */}
+                {showSuggestions && searchQuery.trim() && (
+                  <div className="absolute z-50 w-full mt-1 bg-white rounded-xl shadow-xl border-2 max-h-64 overflow-y-auto"
+                       style={{ borderColor: 'var(--beige)' }}>
+                    {filteredSeries.length > 0 ? (
+                      <>
+                        <div className="p-2 border-b" style={{ borderColor: 'var(--beige)' }}>
+                          <p className="text-xs font-bold px-2" style={{ color: 'var(--warm-pink)' }}>
+                            📚 Sagas existantes
+                          </p>
+                        </div>
+                        {filteredSeries.map(series => (
+                          <button
+                            key={series.id}
+                            onMouseDown={() => handleSelectSeries(series)} // Use onMouseDown to prevent blur from closing before click
+                            className="w-full text-left px-4 py-3 hover:bg-pink-50 transition-colors border-b last:border-b-0"
+                            style={{ borderColor: 'var(--beige)' }}
+                          >
+                            <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                              {series.series_name}
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                              {series.author} • {(series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)} livre{((series.books_read?.length || 0) + (series.books_in_pal?.length || 0) + (series.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                            </p>
+                          </button>
+                        ))}
+                      </>
+                    ) : null}
+                    
+                    {/* Create new option */}
+                    <button
+                      onMouseDown={handleCreateFromSearch} // Use onMouseDown to prevent blur from closing before click
+                      className="w-full text-left px-4 py-3 border-t-2 hover:bg-purple-50 transition-colors"
+                      style={{ borderColor: 'var(--beige)' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Plus className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: 'var(--deep-pink)' }}>
+                            Créer "{searchQuery}"
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                            Nouvelle saga
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="flex flex-col gap-2">
+              {/* Selected series preview */}
+              {selectedSeriesId && selectedSeries && (
+                <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8' }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layers className="w-5 h-5 text-white" />
+                    <span className="font-bold text-white">{selectedSeries.series_name}</span>
+                  </div>
+                  <p className="text-sm text-white opacity-90">
+                    {selectedSeries.author} • {(selectedSeries.books_read?.length || 0) + (selectedSeries.books_in_pal?.length || 0) + (selectedSeries.books_wishlist?.length || 0)} livre{((selectedSeries.books_read?.length || 0) + (selectedSeries.books_in_pal?.length || 0) + (selectedSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 pt-4">
                 <Button
                   onClick={() => addToSeriesMutation.mutate(selectedSeriesId)}
                   disabled={!selectedSeriesId || addToSeriesMutation.isPending}
                   className="w-full text-white"
                   style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
                 >
+                  <Layers className="w-4 h-4 mr-2" />
                   Ajouter à cette saga
-                </Button>
-
-                <Button
-                  onClick={() => {
-                    setCreatingNew(true);
-                    setNewSeriesName(""); // Clear new series name when switching to create mode
-                    setNewSeriesAuthor(book?.author || ""); // Reset author to book's author
-                  }}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Créer une nouvelle saga
                 </Button>
 
                 {currentSeries && (
                   <Button
                     onClick={() => removeFromSeriesMutation.mutate()}
+                    disabled={removeFromSeriesMutation.isPending}
                     variant="outline"
                     className="w-full text-red-600 border-red-300 hover:bg-red-50"
                   >
+                    <X className="w-4 h-4 mr-2" />
                     Retirer de "{currentSeries.series_name}"
                   </Button>
                 )}
@@ -1384,20 +1477,32 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <Button
                   onClick={() => createSeriesMutation.mutate()}
                   disabled={!newSeriesName.trim() || createSeriesMutation.isPending}
                   className="flex-1 text-white"
                   style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
                 >
-                  Créer la saga
+                  {createSeriesMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Créer la saga
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={() => {
                     setCreatingNew(false);
                     setNewSeriesName("");
                     setNewSeriesAuthor(book?.author || "");
+                    setSearchQuery(selectedSeries?.series_name || ""); // Restore search query if a series was selected
+                    setSelectedSeriesId(selectedSeries?.id || "");
                   }}
                   variant="outline"
                 >
