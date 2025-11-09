@@ -9,15 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { 
-  Star, 
-  Music, 
-  Calendar, 
-  Trash2, 
-  Upload, 
-  Loader2, 
-  BookOpen, 
-  X, 
+import {
+  Star,
+  Music,
+  Calendar,
+  Trash2,
+  Upload,
+  Loader2,
+  BookOpen,
+  X,
   Edit,
   Heart,
   Users,
@@ -28,8 +28,8 @@ import {
   FileText,
   Tag,
   Info,
-  Plus, 
-  Play 
+  Plus,
+  Play
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -60,35 +60,54 @@ const getDominantColor = (imageUrl) => {
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.src = imageUrl;
-    
+
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
-      
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      
+
       let r = 0, g = 0, b = 0;
       const pixelCount = data.length / 4;
-      
+
       for (let i = 0; i < data.length; i += 4) {
         r += data[i];
         g += data[i + 1];
         b += data[i + 2];
       }
-      
+
       r = Math.floor(r / pixelCount);
       g = Math.floor(g / pixelCount);
       b = Math.floor(b / pixelCount);
-      
+
       resolve(`rgb(${r}, ${g}, ${b})`);
     };
-    
+
     img.onerror = () => resolve(null);
   });
+};
+
+// Helper function to extract series name from book title
+const extractSeriesName = (title) => {
+  if (!title) return null;
+
+  // Remove common volume/tome patterns
+  const cleaned = title
+    .replace(/\s*-\s*Tome\s+\d+.*$/i, '')
+    .replace(/\s*-\s*Volume\s+\d+.*$/i, '')
+    .replace(/\s*-\s*T\d+.*$/i, '')
+    .replace(/\s*Tome\s+\d+.*$/i, '')
+    .replace(/\s*Volume\s+\d+.*$/i, '')
+    .replace(/\s*\(Tome\s+\d+\).*$/i, '')
+    .replace(/\s*\d+\/\d+$/i, '')
+    .replace(/\s*#\d+$/i, '')
+    .trim();
+
+  return cleaned.length > 2 ? cleaned : null;
 };
 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
@@ -121,7 +140,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     if (userBook) {
       // Migrate old music format to new playlist format if needed
       let playlist = userBook.music_playlist || [];
-      
+
       // If old format exists and not yet in playlist, add it
       if (userBook.music && !playlist.some(m => m.title === userBook.music)) {
         playlist = [{
@@ -169,15 +188,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user && open,
   });
 
-  // Find series containing this book
-  const currentSeries = useMemo(() => {
-    if (!book || !bookSeries) return null;
-    return bookSeries.find(series => 
-      series.books_read?.includes(book.id) ||
-      series.books_in_pal?.includes(book.id) ||
-      series.books_wishlist?.includes(book.id)
-    );
-  }, [bookSeries, book?.id]);
+  // Fetch all books to detect series by name similarity
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['books'],
+    queryFn: () => base44.entities.Book.list(),
+    enabled: open,
+  });
 
   // Fetch all user books to find other books in the same series
   const { data: allUserBooks = [] } = useQuery({
@@ -186,23 +202,70 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: !!user && open,
   });
 
-  // Get all books in the same series
-  const seriesBookIds = useMemo(() => {
-    if (!currentSeries || !book) return [];
-    return [
-      ...(currentSeries.books_read || []),
-      ...(currentSeries.books_in_pal || []),
-      ...(currentSeries.books_wishlist || [])
-    ].filter(id => id !== book.id); // Exclude current book
-  }, [currentSeries, book?.id]);
+  // Find series containing this book (from BookSeries entity)
+  const currentSeries = useMemo(() => {
+    if (!book || !bookSeries) return null;
+    return bookSeries.find(series =>
+      series.books_read?.includes(book.id) ||
+      series.books_in_pal?.includes(book.id) ||
+      series.books_wishlist?.includes(book.id)
+    );
+  }, [bookSeries, book?.id]);
 
-  // Function to sync playlists across series
+  // Detect series by title similarity
+  const detectedSeries = useMemo(() => {
+    if (!book?.title) return null;
+
+    const baseName = extractSeriesName(book.title);
+    if (!baseName) return null;
+
+    // Find all books with similar base name
+    const similarBooks = allBooks.filter(b => {
+      if (b.id === book.id) return false;
+      const otherBaseName = extractSeriesName(b.title);
+      return otherBaseName && otherBaseName.toLowerCase() === baseName.toLowerCase();
+    });
+
+    if (similarBooks.length > 0) {
+      return {
+        name: baseName,
+        bookIds: [book.id, ...similarBooks.map(b => b.id)]
+      };
+    }
+
+    return null;
+  }, [book?.title, book?.id, allBooks]);
+
+  // Use either explicit series or detected series
+  const effectiveSeries = currentSeries ? { name: currentSeries.series_name, type: 'explicit' } : (detectedSeries ? { name: detectedSeries.name, type: 'detected' } : null);
+
+
+  // Get all books in the same series (excluding the current one)
+  const seriesBookIds = useMemo(() => {
+    if (!effectiveSeries) return [];
+
+    if (currentSeries) {
+      // From BookSeries entity
+      return [
+        ...(currentSeries.books_read || []),
+        ...(currentSeries.books_in_pal || []),
+        ...(currentSeries.books_wishlist || [])
+      ].filter(id => id !== book?.id);
+    } else if (detectedSeries) {
+      // From detected series
+      return detectedSeries.bookIds.filter(id => id !== book?.id);
+    }
+
+    return [];
+  }, [effectiveSeries, currentSeries, detectedSeries, book?.id]);
+
+  // Function to sync playlists across series (adding a single music item)
   const syncPlaylistAcrossSeries = async (musicToSync) => {
-    if (!currentSeries || seriesBookIds.length === 0) return;
+    if (!effectiveSeries || seriesBookIds.length === 0) return;
 
     try {
       // Find all UserBook entries for books in this series
-      const seriesUserBooks = allUserBooks.filter(ub => 
+      const seriesUserBooks = allUserBooks.filter(ub =>
         seriesBookIds.includes(ub.book_id)
       );
 
@@ -210,10 +273,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       const updatePromises = seriesUserBooks.map(ub => {
         const existingPlaylist = ub.music_playlist || [];
         const mergedPlaylist = [...existingPlaylist];
-        
+
         // Add musicToSync if not already present
-        if (!mergedPlaylist.some(m => 
-              m.title === musicToSync.title && 
+        if (!mergedPlaylist.some(m =>
+              m.title === musicToSync.title &&
               m.artist === musicToSync.artist &&
               m.link === musicToSync.link
             )) {
@@ -226,6 +289,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       });
 
       await Promise.all(updatePromises);
+      toast.success(`🎵 Musique ajoutée et synchronisée avec la saga ${effectiveSeries.name}`);
     } catch (error) {
       console.error('Error syncing playlist across series:', error);
       toast.error("Erreur lors de la synchronisation de la playlist avec la saga.");
@@ -234,18 +298,18 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   // Function to remove music from all books in series
   const removeMusicFromSeries = async (musicToRemove) => {
-    if (!currentSeries || seriesBookIds.length === 0) return;
+    if (!effectiveSeries || seriesBookIds.length === 0) return;
 
     try {
       // Find all UserBook entries for books in this series
-      const seriesUserBooks = allUserBooks.filter(ub => 
+      const seriesUserBooks = allUserBooks.filter(ub =>
         seriesBookIds.includes(ub.book_id)
       );
 
       // Remove from each book's playlist
       const updatePromises = seriesUserBooks.map(ub => {
         const updatedPlaylist = (ub.music_playlist || []).filter(m =>
-          !(m.title === musicToRemove.title && 
+          !(m.title === musicToRemove.title &&
             m.artist === musicToRemove.artist &&
             m.link === musicToRemove.link)
         );
@@ -256,6 +320,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       });
 
       await Promise.all(updatePromises);
+      toast.success(`🎵 Musique retirée et synchronisée avec la saga ${effectiveSeries.name}`);
     } catch (error) {
       console.error('Error removing music from series:', error);
       toast.error("Erreur lors de la suppression de la musique de la saga.");
@@ -265,7 +330,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const updateUserBookMutation = useMutation({
     mutationFn: async (data) => {
       await base44.entities.UserBook.update(userBook.id, data);
-      
+
       // Award points if status changed to "Lu"
       if (data.status === "Lu" && userBook.status !== "Lu" && user) {
         await awardPointsForLuStatusMutation.mutateAsync();
@@ -318,7 +383,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const updateBookCoverMutation = useMutation({
     mutationFn: async (newCoverUrl) => {
       await base44.entities.Book.update(book.id, { cover_url: newCoverUrl });
-      
+
       try {
         const color = await getDominantColor(newCoverUrl);
         if (color) {
@@ -389,33 +454,31 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
     const musicToAdd = { ...newMusic };
     const updatedPlaylist = [...editedData.music_playlist, musicToAdd];
-    
+
     setEditedData({
       ...editedData,
       music_playlist: updatedPlaylist
     });
-    
+
     // Sync with series immediately
-    if (currentSeries && seriesBookIds.length > 0) {
+    if (effectiveSeries && seriesBookIds.length > 0) {
       await syncPlaylistAcrossSeries(musicToAdd);
       queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
-      toast.success(`🎵 Musique ajoutée et synchronisée avec la saga ${currentSeries.series_name}`);
     }
-    
+
     setNewMusic({ title: "", artist: "", link: "" });
     setIsAddingMusic(false);
   };
 
   const handleRemoveMusic = async (index) => {
     const musicToRemove = editedData.music_playlist[index];
-    
+
     // Remove from series first
-    if (currentSeries && seriesBookIds.length > 0) {
+    if (effectiveSeries && seriesBookIds.length > 0) {
       await removeMusicFromSeries(musicToRemove);
       queryClient.invalidateQueries({ queryKey: ['allUserBooks'] }); // Invalidate to reflect changes
-      toast.success(`🎵 Musique retirée et synchronisée avec la saga ${currentSeries.series_name}`);
     }
-    
+
     setEditedData({
       ...editedData,
       music_playlist: editedData.music_playlist.filter((_, i) => i !== index)
@@ -443,7 +506,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   const handleSave = async () => {
     const updates = { ...editedData };
-    
+
     // Clean up empty values
     if (!updates.rating) delete updates.rating;
     if (!updates.review) delete updates.review;
@@ -510,7 +573,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       placeholder="URL de la nouvelle couverture"
                       className="focus-glow"
                     />
-                    
+
                     <label className="cursor-pointer">
                       <input
                         type="file"
@@ -519,10 +582,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                         className="hidden"
                         disabled={uploadingCover}
                       />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full" 
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
                         disabled={uploadingCover}
                         asChild
                       >
@@ -580,7 +643,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </div>
                     <button
                       onClick={() => setEditingCover(true)}
-                      className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
+                      className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100
                                 transition-opacity flex items-center justify-center rounded-2xl"
                     >
                       <Edit className="w-8 h-8 text-white" />
@@ -596,7 +659,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   {book.title}
                 </h1>
-                
+
                 {isEditingAuthor ? (
                   <div className="flex items-center gap-2">
                     <Input
@@ -636,9 +699,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 <div className={`px-4 py-2 rounded-full font-semibold text-sm border-2 ${statusColors[editedData.status]}`}>
                   {editedData.status}
                 </div>
-                
-                <Select 
-                  value={editedData.reading_language || "Français"} 
+
+                <Select
+                  value={editedData.reading_language || "Français"}
                   onValueChange={(value) => setEditedData({...editedData, reading_language: value})}
                 >
                   <SelectTrigger className="w-48 focus-glow">
@@ -666,8 +729,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 <Label className="text-sm font-semibold mb-2 block" style={{ color: 'var(--dark-text)' }}>
                   Statut du livre
                 </Label>
-                <Select 
-                  value={editedData.status} 
+                <Select
+                  value={editedData.status}
                   onValueChange={(value) => setEditedData({...editedData, status: value})}
                 >
                   <SelectTrigger className="focus-glow">
@@ -719,8 +782,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       updateBookMutation.mutate({ tags: newTags });
                     }}
                     className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 ${
-                      (book.tags || []).includes(tag) 
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg' 
+                      (book.tags || []).includes(tag)
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
                         : 'bg-pink-50 text-pink-800 border-2 border-pink-200'
                     }`}
                   >
@@ -759,7 +822,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 <Sparkles className="w-5 h-5" />
                 Ma lecture
               </h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
@@ -781,8 +844,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                 {customShelves.length > 0 && (
                   <div>
                     <Label className="text-sm font-semibold mb-2 block">Étagère personnalisée</Label>
-                    <Select 
-                      value={editedData.custom_shelf || ""} 
+                    <Select
+                      value={editedData.custom_shelf || ""}
                       onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
                     >
                       <SelectTrigger className="focus-glow">
@@ -840,23 +903,23 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               </div>
             </div>
 
-            {/* Music Section - Updated for playlist */}
+            {/* Music Section - Updated for series sync */}
             <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
               <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
                 <Music className="w-5 h-5" />
                 Playlist musicale ({editedData.music_playlist.length})
-                {currentSeries && (
-                  <span className="text-xs px-2 py-1 rounded-full ml-auto font-medium" 
-                        style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
-                    🔗 Saga : {currentSeries.series_name}
+                {effectiveSeries && (
+                  <span className="text-xs px-2 py-1 rounded-full ml-auto"
+                        style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                    🔗 Saga : {effectiveSeries.name}
                   </span>
                 )}
               </h3>
-              
-              {currentSeries && (
-                <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                  <p className="text-sm font-medium" style={{ color: 'var(--deep-pink)' }}>
-                    💡 Cette playlist est synchronisée avec tous les tomes de la saga "{currentSeries.series_name}".
+
+              {effectiveSeries && (
+                <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
+                  <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
+                    💡 Cette playlist est partagée avec tous les tomes de la saga "{effectiveSeries.name}"
                   </p>
                 </div>
               )}
@@ -927,7 +990,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     {editedData.music_playlist.map((music, index) => {
                       const platform = getPlatform(music.link);
                       const platformColor = platform ? getPlatformColor(platform) : 'var(--warm-pink)';
-                      
+
                       return (
                         <div key={index} className="flex items-center gap-3 p-3 rounded-xl"
                              style={{ backgroundColor: 'var(--cream)' }}>
@@ -1042,7 +1105,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <ArrowLeft className="w-5 h-5 mr-2" />
               Retour
             </Button>
-            
+
             <Button
               variant="destructive"
               onClick={() => {
@@ -1056,7 +1119,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <Trash2 className="w-5 h-5 mr-2" />
               Supprimer
             </Button>
-            
+
             <Button
               onClick={handleSave}
               disabled={updateUserBookMutation.isPending}
