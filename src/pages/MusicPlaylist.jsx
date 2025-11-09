@@ -24,25 +24,53 @@ export default function MusicPlaylist() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  // Filter books that have music
-  const booksWithMusic = myBooks
-    .filter(ub => ub.music && ub.music_link)
-    .map(ub => ({
-      ...ub,
-      book: allBooks.find(b => b.id === ub.book_id)
-    }))
-    .filter(item => item.book); // Remove entries where book wasn't found
+  // Extract all music entries from all books (supporting both old and new format)
+  const allMusicEntries = myBooks.flatMap(ub => {
+    const book = allBooks.find(b => b.id === ub.book_id);
+    if (!book) return [];
+
+    const musicList = [];
+
+    // New format: music_playlist array
+    if (ub.music_playlist && ub.music_playlist.length > 0) {
+      musicList.push(...ub.music_playlist.map(music => ({
+        ...music,
+        userBook: ub,
+        book: book
+      })));
+    }
+
+    // Old format: single music field (only if not already in playlist)
+    if (ub.music && ub.music_link) {
+      const alreadyInPlaylist = ub.music_playlist?.some(m => 
+        m.title === ub.music && m.link === ub.music_link
+      );
+      
+      if (!alreadyInPlaylist) {
+        musicList.push({
+          title: ub.music,
+          artist: ub.music_artist || "",
+          link: ub.music_link,
+          userBook: ub,
+          book: book
+        });
+      }
+    }
+
+    return musicList;
+  });
 
   // Apply search filter
-  const filteredMusic = booksWithMusic.filter(item =>
-    item.book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.music.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.music_artist?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMusic = allMusicEntries.filter(entry =>
+    entry.book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    entry.artist?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Detect platform from link
   const getPlatform = (link) => {
+    if (!link) return 'Lien externe';
     if (link.includes('youtube.com') || link.includes('youtu.be')) return 'YouTube';
     if (link.includes('spotify.com')) return 'Spotify';
     if (link.includes('deezer.com')) return 'Deezer';
@@ -74,7 +102,7 @@ export default function MusicPlaylist() {
               🎵 Ma Playlist Littéraire
             </h1>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {booksWithMusic.length} musique{booksWithMusic.length > 1 ? 's' : ''} associée{booksWithMusic.length > 1 ? 's' : ''} à vos lectures
+              {allMusicEntries.length} musique{allMusicEntries.length > 1 ? 's' : ''} associée{allMusicEntries.length > 1 ? 's' : ''} à vos lectures
             </p>
           </div>
         </div>
@@ -98,22 +126,22 @@ export default function MusicPlaylist() {
           </div>
         ) : filteredMusic.length > 0 ? (
           <div className="grid md:grid-cols-2 gap-6">
-            {filteredMusic.map((item) => {
-              const platform = getPlatform(item.music_link);
+            {filteredMusic.map((entry, index) => {
+              const platform = getPlatform(entry.link);
               const platformColor = getPlatformColor(platform);
 
               return (
-                <Card key={item.id} className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
+                <Card key={`${entry.userBook.id}-${index}`} className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
                   <div className="h-3" style={{ background: `linear-gradient(90deg, ${platformColor}, ${platformColor}88)` }} />
                   <CardContent className="p-6">
                     <div className="flex gap-4 mb-4">
                       {/* Book Cover */}
                       <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md flex-shrink-0"
                            style={{ backgroundColor: 'var(--beige)' }}>
-                        {item.book.cover_url ? (
+                        {entry.book.cover_url ? (
                           <img 
-                            src={item.book.cover_url} 
-                            alt={item.book.title}
+                            src={entry.book.cover_url} 
+                            alt={entry.book.title}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -126,16 +154,16 @@ export default function MusicPlaylist() {
                       {/* Book Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-lg mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {item.book.title}
+                          {entry.book.title}
                         </h3>
                         <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                          {item.book.author}
+                          {entry.book.author}
                         </p>
-                        {item.rating && (
+                        {entry.userBook.rating && (
                           <div className="flex items-center gap-1">
                             <span className="text-lg">⭐</span>
                             <span className="text-sm font-bold" style={{ color: 'var(--gold)' }}>
-                              {item.rating}/5
+                              {entry.userBook.rating}/5
                             </span>
                           </div>
                         )}
@@ -152,11 +180,11 @@ export default function MusicPlaylist() {
                         <Music className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: platformColor }} />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-lg mb-1" style={{ color: 'var(--dark-text)' }}>
-                            {item.music}
+                            {entry.title}
                           </p>
-                          {item.music_artist && (
+                          {entry.artist && (
                             <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                              {item.music_artist}
+                              {entry.artist}
                             </p>
                           )}
                         </div>
@@ -164,21 +192,28 @@ export default function MusicPlaylist() {
                     </div>
 
                     {/* Play Button */}
-                    <a 
-                      href={item.music_link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <button
-                        className="w-full py-3 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                        style={{ backgroundColor: platformColor }}
+                    {entry.link ? (
+                      <a 
+                        href={entry.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block"
                       >
-                        <Play className="w-5 h-5" />
-                        Écouter sur {platform}
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    </a>
+                        <button
+                          className="w-full py-3 rounded-xl font-bold text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                          style={{ backgroundColor: platformColor }}
+                        >
+                          <Play className="w-5 h-5" />
+                          Écouter sur {platform}
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                      </a>
+                    ) : (
+                      <div className="w-full py-3 rounded-xl font-bold text-center"
+                           style={{ backgroundColor: 'var(--beige)', color: 'var(--warm-pink)' }}>
+                        Aucun lien disponible
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );

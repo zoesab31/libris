@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   Star, 
-  Music, 
+  Music, // Changed to Music from MusicIcon in outline for consistency
   Calendar, 
   Trash2, 
   Upload, 
@@ -26,7 +27,9 @@ import {
   Sparkles,
   FileText,
   Tag,
-  Info
+  Info,
+  Plus, // New import
+  Play // New import
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -91,12 +94,59 @@ const getDominantColor = (imageUrl) => {
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [editedData, setEditedData] = useState(userBook);
+  const [editedData, setEditedData] = useState({
+    status: userBook?.status || "À lire",
+    rating: userBook?.rating || "",
+    review: userBook?.review || "",
+    music_playlist: userBook?.music_playlist || [],
+    start_date: userBook?.start_date || "",
+    end_date: userBook?.end_date || "",
+    abandon_page: userBook?.abandon_page || "",
+    abandon_percentage: userBook?.abandon_percentage || "",
+    is_shared_reading: userBook?.is_shared_reading || false,
+    custom_shelf: userBook?.custom_shelf || "",
+    favorite_character: userBook?.favorite_character || "",
+    reading_language: userBook?.reading_language || "Français",
+  });
+
   const [editingCover, setEditingCover] = useState(false);
   const [newCoverUrl, setNewCoverUrl] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
   const [isEditingAuthor, setIsEditingAuthor] = useState(false);
   const [newAuthor, setNewAuthor] = useState("");
+  const [newMusic, setNewMusic] = useState({ title: "", artist: "", link: "" });
+  const [isAddingMusic, setIsAddingMusic] = useState(false);
+
+  useEffect(() => {
+    if (userBook) {
+      // Migrate old music format to new playlist format if needed
+      let playlist = userBook.music_playlist || [];
+      
+      // If old format exists and not yet in playlist, add it
+      if (userBook.music && !playlist.some(m => m.title === userBook.music)) {
+        playlist = [{
+          title: userBook.music,
+          artist: userBook.music_artist || "",
+          link: userBook.music_link || ""
+        }, ...playlist];
+      }
+
+      setEditedData({
+        status: userBook.status || "À lire",
+        rating: userBook.rating || "",
+        review: userBook.review || "",
+        music_playlist: playlist,
+        start_date: userBook.start_date || "",
+        end_date: userBook.end_date || "",
+        abandon_page: userBook.abandon_page || "",
+        abandon_percentage: userBook.abandon_percentage || "",
+        is_shared_reading: userBook.is_shared_reading || false,
+        custom_shelf: userBook.custom_shelf || "",
+        favorite_character: userBook.favorite_character || "",
+        reading_language: userBook.reading_language || "Français",
+      });
+    }
+  }, [userBook]);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -113,48 +163,18 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   });
 
   const updateUserBookMutation = useMutation({
-    mutationFn: (data) => base44.entities.UserBook.update(userBook.id, data),
-    onSuccess: async (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
-      queryClient.invalidateQueries({ queryKey: ['friendsBooks'] });
-      queryClient.invalidateQueries({ queryKey: ['friendsFinishedBooks'] });
+    mutationFn: async (data) => {
+      await base44.entities.UserBook.update(userBook.id, data);
       
-      await queryClient.refetchQueries({ queryKey: ['myBooks'] });
-      
-      toast.success("✅ Modifications enregistrées !");
-
-      const oldStatus = userBook.status;
-      const newStatus = variables.status;
-      
-      const shouldAwardPoints = 
-        (oldStatus !== "Lu" && newStatus === "Lu") || 
-        (oldStatus !== "Abandonné" && newStatus === "Abandonné" && 
-         (variables.abandon_percentage >= 50 || 
-          (variables.abandon_page && book?.page_count && variables.abandon_page >= book.page_count / 2)));
-
-      if (shouldAwardPoints && user) {
-        awardPointsForLuStatusMutation.mutate();
-        
-        const friends = await base44.entities.Friendship.filter({ 
-          created_by: user.email, 
-          status: "Acceptée" 
-        });
-        
-        const notificationPromises = friends.map(friend =>
-          base44.entities.Notification.create({
-            type: "milestone",
-            title: newStatus === "Lu" ? "Livre terminé !" : "Livre abandonné",
-            message: `${user.display_name || user.full_name || 'Une amie'} ${newStatus === "Lu" ? 'a terminé' : 'a abandonné'} "${book?.title}"`,
-            link_type: "book",
-            link_id: book.id,
-            created_by: friend.friend_email,
-            from_user: user.email,
-          })
-        );
-        
-        await Promise.all(notificationPromises);
+      // Award points if status changed to "Lu"
+      if (data.status === "Lu" && userBook.status !== "Lu" && user) {
+        await awardPointsForLuStatusMutation.mutateAsync();
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("Modifications enregistrées !");
+      onOpenChange(false);
     },
     onError: (error) => {
       console.error("Error updating user book:", error);
@@ -260,11 +280,60 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     setIsEditingAuthor(true);
   };
 
-  const handleSave = () => {
-    updateUserBookMutation.mutate({
+  const handleAddMusic = () => {
+    if (!newMusic.title.trim()) {
+      toast.error("Le titre de la chanson est requis");
+      return;
+    }
+
+    setEditedData({
       ...editedData,
-      rating: editedData.rating ? parseFloat(editedData.rating) : undefined,
+      music_playlist: [...editedData.music_playlist, { ...newMusic }]
     });
+    setNewMusic({ title: "", artist: "", link: "" });
+    setIsAddingMusic(false);
+  };
+
+  const handleRemoveMusic = (index) => {
+    setEditedData({
+      ...editedData,
+      music_playlist: editedData.music_playlist.filter((_, i) => i !== index)
+    });
+  };
+
+  const getPlatform = (link) => {
+    if (!link) return null;
+    if (link.includes('youtube.com') || link.includes('youtu.be')) return 'YouTube';
+    if (link.includes('spotify.com')) return 'Spotify';
+    if (link.includes('deezer.com')) return 'Deezer';
+    if (link.includes('apple.com')) return 'Apple Music';
+    return 'Lien';
+  };
+
+  const getPlatformColor = (platform) => {
+    switch(platform) {
+      case 'YouTube': return '#FF0000';
+      case 'Spotify': return '#1DB954';
+      case 'Deezer': return '#FF6600';
+      case 'Apple Music': return '#FA243C';
+      default: return '#9B59B6';
+    }
+  };
+
+  const handleSave = async () => {
+    const updates = { ...editedData };
+    
+    // Clean up empty values
+    if (!updates.rating) delete updates.rating;
+    if (!updates.review) delete updates.review;
+    if (!updates.start_date) delete updates.start_date;
+    if (!updates.end_date) delete updates.end_date;
+    if (!updates.abandon_page) delete updates.abandon_page;
+    if (!updates.abandon_percentage) delete updates.abandon_percentage;
+    if (!updates.custom_shelf) delete updates.custom_shelf;
+    if (!updates.favorite_character) delete updates.favorite_character;
+
+    updateUserBookMutation.mutate(updates);
   };
 
   if (!book) return null;
@@ -279,7 +348,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-pink-50 via-white to-purple-50">
         <style>{`
           .focus-glow:focus {
             box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
@@ -650,40 +719,124 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               </div>
             </div>
 
-            {/* Card: Musique */}
+            {/* Music Section - Updated for playlist */}
             <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
               <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
                 <Music className="w-5 h-5" />
-                Musique associée
+                Playlist musicale ({editedData.music_playlist.length})
               </h3>
               <div className="space-y-3">
-                <Input
-                  value={editedData.music || ""}
-                  onChange={(e) => setEditedData({...editedData, music: e.target.value})}
-                  placeholder="Titre de la chanson"
-                  className="focus-glow"
-                />
-                <Input
-                  value={editedData.music_artist || ""}
-                  onChange={(e) => setEditedData({...editedData, music_artist: e.target.value})}
-                  placeholder="Nom de l'artiste"
-                  className="focus-glow"
-                />
-                <Input
-                  value={editedData.music_link || ""}
-                  onChange={(e) => setEditedData({...editedData, music_link: e.target.value})}
-                  placeholder="Lien YouTube, Spotify, Deezer..."
-                  className="focus-glow"
-                />
-                {editedData.music_link && (
-                  <a 
-                    href={editedData.music_link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium hover:scale-105 transition-transform"
+                {/* Add Music Form */}
+                {isAddingMusic && (
+                  <div className="p-4 rounded-xl mb-3 space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                    <Input
+                      value={newMusic.title}
+                      onChange={(e) => setNewMusic({ ...newMusic, title: e.target.value })}
+                      placeholder="Titre de la chanson *"
+                    />
+                    <Input
+                      value={newMusic.artist}
+                      onChange={(e) => setNewMusic({ ...newMusic, artist: e.target.value })}
+                      placeholder="Artiste"
+                    />
+                    <Input
+                      value={newMusic.link}
+                      onChange={(e) => setNewMusic({ ...newMusic, link: e.target.value })}
+                      placeholder="Lien (YouTube, Spotify, Deezer...)"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddMusic}
+                        className="text-white"
+                        style={{ backgroundColor: 'var(--deep-pink)' }}
+                      >
+                        Ajouter
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setIsAddingMusic(false);
+                          setNewMusic({ title: "", artist: "", link: "" });
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isAddingMusic && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setIsAddingMusic(true)}
+                    className="w-full text-white"
+                    style={{ backgroundColor: 'var(--soft-pink)' }}
                   >
-                    ▶️ Écouter
-                  </a>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Ajouter une musique
+                  </Button>
+                )}
+
+                {/* Music List */}
+                {editedData.music_playlist.length > 0 ? (
+                  <div className="space-y-2 pt-2">
+                    {editedData.music_playlist.map((music, index) => {
+                      const platform = getPlatform(music.link);
+                      const platformColor = platform ? getPlatformColor(platform) : 'var(--warm-pink)';
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-3 p-3 rounded-xl"
+                             style={{ backgroundColor: 'var(--cream)' }}>
+                          <Music className="w-5 h-5 flex-shrink-0" style={{ color: platformColor }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                              {music.title}
+                            </p>
+                            {music.artist && (
+                              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                {music.artist}
+                              </p>
+                            )}
+                            {platform && (
+                              <p className="text-xs mt-1" style={{ color: platformColor }}>
+                                📱 {platform}
+                              </p>
+                            )}
+                          </div>
+                          {music.link && (
+                            <a href={music.link} target="_blank" rel="noopener noreferrer">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="flex-shrink-0"
+                              >
+                                <Play className="w-4 h-4" />
+                              </Button>
+                            </a>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRemoveMusic(index)}
+                            className="flex-shrink-0 text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                    Aucune musique associée
+                  </p>
                 )}
               </div>
             </div>

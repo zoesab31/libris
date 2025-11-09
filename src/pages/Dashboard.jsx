@@ -219,7 +219,42 @@ export default function Dashboard() {
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
 
-  const booksWithMusic = myBooks.filter(b => b.music && b.music_link).slice(0, 1);
+  // Get books with music - check both old and new format
+  const booksWithMusic = myBooks.filter(b => {
+    // New format: has music_playlist with at least one entry
+    if (b.music_playlist && b.music_playlist.length > 0) return true;
+    // Old format: has music and link
+    if (b.music && b.music_link) return true;
+    return false;
+  }).slice(0, 1);
+
+  // Get first music from a book (supporting both formats)
+  const getFirstMusic = (userBook) => {
+    // Try new format first
+    if (userBook.music_playlist && userBook.music_playlist.length > 0) {
+      return userBook.music_playlist[0];
+    }
+    // Fallback to old format
+    if (userBook.music) {
+      return {
+        title: userBook.music,
+        artist: userBook.music_artist || "",
+        link: userBook.music_link || ""
+      };
+    }
+    return null;
+  };
+
+  // Count total music entries
+  const totalMusicCount = myBooks.reduce((count, book) => {
+    if (book.music_playlist && book.music_playlist.length > 0) {
+      return count + book.music_playlist.length;
+    }
+    if (book.music && book.music_link) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
 
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
@@ -712,22 +747,27 @@ export default function Dashboard() {
                 ⚡ Accès rapide
               </h2>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
-                {booksWithMusic.length > 0 && booksWithMusic.map((userBook) => (
-                  <Link key={userBook.id} to={createPageUrl("MusicPlaylist")} className="flex-shrink-0 w-[160px] scroll-snap-start">
-                    <div className="p-4 rounded-2xl h-full" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
-                      <div className="text-xl mb-2">🎵</div>
-                      <p className="font-bold text-sm text-white mb-1 line-clamp-2">
-                        {userBook.music}
-                      </p>
-                      <p className="text-xs text-white text-opacity-90 mb-3">
-                        {userBook.music_artist}
-                      </p>
-                      <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
-                        🎵 Playlist
-                      </Button>
-                    </div>
-                  </Link>
-                ))}
+                {booksWithMusic.length > 0 && booksWithMusic.map((userBook) => {
+                  const firstMusic = getFirstMusic(userBook);
+                  if (!firstMusic) return null;
+                  
+                  return (
+                    <Link key={userBook.id} to={createPageUrl("MusicPlaylist")} className="flex-shrink-0 w-[160px] scroll-snap-start">
+                      <div className="p-4 rounded-2xl h-full" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                        <div className="text-xl mb-2">🎵</div>
+                        <p className="font-bold text-sm text-white mb-1 line-clamp-2">
+                          {firstMusic.title}
+                        </p>
+                        <p className="text-xs text-white text-opacity-90 mb-3">
+                          {firstMusic.artist}
+                        </p>
+                        <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
+                          🎵 {totalMusicCount > 1 ? `${totalMusicCount} musiques` : 'Playlist'}
+                        </Button>
+                      </div>
+                    </Link>
+                  );
+                })}
 
                 {quickAccessItems.map((item) => (
                   <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
@@ -751,19 +791,24 @@ export default function Dashboard() {
                     <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                       🎵 Ma Playlist Littéraire
                     </h2>
-                    {booksWithMusic.map((userBook) => (
-                      <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
-                        <p className="font-bold text-lg text-white mb-1">
-                          {userBook.music}
-                        </p>
-                        <p className="text-sm text-white text-opacity-90 mb-4">
-                          {userBook.music_artist}
-                        </p>
-                        <Button className="w-full bg-white text-purple-600 hover:bg-opacity-90">
-                          🎵 Voir toute ma playlist
-                        </Button>
-                      </div>
-                    ))}
+                    {booksWithMusic.map((userBook) => {
+                      const firstMusic = getFirstMusic(userBook);
+                      if (!firstMusic) return null;
+                      
+                      return (
+                        <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
+                          <p className="font-bold text-lg text-white mb-1">
+                            {firstMusic.title}
+                          </p>
+                          <p className="text-sm text-white text-opacity-90 mb-4">
+                            {firstMusic.artist}
+                          </p>
+                          <Button className="w-full bg-white text-purple-600 hover:bg-opacity-90">
+                            🎵 {totalMusicCount > 1 ? `Voir mes ${totalMusicCount} musiques` : 'Voir ma playlist'}
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </CardContent>
                 </Link>
               </Card>
