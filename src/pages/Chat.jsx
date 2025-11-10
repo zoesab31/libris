@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2, Plus, Bell, Paperclip, Image as ImageIcon } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Users, Search, Trash2, Plus, Bell, Paperclip, Image as ImageIcon, Loader2, X } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ export default function Chat() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -121,22 +123,40 @@ export default function Chat() {
   }, [selectedChat, messages, user, queryClient]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (content) => {
-      await base44.entities.ChatMessage.create({
+    mutationFn: async ({ content, photoUrl }) => {
+      const message = await base44.entities.ChatMessage.create({
         chat_room_id: selectedChat.id,
         sender_email: user?.email,
         content,
+        attachment_url: photoUrl || null,
         seen_by: [user?.email]
       });
 
       await base44.entities.ChatRoom.update(selectedChat.id, {
         last_message_at: new Date().toISOString()
       });
+
+      // Send notifications to other participants
+      const otherParticipants = selectedChat.participants.filter(p => p !== user?.email);
+      await Promise.all(
+        otherParticipants.map(email =>
+          base44.entities.Notification.create({
+            type: "friend_comment",
+            title: "💌 Nouveau message",
+            message: `${user?.display_name || user?.full_name || 'Une amie'} vous a envoyé un message`,
+            link_type: "chat",
+            link_id: selectedChat.id,
+            created_by: email,
+            from_user: user?.email,
+          })
+        )
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
       setMessageInput("");
+      setPhotoPreview(null);
       scrollToBottom();
     },
   });
@@ -184,6 +204,23 @@ export default function Chat() {
     },
   });
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      setPhotoPreview(result.file_url);
+      toast.success("Photo uploadée !");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -194,8 +231,11 @@ export default function Chat() {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!messageInput.trim()) return;
-    sendMessageMutation.mutate(messageInput);
+    if (!messageInput.trim() && !photoPreview) return;
+    sendMessageMutation.mutate({ 
+      content: messageInput.trim() || "📷 Photo",
+      photoUrl: photoPreview 
+    });
   };
 
   const handleDeleteChat = (chatId) => {
@@ -551,10 +591,25 @@ export default function Chat() {
                           {message.sender_email?.split('@')[0]}
                         </p>
                       )}
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words"
-                         style={{ color: '#333' }}>
-                        {message.content}
-                      </p>
+                      
+                      {/* Photo attachment */}
+                      {message.attachment_url && (
+                        <div className="mb-2 rounded-lg overflow-hidden cursor-pointer"
+                             onClick={() => window.open(message.attachment_url, '_blank')}>
+                          <img 
+                            src={message.attachment_url} 
+                            alt="Photo" 
+                            className="max-w-full max-h-64 object-cover hover:scale-105 transition-transform" 
+                          />
+                        </div>
+                      )}
+                      
+                      {message.content && (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words"
+                           style={{ color: '#333' }}>
+                          {message.content}
+                        </p>
+                      )}
                       <p className="text-xs mt-2 opacity-70" style={{ color: '#666' }}>
                         {format(messageDate, 'HH:mm', { locale: fr })}
                       </p>
@@ -565,23 +620,60 @@ export default function Chat() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input area */}
+            {/* Input area with photo preview */}
             <form onSubmit={handleSendMessage} 
                   className="p-4 border-t"
                   style={{ 
                     borderColor: '#FFD8E8',
                     backgroundColor: 'white'
                   }}>
+              {/* Photo preview */}
+              {photoPreview && (
+                <div className="mb-3 relative inline-block">
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 rounded-lg object-cover" 
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    onClick={() => setPhotoPreview(null)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+
               <div className="flex gap-3 items-end">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="rounded-full flex-shrink-0"
-                  style={{ color: '#FF4DA6' }}
-                >
-                  <Plus className="w-5 h-5" />
-                </Button>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="rounded-full flex-shrink-0"
+                    style={{ color: '#FF4DA6' }}
+                    disabled={uploadingPhoto}
+                    asChild
+                  >
+                    <span>
+                      {uploadingPhoto ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-5 h-5" />
+                      )}
+                    </span>
+                  </Button>
+                </label>
                 
                 <Textarea
                   value={messageInput}
@@ -600,20 +692,10 @@ export default function Chat() {
                   }}
                   rows={1}
                 />
-
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="rounded-full flex-shrink-0"
-                  style={{ color: '#FF4DA6' }}
-                >
-                  <Paperclip className="w-5 h-5" />
-                </Button>
                 
                 <Button
                   type="submit"
-                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
+                  disabled={(!messageInput.trim() && !photoPreview) || sendMessageMutation.isPending}
                   size="icon"
                   className="rounded-full w-12 h-12 flex-shrink-0 shadow-lg"
                   style={{ 
