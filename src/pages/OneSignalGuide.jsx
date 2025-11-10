@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Circle, Copy, ExternalLink, Bell, Smartphone, Globe, Code } from "lucide-react";
+import { CheckCircle2, Circle, Copy, ExternalLink, Bell, Smartphone, Globe, Code, Shield, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 const steps = [
   {
@@ -39,8 +41,16 @@ const steps = [
 
 export default function OneSignalGuide() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [appId, setAppId] = useState("");
+  const [appId, setAppId] = useState("6a28ef87-f515-4193-8df1-529268523ebb");
   const [siteUrl, setSiteUrl] = useState("");
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // 🔒 SÉCURITÉ : Vérifier si l'utilisateur est admin
+  const isAdmin = user?.role === 'admin';
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -68,9 +78,82 @@ export default function OneSignalGuide() {
 const ONESIGNAL_APP_ID = '${appId || 'YOUR_ONESIGNAL_APP_ID'}';`;
   };
 
+  // 🔒 Afficher message si non-admin
+  if (!isAdmin) {
+    return (
+      <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="shadow-xl border-0">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+                     style={{ backgroundColor: '#FFF3E0' }}>
+                  <Shield className="w-10 h-10" style={{ color: '#F57C00' }} />
+                </div>
+                <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
+                  🔒 Accès Réservé aux Administrateurs
+                </h1>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  La configuration OneSignal est disponible uniquement pour les comptes administrateurs.
+                </p>
+                
+                <div className="p-6 rounded-xl mb-6" style={{ backgroundColor: '#E0F2FE' }}>
+                  <div className="flex items-start gap-3 text-left">
+                    <Lock className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#0369A1' }} />
+                    <div>
+                      <h3 className="font-bold mb-2" style={{ color: '#0369A1' }}>
+                        Pourquoi cette restriction ?
+                      </h3>
+                      <ul className="text-sm space-y-2" style={{ color: '#075985' }}>
+                        <li>• <strong>Sécurité :</strong> Les notifications push nécessitent des clés API sensibles</li>
+                        <li>• <strong>Contrôle :</strong> Les admins gèrent qui peut envoyer des notifications</li>
+                        <li>• <strong>Configuration :</strong> Setup technique réservé aux administrateurs</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-xl" style={{ backgroundColor: '#D1FAE5' }}>
+                  <h3 className="font-bold mb-2 text-green-900">
+                    ✅ Ce qui fonctionne pour vous
+                  </h3>
+                  <ul className="text-sm space-y-2 text-left text-green-800">
+                    <li>• <strong>Notifications in-app</strong> : Badge rouge et cloche</li>
+                    <li>• <strong>Messages en temps réel</strong> : Mise à jour instantanée</li>
+                    <li>• <strong>Marquage automatique</strong> : Messages lus automatiquement</li>
+                    <li>• <strong>Deep links</strong> : Accès direct aux conversations</li>
+                  </ul>
+                </div>
+
+                <p className="text-sm mt-6" style={{ color: 'var(--warm-brown)' }}>
+                  Pour devenir administrateur, contactez l'administrateur principal de l'application.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto">
+        {/* Admin Badge */}
+        <div className="mb-6 p-4 rounded-xl" style={{ backgroundColor: '#E0F2FE' }}>
+          <div className="flex items-center gap-3">
+            <Shield className="w-6 h-6" style={{ color: '#0369A1' }} />
+            <div>
+              <p className="font-bold" style={{ color: '#0369A1' }}>
+                ✨ Accès Administrateur
+              </p>
+              <p className="text-sm" style={{ color: '#075985' }}>
+                Vous avez accès à la configuration OneSignal
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"

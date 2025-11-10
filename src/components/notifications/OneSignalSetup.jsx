@@ -5,6 +5,8 @@ import { useEffect } from 'react';
  * 
  * ✅ CONFIGURATION ACTIVÉE !
  * App ID: 6a28ef87-f515-4193-8df1-529268523ebb
+ * 
+ * 🔒 SÉCURITÉ : Seuls les administrateurs peuvent utiliser OneSignal
  */
 
 // ✅ App ID configuré
@@ -12,10 +14,18 @@ const ONESIGNAL_APP_ID = '6a28ef87-f515-4193-8df1-529268523ebb';
 
 export default function OneSignalSetup({ user }) {
   useEffect(() => {
+    // 🔒 SÉCURITÉ : Ne pas initialiser OneSignal pour les non-admins
+    if (!user || user.role !== 'admin') {
+      console.log('[OneSignal] User is not admin, skipping initialization');
+      return;
+    }
+
     // Ne pas initialiser si déjà fait
     if (typeof window === 'undefined' || !window.OneSignal) {
       return;
     }
+
+    console.log('[OneSignal] Initializing for admin user:', user.email);
 
     // Initialiser OneSignal
     window.OneSignal = window.OneSignal || [];
@@ -68,16 +78,17 @@ export default function OneSignalSetup({ user }) {
         window.OneSignal.sendTags({
           userId: user.email,
           userName: user.display_name || user.full_name || '',
-          role: user.role || 'user'
+          role: user.role || 'admin',
+          isAdmin: true // Tag spécial pour les admins
         });
       }
 
       // Listener pour les changements de statut
       window.OneSignal.on('subscriptionChange', function(isSubscribed) {
-        console.log('[OneSignal] Subscription status changed:', isSubscribed);
+        console.log('[OneSignal] Admin subscription status changed:', isSubscribed);
         
         if (isSubscribed) {
-          console.log('[OneSignal] User is now subscribed!');
+          console.log('[OneSignal] Admin user is now subscribed!');
         }
       });
 
@@ -97,27 +108,31 @@ export default function OneSignalSetup({ user }) {
 
 /**
  * HELPER FUNCTIONS pour envoyer des notifications depuis votre code
+ * 
+ * 🔒 SÉCURITÉ : Ces fonctions ne doivent être appelées que par des admins
  */
 
 /**
  * Envoyer une notification via OneSignal API
  * 
+ * ⚠️ IMPORTANT : Cette fonction nécessite votre REST API Key
+ * À utiliser depuis un backend ou webhook sécurisé
+ * 
  * @param {Object} params
- * @param {string[]} params.userEmails - Liste des emails des destinataires
+ * @param {string[]} params.userEmails - Liste des emails des destinataires (admins uniquement)
  * @param {string} params.title - Titre de la notification
  * @param {string} params.message - Contenu de la notification
  * @param {string} params.url - URL à ouvrir au clic
  * @param {string} params.icon - URL de l'icône (optionnel)
  */
 export async function sendOneSignalNotification({ userEmails, title, message, url, icon }) {
-  // ⚠️ IMPORTANT : Cette fonction nécessite votre REST API Key
-  // Pour des raisons de sécurité, NE METTEZ PAS la clé API ici
-  // Utilisez plutôt :
-  // 1. Une fonction Backend (Cloud Function, etc.)
-  // 2. OneSignal Dashboard pour envoyer manuellement
-  // 3. Un webhook depuis votre backend
+  // ⚠️ NE PAS UTILISER DIRECTEMENT - Nécessite REST API Key
+  // Cette fonction est documentée pour référence
+  // Utilisez un webhook Zapier/Make ou une Cloud Function à la place
   
-  const ONESIGNAL_REST_API_KEY = 'YOUR_REST_API_KEY'; // ⚠️ NE PAS METTRE ICI - UTILISER UN BACKEND
+  console.warn('[OneSignal] sendOneSignalNotification should be called from a secure backend, not from frontend');
+  
+  const ONESIGNAL_REST_API_KEY = 'YOUR_REST_API_KEY'; // ⚠️ NE JAMAIS METTRE ICI
   
   if (ONESIGNAL_REST_API_KEY === 'YOUR_REST_API_KEY') {
     console.warn('[OneSignal] REST API Key not configured. Cannot send notification.');
@@ -134,6 +149,10 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
         include_external_user_ids: userEmails,
+        filters: [
+          // 🔒 SÉCURITÉ : Cibler uniquement les admins
+          { field: "tag", key: "isAdmin", relation: "=", value: "true" }
+        ],
         headings: { en: title },
         contents: { en: message },
         url: url,
@@ -149,7 +168,7 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
     });
 
     const data = await response.json();
-    console.log('[OneSignal] Notification sent:', data);
+    console.log('[OneSignal] Notification sent to admins:', data);
     return data;
   } catch (error) {
     console.error('[OneSignal] Error sending notification:', error);
@@ -160,6 +179,8 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
 /**
  * Alternative : Utiliser la fonction OneSignal sendSelfNotification
  * (Fonctionne uniquement pour l'utilisateur actuel, utile pour les tests)
+ * 
+ * 🔒 Disponible uniquement pour les admins
  */
 export function sendTestNotification(title, message, url) {
   if (typeof window !== 'undefined' && window.OneSignal) {

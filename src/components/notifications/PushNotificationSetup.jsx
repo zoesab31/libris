@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Loader2, ExternalLink } from "lucide-react";
+import { Bell, BellOff, Loader2, ExternalLink, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
@@ -10,7 +10,13 @@ export default function PushNotificationSetup({ user }) {
   const [isLoading, setIsLoading] = useState(false);
   const [playerId, setPlayerId] = useState(null);
 
+  // 🔒 SÉCURITÉ : Vérifier si l'utilisateur est admin
+  const isAdmin = user?.role === 'admin';
+
   useEffect(() => {
+    // Ne charger que pour les admins
+    if (!isAdmin) return;
+
     // Check if OneSignal is loaded
     if (typeof window !== 'undefined' && window.OneSignal) {
       checkOneSignalStatus();
@@ -20,7 +26,7 @@ export default function PushNotificationSetup({ user }) {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
-  }, []);
+  }, [isAdmin]);
 
   const checkOneSignalStatus = () => {
     window.OneSignal.push(function() {
@@ -45,6 +51,12 @@ export default function PushNotificationSetup({ user }) {
   };
 
   const subscribeToOneSignal = async () => {
+    // 🔒 SÉCURITÉ : Bloquer si non-admin
+    if (!isAdmin) {
+      toast.error("🔒 Les notifications push sont réservées aux administrateurs");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -161,6 +173,31 @@ export default function PushNotificationSetup({ user }) {
   const isOneSignalConfigured = typeof window !== 'undefined' && 
                                  window.OneSignalSDKLoaded !== undefined;
 
+  // 🔒 SÉCURITÉ : Afficher message pour les non-admins
+  if (!isAdmin) {
+    return (
+      <div className="p-4 rounded-xl" style={{ backgroundColor: '#FFF3E0' }}>
+        <div className="flex items-start gap-3">
+          <Shield className="w-5 h-5 flex-shrink-0" style={{ color: '#F57C00' }} />
+          <div className="flex-1">
+            <h3 className="font-bold mb-1" style={{ color: '#E65100' }}>
+              🔒 Notifications Push réservées aux administrateurs
+            </h3>
+            <p className="text-sm" style={{ color: '#F57C00' }}>
+              Les notifications push OneSignal sont disponibles uniquement pour les comptes administrateurs.
+              Vous continuez à recevoir les notifications in-app (badge rouge et cloche) normalement.
+            </p>
+            <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
+              <p className="text-xs font-medium" style={{ color: '#E65100' }}>
+                ✅ <strong>Actif pour vous :</strong> Badge messages, notifications in-app, marquage automatique comme lu
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isOneSignalConfigured) {
     return (
       <div className="p-4 rounded-xl" style={{ backgroundColor: '#FFF3E0' }}>
@@ -198,6 +235,16 @@ export default function PushNotificationSetup({ user }) {
 
   return (
     <div className="space-y-4">
+      {/* Badge Admin */}
+      <div className="p-3 rounded-xl" style={{ backgroundColor: '#E0F2FE' }}>
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4" style={{ color: '#0369A1' }} />
+          <p className="text-sm font-medium" style={{ color: '#0369A1' }}>
+            ✨ <strong>Accès administrateur</strong> - Notifications push disponibles
+          </p>
+        </div>
+      </div>
+
       <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
