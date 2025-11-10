@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Loader2, Shield } from "lucide-react";
+import { Bell, BellOff, Loader2, Shield, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
@@ -36,6 +36,7 @@ export default function PushNotificationSetup({ user }) {
     // Check native notification permission
     if ('Notification' in window) {
       setPermission(Notification.permission);
+      console.log('[OneSignal] Browser permission:', Notification.permission);
     }
   }, [isAdmin]);
 
@@ -44,13 +45,13 @@ export default function PushNotificationSetup({ user }) {
 
     try {
       // Check if user is subscribed (nouvelle API v16)
-      const isPushEnabled = await window.OneSignal.User.PushSubscription.optedIn;
+      const isPushEnabled = window.OneSignal.User.PushSubscription.optedIn;
       setIsSubscribed(isPushEnabled);
       console.log('[OneSignal] Subscription status:', isPushEnabled);
       
       if (isPushEnabled) {
         // Get player ID (nouvelle API v16)
-        const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        const subscriptionId = window.OneSignal.User.PushSubscription.id;
         if (subscriptionId) {
           setPlayerId(subscriptionId);
           console.log('[OneSignal] Player ID:', subscriptionId);
@@ -59,7 +60,9 @@ export default function PushNotificationSetup({ user }) {
 
       // Check notification permission
       if ('Notification' in window) {
-        setPermission(Notification.permission);
+        const currentPermission = Notification.permission;
+        setPermission(currentPermission);
+        console.log('[OneSignal] Permission updated:', currentPermission);
       }
     } catch (error) {
       console.error('[OneSignal] Error checking status:', error);
@@ -83,6 +86,16 @@ export default function PushNotificationSetup({ user }) {
       }
 
       console.log('[OneSignal] Requesting notification permission...');
+      console.log('[OneSignal] Current permission:', Notification.permission);
+
+      // Vérifier si les notifications sont bloquées
+      if (Notification.permission === 'denied') {
+        toast.error("⚠️ Les notifications sont bloquées ! Suivez les instructions ci-dessous pour les débloquer.", {
+          duration: 5000
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // Nouvelle API v16 : Demander la permission
       const permission = await window.OneSignal.Notifications.requestPermission();
@@ -108,7 +121,7 @@ export default function PushNotificationSetup({ user }) {
         }
 
         // Récupérer l'ID d'abonnement
-        const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        const subscriptionId = window.OneSignal.User.PushSubscription.id;
         if (subscriptionId) {
           setPlayerId(subscriptionId);
           console.log('[OneSignal] Subscription ID:', subscriptionId);
@@ -126,19 +139,19 @@ export default function PushNotificationSetup({ user }) {
         }
 
         setIsSubscribed(true);
-        toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.");
-
-        // Envoyer une notification de test (optionnel)
-        // Note: sendSelfNotification peut ne pas être disponible en v16
-        if (window.OneSignal.Debug) {
-          console.log('[OneSignal] Debug mode available for testing');
-        }
+        setPermission('granted');
+        toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.", {
+          duration: 5000
+        });
       } else {
-        toast.error("Permission refusée. Autorisez les notifications dans votre navigateur.");
+        toast.error("Permission refusée. Veuillez autoriser les notifications.", {
+          duration: 5000
+        });
+        setPermission('denied');
       }
     } catch (error) {
       console.error('[OneSignal] Error subscribing:', error);
-      toast.error("Erreur lors de l'activation des notifications");
+      toast.error("Erreur lors de l'activation : " + error.message);
     } finally {
       setIsLoading(false);
       // Recheck status
@@ -195,6 +208,70 @@ export default function PushNotificationSetup({ user }) {
       }
     }
   };
+
+  // Détecter le navigateur pour les instructions
+  const getBrowserInstructions = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+      return {
+        name: 'Chrome',
+        steps: [
+          "1. Cliquez sur l'icône 🔒 ou ⓘ à gauche de l'URL",
+          "2. Cliquez sur 'Paramètres du site'",
+          "3. Trouvez 'Notifications' et sélectionnez 'Autoriser'",
+          "4. Rechargez cette page (F5)"
+        ],
+        icon: '🔒'
+      };
+    } else if (userAgent.includes('firefox')) {
+      return {
+        name: 'Firefox',
+        steps: [
+          "1. Cliquez sur l'icône 🔒 à gauche de l'URL",
+          "2. Cliquez sur la flèche à côté de 'Notifications bloquées'",
+          "3. Sélectionnez 'Autoriser'",
+          "4. Rechargez cette page (F5)"
+        ],
+        icon: '🔒'
+      };
+    } else if (userAgent.includes('safari')) {
+      return {
+        name: 'Safari',
+        steps: [
+          "1. Ouvrez Safari → Réglages → Sites web",
+          "2. Cliquez sur 'Notifications'",
+          "3. Trouvez ce site et sélectionnez 'Autoriser'",
+          "4. Rechargez cette page (F5)"
+        ],
+        icon: '⚙️'
+      };
+    } else if (userAgent.includes('edg')) {
+      return {
+        name: 'Edge',
+        steps: [
+          "1. Cliquez sur l'icône 🔒 à gauche de l'URL",
+          "2. Cliquez sur 'Autorisations pour ce site'",
+          "3. Trouvez 'Notifications' et sélectionnez 'Autoriser'",
+          "4. Rechargez cette page (F5)"
+        ],
+        icon: '🔒'
+      };
+    } else {
+      return {
+        name: 'votre navigateur',
+        steps: [
+          "1. Cliquez sur l'icône à gauche de l'URL",
+          "2. Cherchez les paramètres de notifications",
+          "3. Autorisez les notifications pour ce site",
+          "4. Rechargez cette page (F5)"
+        ],
+        icon: '🔒'
+      };
+    }
+  };
+
+  const browserInstructions = getBrowserInstructions();
 
   // 🔒 SÉCURITÉ : Afficher message pour les non-admins
   if (!isAdmin) {
@@ -271,11 +348,35 @@ export default function PushNotificationSetup({ user }) {
           </div>
         </div>
 
+        {/* Guide détaillé pour débloquer les notifications */}
         {permission === 'denied' && (
-          <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#FEE2E2' }}>
-            <p className="text-sm font-medium text-red-800">
-              ⚠️ Les notifications sont bloquées. Autorisez-les dans les paramètres de votre navigateur.
-            </p>
+          <div className="mb-4 p-4 rounded-xl" style={{ backgroundColor: '#FEE2E2', border: '2px solid #FCA5A5' }}>
+            <div className="flex items-start gap-3 mb-3">
+              <Info className="w-5 h-5 flex-shrink-0 text-red-600" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-800 mb-2">
+                  ⚠️ Les notifications sont bloquées dans {browserInstructions.name}
+                </p>
+                <p className="text-xs text-red-700 mb-3">
+                  Suivez ces étapes pour les débloquer :
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 ml-8">
+              {browserInstructions.steps.map((step, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <span className="text-red-600 font-mono text-xs">▸</span>
+                  <p className="text-xs text-red-800 flex-1">{step}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-red-300">
+              <p className="text-xs text-red-700 font-medium">
+                💡 <strong>Astuce :</strong> Cherchez l'icône {browserInstructions.icon} à gauche de l'URL dans la barre d'adresse
+              </p>
+            </div>
           </div>
         )}
 
