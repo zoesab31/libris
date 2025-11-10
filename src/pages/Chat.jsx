@@ -87,38 +87,54 @@ export default function Chat() {
     enabled: !!user,
   });
 
-  // Mark messages as seen when viewing a chat
+  // Mark messages AND notifications as seen when viewing a chat
   useEffect(() => {
     if (!selectedChat || !user?.email || messages.length === 0) return;
 
-    const markMessagesAsSeen = async () => {
-      // Find messages that haven't been seen by current user
+    const markAsSeenAndClearNotifications = async () => {
+      // 1. Mark unseen messages as seen
       const unseenMessages = messages.filter(msg => 
         msg.sender_email !== user.email &&
         (!msg.seen_by || !msg.seen_by.includes(user.email))
       );
 
-      if (unseenMessages.length === 0) return;
+      if (unseenMessages.length > 0) {
+        await Promise.all(
+          unseenMessages.map(async (msg) => {
+            const seenBy = msg.seen_by || [];
+            if (!seenBy.includes(user.email)) {
+              await base44.entities.ChatMessage.update(msg.id, {
+                seen_by: [...seenBy, user.email]
+              });
+            }
+          })
+        );
+      }
 
-      // Mark each unseen message as seen
-      await Promise.all(
-        unseenMessages.map(async (msg) => {
-          const seenBy = msg.seen_by || [];
-          if (!seenBy.includes(user.email)) {
-            await base44.entities.ChatMessage.update(msg.id, {
-              seen_by: [...seenBy, user.email]
-            });
-          }
-        })
-      );
+      // 2. Mark related chat notifications as read
+      const chatNotifications = await base44.entities.Notification.filter({
+        created_by: user.email,
+        type: "friend_comment",
+        link_type: "chat",
+        link_id: selectedChat.id,
+        is_read: false
+      });
 
-      // Invalidate queries to update UI
+      if (chatNotifications.length > 0) {
+        await Promise.all(
+          chatNotifications.map(notif => 
+            base44.entities.Notification.update(notif.id, { is_read: true })
+          )
+        );
+      }
+
+      // Invalidate queries for immediate UI update (optimistic)
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
       queryClient.invalidateQueries({ queryKey: ['unreadMessagesCount'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     };
 
-    // Small delay to ensure smooth UI
-    const timer = setTimeout(markMessagesAsSeen, 500);
+    const timer = setTimeout(markAsSeenAndClearNotifications, 500);
     return () => clearTimeout(timer);
   }, [selectedChat, messages, user, queryClient]);
 
@@ -136,25 +152,59 @@ export default function Chat() {
         last_message_at: new Date().toISOString()
       });
 
-      // Send notifications to other participants
+      // Get chat name for notification
+      const getChatName = () => {
+        if (selectedChat.name) return selectedChat.name;
+        if (selectedChat.type === "PRIVATE") {
+          const otherEmail = selectedChat.participants.find(p => p !== user?.email);
+          const friend = myFriends.find(f => f.friend_email === otherEmail);
+          return friend?.friend_name || otherEmail?.split('@')[0] || 'Chat';
+        }
+        return selectedChat.name || "Groupe";
+      };
+
+      const chatName = getChatName();
+      const senderName = user?.display_name || user?.full_name || 'Une amie';
+
+      // Create notification for EACH recipient (not the sender)
       const otherParticipants = selectedChat.participants.filter(p => p !== user?.email);
+      
       await Promise.all(
-        otherParticipants.map(email =>
-          base44.entities.Notification.create({
-            type: "friend_comment",
-            title: "💌 Nouveau message",
-            message: `${user?.display_name || user?.full_name || 'Une amie'} vous a envoyé un message`,
+        otherParticipants.map(async (recipientEmail) => {
+          // Check for recent notifications *for this specific recipient* from *this sender*
+          const recentNotificationsForRecipient = await base44.entities.Notification.filter({
+            created_by: recipientEmail, // Notification created FOR this recipient
+            from_user: user?.email,     // Notification FROM the current sender
             link_type: "chat",
             link_id: selectedChat.id,
-            created_by: email,
-            from_user: user?.email,
-          })
-        )
+            is_read: false // Only consider unread notifications for anti-spam
+          });
+
+          const thirtySecondsAgo = new Date(Date.now() - 30000); // 30 seconds ago
+          const hasRecentUnreadNotif = recentNotificationsForRecipient.some(n =>
+            new Date(n.created_date) > thirtySecondsAgo
+          );
+
+          // Only send a new notification if no recent unread notification exists for this recipient
+          if (!hasRecentUnreadNotif) {
+            await base44.entities.Notification.create({
+              type: "friend_comment",
+              title: `💌 ${chatName}`,
+              message: `${senderName} : ${photoUrl ? '📷 Photo' : (content.length > 50 ? content.substring(0, 50) + '...' : content)}`,
+              link_type: "chat",
+              link_id: selectedChat.id,
+              created_by: recipientEmail, // Notification is created for this recipient
+              from_user: user?.email,     // Sender is the current user
+              is_read: false
+            });
+          }
+        })
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatMessages'] });
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadMessagesCount'] });
       setMessageInput("");
       setPhotoPreview(null);
       scrollToBottom();
@@ -165,11 +215,21 @@ export default function Chat() {
     mutationFn: async (chatRoomId) => {
       const messagesToDelete = await base44.entities.ChatMessage.filter({ chat_room_id: chatRoomId });
       await Promise.all(messagesToDelete.map(msg => base44.entities.ChatMessage.delete(msg.id)));
+      
+      // Delete related notifications for the current user
+      const chatNotifications = await base44.entities.Notification.filter({
+        created_by: user.email,
+        link_type: "chat",
+        link_id: chatRoomId
+      });
+      await Promise.all(chatNotifications.map(n => base44.entities.Notification.delete(n.id)));
+      
       await base44.entities.ChatRoom.delete(chatRoomId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
       queryClient.invalidateQueries({ queryKey: ['unreadMessagesCount'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       setSelectedChat(null);
       toast.success("Conversation supprimée");
     },
@@ -233,7 +293,7 @@ export default function Chat() {
     e.preventDefault();
     if (!messageInput.trim() && !photoPreview) return;
     sendMessageMutation.mutate({ 
-      content: messageInput.trim() || "📷 Photo",
+      content: messageInput.trim() || "", // Corrected: content should be empty string if only photo
       photoUrl: photoPreview 
     });
   };
