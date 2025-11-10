@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Bell, Trash2, AlertTriangle } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Bell, Trash2, AlertTriangle, Bug } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
 import PushNotificationSetup from "@/components/notifications/PushNotificationSetup";
+import OneSignalDebug from "@/components/notifications/OneSignalDebug";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -19,6 +19,7 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showDebug, setShowDebug] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -310,13 +311,33 @@ export default function AccountSettings() {
           {/* Push Notifications Setup */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                <Bell className="w-5 h-5" />
-                Notifications
+              <CardTitle className="flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
+                <span className="flex items-center gap-2">
+                  <Bell className="w-5 h-5" />
+                  Notifications
+                </span>
+                {user?.role === 'admin' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowDebug(!showDebug)}
+                    className="text-xs"
+                  >
+                    <Bug className="w-4 h-4 mr-1" />
+                    {showDebug ? 'Masquer' : 'Debug'}
+                  </Button>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <PushNotificationSetup user={user} />
+              
+              {/* Debug tool - only for admins */}
+              {user?.role === 'admin' && showDebug && (
+                <div className="mt-6">
+                  <OneSignalDebug />
+                </div>
+              )}
             </CardContent>
           </Card>
 
