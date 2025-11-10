@@ -18,6 +18,7 @@ import Statistics from './pages/Statistics';
 import BookTournament from './pages/BookTournament';
 import Series from './pages/Series';
 import MusicPlaylist from './pages/MusicPlaylist';
+import OneSignalGuide from './pages/OneSignalGuide';
 import Layout from './Layout.jsx';
 
 
@@ -42,6 +43,7 @@ export const PAGES = {
     "BookTournament": BookTournament,
     "Series": Series,
     "MusicPlaylist": MusicPlaylist,
+    "OneSignalGuide": OneSignalGuide,
 }
 
 export const pagesConfig = {
