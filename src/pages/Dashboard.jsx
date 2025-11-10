@@ -219,31 +219,41 @@ export default function Dashboard() {
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
 
-  // Get books with music - check both old and new format
-  const booksWithMusic = myBooks.filter(b => {
-    // New format: has music_playlist with at least one entry
-    if (b.music_playlist && b.music_playlist.length > 0) return true;
-    // Old format: has music and link
-    if (b.music && b.music_link) return true;
-    return false;
-  }).slice(0, 1);
+  // Collect all music with book info and select random ones
+  const randomMusicSelection = React.useMemo(() => {
+    const allMusicWithBooks = [];
+    
+    myBooks.forEach(userBook => {
+      const book = allBooks.find(b => b.id === userBook.book_id);
+      if (!book) return;
 
-  // Get first music from a book (supporting both formats)
-  const getFirstMusic = (userBook) => {
-    // Try new format first
-    if (userBook.music_playlist && userBook.music_playlist.length > 0) {
-      return userBook.music_playlist[0];
-    }
-    // Fallback to old format
-    if (userBook.music) {
-      return {
-        title: userBook.music,
-        artist: userBook.music_artist || "",
-        link: userBook.music_link || ""
-      };
-    }
-    return null;
-  };
+      // New format: music_playlist
+      if (userBook.music_playlist && userBook.music_playlist.length > 0) {
+        userBook.music_playlist.forEach(music => {
+          allMusicWithBooks.push({
+            ...music,
+            book,
+            userBook
+          });
+        });
+      }
+      
+      // Old format: music + music_link
+      if (userBook.music && userBook.music_link) {
+        allMusicWithBooks.push({
+          title: userBook.music,
+          artist: userBook.music_artist || "",
+          link: userBook.music_link,
+          book,
+          userBook
+        });
+      }
+    });
+
+    // Shuffle and take 3 random music
+    const shuffled = allMusicWithBooks.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }, [myBooks, allBooks]);
 
   // Count total music entries
   const totalMusicCount = myBooks.reduce((count, book) => {
@@ -741,33 +751,37 @@ export default function Dashboard() {
 
           {/* Right Column (1/3 on desktop, full width on mobile) */}
           <div className="space-y-4 md:space-y-6">
-            {/* Playlist + Quick Access - Combined on mobile */}
+            {/* Mobile - Playlist + Quick Access combined */}
             <div className="md:hidden">
               <h2 className="text-lg font-bold mb-3 px-1" style={{ color: '#2D3748' }}>
                 ⚡ Accès rapide
               </h2>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
-                {booksWithMusic.length > 0 && booksWithMusic.map((userBook) => {
-                  const firstMusic = getFirstMusic(userBook);
-                  if (!firstMusic) return null;
-                  
-                  return (
-                    <Link key={userBook.id} to={createPageUrl("MusicPlaylist")} className="flex-shrink-0 w-[160px] scroll-snap-start">
-                      <div className="p-4 rounded-2xl h-full" style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                {randomMusicSelection.length > 0 && randomMusicSelection.slice(0, 2).map((musicItem, idx) => (
+                  <Link key={idx} to={createPageUrl("MusicPlaylist")} className="flex-shrink-0 w-[160px] scroll-snap-start">
+                    <div className="relative rounded-2xl overflow-hidden h-full"
+                         style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                      {musicItem.book.cover_url && (
+                        <div className="absolute inset-0 opacity-20">
+                          <img src={musicItem.book.cover_url} alt="" 
+                               className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="relative p-4">
                         <div className="text-xl mb-2">🎵</div>
                         <p className="font-bold text-sm text-white mb-1 line-clamp-2">
-                          {firstMusic.title}
+                          {musicItem.title}
                         </p>
-                        <p className="text-xs text-white text-opacity-90 mb-3">
-                          {firstMusic.artist}
+                        <p className="text-xs text-white text-opacity-90 mb-2 line-clamp-1">
+                          {musicItem.artist}
                         </p>
-                        <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-opacity-90 text-xs">
-                          🎵 {totalMusicCount > 1 ? `${totalMusicCount} musiques` : 'Playlist'}
-                        </Button>
+                        <p className="text-xs text-white text-opacity-80 line-clamp-1">
+                          {musicItem.book.title}
+                        </p>
                       </div>
-                    </Link>
-                  );
-                })}
+                    </div>
+                  </Link>
+                ))}
 
                 {quickAccessItems.map((item) => (
                   <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
@@ -782,8 +796,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Desktop - Playlist littéraire */}
-            {booksWithMusic.length > 0 && (
+            {/* Desktop - Playlist littéraire with random music */}
+            {randomMusicSelection.length > 0 && (
               <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
                 <Link to={createPageUrl("MusicPlaylist")}>
                   <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity" 
@@ -791,24 +805,40 @@ export default function Dashboard() {
                     <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                       🎵 Ma Playlist Littéraire
                     </h2>
-                    {booksWithMusic.map((userBook) => {
-                      const firstMusic = getFirstMusic(userBook);
-                      if (!firstMusic) return null;
-                      
-                      return (
-                        <div key={userBook.id} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-4">
-                          <p className="font-bold text-lg text-white mb-1">
-                            {firstMusic.title}
-                          </p>
-                          <p className="text-sm text-white text-opacity-90 mb-4">
-                            {firstMusic.artist}
-                          </p>
-                          <Button className="w-full bg-white text-purple-600 hover:bg-opacity-90">
-                            🎵 {totalMusicCount > 1 ? `Voir mes ${totalMusicCount} musiques` : 'Voir ma playlist'}
-                          </Button>
+                    <div className="space-y-3">
+                      {randomMusicSelection.map((musicItem, idx) => (
+                        <div key={idx} className="flex items-center gap-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl p-3">
+                          {/* Book cover */}
+                          <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
+                               style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                            {musicItem.book.cover_url ? (
+                              <img src={musicItem.book.cover_url} alt={musicItem.book.title} 
+                                   className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Music className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Music info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm text-white line-clamp-1">
+                              {musicItem.title}
+                            </p>
+                            <p className="text-xs text-white text-opacity-90 line-clamp-1">
+                              {musicItem.artist}
+                            </p>
+                            <p className="text-xs text-white text-opacity-70 line-clamp-1">
+                              📖 {musicItem.book.title}
+                            </p>
+                          </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                    <Button className="w-full mt-4 bg-white text-purple-600 hover:bg-opacity-90">
+                      🎵 Voir mes {totalMusicCount} musiques
+                    </Button>
                   </CardContent>
                 </Link>
               </Card>
