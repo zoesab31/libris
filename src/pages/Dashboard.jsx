@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -887,6 +887,45 @@ export default function Dashboard() {
                 <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
                   <p className="text-sm font-medium" style={{ color: '#2D3748' }}>
                     🌤️ Humeur du jour : Paisible et inspirée ✨
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* OneSignal Setup Guide Card */}
+            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+              <CardContent className="p-6" style={{ background: 'linear-gradient(135deg, #FFE4EC, #F0E6FF)' }}>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md"
+                       style={{ background: 'linear-gradient(135deg, #FF69B4, #9B59B6)' }}>
+                    <Bell className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold mb-1" style={{ color: '#2D3748' }}>
+                      🔔 Notifications Push
+                    </h2>
+                    <p className="text-sm" style={{ color: '#9B59B6' }}>
+                      Configurez OneSignal en 10 minutes
+                    </p>
+                  </div>
+                </div>
+                
+                <p className="text-sm mb-4" style={{ color: '#2D3748' }}>
+                  Recevez des notifications même quand l'app est fermée ! Guide interactif étape par étape.
+                </p>
+                
+                <Link to={createPageUrl("OneSignalGuide")}>
+                  <Button className="w-full text-white shadow-md hover-lift"
+                          style={{ background: 'linear-gradient(135deg, #FF69B4, #9B59B6)' }}>
+                    <Bell className="w-4 h-4 mr-2" />
+                    Guide de configuration
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+
+                <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}>
+                  <p className="text-xs font-medium" style={{ color: '#9B59B6' }}>
+                    ✨ Gratuit • iOS & Android • 10 minutes de setup
                   </p>
                 </div>
               </CardContent>
