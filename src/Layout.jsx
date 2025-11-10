@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import OneSignalSetup from "@/components/notifications/OneSignalSetup";
+import OneSignalLoader from "@/components/notifications/OneSignalLoader"; // New import
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
@@ -329,6 +330,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <SidebarProvider defaultOpen={false}>
+      {/* Charger OneSignal dynamiquement */}
+      <OneSignalLoader />
+      
       <style>{`
         :root {
           --cream: #FFF5F9;
