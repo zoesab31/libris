@@ -1,148 +1,140 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
-
-// Helper to convert base64 to Uint8Array for VAPID key
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
 
 export default function PushNotificationSetup({ user }) {
   const [permission, setPermission] = useState('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [registration, setRegistration] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
 
   useEffect(() => {
-    // Check current notification permission
+    // Check if OneSignal is loaded
+    if (typeof window !== 'undefined' && window.OneSignal) {
+      checkOneSignalStatus();
+    }
+
+    // Check native notification permission
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
-
-    // Check if service worker is registered
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((reg) => {
-        setRegistration(reg);
-        
-        // Check if already subscribed
-        reg.pushManager.getSubscription().then((subscription) => {
-          setIsSubscribed(!!subscription);
-        });
-      });
-    }
   }, []);
 
-  const registerServiceWorker = async () => {
-    if (!('serviceWorker' in navigator)) {
-      toast.error("Votre navigateur ne supporte pas les notifications");
-      return null;
-    }
-
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+  const checkOneSignalStatus = () => {
+    window.OneSignal.push(function() {
+      // Check if user is subscribed
+      window.OneSignal.isPushNotificationsEnabled(function(isEnabled) {
+        setIsSubscribed(isEnabled);
+        
+        if (isEnabled) {
+          // Get player ID
+          window.OneSignal.getUserId(function(userId) {
+            setPlayerId(userId);
+            console.log('[OneSignal] Player ID:', userId);
+          });
+        }
       });
-      
-      console.log('Service Worker registered:', reg);
-      await navigator.serviceWorker.ready;
-      
-      setRegistration(reg);
-      return reg;
-    } catch (error) {
-      console.error('Service Worker registration failed:', error);
-      toast.error("Erreur lors de l'installation du service worker");
-      return null;
-    }
+
+      // Check notification permission
+      window.OneSignal.getNotificationPermission(function(permission) {
+        setPermission(permission);
+      });
+    });
   };
 
-  const subscribeToPush = async () => {
+  const subscribeToOneSignal = async () => {
     setIsLoading(true);
 
     try {
-      // 1. Request notification permission
-      const permission = await Notification.requestPermission();
-      setPermission(permission);
-
-      if (permission !== 'granted') {
-        toast.error("Permission refusée. Activez les notifications dans les paramètres de votre navigateur.");
+      if (typeof window === 'undefined' || !window.OneSignal) {
+        toast.error("OneSignal n'est pas chargé. Rechargez la page.");
         setIsLoading(false);
         return;
       }
 
-      // 2. Register service worker if not already registered
-      let reg = registration;
-      if (!reg) {
-        reg = await registerServiceWorker();
-        if (!reg) {
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // 3. Subscribe to push notifications
-      // Note: You'll need to generate VAPID keys and store the public key
-      // For now, using userVisibleOnly without applicationServerKey (limited functionality)
-      const subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        // applicationServerKey: urlBase64ToUint8Array('YOUR_VAPID_PUBLIC_KEY_HERE')
+      // Show OneSignal prompt
+      window.OneSignal.push(function() {
+        window.OneSignal.showSlidedownPrompt().then(function() {
+          console.log('[OneSignal] Prompt shown');
+        });
       });
 
-      console.log('Push subscription:', subscription);
+      // Wait a bit for user action
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 4. Save subscription to your backend
-      // In a real implementation, you'd send this to your server
-      // For Base44, you could store it in User entity or a new PushSubscription entity
-      await base44.auth.updateMe({
-        push_subscription: JSON.stringify(subscription.toJSON()),
-        push_enabled: true
+      // Register for push
+      window.OneSignal.push(function() {
+        window.OneSignal.registerForPushNotifications({
+          modalPrompt: true
+        });
       });
 
-      setIsSubscribed(true);
-      toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.");
+      // Wait for subscription
+      window.OneSignal.push(function() {
+        window.OneSignal.on('subscriptionChange', function(isSubscribed) {
+          console.log('[OneSignal] Subscription changed:', isSubscribed);
+          
+          if (isSubscribed) {
+            setIsSubscribed(true);
+            
+            // Get player ID and save to user
+            window.OneSignal.getUserId(function(userId) {
+              setPlayerId(userId);
+              console.log('[OneSignal] Player ID:', userId);
+              
+              // Save to user profile
+              base44.auth.updateMe({
+                onesignal_player_id: userId,
+                push_enabled: true
+              }).then(() => {
+                toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.");
+                
+                // Send test notification
+                window.OneSignal.sendSelfNotification(
+                  "🎉 Notifications activées !",
+                  "Vous recevrez maintenant des alertes pour vos nouveaux messages 💌",
+                  window.location.origin + '/Chat',
+                  '/icon-192.png'
+                );
+              }).catch(err => {
+                console.error('[OneSignal] Error saving player ID:', err);
+              });
+            });
+          }
+        });
+      });
 
     } catch (error) {
-      console.error('Error subscribing to push:', error);
+      console.error('[OneSignal] Error subscribing:', error);
       toast.error("Erreur lors de l'activation des notifications");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const unsubscribeFromPush = async () => {
+  const unsubscribeFromOneSignal = async () => {
     setIsLoading(true);
 
     try {
-      if (!registration) {
-        setIsLoading(false);
-        return;
-      }
-
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await subscription.unsubscribe();
-        
-        // Update user settings
-        await base44.auth.updateMe({
-          push_subscription: null,
-          push_enabled: false
+      if (typeof window !== 'undefined' && window.OneSignal) {
+        window.OneSignal.push(function() {
+          window.OneSignal.setSubscription(false);
+          
+          // Update user profile
+          base44.auth.updateMe({
+            onesignal_player_id: null,
+            push_enabled: false
+          }).then(() => {
+            setIsSubscribed(false);
+            setPlayerId(null);
+            toast.success("Notifications désactivées");
+          });
         });
-
-        setIsSubscribed(false);
-        toast.success("Notifications désactivées");
       }
     } catch (error) {
-      console.error('Error unsubscribing from push:', error);
+      console.error('[OneSignal] Error unsubscribing:', error);
       toast.error("Erreur lors de la désactivation");
     } finally {
       setIsLoading(false);
@@ -150,23 +142,58 @@ export default function PushNotificationSetup({ user }) {
   };
 
   const showTestNotification = () => {
-    if (permission === 'granted' && registration) {
-      registration.showNotification('🎉 Test - Nos Livres', {
-        body: 'Les notifications fonctionnent parfaitement !',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        tag: 'test-notification',
-        vibrate: [200, 100, 200],
-        data: {
-          url: '/Chat'
-        }
+    if (typeof window !== 'undefined' && window.OneSignal && isSubscribed) {
+      window.OneSignal.push(function() {
+        window.OneSignal.sendSelfNotification(
+          "🎉 Test - Nos Livres",
+          "Les notifications fonctionnent parfaitement ! 💌",
+          window.location.origin + '/Chat',
+          '/icon-192.png',
+          { url: '/Chat' },
+          [{ id: 'open-chat', text: 'Ouvrir le chat', icon: '/icon-192.png' }]
+        );
       });
+      toast.success("Notification de test envoyée !");
     }
   };
 
-  // Don't show on non-supporting browsers
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    return null;
+  // Don't show if OneSignal is not configured
+  const isOneSignalConfigured = typeof window !== 'undefined' && 
+                                 window.OneSignalSDKLoaded !== undefined;
+
+  if (!isOneSignalConfigured) {
+    return (
+      <div className="p-4 rounded-xl" style={{ backgroundColor: '#FFF3E0' }}>
+        <div className="flex items-start gap-3">
+          <Bell className="w-5 h-5 flex-shrink-0" style={{ color: '#F57C00' }} />
+          <div className="flex-1">
+            <h3 className="font-bold mb-1" style={{ color: '#E65100' }}>
+              Configuration OneSignal requise
+            </h3>
+            <p className="text-sm mb-3" style={{ color: '#F57C00' }}>
+              Pour activer les notifications push, configurez OneSignal en suivant les instructions dans le fichier 
+              <code className="px-2 py-1 rounded bg-white text-xs mx-1">OneSignalSetup.jsx</code>
+            </p>
+            <div className="space-y-2 text-xs" style={{ color: '#F57C00' }}>
+              <p><strong>1.</strong> Créer un compte sur onesignal.com (gratuit)</p>
+              <p><strong>2.</strong> Créer une app Web Push</p>
+              <p><strong>3.</strong> Copier votre App ID dans le fichier</p>
+              <p><strong>4.</strong> Ajouter le script OneSignal dans index.html</p>
+            </div>
+            <a 
+              href="https://documentation.onesignal.com/docs/web-push-quickstart" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-3 text-sm font-medium hover:underline"
+              style={{ color: '#E65100' }}
+            >
+              📚 Voir la documentation
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -179,13 +206,18 @@ export default function PushNotificationSetup({ user }) {
           </div>
           <div className="flex-1">
             <h3 className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-              Notifications Push
+              Notifications Push (OneSignal)
             </h3>
             <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
               {isSubscribed 
                 ? "✅ Vous recevez les notifications même quand l'app est fermée" 
                 : "Activez pour recevoir des alertes en temps réel"}
             </p>
+            {playerId && (
+              <p className="text-xs mt-1 font-mono" style={{ color: 'var(--warm-brown)' }}>
+                ID: {playerId.substring(0, 8)}...
+              </p>
+            )}
           </div>
         </div>
 
@@ -200,7 +232,7 @@ export default function PushNotificationSetup({ user }) {
         <div className="flex gap-2">
           {!isSubscribed ? (
             <Button
-              onClick={subscribeToPush}
+              onClick={subscribeToOneSignal}
               disabled={isLoading || permission === 'denied'}
               className="flex-1 text-white"
               style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
@@ -227,7 +259,7 @@ export default function PushNotificationSetup({ user }) {
                 🎉 Tester
               </Button>
               <Button
-                onClick={unsubscribeFromPush}
+                onClick={unsubscribeFromOneSignal}
                 disabled={isLoading}
                 variant="outline"
                 className="flex-1"
@@ -256,6 +288,15 @@ export default function PushNotificationSetup({ user }) {
           <p className="text-xs mt-2" style={{ color: '#5B21B6' }}>
             <strong>iOS :</strong> Safari → Partager → Sur l'écran d'accueil<br/>
             <strong>Android :</strong> Menu → Installer l'application
+          </p>
+        </div>
+      )}
+
+      {/* OneSignal Status */}
+      {isSubscribed && (
+        <div className="p-3 rounded-xl" style={{ backgroundColor: '#D1FAE5' }}>
+          <p className="text-xs font-medium text-green-800">
+            ✅ Connecté à OneSignal • Les notifications fonctionnent !
           </p>
         </div>
       )}

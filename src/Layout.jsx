@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -19,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import OneSignalSetup from "@/components/notifications/OneSignalSetup";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
@@ -104,7 +106,6 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
     queryFn: async () => {
       if (!user?.email) return 0;
       
-      // Get all chat rooms where user is a participant
       const allRooms = await base44.entities.ChatRoom.list();
       const userRooms = allRooms.filter(room => 
         room.participants?.includes(user.email)
@@ -112,25 +113,22 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       
       if (userRooms.length === 0) return 0;
       
-      // Get all messages from those rooms
       const roomIds = userRooms.map(r => r.id);
       const allMessages = await base44.entities.ChatMessage.list();
       
-      // Count messages where user's email is NOT in seen_by
       const unread = allMessages.filter(msg => 
         roomIds.includes(msg.chat_room_id) &&
-        msg.sender_email !== user.email && // Not sent by the user
-        (!msg.seen_by || !msg.seen_by.includes(user.email)) // Not seen by user
+        msg.sender_email !== user.email &&
+        (!msg.seen_by || !msg.seen_by.includes(user.email))
       );
       
       return unread.length;
     },
     enabled: !!user?.email,
-    refetchInterval: 10000, // Refetch every 10 seconds
-    staleTime: 5000, // Consider data stale after 5 seconds
+    refetchInterval: 10000,
+    staleTime: 5000,
   });
 
-  // Update user's last_active_at every 2 minutes while they're using the app
   useEffect(() => {
     if (!user) return;
 
@@ -144,16 +142,12 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       }
     };
 
-    // Update immediately
     updateActivity();
-
-    // Then update every 2 minutes
     const interval = setInterval(updateActivity, 2 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [user]);
 
-  // Close sidebar on mobile after navigation
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
@@ -163,6 +157,9 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
 
   return (
     <>
+      {/* OneSignal Initialization */}
+      {user && <OneSignalSetup user={user} />}
+
       <Sidebar 
         className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
         style={{ 
