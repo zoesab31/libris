@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Bell } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Bell, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
 import PushNotificationSetup from "@/components/notifications/PushNotificationSetup";
@@ -16,6 +17,8 @@ export default function AccountSettings() {
   const [displayName, setDisplayName] = useState("");
   const [showCropper, setShowCropper] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -66,6 +69,118 @@ export default function AccountSettings() {
   const toggleTheme = () => {
     const newTheme = user?.theme === 'dark' ? 'light' : 'dark';
     updateProfileMutation.mutate({ theme: newTheme });
+  };
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      // Supprimer toutes les données de l'utilisateur
+      const email = user?.email;
+      const userId = user?.id;
+      
+      if (!email || !userId) {
+        throw new Error("User email or ID is missing, cannot delete account data.");
+      }
+
+      // Supprimer les livres de l'utilisateur
+      const userBooks = await base44.entities.UserBook.filter({ created_by: email });
+      await Promise.all(userBooks.map(ub => base44.entities.UserBook.delete(ub.id)));
+      
+      // Supprimer les amitiés
+      const friendships = await base44.entities.Friendship.filter({ created_by: email });
+      await Promise.all(friendships.map(f => base44.entities.Friendship.delete(f.id)));
+      
+      // Supprimer les lectures communes
+      const sharedReadings = await base44.entities.SharedReading.filter({ created_by: email });
+      await Promise.all(sharedReadings.map(sr => base44.entities.SharedReading.delete(sr.id)));
+      
+      // Supprimer les messages de chat
+      const chatMessages = await base44.entities.ChatMessage.filter({ sender_email: email });
+      await Promise.all(chatMessages.map(msg => base44.entities.ChatMessage.delete(msg.id)));
+      
+      // Supprimer les salons de chat créés
+      const chatRooms = await base44.entities.ChatRoom.filter({ created_by: email });
+      await Promise.all(chatRooms.map(room => base44.entities.ChatRoom.delete(room.id)));
+      
+      // Supprimer les citations
+      const quotes = await base44.entities.Quote.filter({ created_by: email });
+      await Promise.all(quotes.map(q => base44.entities.Quote.delete(q.id)));
+      
+      // Supprimer les commentaires de lecture
+      const comments = await base44.entities.ReadingComment.filter({ created_by: email });
+      await Promise.all(comments.map(c => base44.entities.ReadingComment.delete(c.id)));
+      
+      // Supprimer les notifications
+      const notifications = await base44.entities.Notification.filter({ created_by: email });
+      await Promise.all(notifications.map(n => base44.entities.Notification.delete(n.id)));
+      
+      // Supprimer les objectifs de lecture
+      const readingGoals = await base44.entities.ReadingGoal.filter({ created_by: email });
+      await Promise.all(readingGoals.map(rg => base44.entities.ReadingGoal.delete(rg.id)));
+      
+      // Supprimer les séries
+      const bookSeries = await base44.entities.BookSeries.filter({ created_by: email });
+      await Promise.all(bookSeries.map(bs => base44.entities.BookSeries.delete(bs.id)));
+      
+      // Supprimer les étagères personnalisées
+      const customShelves = await base44.entities.CustomShelf.filter({ created_by: email });
+      await Promise.all(customShelves.map(cs => base44.entities.CustomShelf.delete(cs.id)));
+      
+      // Supprimer les bingo challenges
+      const bingoChallenges = await base44.entities.BingoChallenge.filter({ created_by: email });
+      await Promise.all(bingoChallenges.map(bc => base44.entities.BingoChallenge.delete(bc.id)));
+      
+      // Supprimer les book boyfriends
+      const bookBoyfriends = await base44.entities.BookBoyfriend.filter({ created_by: email });
+      await Promise.all(bookBoyfriends.map(bb => base44.entities.BookBoyfriend.delete(bb.id)));
+      
+      // Supprimer les fan arts
+      const fanArts = await base44.entities.FanArt.filter({ created_by: email });
+      await Promise.all(fanArts.map(fa => base44.entities.FanArt.delete(fa.id)));
+      
+      // Supprimer les inspirations ongles
+      const nailInspos = await base44.entities.NailInspo.filter({ created_by: email });
+      await Promise.all(nailInspos.map(ni => base44.entities.NailInspo.delete(ni.id)));
+      
+      // Supprimer les lieux de lecture
+      const readingLocations = await base44.entities.ReadingLocation.filter({ created_by: email });
+      await Promise.all(readingLocations.map(rl => base44.entities.ReadingLocation.delete(rl.id)));
+      
+      // Supprimer les votes du tournoi
+      const bookOfTheYear = await base44.entities.BookOfTheYear.filter({ created_by: email });
+      await Promise.all(bookOfTheYear.map(boty => base44.entities.BookOfTheYear.delete(boty.id)));
+      
+      // Supprimer les PAL
+      const readingLists = await base44.entities.ReadingList.filter({ created_by: email });
+      await Promise.all(readingLists.map(rl => base44.entities.ReadingList.delete(rl.id)));
+      
+      // Supprimer les wishlists de lecture
+      const sharedReadingWishlists = await base44.entities.SharedReadingWishlist.filter({ created_by: email });
+      await Promise.all(sharedReadingWishlists.map(srw => base44.entities.SharedReadingWishlist.delete(srw.id)));
+      
+      // Enfin, supprimer le compte utilisateur
+      await base44.entities.User.delete(userId);
+    },
+    onSuccess: () => {
+      toast.success("Compte supprimé avec succès");
+      // Déconnecter l'utilisateur
+      setTimeout(() => {
+        base44.auth.logout();
+        // Redirect to home or login page if needed
+        window.location.href = '/'; 
+      }, 1000);
+    },
+    onError: (error) => {
+      console.error("Error deleting account:", error);
+      toast.error("Erreur lors de la suppression du compte: " + error.message);
+    }
+  });
+
+  const handleDeleteAccount = () => {
+    if (deleteConfirmText.toLowerCase() === "supprimer mon compte") {
+      deleteAccountMutation.mutate();
+    } else {
+      toast.error("Veuillez taper exactement 'supprimer mon compte'");
+    }
   };
 
   const isDark = user?.theme === 'dark';
@@ -223,6 +338,93 @@ export default function AccountSettings() {
                   {user?.role === 'admin' ? '👑 Administrateur' : '👤 Utilisateur'}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Delete Account - DANGER ZONE */}
+          <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid #DC2626' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                Zone dangereuse
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-xl" style={{ backgroundColor: '#FEE2E2' }}>
+                <p className="text-sm font-medium text-red-800 mb-2">
+                  ⚠️ Attention : Cette action est irréversible !
+                </p>
+                <p className="text-xs text-red-700">
+                  La suppression de votre compte entraînera la perte définitive de toutes vos données :
+                </p>
+                <ul className="text-xs text-red-700 mt-2 ml-4 list-disc space-y-1">
+                  <li>Tous vos livres et lectures</li>
+                  <li>Vos amitiés et messages</li>
+                  <li>Vos citations et commentaires</li>
+                  <li>Vos étagères personnalisées</li>
+                  <li>Vos objectifs de lecture</li>
+                  <li>Tous vos autres contenus</li>
+                </ul>
+              </div>
+
+              {!showDeleteConfirm ? (
+                <Button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  variant="outline"
+                  className="w-full border-red-600 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer mon compte
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-red-700 font-medium">
+                      Pour confirmer, tapez : <span className="font-bold">supprimer mon compte</span>
+                    </Label>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="supprimer mon compte"
+                      className="mt-2 border-red-300 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmText("");
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteAccountMutation.isPending || deleteConfirmText.toLowerCase() !== "supprimer mon compte"}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {deleteAccountMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Suppression...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Supprimer définitivement
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-center text-red-600 font-medium">
+                    ⚠️ Cette action ne peut pas être annulée
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
