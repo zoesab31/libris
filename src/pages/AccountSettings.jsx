@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Bell, Trash2, AlertTriangle, Bug } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
-import PushNotificationSetup from "@/components/notifications/PushNotificationSetup";
-import OneSignalDebug from "@/components/notifications/OneSignalDebug";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -19,7 +17,6 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [showDebug, setShowDebug] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -74,7 +71,6 @@ export default function AccountSettings() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      // Supprimer toutes les données de l'utilisateur
       const email = user?.email;
       const userId = user?.id;
       
@@ -82,91 +78,70 @@ export default function AccountSettings() {
         throw new Error("User email or ID is missing, cannot delete account data.");
       }
 
-      // Supprimer les livres de l'utilisateur
+      // Supprimer toutes les données de l'utilisateur
       const userBooks = await base44.entities.UserBook.filter({ created_by: email });
       await Promise.all(userBooks.map(ub => base44.entities.UserBook.delete(ub.id)));
       
-      // Supprimer les amitiés
       const friendships = await base44.entities.Friendship.filter({ created_by: email });
       await Promise.all(friendships.map(f => base44.entities.Friendship.delete(f.id)));
       
-      // Supprimer les lectures communes
       const sharedReadings = await base44.entities.SharedReading.filter({ created_by: email });
       await Promise.all(sharedReadings.map(sr => base44.entities.SharedReading.delete(sr.id)));
       
-      // Supprimer les messages de chat
       const chatMessages = await base44.entities.ChatMessage.filter({ sender_email: email });
       await Promise.all(chatMessages.map(msg => base44.entities.ChatMessage.delete(msg.id)));
       
-      // Supprimer les salons de chat créés
       const chatRooms = await base44.entities.ChatRoom.filter({ created_by: email });
       await Promise.all(chatRooms.map(room => base44.entities.ChatRoom.delete(room.id)));
       
-      // Supprimer les citations
       const quotes = await base44.entities.Quote.filter({ created_by: email });
       await Promise.all(quotes.map(q => base44.entities.Quote.delete(q.id)));
       
-      // Supprimer les commentaires de lecture
       const comments = await base44.entities.ReadingComment.filter({ created_by: email });
       await Promise.all(comments.map(c => base44.entities.ReadingComment.delete(c.id)));
       
-      // Supprimer les notifications
       const notifications = await base44.entities.Notification.filter({ created_by: email });
       await Promise.all(notifications.map(n => base44.entities.Notification.delete(n.id)));
       
-      // Supprimer les objectifs de lecture
       const readingGoals = await base44.entities.ReadingGoal.filter({ created_by: email });
       await Promise.all(readingGoals.map(rg => base44.entities.ReadingGoal.delete(rg.id)));
       
-      // Supprimer les séries
       const bookSeries = await base44.entities.BookSeries.filter({ created_by: email });
       await Promise.all(bookSeries.map(bs => base44.entities.BookSeries.delete(bs.id)));
       
-      // Supprimer les étagères personnalisées
       const customShelves = await base44.entities.CustomShelf.filter({ created_by: email });
       await Promise.all(customShelves.map(cs => base44.entities.CustomShelf.delete(cs.id)));
       
-      // Supprimer les bingo challenges
       const bingoChallenges = await base44.entities.BingoChallenge.filter({ created_by: email });
       await Promise.all(bingoChallenges.map(bc => base44.entities.BingoChallenge.delete(bc.id)));
       
-      // Supprimer les book boyfriends
       const bookBoyfriends = await base44.entities.BookBoyfriend.filter({ created_by: email });
       await Promise.all(bookBoyfriends.map(bb => base44.entities.BookBoyfriend.delete(bb.id)));
       
-      // Supprimer les fan arts
       const fanArts = await base44.entities.FanArt.filter({ created_by: email });
       await Promise.all(fanArts.map(fa => base44.entities.FanArt.delete(fa.id)));
       
-      // Supprimer les inspirations ongles
       const nailInspos = await base44.entities.NailInspo.filter({ created_by: email });
       await Promise.all(nailInspos.map(ni => base44.entities.NailInspo.delete(ni.id)));
       
-      // Supprimer les lieux de lecture
       const readingLocations = await base44.entities.ReadingLocation.filter({ created_by: email });
       await Promise.all(readingLocations.map(rl => base44.entities.ReadingLocation.delete(rl.id)));
       
-      // Supprimer les votes du tournoi
       const bookOfTheYear = await base44.entities.BookOfTheYear.filter({ created_by: email });
       await Promise.all(bookOfTheYear.map(boty => base44.entities.BookOfTheYear.delete(boty.id)));
       
-      // Supprimer les PAL
       const readingLists = await base44.entities.ReadingList.filter({ created_by: email });
       await Promise.all(readingLists.map(rl => base44.entities.ReadingList.delete(rl.id)));
       
-      // Supprimer les wishlists de lecture
       const sharedReadingWishlists = await base44.entities.SharedReadingWishlist.filter({ created_by: email });
       await Promise.all(sharedReadingWishlists.map(srw => base44.entities.SharedReadingWishlist.delete(srw.id)));
       
-      // Enfin, supprimer le compte utilisateur
       await base44.entities.User.delete(userId);
     },
     onSuccess: () => {
       toast.success("Compte supprimé avec succès");
-      // Déconnecter l'utilisateur
       setTimeout(() => {
         base44.auth.logout();
-        // Redirect to home or login page if needed
         window.location.href = '/'; 
       }, 1000);
     },
@@ -305,39 +280,6 @@ export default function AccountSettings() {
                   disabled={updateProfileMutation.isPending}
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Push Notifications Setup */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
-                <span className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                </span>
-                {user?.role === 'admin' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowDebug(!showDebug)}
-                    className="text-xs"
-                  >
-                    <Bug className="w-4 h-4 mr-1" />
-                    {showDebug ? 'Masquer' : 'Debug'}
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <PushNotificationSetup user={user} />
-              
-              {/* Debug tool - only for admins */}
-              {user?.role === 'admin' && showDebug && (
-                <div className="mt-6">
-                  <OneSignalDebug />
-                </div>
-              )}
             </CardContent>
           </Card>
 
