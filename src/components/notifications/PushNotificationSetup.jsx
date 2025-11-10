@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Loader2, ExternalLink, Shield } from "lucide-react";
+import { Bell, BellOff, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
@@ -18,12 +18,14 @@ export default function PushNotificationSetup({ user }) {
     // Ne charger que pour les admins
     if (!isAdmin) return;
 
-    // Vérifier si OneSignal est chargé
-    const checkOneSignalReady = () => {
-      if (typeof window !== 'undefined' && window.OneSignal) {
+    // Vérifier si OneSignal est chargé avec la nouvelle API v16
+    const checkOneSignalReady = async () => {
+      if (typeof window !== 'undefined' && window.OneSignal && window.OneSignal.User) {
+        console.log('[OneSignal] OneSignal v16 detected');
         setOneSignalReady(true);
-        checkOneSignalStatus();
+        await checkOneSignalStatus();
       } else {
+        console.log('[OneSignal] Waiting for OneSignal to load...');
         // Réessayer après un court délai
         setTimeout(checkOneSignalReady, 500);
       }
@@ -37,28 +39,31 @@ export default function PushNotificationSetup({ user }) {
     }
   }, [isAdmin]);
 
-  const checkOneSignalStatus = () => {
-    if (!window.OneSignal) return;
+  const checkOneSignalStatus = async () => {
+    if (!window.OneSignal || !window.OneSignal.User) return;
 
-    window.OneSignal.push(function() {
-      // Check if user is subscribed
-      window.OneSignal.isPushNotificationsEnabled(function(isEnabled) {
-        setIsSubscribed(isEnabled);
-        
-        if (isEnabled) {
-          // Get player ID
-          window.OneSignal.getUserId(function(userId) {
-            setPlayerId(userId);
-            console.log('[OneSignal] Player ID:', userId);
-          });
+    try {
+      // Check if user is subscribed (nouvelle API v16)
+      const isPushEnabled = await window.OneSignal.User.PushSubscription.optedIn;
+      setIsSubscribed(isPushEnabled);
+      console.log('[OneSignal] Subscription status:', isPushEnabled);
+      
+      if (isPushEnabled) {
+        // Get player ID (nouvelle API v16)
+        const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        if (subscriptionId) {
+          setPlayerId(subscriptionId);
+          console.log('[OneSignal] Player ID:', subscriptionId);
         }
-      });
+      }
 
       // Check notification permission
-      window.OneSignal.getNotificationPermission(function(permission) {
-        setPermission(permission);
-      });
-    });
+      if ('Notification' in window) {
+        setPermission(Notification.permission);
+      }
+    } catch (error) {
+      console.error('[OneSignal] Error checking status:', error);
+    }
   };
 
   const subscribeToOneSignal = async () => {
@@ -71,69 +76,73 @@ export default function PushNotificationSetup({ user }) {
     setIsLoading(true);
 
     try {
-      if (typeof window === 'undefined' || !window.OneSignal) {
+      if (typeof window === 'undefined' || !window.OneSignal || !window.OneSignal.User) {
         toast.error("OneSignal n'est pas chargé. Rechargez la page.");
         setIsLoading(false);
         return;
       }
 
-      // Show OneSignal prompt
-      window.OneSignal.push(function() {
-        window.OneSignal.showSlidedownPrompt().then(function() {
-          console.log('[OneSignal] Prompt shown');
-        });
-      });
+      console.log('[OneSignal] Requesting notification permission...');
 
-      // Wait a bit for user action
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Nouvelle API v16 : Demander la permission
+      const permission = await window.OneSignal.Notifications.requestPermission();
+      console.log('[OneSignal] Permission result:', permission);
 
-      // Register for push
-      window.OneSignal.push(function() {
-        window.OneSignal.registerForPushNotifications({
-          modalPrompt: true
-        });
-      });
+      if (permission) {
+        // S'abonner aux notifications push
+        await window.OneSignal.User.PushSubscription.optIn();
+        console.log('[OneSignal] User opted in successfully');
 
-      // Wait for subscription
-      window.OneSignal.push(function() {
-        window.OneSignal.on('subscriptionChange', function(isSubscribed) {
-          console.log('[OneSignal] Subscription changed:', isSubscribed);
-          
-          if (isSubscribed) {
-            setIsSubscribed(true);
-            
-            // Get player ID and save to user
-            window.OneSignal.getUserId(function(userId) {
-              setPlayerId(userId);
-              console.log('[OneSignal] Player ID:', userId);
-              
-              // Save to user profile
-              base44.auth.updateMe({
-                onesignal_player_id: userId,
-                push_enabled: true
-              }).then(() => {
-                toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.");
-                
-                // Send test notification
-                window.OneSignal.sendSelfNotification(
-                  "🎉 Notifications activées !",
-                  "Vous recevrez maintenant des alertes pour vos nouveaux messages 💌",
-                  window.location.origin + '/Chat',
-                  '/icon-192.png'
-                );
-              }).catch(err => {
-                console.error('[OneSignal] Error saving player ID:', err);
-              });
+        // Associer l'utilisateur avec login (nouvelle API v16)
+        if (user?.email) {
+          await window.OneSignal.login(user.email);
+          console.log('[OneSignal] User logged in:', user.email);
+
+          // Ajouter des tags (nouvelle API v16)
+          await window.OneSignal.User.addTags({
+            userName: user.display_name || user.full_name || '',
+            role: user.role || 'admin',
+            isAdmin: 'true'
+          });
+          console.log('[OneSignal] Tags added');
+        }
+
+        // Récupérer l'ID d'abonnement
+        const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        if (subscriptionId) {
+          setPlayerId(subscriptionId);
+          console.log('[OneSignal] Subscription ID:', subscriptionId);
+
+          // Sauvegarder dans le profil utilisateur
+          try {
+            await base44.auth.updateMe({
+              onesignal_player_id: subscriptionId,
+              push_enabled: true
             });
+            console.log('[OneSignal] Profile updated with player ID');
+          } catch (error) {
+            console.error('[OneSignal] Error saving player ID:', error);
           }
-        });
-      });
+        }
 
+        setIsSubscribed(true);
+        toast.success("🔔 Notifications activées ! Vous recevrez des alertes pour vos messages.");
+
+        // Envoyer une notification de test (optionnel)
+        // Note: sendSelfNotification peut ne pas être disponible en v16
+        if (window.OneSignal.Debug) {
+          console.log('[OneSignal] Debug mode available for testing');
+        }
+      } else {
+        toast.error("Permission refusée. Autorisez les notifications dans votre navigateur.");
+      }
     } catch (error) {
       console.error('[OneSignal] Error subscribing:', error);
       toast.error("Erreur lors de l'activation des notifications");
     } finally {
       setIsLoading(false);
+      // Recheck status
+      await checkOneSignalStatus();
     }
   };
 
@@ -141,20 +150,30 @@ export default function PushNotificationSetup({ user }) {
     setIsLoading(true);
 
     try {
-      if (typeof window !== 'undefined' && window.OneSignal) {
-        window.OneSignal.push(function() {
-          window.OneSignal.setSubscription(false);
-          
-          // Update user profile
-          base44.auth.updateMe({
+      if (typeof window !== 'undefined' && window.OneSignal && window.OneSignal.User) {
+        // Nouvelle API v16 : Se désabonner
+        await window.OneSignal.User.PushSubscription.optOut();
+        console.log('[OneSignal] User opted out');
+
+        // Logout de OneSignal
+        if (user?.email) {
+          await window.OneSignal.logout();
+          console.log('[OneSignal] User logged out');
+        }
+
+        // Update user profile
+        try {
+          await base44.auth.updateMe({
             onesignal_player_id: null,
             push_enabled: false
-          }).then(() => {
-            setIsSubscribed(false);
-            setPlayerId(null);
-            toast.success("Notifications désactivées");
           });
-        });
+        } catch (error) {
+          console.error('[OneSignal] Error updating profile:', error);
+        }
+
+        setIsSubscribed(false);
+        setPlayerId(null);
+        toast.success("Notifications désactivées");
       }
     } catch (error) {
       console.error('[OneSignal] Error unsubscribing:', error);
@@ -164,19 +183,16 @@ export default function PushNotificationSetup({ user }) {
     }
   };
 
-  const showTestNotification = () => {
+  const showTestNotification = async () => {
     if (typeof window !== 'undefined' && window.OneSignal && isSubscribed) {
-      window.OneSignal.push(function() {
-        window.OneSignal.sendSelfNotification(
-          "🎉 Test - Nos Livres",
-          "Les notifications fonctionnent parfaitement ! 💌",
-          window.location.origin + '/Chat',
-          '/icon-192.png',
-          { url: '/Chat' },
-          [{ id: 'open-chat', text: 'Ouvrir le chat', icon: '/icon-192.png' }]
-        );
-      });
-      toast.success("Notification de test envoyée !");
+      try {
+        // En v16, il faut utiliser l'API REST ou les notifications via le dashboard
+        // sendSelfNotification n'existe plus
+        toast.success("Pour tester, envoyez-vous un message dans le chat !");
+        console.log('[OneSignal] Test notifications should be sent via API or Dashboard');
+      } catch (error) {
+        console.error('[OneSignal] Error sending test:', error);
+      }
     }
   };
 
@@ -290,7 +306,7 @@ export default function PushNotificationSetup({ user }) {
                 variant="outline"
                 className="flex-1"
               >
-                🎉 Tester
+                💬 Tester dans le Chat
               </Button>
               <Button
                 onClick={unsubscribeFromOneSignal}
@@ -330,7 +346,7 @@ export default function PushNotificationSetup({ user }) {
       {isSubscribed && (
         <div className="p-3 rounded-xl" style={{ backgroundColor: '#D1FAE5' }}>
           <p className="text-xs font-medium text-green-800">
-            ✅ Connecté à OneSignal • Les notifications fonctionnent !
+            ✅ Connecté à OneSignal v16 • Les notifications fonctionnent !
           </p>
         </div>
       )}

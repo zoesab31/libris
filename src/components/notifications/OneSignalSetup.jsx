@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 /**
- * OneSignal Configuration for Nos Livres
+ * OneSignal Configuration for Nos Livres (v16)
  * 
  * ✅ CONFIGURATION ACTIVÉE !
  * App ID: 6a28ef87-f515-4193-8df1-529268523ebb
@@ -27,93 +27,72 @@ export default function OneSignalSetup({ user }) {
 
     console.log('[OneSignal] Initializing for admin user:', user.email);
 
-    // Initialiser OneSignal
-    window.OneSignal = window.OneSignal || [];
-    
-    window.OneSignal.push(function() {
-      window.OneSignal.init({
-        appId: ONESIGNAL_APP_ID,
-        notifyButton: {
-          enable: false, // On utilise notre propre UI
-        },
-        allowLocalhostAsSecureOrigin: true,
-        autoResubscribe: true,
-        autoRegister: false, // On demande la permission manuellement
-        serviceWorkerParam: {
-          scope: '/'
-        },
-        serviceWorkerPath: 'OneSignalSDKWorker.js',
-        
-        // Callbacks
-        notificationClickHandlerMatch: 'origin',
-        notificationClickHandlerAction: 'navigate',
-        
-        // Apparence des notifications
-        promptOptions: {
-          slidedown: {
-            prompts: [
-              {
-                type: "push",
-                autoPrompt: false,
-                text: {
-                  actionMessage: "Nous aimerions vous envoyer des notifications pour vos nouveaux messages 💌",
-                  acceptButton: "Autoriser",
-                  cancelButton: "Non merci"
-                }
-              }
-            ]
-          }
-        },
-        
-        welcomeNotification: {
-          disable: true
-        }
-      });
+    // Associer l'utilisateur à l'abonnement (nouvelle API v16)
+    const setupUserData = async () => {
+      try {
+        if (user?.email && window.OneSignal && window.OneSignal.User) {
+          // Login l'utilisateur (nouvelle API v16)
+          await window.OneSignal.login(user.email);
+          console.log('[OneSignal] User logged in:', user.email);
+          
+          // Ajouter des tags (nouvelle API v16)
+          await window.OneSignal.User.addTags({
+            userId: user.email,
+            userName: user.display_name || user.full_name || '',
+            role: user.role || 'admin',
+            isAdmin: 'true' // Tag spécial pour les admins
+          });
+          console.log('[OneSignal] Tags added for admin');
 
-      // Associer l'utilisateur à l'abonnement
-      if (user?.email) {
-        window.OneSignal.setExternalUserId(user.email);
-        
-        // Tags supplémentaires pour le ciblage
-        window.OneSignal.sendTags({
-          userId: user.email,
-          userName: user.display_name || user.full_name || '',
-          role: user.role || 'admin',
-          isAdmin: true // Tag spécial pour les admins
-        });
+          // Listener pour les changements de statut (nouvelle API v16)
+          window.OneSignal.User.PushSubscription.addEventListener('change', async (event) => {
+            console.log('[OneSignal] Admin subscription status changed:', event);
+            
+            if (event.current.optedIn) {
+              console.log('[OneSignal] Admin user is now subscribed!');
+              console.log('[OneSignal] Subscription ID:', event.current.id);
+            }
+          });
+
+          // Listener pour les notifications
+          window.OneSignal.Notifications.addEventListener('click', (event) => {
+            console.log('[OneSignal] Notification clicked:', event);
+            // Le lien de la notification sera automatiquement ouvert
+          });
+        }
+      } catch (error) {
+        console.error('[OneSignal] Error setting up user data:', error);
       }
-
-      // Listener pour les changements de statut
-      window.OneSignal.on('subscriptionChange', function(isSubscribed) {
-        console.log('[OneSignal] Admin subscription status changed:', isSubscribed);
-        
-        if (isSubscribed) {
-          console.log('[OneSignal] Admin user is now subscribed!');
-        }
-      });
-
-      // Listener pour les clics sur notifications
-      window.OneSignal.on('notificationDisplay', function(event) {
-        console.log('[OneSignal] Notification displayed:', event);
-      });
-    });
-
-    return () => {
-      // Cleanup si nécessaire
     };
+
+    // Attendre que OneSignal soit complètement chargé
+    if (window.OneSignal && window.OneSignal.User) {
+      setupUserData();
+    } else {
+      // Attendre que OneSignal se charge
+      const checkReady = setInterval(() => {
+        if (window.OneSignal && window.OneSignal.User) {
+          clearInterval(checkReady);
+          setupUserData();
+        }
+      }, 500);
+
+      // Cleanup
+      return () => clearInterval(checkReady);
+    }
   }, [user]);
 
   return null;
 }
 
 /**
- * HELPER FUNCTIONS pour envoyer des notifications depuis votre code
+ * DOCUMENTATION OneSignal v16 API
  * 
  * 🔒 SÉCURITÉ : Ces fonctions ne doivent être appelées que par des admins
  */
 
 /**
- * Envoyer une notification via OneSignal API
+ * Envoyer une notification via OneSignal REST API
  * 
  * ⚠️ IMPORTANT : Cette fonction nécessite votre REST API Key
  * À utiliser depuis un backend ou webhook sécurisé
@@ -148,11 +127,10 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: userEmails,
-        filters: [
-          // 🔒 SÉCURITÉ : Cibler uniquement les admins
-          { field: "tag", key: "isAdmin", relation: "=", value: "true" }
-        ],
+        include_aliases: {
+          external_id: userEmails // v16 utilise des aliases
+        },
+        target_channel: 'push',
         headings: { en: title },
         contents: { en: message },
         url: url,
@@ -160,10 +138,11 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
         chrome_web_icon: icon || '/icon-192.png',
         firefox_icon: icon || '/icon-192.png',
         chrome_web_badge: '/icon-192.png',
-        ios_badgeType: 'Increase',
-        ios_badgeCount: 1,
-        android_channel_id: 'nos-livres-chat',
-        priority: 10
+        priority: 10,
+        // 🔒 SÉCURITÉ : Cibler uniquement les admins
+        filters: [
+          { field: "tag", key: "isAdmin", relation: "=", value: "true" }
+        ]
       })
     });
 
@@ -177,22 +156,23 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
 }
 
 /**
- * Alternative : Utiliser la fonction OneSignal sendSelfNotification
- * (Fonctionne uniquement pour l'utilisateur actuel, utile pour les tests)
+ * EXEMPLE D'UTILISATION dans votre code (pages/Chat.jsx)
  * 
- * 🔒 Disponible uniquement pour les admins
+ * Quand un message est envoyé, créez une notification :
  */
-export function sendTestNotification(title, message, url) {
-  if (typeof window !== 'undefined' && window.OneSignal) {
-    window.OneSignal.push(function() {
-      window.OneSignal.sendSelfNotification(
-        title,
-        message,
-        url,
-        '/icon-192.png',
-        { url: url },
-        [{ id: 'open-chat', text: 'Ouvrir', icon: '/icon-192.png' }]
-      );
-    });
-  }
+export function createChatNotification(senderName, message, chatId) {
+  // Cette fonction sera appelée depuis votre backend ou webhook
+  return {
+    app_id: ONESIGNAL_APP_ID,
+    // Cible : tous les admins sauf l'expéditeur
+    filters: [
+      { field: "tag", key: "isAdmin", relation: "=", value: "true" }
+    ],
+    headings: { en: `💌 ${senderName}` },
+    contents: { en: message.length > 50 ? message.substring(0, 50) + '...' : message },
+    url: `${window.location.origin}/Chat`,
+    web_url: `${window.location.origin}/Chat`,
+    chrome_web_icon: '/icon-192.png',
+    priority: 10
+  };
 }
