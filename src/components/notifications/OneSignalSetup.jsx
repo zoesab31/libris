@@ -28,7 +28,7 @@ import { useEffect } from 'react';
  * 
  * 6. Test :
  *    - OneSignal Dashboard → Messages → New Push
- *    - Envoyer un message test à tous les abonnés
+ * 6a28ef87-f515-4193-8df1-529268523ebb   - Envoyer un message test à tous les abonnés
  */
 
 // ⚠️ IMPORTANT : Remplacez par votre App ID OneSignal
