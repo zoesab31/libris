@@ -3,41 +3,17 @@ import { useEffect } from 'react';
 /**
  * OneSignal Configuration for Nos Livres
  * 
- * INSTRUCTIONS DE CONFIGURATION :
- * 
- * 1. Créer un compte sur https://onesignal.com (gratuit)
- * 
- * 2. Créer une nouvelle app :
- *    - Name: "Nos Livres"
- *    - Platform: Web Push
- *    - Choose Web configuration
- * 
- * 3. Configuration du site :
- *    - Site Name: "Nos Livres"
- *    - Site URL: https://votre-domaine.com (votre URL Base44)
- *    - Auto Resubscribe: ON
- *    - Default Notification Icon: URL de votre icône
- * 
- * 4. Récupérer votre App ID :
- *    - Settings → Keys & IDs → OneSignal App ID
- *    - Remplacer 'YOUR_ONESIGNAL_APP_ID' ci-dessous
- * 
- * 5. Configuration Safari (optionnel mais recommandé) :
- *    - Settings → Apple Safari → Configure
- *    - Suivre les instructions pour obtenir le certificat
- * 
- * 6. Test :
- *    - OneSignal Dashboard → Messages → New Push
- *    - Envoyer un message test à tous les abonnés
+ * ✅ CONFIGURATION ACTIVÉE !
+ * App ID: 6a28ef87-f515-4193-8df1-529268523ebb
  */
 
-// ⚠️ IMPORTANT : Remplacez par votre App ID OneSignal
-const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID'; // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+// ✅ App ID configuré
+const ONESIGNAL_APP_ID = '6a28ef87-f515-4193-8df1-529268523ebb';
 
 export default function OneSignalSetup({ user }) {
   useEffect(() => {
-    // Ne pas initialiser si déjà fait ou si pas d'App ID
-    if (typeof window === 'undefined' || !window.OneSignal || ONESIGNAL_APP_ID === 'YOUR_ONESIGNAL_APP_ID') {
+    // Ne pas initialiser si déjà fait
+    if (typeof window === 'undefined' || !window.OneSignal) {
       return;
     }
 
@@ -47,11 +23,10 @@ export default function OneSignalSetup({ user }) {
     window.OneSignal.push(function() {
       window.OneSignal.init({
         appId: ONESIGNAL_APP_ID,
-        safari_web_id: 'web.onesignal.auto.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', // Optionnel
         notifyButton: {
           enable: false, // On utilise notre propre UI
         },
-        allowLocalhostAsSecureOrigin: true, // Pour le développement local
+        allowLocalhostAsSecureOrigin: true,
         autoResubscribe: true,
         autoRegister: false, // On demande la permission manuellement
         serviceWorkerParam: {
@@ -69,7 +44,7 @@ export default function OneSignalSetup({ user }) {
             prompts: [
               {
                 type: "push",
-                autoPrompt: false, // On contrôle quand afficher
+                autoPrompt: false,
                 text: {
                   actionMessage: "Nous aimerions vous envoyer des notifications pour vos nouveaux messages 💌",
                   acceptButton: "Autoriser",
@@ -81,7 +56,7 @@ export default function OneSignalSetup({ user }) {
         },
         
         welcomeNotification: {
-          disable: true // On envoie notre propre notification de bienvenue
+          disable: true
         }
       });
 
@@ -102,7 +77,6 @@ export default function OneSignalSetup({ user }) {
         console.log('[OneSignal] Subscription status changed:', isSubscribed);
         
         if (isSubscribed) {
-          // Notification de bienvenue personnalisée
           console.log('[OneSignal] User is now subscribed!');
         }
       });
@@ -118,13 +92,11 @@ export default function OneSignalSetup({ user }) {
     };
   }, [user]);
 
-  return null; // Ce composant ne rend rien, il initialise juste OneSignal
+  return null;
 }
 
 /**
  * HELPER FUNCTIONS pour envoyer des notifications depuis votre code
- * 
- * Utilisez ces fonctions dans votre Chat.jsx ou ailleurs
  */
 
 /**
@@ -161,7 +133,7 @@ export async function sendOneSignalNotification({ userEmails, title, message, ur
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: userEmails, // Utilise les emails comme external IDs
+        include_external_user_ids: userEmails,
         headings: { en: title },
         contents: { en: message },
         url: url,
