@@ -9,6 +9,7 @@ export default function PushNotificationSetup({ user }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [playerId, setPlayerId] = useState(null);
+  const [oneSignalReady, setOneSignalReady] = useState(false);
 
   // 🔒 SÉCURITÉ : Vérifier si l'utilisateur est admin
   const isAdmin = user?.role === 'admin';
@@ -17,10 +18,18 @@ export default function PushNotificationSetup({ user }) {
     // Ne charger que pour les admins
     if (!isAdmin) return;
 
-    // Check if OneSignal is loaded
-    if (typeof window !== 'undefined' && window.OneSignal) {
-      checkOneSignalStatus();
-    }
+    // Vérifier si OneSignal est chargé
+    const checkOneSignalReady = () => {
+      if (typeof window !== 'undefined' && window.OneSignal) {
+        setOneSignalReady(true);
+        checkOneSignalStatus();
+      } else {
+        // Réessayer après un court délai
+        setTimeout(checkOneSignalReady, 500);
+      }
+    };
+
+    checkOneSignalReady();
 
     // Check native notification permission
     if ('Notification' in window) {
@@ -29,6 +38,8 @@ export default function PushNotificationSetup({ user }) {
   }, [isAdmin]);
 
   const checkOneSignalStatus = () => {
+    if (!window.OneSignal) return;
+
     window.OneSignal.push(function() {
       // Check if user is subscribed
       window.OneSignal.isPushNotificationsEnabled(function(isEnabled) {
@@ -169,10 +180,6 @@ export default function PushNotificationSetup({ user }) {
     }
   };
 
-  // Don't show if OneSignal is not configured
-  const isOneSignalConfigured = typeof window !== 'undefined' && 
-                                 window.OneSignalSDKLoaded !== undefined;
-
   // 🔒 SÉCURITÉ : Afficher message pour les non-admins
   if (!isAdmin) {
     return (
@@ -198,37 +205,17 @@ export default function PushNotificationSetup({ user }) {
     );
   }
 
-  if (!isOneSignalConfigured) {
+  // Afficher un loader pendant le chargement de OneSignal
+  if (!oneSignalReady) {
     return (
-      <div className="p-4 rounded-xl" style={{ backgroundColor: '#FFF3E0' }}>
-        <div className="flex items-start gap-3">
-          <Bell className="w-5 h-5 flex-shrink-0" style={{ color: '#F57C00' }} />
-          <div className="flex-1">
-            <h3 className="font-bold mb-1" style={{ color: '#E65100' }}>
-              Configuration OneSignal requise
-            </h3>
-            <p className="text-sm mb-3" style={{ color: '#F57C00' }}>
-              Pour activer les notifications push, configurez OneSignal en suivant les instructions dans le fichier 
-              <code className="px-2 py-1 rounded bg-white text-xs mx-1">OneSignalSetup.jsx</code>
-            </p>
-            <div className="space-y-2 text-xs" style={{ color: '#F57C00' }}>
-              <p><strong>1.</strong> Créer un compte sur onesignal.com (gratuit)</p>
-              <p><strong>2.</strong> Créer une app Web Push</p>
-              <p><strong>3.</strong> Copier votre App ID dans le fichier</p>
-              <p><strong>4.</strong> Ajouter le script OneSignal dans index.html</p>
-            </div>
-            <a 
-              href="https://documentation.onesignal.com/docs/web-push-quickstart" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-3 text-sm font-medium hover:underline"
-              style={{ color: '#E65100' }}
-            >
-              📚 Voir la documentation
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
+      <div className="p-4 rounded-xl text-center" style={{ backgroundColor: 'var(--cream)' }}>
+        <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin" style={{ color: 'var(--deep-pink)' }} />
+        <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+          Chargement de OneSignal...
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+          Si ce message persiste, rechargez la page
+        </p>
       </div>
     );
   }
