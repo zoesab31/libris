@@ -117,6 +117,58 @@ export default function SharedReadings() {
     enabled: !!user,
   });
 
+  // Separate pending invitations from regular wishlists
+  const pendingInvitations = wishlists.filter(w => 
+    w.pending_invitations?.includes(user?.email)
+  );
+  
+  const myWishlists = wishlists.filter(w => 
+    !w.pending_invitations?.includes(user?.email) && (w.created_by === user?.email || w.shared_with?.includes(user?.email))
+  );
+
+  // Mutations for accepting/rejecting invitations
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async (wishlistId) => {
+      const wishlist = wishlists.find(w => w.id === wishlistId);
+      if (!wishlist) return;
+
+      const newSharedWith = [...(wishlist.shared_with || []), user.email];
+      const newPendingInvitations = (wishlist.pending_invitations || []).filter(email => email !== user.email);
+
+      await base44.entities.SharedReadingWishlist.update(wishlistId, {
+        shared_with: newSharedWith,
+        pending_invitations: newPendingInvitations
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("✅ Invitation acceptée ! Vous pouvez maintenant modifier cette liste.");
+    },
+    onError: () => {
+      toast.error("Erreur lors de l'acceptation de l'invitation.");
+    }
+  });
+
+  const rejectInvitationMutation = useMutation({
+    mutationFn: async (wishlistId) => {
+      const wishlist = wishlists.find(w => w.id === wishlistId);
+      if (!wishlist) return;
+
+      const newPendingInvitations = (wishlist.pending_invitations || []).filter(email => email !== user.email);
+
+      await base44.entities.SharedReadingWishlist.update(wishlistId, {
+        pending_invitations: newPendingInvitations
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("❌ Invitation refusée.");
+    },
+    onError: () => {
+      toast.error("Erreur lors du refus de l'invitation.");
+    }
+  });
+
   const bulkDeleteMutation = useMutation({
     mutationFn: async () => {
       const promises = selectedReadings.map(async (readingId) => {
@@ -250,13 +302,19 @@ export default function SharedReadings() {
             </TabsTrigger>
             <TabsTrigger
               value="wishlist"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white relative"
               style={activeTab === "wishlist" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: '#FFFFFF'
               } : { color: '#000000' }}
             >
-              💭 Listes de souhaits ({wishlists.length})
+              💭 Listes de souhaits ({myWishlists.length})
+              {pendingInvitations.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ backgroundColor: '#FF0000' }}>
+                  {pendingInvitations.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -379,18 +437,93 @@ export default function SharedReadings() {
               </Button>
             </div>
 
-            {wishlists.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                {wishlists.map((wishlist) => (
-                  <WishlistCard
-                    key={wishlist.id}
-                    wishlist={wishlist}
-                    books={allBooks}
-                    onEdit={(w) => setSelectedWishlist(w)}
-                  />
-                ))}
+            {/* Pending Invitations Section */}
+            {pendingInvitations.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                  ✉️ Invitations en attente ({pendingInvitations.length})
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {pendingInvitations.map((wishlist) => (
+                    <Card key={wishlist.id} className="shadow-lg border-0 overflow-hidden"
+                          style={{ backgroundColor: 'white', borderLeft: '4px solid var(--warm-pink)' }}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-3xl">{wishlist.icon || '📚'}</span>
+                            <div>
+                              <h3 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
+                                {wishlist.title}
+                              </h3>
+                              {wishlist.description && (
+                                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                  {wishlist.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-4">
+                          <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                          <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                            {wishlist.book_ids?.length || 0} livre{(wishlist.book_ids?.length || 0) > 1 ? 's' : ''}
+                          </p>
+                        </div>
+
+                        <p className="text-xs mb-4 p-2 rounded-lg" 
+                           style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                          💌 Invitation de la part de {wishlist.created_by?.split('@')[0]}
+                        </p>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => acceptInvitationMutation.mutate(wishlist.id)}
+                            disabled={acceptInvitationMutation.isPending}
+                            className="flex-1 text-white font-medium"
+                            style={{ background: 'linear-gradient(135deg, #10B981, #34D399)' }}
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            Accepter
+                          </Button>
+                          <Button
+                            onClick={() => rejectInvitationMutation.mutate(wishlist.id)}
+                            disabled={rejectInvitationMutation.isPending}
+                            variant="outline"
+                            className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Refuser
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            ) : (
+            )}
+
+            {/* My Wishlists Section */}
+            {myWishlists.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                  📚 Mes listes ({myWishlists.length})
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {myWishlists.map((wishlist) => (
+                    <WishlistCard
+                      key={wishlist.id}
+                      wishlist={wishlist}
+                      books={allBooks}
+                      onEdit={(w) => setSelectedWishlist(w)}
+                      userEmail={user?.email}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {myWishlists.length === 0 && pendingInvitations.length === 0 && (
               <div className="text-center py-20">
                 <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
@@ -499,9 +632,10 @@ export default function SharedReadings() {
 }
 
 // Wishlist Card Component
-function WishlistCard({ wishlist, books, onEdit }) {
+function WishlistCard({ wishlist, books, onEdit, userEmail }) {
   const wishlistBooks = books.filter(b => wishlist.book_ids?.includes(b.id));
   const totalCollaborators = (wishlist.shared_with?.length || 0) + (wishlist.pending_invitations?.length || 0);
+  const isOwner = wishlist.created_by === userEmail;
   
   return (
     <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer"
@@ -522,12 +656,20 @@ function WishlistCard({ wishlist, books, onEdit }) {
               )}
             </div>
           </div>
-          {wishlist.is_public && (
-            <span className="px-2 py-1 rounded-full text-xs font-medium"
-                  style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-              Publique
-            </span>
-          )}
+          <div className="flex flex-col gap-1 items-end">
+            {wishlist.is_public && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                Publique
+              </span>
+            )}
+            {!isOwner && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                Partagée
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 mb-4">
@@ -893,7 +1035,7 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
   }, [searchQuery, myLibraryBooks]);
 
   const filteredFriends = useMemo(() => {
-    if (!friendSearchQuery || friendSearchQuery.length < 2) return myFriends;
+    if (!friendSearchQuery || friendSearchQuery.length < 2) return [];
     const query = friendSearchQuery.toLowerCase().trim();
     return myFriends.filter(friend =>
       (friend.friend_name?.toLowerCase().includes(query) ||
