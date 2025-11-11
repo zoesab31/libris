@@ -514,6 +514,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     status: userBook?.status || "À lire",
     rating: userBook?.rating || "",
     review: userBook?.review || "",
+    current_page: userBook?.current_page || "",
     music_playlist: userBook?.music_playlist || [],
     start_date: userBook?.start_date || "",
     end_date: userBook?.end_date || "",
@@ -552,6 +553,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         status: userBook.status || "À lire",
         rating: userBook.rating || "",
         review: userBook.review || "",
+        current_page: userBook.current_page || "",
         music_playlist: playlist,
         start_date: userBook.start_date || "",
         end_date: userBook.end_date || "",
@@ -864,6 +866,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     // Clean up empty values
     if (!updates.rating) delete updates.rating;
     if (!updates.review) delete updates.review;
+    if (!updates.current_page) delete updates.current_page;
     if (!updates.start_date) delete updates.start_date;
     if (!updates.end_date) delete updates.end_date;
     if (!updates.abandon_page) delete updates.abandon_page;
@@ -1233,6 +1236,39 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       className="focus-glow"
                     />
                   </div>
+
+                  {/* Current Page - Only show when status is "En cours" */}
+                  {editedData.status === "En cours" && book?.page_count && (
+                    <div>
+                      <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                        <BookOpen className="w-4 h-4" />
+                        Page actuelle (sur {book.page_count})
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max={book.page_count}
+                        value={editedData.current_page || ""}
+                        onChange={(e) => setEditedData({...editedData, current_page: e.target.value})}
+                        placeholder={`0 - ${book.page_count}`}
+                        className="focus-glow"
+                      />
+                      {editedData.current_page && (
+                        <div className="mt-2">
+                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                            <div className="h-full rounded-full transition-all"
+                                 style={{
+                                   width: `${Math.min((editedData.current_page / book.page_count) * 100, 100)}%`,
+                                   background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                 }} />
+                          </div>
+                          <p className="text-xs mt-1 font-bold text-center" style={{ color: 'var(--deep-pink)' }}>
+                            {Math.round((editedData.current_page / book.page_count) * 100)}% complété
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {customShelves.length > 0 && (
                     <div>
