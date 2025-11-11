@@ -952,7 +952,7 @@ export default function MyLibrary() {
 
         <CustomShelvesManager
           open={showShelves}
-          onOpenChange={setShowShelhes}
+          onOpenChange={setShowShelves}
           shelves={customShelves}
         />
 
