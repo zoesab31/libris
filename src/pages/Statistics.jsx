@@ -133,6 +133,18 @@ export default function Statistics() {
       .sort((a, b) => b.value - a.value);
   }, [booksThisYear, allBooks]);
 
+  const languageStats = useMemo(() => {
+    const stats = {};
+    booksThisYear.forEach(userBook => {
+      const lang = userBook.reading_language || "Français";
+      stats[lang] = (stats[lang] || 0) + 1;
+    });
+
+    return Object.entries(stats)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [booksThisYear]);
+
   const totalPages = useMemo(() => {
     return booksThisYear.reduce((sum, userBook) => {
       const book = allBooks.find(b => b.id === userBook.book_id);
@@ -655,6 +667,41 @@ export default function Statistics() {
                         dataKey="value"
                       >
                         {genreStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          const percent = (value / booksThisYear.length * 100).toFixed(1);
+                          return [`${value} livre${value > 1 ? 's' : ''} (${percent}%)`, name];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle style={{ color: 'var(--dark-text)' }}>Langues de lecture</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={languageStats}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(entry) => {
+                          const percent = (entry.value / booksThisYear.length * 100).toFixed(0);
+                          return `${entry.name} ${percent}%`;
+                        }}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {languageStats.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
