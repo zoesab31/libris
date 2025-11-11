@@ -70,6 +70,11 @@ export default function ShelfView() {
   const sortedBooks = [...filteredBooks].sort((a, b) => {
     if (sortBy === "recent") {
       return new Date(b.updated_date) - new Date(a.updated_date);
+    } else if (sortBy === "reading_date") {
+      // Priority: end_date > start_date > created_date
+      const dateA = a.end_date || a.start_date || a.created_date || "";
+      const dateB = b.end_date || b.start_date || b.created_date || "";
+      return dateB.localeCompare(dateA); // Most recent first
     } else if (sortBy === "title") {
       const bookA = allBooks.find(book => book.id === a.book_id);
       const bookB = allBooks.find(book => book.id === b.book_id);
@@ -140,6 +145,7 @@ export default function ShelfView() {
             <SelectContent>
               {/* The "Ma disposition" option for sorting by position is removed */}
               <SelectItem value="recent">Plus récents</SelectItem>
+              <SelectItem value="reading_date">Date de lecture</SelectItem>
               <SelectItem value="title">Titre (A-Z)</SelectItem>
               <SelectItem value="author">Auteur (A-Z)</SelectItem>
             </SelectContent>
