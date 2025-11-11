@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -313,6 +314,19 @@ export default function BookGrid({
                       </div>
                     )}
 
+                    {/* "En cours" badge - top left, only for books with "En cours" status */}
+                    {userBook.status === "En cours" && !isSelected && (
+                      <div className="absolute top-2 left-2 px-3 py-1.5 rounded-lg shadow-lg z-20"
+                           style={{ 
+                             background: 'linear-gradient(135deg, #FF69B4, #FF1493)',
+                             animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                           }}>
+                        <span className="text-xs font-bold text-white uppercase tracking-wide">
+                          En cours
+                        </span>
+                      </div>
+                    )}
+
                     {/* Selection indicator - only shows when selected */}
                     {isSelected && (
                       <div className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-10"
@@ -321,9 +335,13 @@ export default function BookGrid({
                       </div>
                     )}
 
-                    {/* Custom shelf badge - shows at top left when NOT selected, or below selection badge when selected */}
+                    {/* Custom shelf badge - shows below "En cours" or selection badge */}
                     {shelfInfo && (
-                      <div className={`absolute ${isSelected ? 'top-12 left-2' : 'top-2 left-2'} px-2 py-1 rounded-lg shadow-lg flex items-center gap-1 transition-all z-10`}
+                      <div className={`absolute ${
+                        isSelected ? 'top-12 left-2' : 
+                        userBook.status === "En cours" ? 'top-12 left-2' : 
+                        'top-2 left-2'
+                      } px-2 py-1 rounded-lg shadow-lg flex items-center gap-1 transition-all z-10`}
                            style={{ 
                              backgroundColor: shelfInfo.color === 'rose' ? '#FFB7D5' :
                                              shelfInfo.color === 'bleu' ? '#A7C7E7' :
