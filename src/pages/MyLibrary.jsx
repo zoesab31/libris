@@ -13,10 +13,10 @@ import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import PALManager from "../components/library/PALManager";
-import ReadingGoalManager from "../components/dashboard/ReadingGoalManager"; // Added import
-import { format } from "date-fns"; // Added import
-import { fr } from "date-fns/locale"; // Added import
-import { Card, CardContent } from "@/components/ui/card"; // Added import for Card components
+import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function MyLibrary() {
   const navigate = useNavigate();

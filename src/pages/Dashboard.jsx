@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 
 // Helper component for Book Details Dialog
 // This component is created to make the provided outline fully functional.
@@ -741,52 +742,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Défi lecture annuel */}
-            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
-              <CardContent className="p-4 md:p-6">
-                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
-                  🎯 Défi Lecture {selectedYear}
-                </h2>
-                {readingGoal ? (
-                  <div>
-                    <div className="text-center mb-4 md:mb-6">
-                      <p className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
-                        {booksReadThisYear} / {readingGoal.goal_count}
-                      </p>
-                      <p className="text-base md:text-lg" style={{ color: '#9B59B6' }}>
-                        {Math.round((booksReadThisYear / readingGoal.goal_count) * 100)}% complété
-                      </p>
-                    </div>
-                    <div className="mb-3 md:mb-4">
-                      <div className="w-full h-3 md:h-4 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                        <div className="h-full rounded-full transition-all duration-500"
-                             style={{ 
-                               width: `${Math.min((booksReadThisYear / readingGoal.goal_count) * 100, 100)}%`,
-                               background: 'linear-gradient(90deg, #FF69B4, #9B59B6)'
-                             }} />
-                      </div>
-                    </div>
-                    <p className="text-center font-medium text-sm md:text-base" style={{ color: '#2D3748' }}>
-                      Plus que {Math.max(readingGoal.goal_count - booksReadThisYear, 0)} livre{Math.max(readingGoal.goal_count - booksReadThisYear, 0) > 1 ? 's' : ''} à lire ! 📚
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 md:py-8">
-                    <Target className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
-                    <p className="mb-4 text-sm md:text-base" style={{ color: '#A0AEC0' }}>
-                      Aucun objectif défini pour {selectedYear}
-                    </p>
-                    <Button
-                      onClick={() => navigate(createPageUrl("Dashboard"))}
-                      className="text-white text-sm md:text-base"
-                      style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
-                    >
-                      Définir mon objectif
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Défi lecture annuel - Now with editing capability */}
+            <ReadingGoalManager year={selectedYear} compact={false} />
 
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
