@@ -4,15 +4,97 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
+// Helper component for Book Details Dialog
+// This component is created to make the provided outline fully functional.
+const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
+  if (!userBook || !book) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px] rounded-lg p-6">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 border-b pb-4 mb-4">
+          <DialogTitle className="text-xl font-bold" style={{ color: '#2D3748' }}>Détails du livre</DialogTitle>
+          <button onClick={() => onOpenChange(false)} className="text-gray-400 hover:text-gray-600">
+            <X className="h-5 w-5" />
+          </button>
+        </DialogHeader>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-shrink-0 w-24 h-36 rounded-lg overflow-hidden shadow-md">
+            {book.cover_url ? (
+              <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <BookOpen className="w-8 h-8 text-gray-500" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>{book.title}</h3>
+            <p className="text-sm text-gray-600 mb-2">{book.author}</p>
+            {userBook.status && (
+              <p className="text-xs font-medium px-2 py-0.5 rounded-full inline-block mb-2" 
+                 style={{ 
+                   backgroundColor: userBook.status === "En cours" ? '#FFE4EC' : 
+                                    userBook.status === "Lu" ? '#E6FFFA' : 
+                                    userBook.status === "À lire" ? '#F0E6FF' : '#FFD9D9',
+                   color: userBook.status === "En cours" ? '#FF69B4' : 
+                          userBook.status === "Lu" ? '#38B2AC' : 
+                          userBook.status === "À lire" ? '#9B59B6' : '#DC2626'
+                 }}>
+                {userBook.status}
+              </p>
+            )}
+            {userBook.start_date && (
+              <p className="text-sm text-gray-500">Début: {format(new Date(userBook.start_date), 'dd MMMM yyyy', { locale: fr })}</p>
+            )}
+            {userBook.end_date && (
+              <p className="text-sm text-gray-500">Fin: {format(new Date(userBook.end_date), 'dd MMMM yyyy', { locale: fr })}</p>
+            )}
+            {userBook.current_page && book.page_count && (
+              <p className="text-sm text-gray-500">Page actuelle: {userBook.current_page} / {book.page_count}</p>
+            )}
+            {userBook.rating && (
+              <div className="flex items-center gap-1 mt-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4"
+                        style={{ 
+                          fill: i < userBook.rating ? '#FFD700' : 'none', 
+                          stroke: '#FFD700' 
+                        }} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {userBook.notes && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="font-bold text-sm mb-2" style={{ color: '#2D3748' }}>Notes:</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{userBook.notes}</p>
+          </div>
+        )}
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fermer</Button>
+          <Link to={createPageUrl("MyLibrary")}>
+            <Button style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}>Modifier</Button>
+          </Link>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedBookForDetails, setSelectedBookForDetails] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -126,11 +208,18 @@ export default function Dashboard() {
   const getTimeBasedProgress = (userBook, userAvgDays = avgReadingDays) => {
     if (!userBook.start_date) return 0;
     
+    const book = allBooks.find(b => b.id === userBook.book_id);
+    
+    // If current_page is set and book has page_count, use that for accurate progress
+    if (userBook.current_page && book?.page_count) {
+      return Math.min(Math.round((userBook.current_page / book.page_count) * 100), 95);
+    }
+    
+    // Otherwise, use time-based estimation
     const start = new Date(userBook.start_date);
     const now = new Date();
     const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
     
-    // Calculate percentage based on average reading time
     const progress = Math.min((daysReading / userAvgDays) * 100, 95); // Max 95% until finished
     return Math.round(progress);
   };
@@ -536,7 +625,7 @@ export default function Dashboard() {
                           <div key={userBook.id} 
                                className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
                                style={{ backgroundColor: '#FFF7FA' }}
-                               onClick={() => navigate(createPageUrl("MyLibrary"))}>
+                               onClick={() => setSelectedBookForDetails(userBook)}>
                             <div className="relative flex-shrink-0">
                               <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                    style={{ backgroundColor: '#FFE4EC' }}>
@@ -570,7 +659,10 @@ export default function Dashboard() {
                                        }} />
                                 </div>
                                 <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
-                                  ⏱️ ~{progress}% (estimation temporelle)
+                                  {userBook.current_page && book.page_count 
+                                    ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
+                                    : `⏱️ ~${progress}% (estimation temporelle)`
+                                  }
                                 </p>
                               </div>
                             </div>
@@ -626,7 +718,10 @@ export default function Dashboard() {
                                            }} />
                                     </div>
                                     <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
-                                      ⏱️ ~{progress}% (estimation temporelle)
+                                      {userBook.current_page && book.page_count 
+                                        ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
+                                        : `⏱️ ~${progress}% (estimation temporelle)`
+                                      }
                                     </p>
                                   </div>
                                 </>
@@ -894,6 +989,16 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Book Details Dialog */}
+      {selectedBookForDetails && (
+        <BookDetailsDialog
+          userBook={selectedBookForDetails}
+          book={allBooks.find(b => b.id === selectedBookForDetails.book_id)}
+          open={!!selectedBookForDetails}
+          onOpenChange={(open) => !open && setSelectedBookForDetails(null)}
+        />
+      )}
     </div>
   );
 }
