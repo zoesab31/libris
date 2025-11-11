@@ -598,14 +598,23 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     queryFn: async () => {
       if (!book || myFriends.length === 0) return [];
       
+      console.log("🔍 DEBUG - Fetching friends books for:", book.title);
+      console.log("🔍 DEBUG - Book ID:", book.id);
+      console.log("🔍 DEBUG - My friends:", myFriends.map(f => ({ name: f.friend_name, email: f.friend_email })));
+      
       const friendEmails = myFriends.map(f => f.friend_email);
       const allFriendBooks = await Promise.all(
-        friendEmails.map(email => 
-          base44.entities.UserBook.filter({ book_id: book.id, created_by: email })
-        )
+        friendEmails.map(async (email) => {
+          const books = await base44.entities.UserBook.filter({ book_id: book.id, created_by: email });
+          console.log(`🔍 DEBUG - Books found for ${email}:`, books);
+          return books;
+        })
       );
       
-      return allFriendBooks.flat();
+      const flatBooks = allFriendBooks.flat();
+      console.log("🔍 DEBUG - Total friend books found:", flatBooks);
+      
+      return flatBooks;
     },
     enabled: !!book && myFriends.length > 0 && open,
   });
