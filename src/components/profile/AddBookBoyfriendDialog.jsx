@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Loader2, Upload, Search, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AddBookBoyfriendDialog({ open, onOpenChange, books, existingCharacters }) {
+export default function AddBookBoyfriendDialog({ open, onOpenChange, books, existingCharacters, editingCharacter = null }) {
   const queryClient = useQueryClient();
   const [user, setUser] = React.useState(null);
   const [uploading, setUploading] = useState(false);
@@ -29,6 +29,39 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Initialize form with editing data
+  useEffect(() => {
+    if (editingCharacter) {
+      setCharacterData({
+        character_name: editingCharacter.character_name || "",
+        book_id: editingCharacter.book_id || "",
+        rank: editingCharacter.rank || 1,
+        gender: editingCharacter.gender || "male",
+        why_i_love_him: editingCharacter.why_i_love_him || "",
+        best_quote: editingCharacter.best_quote || "",
+        image_url: editingCharacter.image_url || "",
+      });
+      // Set search query to book title if editing
+      if (editingCharacter.book_id) {
+        const book = allBooks.find(b => b.id === editingCharacter.book_id);
+        if (book) {
+          setSearchQuery(book.title);
+        }
+      }
+    } else {
+      setCharacterData({
+        character_name: "",
+        book_id: "",
+        rank: existingCharacters.length + 1,
+        gender: "male",
+        why_i_love_him: "",
+        best_quote: "",
+        image_url: ""
+      });
+      setSearchQuery("");
+    }
+  }, [editingCharacter, open]);
 
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooksForCharacters'],
@@ -63,11 +96,17 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
 
   const selectedBook = allBooks.find(b => b.id === characterData.book_id);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.BookBoyfriend.create(data),
+  const saveMutation = useMutation({
+    mutationFn: (data) => {
+      if (editingCharacter) {
+        return base44.entities.BookBoyfriend.update(editingCharacter.id, data);
+      } else {
+        return base44.entities.BookBoyfriend.create(data);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookBoyfriends'] });
-      toast.success("Personnage ajouté !");
+      toast.success(editingCharacter ? "Personnage modifié !" : "Personnage ajouté !");
       onOpenChange(false);
       setCharacterData({
         character_name: "",
@@ -110,7 +149,7 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
-            💕 Ajouter un personnage préféré
+            💕 {editingCharacter ? "Modifier" : "Ajouter"} un personnage préféré
           </DialogTitle>
         </DialogHeader>
 
@@ -299,18 +338,18 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
           </div>
 
           <Button
-            onClick={() => createMutation.mutate(characterData)}
-            disabled={!characterData.character_name || !characterData.book_id || createMutation.isPending}
+            onClick={() => saveMutation.mutate(characterData)}
+            disabled={!characterData.character_name || !characterData.book_id || saveMutation.isPending}
             className="w-full font-medium py-6"
             style={{ background: 'linear-gradient(135deg, var(--rose-gold), var(--gold))', color: '#000000' }}
           >
-            {createMutation.isPending ? (
+            {saveMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Ajout en cours...
+                {editingCharacter ? "Modification..." : "Ajout en cours..."}
               </>
             ) : (
-              "Ajouter le personnage"
+              editingCharacter ? "Modifier le personnage" : "Ajouter le personnage"
             )}
           </Button>
         </div>

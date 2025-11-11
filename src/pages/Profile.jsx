@@ -11,6 +11,7 @@ import BookBoyfriendCard from "../components/profile/BookBoyfriendCard";
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingCharacter, setEditingCharacter] = useState(null);
   const [selectedGender, setSelectedGender] = useState("male");
 
   useEffect(() => {
@@ -30,6 +31,16 @@ export default function Profile() {
 
   const maleCharacters = bookBoyfriends.filter(bf => !bf.gender || bf.gender === 'male');
   const femaleCharacters = bookBoyfriends.filter(bf => bf.gender === 'female');
+
+  const handleEdit = (character) => {
+    setEditingCharacter(character);
+    setShowAddDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowAddDialog(false);
+    setEditingCharacter(null);
+  };
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -89,13 +100,14 @@ export default function Profile() {
           <TabsContent value="male">
             {maleCharacters.length > 0 ? (
               <div className="space-y-4">
-                {maleCharacters.map((character) => {
-                  const book = allBooks.find(b => b.id === character.book_id);
+                {maleCharacters.map((char) => {
+                  const book = allBooks.find(b => b.id === char.book_id);
                   return (
                     <BookBoyfriendCard 
-                      key={character.id} 
-                      character={character} 
+                      key={char.id} 
+                      character={char} 
                       book={book}
+                      onEdit={handleEdit}
                     />
                   );
                 })}
@@ -116,13 +128,14 @@ export default function Profile() {
           <TabsContent value="female">
             {femaleCharacters.length > 0 ? (
               <div className="space-y-4">
-                {femaleCharacters.map((character) => {
-                  const book = allBooks.find(b => b.id === character.book_id);
+                {femaleCharacters.map((char) => {
+                  const book = allBooks.find(b => b.id === char.book_id);
                   return (
                     <BookBoyfriendCard 
-                      key={character.id} 
-                      character={character} 
+                      key={char.id} 
+                      character={char} 
                       book={book}
+                      onEdit={handleEdit}
                     />
                   );
                 })}
@@ -136,16 +149,17 @@ export default function Profile() {
                 <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                   Ajoutez vos personnages féminins préférés
                 </p>
-              </div>
+              </p>
             )}
           </TabsContent>
         </Tabs>
 
         <AddBookBoyfriendDialog 
           open={showAddDialog}
-          onOpenChange={setShowAddDialog}
+          onOpenChange={handleCloseDialog}
           books={allBooks}
           existingCharacters={bookBoyfriends}
+          editingCharacter={editingCharacter}
         />
       </div>
     </div>

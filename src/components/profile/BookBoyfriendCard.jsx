@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, Heart, BookOpen, Quote as QuoteIcon } from "lucide-react";
+import { Trash2, Heart, BookOpen, Quote as QuoteIcon, Edit } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export default function BookBoyfriendCard({ character, book }) {
+export default function BookBoyfriendCard({ character, book, onEdit }) {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -74,14 +74,23 @@ export default function BookBoyfriendCard({ character, book }) {
                   </div>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-              >
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(character)}
+                >
+                  <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
             </div>
 
             {character.why_i_love_him && (
