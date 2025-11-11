@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -149,7 +148,7 @@ export default function Profile() {
                 <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                   Ajoutez vos personnages féminins préférés
                 </p>
-              </p>
+              </div>
             )}
           </TabsContent>
         </Tabs>
