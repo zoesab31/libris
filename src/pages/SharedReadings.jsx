@@ -1035,13 +1035,18 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
   }, [searchQuery, myLibraryBooks]);
 
   const filteredFriends = useMemo(() => {
-    if (!friendSearchQuery || friendSearchQuery.length < 2) return [];
+    // Show all eligible friends if search query is short or empty
+    let friendsToFilter = myFriends.filter(friend =>
+      !wishlist.shared_with?.includes(friend.friend_email) &&
+      !wishlist.pending_invitations?.includes(friend.friend_email)
+    );
+
+    if (!friendSearchQuery || friendSearchQuery.length < 2) return friendsToFilter;
+
     const query = friendSearchQuery.toLowerCase().trim();
-    return myFriends.filter(friend =>
-      (friend.friend_name?.toLowerCase().includes(query) ||
-      friend.friend_email?.toLowerCase().includes(query))
-      && !wishlist.shared_with?.includes(friend.friend_email)
-      && !wishlist.pending_invitations?.includes(friend.friend_email)
+    return friendsToFilter.filter(friend =>
+      friend.friend_name?.toLowerCase().includes(query) ||
+      friend.friend_email?.toLowerCase().includes(query)
     );
   }, [friendSearchQuery, myFriends, wishlist]);
 
@@ -1055,6 +1060,19 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
     onError: (error) => {
       console.error("Error updating wishlist:", error);
       toast.error("Erreur lors de la mise à jour de la liste.");
+    },
+  });
+
+  // Separate mutation for books only (for collaborators)
+  const updateBooksMutation = useMutation({
+    mutationFn: (bookIds) => base44.entities.SharedReadingWishlist.update(wishlist.id, { book_ids: bookIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
+      toast.success("📚 Livres mis à jour !");
+    },
+    onError: (error) => {
+      console.error("Error updating books:", error);
+      toast.error("Erreur lors de la mise à jour des livres.");
     },
   });
 
@@ -1103,7 +1121,6 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
       queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
       toast.success("✉️ Invitation envoyée !");
       setFriendSearchQuery("");
-      // setShowInviteDialog(false); // Keep dialog open for more invites
     },
     onError: (error) => {
       toast.error(error.message || "Erreur lors de l'envoi de l'invitation.");
@@ -1130,11 +1147,16 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
   });
 
   const toggleBookSelection = (bookId) => {
-    setSelectedBooks(prev =>
-      prev.includes(bookId)
-        ? prev.filter(id => id !== bookId)
-        : [...prev, bookId]
-    );
+    const newSelectedBooks = selectedBooks.includes(bookId)
+      ? selectedBooks.filter(id => id !== bookId)
+      : [...selectedBooks, bookId];
+    
+    setSelectedBooks(newSelectedBooks);
+    
+    // If user is a collaborator (not owner), update immediately
+    if (canEditBooks && !canEditSettings) {
+      updateBooksMutation.mutate(newSelectedBooks);
+    }
   };
 
   const handleUpdate = (e) => {
@@ -1159,14 +1181,17 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
   };
 
   const isOwner = wishlist.created_by === user?.email;
+  const isCollaborator = wishlist.shared_with?.includes(user?.email) || isOwner;
+  const canEditBooks = isCollaborator; // Collaborators and owner can edit books
+  const canEditSettings = isOwner; // Only owner can edit settings (title, desc, icon, public, collaborators)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
-            <span>💭 {isOwner ? 'Modifier la liste' : 'Liste de souhaits'}</span>
-            {isOwner && (
+            <span>💭 {canEditSettings ? 'Modifier la liste' : 'Liste de souhaits'}</span>
+            {canEditSettings && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -1181,47 +1206,69 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
         </DialogHeader>
 
         <form onSubmit={handleUpdate} className="space-y-6 py-4">
-          {/* Same form fields as AddWishlistDialog */}
-          <div>
-            <Label htmlFor="title">Titre *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Lectures d'été 2025"
-              required
-              disabled={!isOwner}
-            />
-          </div>
+          {/* Title, description, icon, public - only for owner */}
+          {canEditSettings && (
+            <>
+              <div>
+                <Label htmlFor="title">Titre *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: Lectures d'été 2025"
+                  required
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez cette liste..."
-              rows={3}
-              disabled={!isOwner}
-            />
-          </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Décrivez cette liste..."
+                  rows={3}
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="icon">Emoji</Label>
-            <Select value={icon} onValueChange={setIcon} disabled={!isOwner}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["📚", "💭", "🌸", "☀️", "❄️", "🍂", "🌺", "💕", "✨", "🎀"].map(e => (
-                  <SelectItem key={e} value={e}>{e}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div>
+                <Label htmlFor="icon">Emoji</Label>
+                <Select value={icon} onValueChange={setIcon}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["📚", "💭", "🌸", "☀️", "❄️", "🍂", "🌺", "💕", "✨", "🎀"].map(e => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {/* Display title and description for collaborators (read-only) */}
+          {!canEditSettings && (
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-3xl">{wishlist.icon}</span>
+                <h3 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                  {wishlist.title}
+                </h3>
+              </div>
+              {wishlist.description && (
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  {wishlist.description}
+                </p>
+              )}
+              <p className="text-xs mt-2" style={{ color: 'var(--warm-brown)' }}>
+                📝 Créée par {wishlist.created_by?.split('@')[0]}
+              </p>
+            </div>
+          )}
 
           {/* Collaborators section - only for owner */}
-          {isOwner && (
+          {canEditSettings && (
             <div className="border-t pt-4" style={{ borderColor: 'var(--beige)' }}>
               <div className="flex items-center justify-between mb-3">
                 <Label>Collaborateurs ({(wishlist.shared_with?.length || 0) + (wishlist.pending_invitations?.length || 0)})</Label>
@@ -1299,14 +1346,14 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
             </div>
           )}
 
-          {/* Book search and selection */}
+          {/* Book search and selection - for all collaborators */}
           <div>
             <Label>Livres dans la liste</Label>
             <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
-              {isOwner ? 'Recherchez et sélectionnez des livres de votre bibliothèque' : 'Livres de cette liste'}
+              {canEditBooks ? 'Recherchez et ajoutez des livres de votre bibliothèque' : 'Livres de cette liste'}
             </p>
             
-            {isOwner && (
+            {canEditBooks && (
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" 
                         style={{ color: 'var(--warm-pink)' }} />
@@ -1336,7 +1383,7 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                         style={{ backgroundColor: 'var(--soft-pink)' }}
                       >
                         <span>{book.title}</span>
-                        {isOwner && (
+                        {canEditBooks && (
                           <button
                             type="button"
                             onClick={() => toggleBookSelection(bookId)}
@@ -1351,15 +1398,14 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                 </div>
               </div>
             )}
-             {(selectedBooks.length === 0 && !isOwner) && (
-                <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
-                  Cette liste ne contient pas encore de livres.
-                </p>
-              )}
+            {(selectedBooks.length === 0 && !canEditBooks) && (
+              <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                Cette liste ne contient pas encore de livres.
+              </p>
+            )}
 
-
-            {/* Search results - only for owner */}
-            {isOwner && searchQuery.length >= 2 && filteredBooks.length > 0 && (
+            {/* Search results - for all collaborators */}
+            {canEditBooks && searchQuery.length >= 2 && filteredBooks.length > 0 && (
               <div className="border rounded-lg max-h-64 overflow-y-auto" 
                    style={{ borderColor: 'var(--beige)' }}>
                 {filteredBooks.map((book) => {
@@ -1409,14 +1455,14 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                 })}
               </div>
             )}
-            {isOwner && searchQuery.length >= 2 && filteredBooks.length === 0 && (
+            {canEditBooks && searchQuery.length >= 2 && filteredBooks.length === 0 && (
               <p className="text-center py-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
                 Aucun livre trouvé dans votre bibliothèque
               </p>
             )}
           </div>
 
-          {isOwner && (
+          {canEditSettings && (
             <>
               <div className="flex items-center justify-between p-3 rounded-lg"
                    style={{ backgroundColor: 'var(--cream)' }}>
@@ -1446,6 +1492,19 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
                 </Button>
               </div>
             </>
+          )}
+
+          {/* For collaborators - just a close button */}
+          {!canEditSettings && canEditBooks && (
+            <div className="flex justify-end pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Fermer
+              </Button>
+            </div>
           )}
         </form>
 
