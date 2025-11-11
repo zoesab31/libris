@@ -13,6 +13,10 @@ import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import PALManager from "../components/library/PALManager";
+import ReadingGoalManager from "../components/dashboard/ReadingGoalManager"; // Added import
+import { format } from "date-fns"; // Added import
+import { fr } from "date-fns/locale"; // Added import
+import { Card, CardContent } from "@/components/ui/card"; // Added import for Card components
 
 export default function MyLibrary() {
   const navigate = useNavigate();
@@ -55,6 +59,43 @@ export default function MyLibrary() {
     queryFn: () => base44.entities.ReadingList.filter({ created_by: user?.email }),
     enabled: !!user,
   });
+
+  // Get currently reading books
+  const currentlyReading = myBooks.filter(b => b.status === "En cours");
+
+  // Calculate time-based progress for a book
+  const getTimeBasedProgress = (userBook) => {
+    if (!userBook.start_date) return 0;
+    
+    const book = allBooks.find(b => b.id === userBook.book_id);
+    
+    // If current_page is set and book has page_count, use that for accurate progress
+    if (userBook.current_page && book?.page_count && book.page_count > 0) {
+      return Math.min(Math.round((userBook.current_page / book.page_count) * 100), 99); // Cap at 99% to indicate not fully read
+    }
+    
+    // Otherwise, use time-based estimation
+    const start = new Date(userBook.start_date);
+    const now = new Date();
+    const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    
+    // Calculate average reading days for user
+    const completedBooks = myBooks.filter(b => 
+      b.status === "Lu" && b.start_date && b.end_date
+    );
+    
+    const avgReadingDays = completedBooks.length === 0 ? 14 : Math.round(
+      completedBooks.reduce((sum, book) => {
+        const start = new Date(book.start_date);
+        const end = new Date(book.end_date);
+        const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+        return sum + Math.max(days, 1); // Ensure at least 1 day for calculation
+      }, 0) / completedBooks.length
+    );
+    
+    const progress = Math.min((daysReading / avgReadingDays) * 100, 99); // Cap at 99%
+    return Math.round(progress);
+  };
 
   // Helper function to check if abandoned book counts (>50%)
   const abandonedBookCounts = (userBook) => {
@@ -926,21 +967,125 @@ export default function MyLibrary() {
             )}
           </div>
         ) : (
-          <BookGrid
-            userBooks={filteredBooks}
-            allBooks={allBooks}
-            customShelves={customShelves}
-            isLoading={isLoading}
-            selectionMode={selectionMode}
-            selectedBooks={selectedBooks}
-            onSelectionChange={setSelectedBooks}
-            onExitSelectionMode={() => {
-              setSelectionMode(false);
-              setSelectedBooks([]);
-            }}
-            showPALSelector={activeTab === "À lire"}
-            readingLists={readingLists}
-          />
+          <>
+            {/* Currently Reading + Reading Goal Section (Only in "Tous" tab) */}
+            {activeTab === "tous" && (
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                {/* Currently Reading Books */}
+                <div className="md:col-span-2">
+                  <Card className="shadow-lg border-0 overflow-hidden">
+                    <CardContent className="p-4 md:p-6">
+                      <h3 className="font-bold text-lg md:text-xl mb-4 flex items-center gap-2" 
+                          style={{ color: 'var(--dark-text)' }}>
+                        📖 En cours de lecture
+                      </h3>
+                      
+                      {currentlyReading.length > 0 ? (
+                        <div className="space-y-3">
+                          {currentlyReading.slice(0, 2).map((userBook) => {
+                            const book = allBooks.find(b => b.id === userBook.book_id);
+                            if (!book) return null;
+                            
+                            const daysReading = userBook.start_date 
+                              ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
+                              : 0;
+                            const progress = getTimeBasedProgress(userBook);
+                            
+                            return (
+                              <div
+                                key={userBook.id}
+                                className="flex gap-3 p-3 rounded-xl hover:shadow-lg transition-all cursor-pointer"
+                                style={{ backgroundColor: 'var(--cream)' }}
+                                onClick={() => setSelectedUserBook(userBook)}
+                              >
+                                <div className="w-16 h-24 md:w-20 md:h-28 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                                     style={{ backgroundColor: 'var(--beige)' }}>
+                                  {book?.cover_url ? (
+                                    <img src={book.cover_url} alt={book.title} 
+                                         className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Library className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-bold text-sm md:text-base line-clamp-2" 
+                                      style={{ color: 'var(--dark-text)' }}>
+                                    {book.title}
+                                  </h4>
+                                  <p className="text-xs md:text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                    {book.author}
+                                  </p>
+                                  
+                                  {userBook.start_date && (
+                                    <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
+                                      {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
+                                    </p>
+                                  )}
+                                  
+                                  <div className="mt-2">
+                                    <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                      <div className="h-full rounded-full transition-all duration-500" 
+                                           style={{ 
+                                             width: `${progress}%`,
+                                             background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                           }} />
+                                    </div>
+                                    <p className="text-xs mt-1 font-medium" style={{ color: 'var(--deep-pink)' }}>
+                                      {userBook.current_page && book?.page_count 
+                                        ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
+                                        : `⏱️ ~${progress}% (estimation temporelle)`
+                                      }
+                                    </p>
+                                    {!userBook.current_page && book?.page_count && (
+                                      <p className="text-xs mt-1 italic" style={{ color: '#999' }}>
+                                        💡 Cliquez pour indiquer votre page actuelle
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Library className="w-12 h-12 mx-auto mb-3 opacity-20" 
+                                   style={{ color: 'var(--warm-pink)' }} />
+                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                            Aucune lecture en cours
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Reading Goal */}
+                <div>
+                  <ReadingGoalManager year={new Date().getFullYear()} compact={true} />
+                </div>
+              </div>
+            )}
+
+            <BookGrid
+              userBooks={filteredBooks}
+              allBooks={allBooks}
+              customShelves={customShelves}
+              isLoading={isLoading}
+              selectionMode={selectionMode}
+              selectedBooks={selectedBooks}
+              onSelectionChange={setSelectedBooks}
+              onExitSelectionMode={() => {
+                setSelectionMode(false);
+                setSelectedBooks([]);
+              }}
+              showPALSelector={activeTab === "À lire"}
+              readingLists={readingLists}
+            />
+          </>
         )}
 
         <AddBookDialog
