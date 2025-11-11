@@ -138,6 +138,9 @@ export default function NotificationBell({ user }) {
       case 'shared_reading':
         navigate(createPageUrl("SharedReadings"));
         break;
+      case 'wishlist':
+        navigate(createPageUrl("SharedReadings")); // Assuming 'SharedReadings' is the correct page for wishlist for now
+        break;
       default:
         break;
     }

@@ -636,7 +636,7 @@ function AddWishlistDialog({ open, onOpenChange, user }) {
       is_public: isPublic,
       book_ids: selectedBooks,
       shared_with: [],
-      pending_invitations: [], // Initialize pending_invitations
+      pending_invitations: [],
       created_by: user?.email,
     });
   };
@@ -936,9 +936,26 @@ function WishlistDetailsDialog({ wishlist, open, onOpenChange, user }) {
       if (pendingInvites.includes(friendEmail)) {
         throw new Error("Cette amie a déjà été invitée");
       }
-      return base44.entities.SharedReadingWishlist.update(currentWishlist.id, {
+      
+      // Update wishlist with new invitation
+      await base44.entities.SharedReadingWishlist.update(currentWishlist.id, {
         pending_invitations: [...pendingInvites, friendEmail]
       });
+      
+      // Create notification for invited friend
+      const friend = myFriends.find(f => f.friend_email === friendEmail);
+      await base44.entities.Notification.create({
+        type: "wishlist_invitation",
+        title: "📚 Nouvelle invitation",
+        message: `${user?.full_name || user?.email} vous invite à collaborer sur la liste "${wishlist.title}"`,
+        link_type: "wishlist",
+        link_id: wishlist.id,
+        is_read: false,
+        from_user: user?.email,
+        created_by: friendEmail
+      });
+      
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedReadingWishlists'] });
