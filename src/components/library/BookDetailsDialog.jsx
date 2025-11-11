@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +32,7 @@ import {
   Plus,
   Play,
   Layers,
-  Search // Added Search icon
+  Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -510,6 +511,8 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("myinfo"); // New state for tabs
+
   const [editedData, setEditedData] = useState({
     status: userBook?.status || "À lire",
     rating: userBook?.rating || "",
@@ -570,6 +573,59 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
+  });
+
+  // NEW: Fetch friends
+  const { data: myFriends = [] } = useQuery({
+    queryKey: ['myFriends'],
+    queryFn: () => base44.entities.Friendship.filter({ 
+      created_by: user?.email, 
+      status: "Acceptée" 
+    }),
+    enabled: !!user && open,
+  });
+
+  // NEW: Fetch all User entities to get profile pictures
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: open && myFriends.length > 0,
+  });
+
+  // NEW: Fetch friends' UserBooks for this specific book
+  const { data: friendsUserBooks = [] } = useQuery({
+    queryKey: ['friendsUserBooks', book?.id],
+    queryFn: async () => {
+      if (!book || myFriends.length === 0) return [];
+      
+      const friendEmails = myFriends.map(f => f.friend_email);
+      const allFriendBooks = await Promise.all(
+        friendEmails.map(email => 
+          base44.entities.UserBook.filter({ book_id: book.id, created_by: email })
+        )
+      );
+      
+      return allFriendBooks.flat();
+    },
+    enabled: !!book && myFriends.length > 0 && open,
+  });
+
+  // NEW: Fetch custom shelves of friends
+  const { data: friendsShelves = [] } = useQuery({
+    queryKey: ['friendsShelves'],
+    queryFn: async () => {
+      if (myFriends.length === 0) return [];
+      
+      const friendEmails = myFriends.map(f => f.friend_email);
+      const allShelves = await Promise.all(
+        friendEmails.map(email => 
+          base44.entities.CustomShelf.filter({ created_by: email })
+        )
+      );
+      
+      return allShelves.flat();
+    },
+    enabled: myFriends.length > 0 && open,
   });
 
   const { data: customShelves = [] } = useQuery({
@@ -1105,469 +1161,704 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
             </div>
           </div>
 
-          {/* CORPS PRINCIPAL - 2 colonnes */}
-          <div className="p-8 grid md:grid-cols-2 gap-6">
-            {/* COLONNE GAUCHE */}
-            <div className="space-y-6">
-              {/* Card: Genres & Tags */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <Tag className="w-5 h-5" />
-                  Genres personnalisés
-                </h3>
-                <GenreTagInput
-                  value={book.custom_genres || []}
-                  onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
-                />
-              </div>
-
-              {/* Card: Format */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <FileText className="w-5 h-5" />
-                  Format de lecture
-                </h3>
-                <div className="grid grid-cols-3 gap-3">
-                  {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => {
-                        const currentTags = book.tags || [];
-                        const newTags = currentTags.includes(tag)
-                          ? currentTags.filter(t => t !== tag)
-                          : [...currentTags, tag];
-                        updateBookMutation.mutate({ tags: newTags });
-                      }}
-                      className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 ${
-                        (book.tags || []).includes(tag)
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
-                          : 'bg-pink-50 text-pink-800 border-2 border-pink-200'
-                      }`}
-                    >
-                      {tag === "Audio" && "🎧"}
-                      {tag === "Numérique" && "📱"}
-                      {tag === "Broché" && "📕"}
-                      {tag === "Relié" && "📘"}
-                      {tag === "Poche" && "📙"}
-                      {tag === "Wattpad" && "🌟"}
-                      {" "}{tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Card: Personnage préféré */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <Heart className="w-5 h-5" />
-                  Personnage préféré
-                </h3>
-                <Input
-                  value={editedData.favorite_character || ""}
-                  onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                  placeholder="Votre book boyfriend/girlfriend..."
-                  className="focus-glow"
-                />
-              </div>
-
-              {/* Card: Ajouter à une saga */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <Layers className="w-5 h-5" />
-                  Saga
-                </h3>
-
-                {currentSeries ? (
-                  <div className="space-y-3">
-                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Layers className="w-5 h-5" />
-                        <span className="font-bold">{currentSeries.series_name}</span>
-                      </div>
-                      <p className="text-sm opacity-90">
-                        {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} livre{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => setShowSeriesDialog(true)}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Changer de saga
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => setShowSeriesDialog(true)}
-                    className="w-full text-white"
-                    style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
-                  >
-                    <Layers className="w-4 h-4 mr-2" />
-                    Ajouter à une saga
-                  </Button>
-                )}
-              </div>
+          {/* NEW: Tabs for My Info vs Friends Reviews */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="px-8 pt-4 bg-white/50">
+              <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
+                <TabsTrigger
+                  value="myinfo"
+                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+                  style={activeTab === "myinfo" ? {
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: '#FFFFFF'
+                  } : { color: '#000000' }}
+                >
+                  📝 Mes informations
+                </TabsTrigger>
+                <TabsTrigger
+                  value="friends"
+                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+                  style={activeTab === "friends" ? {
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: '#FFFFFF'
+                  } : { color: '#000000' }}
+                >
+                  👭 Avis de mes amies ({friendsUserBooks.length})
+                </TabsTrigger>
+              </TabsList>
             </div>
 
-            {/* COLONNE DROITE */}
-            <div className="space-y-6">
-              {/* Card: Lecture */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <Sparkles className="w-5 h-5" />
-                  Ma lecture
-                </h3>
+            <TabsContent value="myinfo">
+              {/* CORPS PRINCIPAL - 2 colonnes */}
+              <div className="p-8 grid md:grid-cols-2 gap-6">
+                {/* COLONNE GAUCHE */}
+                <div className="space-y-6">
+                  {/* Card: Genres & Tags */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <Tag className="w-5 h-5" />
+                      Genres personnalisés
+                    </h3>
+                    <GenreTagInput
+                      value={book.custom_genres || []}
+                      onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
+                    />
+                  </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                      <Star className="w-4 h-4" />
-                      Note /5
-                    </Label>
+                  {/* Card: Format */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <FileText className="w-5 h-5" />
+                      Format de lecture
+                    </h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            const currentTags = book.tags || [];
+                            const newTags = currentTags.includes(tag)
+                              ? currentTags.filter(t => t !== tag)
+                              : [...currentTags, tag];
+                            updateBookMutation.mutate({ tags: newTags });
+                          }}
+                          className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 ${
+                            (book.tags || []).includes(tag)
+                              ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                              : 'bg-pink-50 text-pink-800 border-2 border-pink-200'
+                          }`}
+                        >
+                          {tag === "Audio" && "🎧"}
+                          {tag === "Numérique" && "📱"}
+                          {tag === "Broché" && "📕"}
+                          {tag === "Relié" && "📘"}
+                          {tag === "Poche" && "📙"}
+                          {tag === "Wattpad" && "🌟"}
+                          {" "}{tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card: Personnage préféré */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <Heart className="w-5 h-5" />
+                      Personnage préféré
+                    </h3>
                     <Input
-                      type="number"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={editedData.rating || ""}
-                      onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
-                      placeholder="4.5"
+                      value={editedData.favorite_character || ""}
+                      onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                      placeholder="Votre book boyfriend/girlfriend..."
                       className="focus-glow"
                     />
                   </div>
 
-                  {/* Current Page - Only show when status is "En cours" */}
-                  {editedData.status === "En cours" && book?.page_count && (
-                    <div>
-                      <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                        <BookOpen className="w-4 h-4" />
-                        Page actuelle (sur {book.page_count})
-                      </Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={book.page_count}
-                        value={editedData.current_page || ""}
-                        onChange={(e) => setEditedData({...editedData, current_page: e.target.value})}
-                        placeholder={`0 - ${book.page_count}`}
-                        className="focus-glow"
-                      />
-                      {editedData.current_page && (
-                        <div className="mt-2">
-                          <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                            <div className="h-full rounded-full transition-all"
-                                 style={{
-                                   width: `${Math.min((editedData.current_page / book.page_count) * 100, 100)}%`,
-                                   background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                                 }} />
+                  {/* Card: Ajouter à une saga */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <Layers className="w-5 h-5" />
+                      Saga
+                    </h3>
+
+                    {currentSeries ? (
+                      <div className="space-y-3">
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Layers className="w-5 h-5" />
+                            <span className="font-bold">{currentSeries.series_name}</span>
                           </div>
-                          <p className="text-xs mt-1 font-bold text-center" style={{ color: 'var(--deep-pink)' }}>
-                            {Math.round((editedData.current_page / book.page_count) * 100)}% complété
+                          <p className="text-sm opacity-90">
+                            {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} livre{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {customShelves.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">Étagère personnalisée</Label>
-                      <Select
-                        value={editedData.custom_shelf || ""}
-                        onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
-                      >
-                        <SelectTrigger className="focus-glow">
-                          <SelectValue placeholder="Aucune" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={null}>Aucune</SelectItem>
-                          {customShelves.map(s => (
-                            <SelectItem key={s.id} value={s.name}>
-                              {s.icon} {s.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border-2 border-pink-200">
-                    <Label className="flex items-center gap-2 cursor-pointer">
-                      <Users className="w-4 h-4" />
-                      Lecture commune
-                    </Label>
-                    <Switch
-                      checked={editedData.is_shared_reading}
-                      onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">
-                        <Calendar className="w-4 h-4 inline mr-1" />
-                        Début
-                      </Label>
-                      <Input
-                        type="date"
-                        value={editedData.start_date || ""}
-                        onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                        className="focus-glow"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">
-                        <Calendar className="w-4 h-4 inline mr-1" />
-                        Fin
-                      </Label>
-                      <Input
-                        type="date"
-                        value={editedData.end_date || ""}
-                        onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                        className="focus-glow"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Music Section - Updated for series sync */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                  <Music className="w-5 h-5" />
-                  Playlist musicale ({editedData.music_playlist.length})
-                  {currentSeries && (
-                    <span className="text-xs px-2 py-1 rounded-full ml-auto"
-                          style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                      🔗 Saga : {currentSeries.series_name}
-                    </span>
-                  )}
-                </h3>
-
-                {currentSeries && (
-                  <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
-                    <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
-                      💡 Cette playlist est partagée avec tous les tomes de la saga "{currentSeries.series_name}"
-                    </p>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {/* Add Music Form */}
-                  {isAddingMusic && (
-                    <div className="p-4 rounded-xl mb-3 space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
-                      <Input
-                        value={newMusic.title}
-                        onChange={(e) => setNewMusic({ ...newMusic, title: e.target.value })}
-                        placeholder="Titre de la chanson *"
-                        className="focus-glow"
-                      />
-                      <Input
-                        value={newMusic.artist}
-                        onChange={(e) => setNewMusic({ ...newMusic, artist: e.target.value })}
-                        placeholder="Artiste"
-                        className="focus-glow"
-                      />
-                      <Input
-                        value={newMusic.link}
-                        onChange={(e) => setNewMusic({ ...newMusic, link: e.target.value })}
-                        placeholder="Lien (YouTube, Spotify, Deezer...)"
-                        className="focus-glow"
-                      />
-                      <div className="flex gap-2">
                         <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleAddMusic}
-                          className="text-white"
-                          style={{ backgroundColor: 'var(--deep-pink)' }}
-                        >
-                          Ajouter
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
+                          onClick={() => setShowSeriesDialog(true)}
                           variant="outline"
-                          onClick={() => {
-                            setIsAddingMusic(false);
-                            setNewMusic({ title: "", artist: "", link: "" });
-                          }}
+                          className="w-full"
                         >
-                          Annuler
+                          Changer de saga
                         </Button>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <Button
+                        onClick={() => setShowSeriesDialog(true)}
+                        className="w-full text-white"
+                        style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
+                      >
+                        <Layers className="w-4 h-4 mr-2" />
+                        Ajouter à une saga
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
-                  {!isAddingMusic && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setIsAddingMusic(true)}
-                      className="w-full text-white"
-                      style={{ backgroundColor: 'var(--soft-pink)' }}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Ajouter une musique
-                    </Button>
-                  )}
+                {/* COLONNE DROITE */}
+                <div className="space-y-6">
+                  {/* Card: Lecture */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <Sparkles className="w-5 h-5" />
+                      Ma lecture
+                    </h3>
 
-                  {/* Music List */}
-                  {editedData.music_playlist.length > 0 ? (
-                    <div className="space-y-2 pt-2">
-                      {editedData.music_playlist.map((music, index) => {
-                        const platform = getPlatform(music.link);
-                        const platformColor = platform ? getPlatformColor(platform) : 'var(--warm-pink)';
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                          <Star className="w-4 h-4" />
+                          Note /5
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="5"
+                          step="0.5"
+                          value={editedData.rating || ""}
+                          onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
+                          placeholder="4.5"
+                          className="focus-glow"
+                        />
+                      </div>
 
-                        return (
-                          <div key={index} className="flex items-center gap-3 p-3 rounded-xl"
-                               style={{ backgroundColor: 'var(--cream)' }}>
-                            <Music className="w-5 h-5 flex-shrink-0" style={{ color: platformColor }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
-                                {music.title}
+                      {/* Current Page - Only show when status is "En cours" */}
+                      {editedData.status === "En cours" && book?.page_count && (
+                        <div>
+                          <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                            <BookOpen className="w-4 h-4" />
+                            Page actuelle (sur {book.page_count})
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={book.page_count}
+                            value={editedData.current_page || ""}
+                            onChange={(e) => setEditedData({...editedData, current_page: e.target.value})}
+                            placeholder={`0 - ${book.page_count}`}
+                            className="focus-glow"
+                          />
+                          {editedData.current_page && (
+                            <div className="mt-2">
+                              <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                <div className="h-full rounded-full transition-all"
+                                     style={{
+                                       width: `${Math.min((editedData.current_page / book.page_count) * 100, 100)}%`,
+                                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                     }} />
+                              </div>
+                              <p className="text-xs mt-1 font-bold text-center" style={{ color: 'var(--deep-pink)' }}>
+                                {Math.round((editedData.current_page / book.page_count) * 100)}% complété
                               </p>
-                              {music.artist && (
-                                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                                  {music.artist}
-                                </p>
-                              )}
-                              {platform && (
-                                <p className="text-xs mt-1" style={{ color: platformColor }}>
-                                  📱 {platform}
-                                </p>
-                              )}
                             </div>
-                            {music.link && (
-                              <a href={music.link} target="_blank" rel="noopener noreferrer">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-shrink-0"
-                                >
-                                  <Play className="w-4 h-4" />
-                                </Button>
-                              </a>
-                            )}
+                          )}
+                        </div>
+                      )}
+
+                      {customShelves.length > 0 && (
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 block">Étagère personnalisée</Label>
+                          <Select
+                            value={editedData.custom_shelf || ""}
+                            onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                          >
+                            <SelectTrigger className="focus-glow">
+                              <SelectValue placeholder="Aucune" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={null}>Aucune</SelectItem>
+                              {customShelves.map(s => (
+                                <SelectItem key={s.id} value={s.name}>
+                                  {s.icon} {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border-2 border-pink-200">
+                        <Label className="flex items-center gap-2 cursor-pointer">
+                          <Users className="w-4 h-4" />
+                          Lecture commune
+                        </Label>
+                        <Switch
+                          checked={editedData.is_shared_reading}
+                          onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 block">
+                            <Calendar className="w-4 h-4 inline mr-1" />
+                            Début
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editedData.start_date || ""}
+                            onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                            className="focus-glow"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 block">
+                            <Calendar className="w-4 h-4 inline mr-1" />
+                            Fin
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editedData.end_date || ""}
+                            onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                            className="focus-glow"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Music Section - Updated for series sync */}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                      <Music className="w-5 h-5" />
+                      Playlist musicale ({editedData.music_playlist.length})
+                      {currentSeries && (
+                        <span className="text-xs px-2 py-1 rounded-full ml-auto"
+                              style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                          🔗 Saga : {currentSeries.series_name}
+                        </span>
+                      )}
+                    </h3>
+
+                    {currentSeries && (
+                      <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
+                        <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
+                          💡 Cette playlist est partagée avec tous les tomes de la saga "{currentSeries.series_name}"
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {/* Add Music Form */}
+                      {isAddingMusic && (
+                        <div className="p-4 rounded-xl mb-3 space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                          <Input
+                            value={newMusic.title}
+                            onChange={(e) => setNewMusic({ ...newMusic, title: e.target.value })}
+                            placeholder="Titre de la chanson *"
+                            className="focus-glow"
+                          />
+                          <Input
+                            value={newMusic.artist}
+                            onChange={(e) => setNewMusic({ ...newMusic, artist: e.target.value })}
+                            placeholder="Artiste"
+                            className="focus-glow"
+                          />
+                          <Input
+                            value={newMusic.link}
+                            onChange={(e) => setNewMusic({ ...newMusic, link: e.target.value })}
+                            placeholder="Lien (YouTube, Spotify, Deezer...)"
+                            className="focus-glow"
+                          />
+                          <div className="flex gap-2">
                             <Button
                               type="button"
                               size="sm"
-                              variant="ghost"
-                              onClick={() => handleRemoveMusic(index)}
-                              className="flex-shrink-0 text-red-500 hover:text-red-700"
+                              onClick={handleAddMusic}
+                              className="text-white"
+                              style={{ backgroundColor: 'var(--deep-pink)' }}
                             >
-                              <X className="w-4 h-4" />
+                              Ajouter
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsAddingMusic(false);
+                                setNewMusic({ title: "", artist: "", link: "" });
+                              }}
+                            >
+                              Annuler
                             </Button>
                           </div>
-                        );
-                      })}
+                        </div>
+                      )}
+
+                      {!isAddingMusic && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setIsAddingMusic(true)}
+                          className="w-full text-white"
+                          style={{ backgroundColor: 'var(--soft-pink)' }}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Ajouter une musique
+                        </Button>
+                      )}
+
+                      {/* Music List */}
+                      {editedData.music_playlist.length > 0 ? (
+                        <div className="space-y-2 pt-2">
+                          {editedData.music_playlist.map((music, index) => {
+                            const platform = getPlatform(music.link);
+                            const platformColor = platform ? getPlatformColor(platform) : 'var(--warm-pink)';
+
+                            return (
+                              <div key={index} className="flex items-center gap-3 p-3 rounded-xl"
+                                   style={{ backgroundColor: 'var(--cream)' }}>
+                                <Music className="w-5 h-5 flex-shrink-0" style={{ color: platformColor }} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                                    {music.title}
+                                  </p>
+                                  {music.artist && (
+                                    <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                      {music.artist}
+                                    </p>
+                                  )}
+                                  {platform && (
+                                    <p className="text-xs mt-1" style={{ color: platformColor }}>
+                                      📱 {platform}
+                                    </p>
+                                  )}
+                                </div>
+                                {music.link && (
+                                  <a href={music.link} target="_blank" rel="noopener noreferrer">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-shrink-0"
+                                    >
+                                      <Play className="w-4 h-4" />
+                                    </Button>
+                                  </a>
+                                )}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveMusic(index)}
+                                  className="flex-shrink-0 text-red-500 hover:text-red-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
+                          Aucune musique associée
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
-                      Aucune musique associée
-                    </p>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* SECTION INFÉRIEURE */}
-          <div className="p-8 space-y-6 bg-white/50">
-            {/* Avis */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                💭 Mon avis
-              </h3>
-              <Textarea
-                value={editedData.review || ""}
-                onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
-                rows={5}
-                className="focus-glow resize-none"
-              />
-            </div>
+              {/* SECTION INFÉRIEURE */}
+              <div className="p-8 space-y-6 bg-white/50">
+                {/* Avis */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                  <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                    💭 Mon avis
+                  </h3>
+                  <Textarea
+                    value={editedData.review || ""}
+                    onChange={(e) => setEditedData({...editedData, review: e.target.value})}
+                    placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
+                    rows={5}
+                    className="focus-glow resize-none"
+                  />
+                </div>
 
-            {/* Infos techniques */}
-            <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-              <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                <Info className="w-5 h-5" />
-                Informations techniques
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                {book.page_count && (
-                  <div className="text-center p-3 bg-white rounded-xl shadow">
-                    <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                      {book.page_count}
-                    </p>
-                    <p className="text-sm text-gray-600">pages</p>
+                {/* Infos techniques */}
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                  <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                    <Info className="w-5 h-5" />
+                    Informations techniques
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {book.page_count && (
+                      <div className="text-center p-3 bg-white rounded-xl shadow">
+                        <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                          {book.page_count}
+                        </p>
+                        <p className="text-sm text-gray-600">pages</p>
+                      </div>
+                    )}
+                    {book.publication_year && (
+                      <div className="text-center p-3 bg-white rounded-xl shadow">
+                        <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                          {book.publication_year}
+                        </p>
+                        <p className="text-sm text-gray-600">année</p>
+                      </div>
+                    )}
+                    {book.genre && (
+                      <div className="text-center p-3 bg-white rounded-xl shadow">
+                        <p className="text-lg font-bold" style={{ color: 'var(--deep-pink)' }}>
+                          {book.genre}
+                        </p>
+                        <p className="text-sm text-gray-600">genre</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {book.publication_year && (
-                  <div className="text-center p-3 bg-white rounded-xl shadow">
-                    <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                      {book.publication_year}
-                    </p>
-                    <p className="text-sm text-gray-600">année</p>
-                  </div>
-                )}
-                {book.genre && (
-                  <div className="text-center p-3 bg-white rounded-xl shadow">
-                    <p className="text-lg font-bold" style={{ color: 'var(--deep-pink)' }}>
-                      {book.genre}
-                    </p>
-                    <p className="text-sm text-gray-600">genre</p>
-                  </div>
-                )}
+                </div>
+
+                {/* Boutons d'action */}
+                <div className="flex justify-center gap-4 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    Retour
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
+                        deleteUserBookMutation.mutate();
+                      }
+                    }}
+                    disabled={deleteUserBookMutation.isPending}
+                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
+                  >
+                    <Trash2 className="w-5 h-5 mr-2" />
+                    Supprimer
+                  </Button>
+
+                  <Button
+                    onClick={handleSave}
+                    disabled={updateUserBookMutation.isPending}
+                    className="px-8 py-6 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-lg"
+                  >
+                    {updateUserBookMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5 mr-2" />
+                        💾 Enregistrer
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Boutons d'action */}
-            <div className="flex justify-center gap-4 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Retour
-              </Button>
+            <TabsContent value="friends">
+              <div className="p-8 space-y-6">
+                <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                  <Users className="w-6 h-6" />
+                  Avis de mes amies sur "{book.title}"
+                </h2>
 
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
-                    deleteUserBookMutation.mutate();
-                  }
-                }}
-                disabled={deleteUserBookMutation.isPending}
-                className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
-              >
-                <Trash2 className="w-5 h-5 mr-2" />
-                Supprimer
-              </Button>
-
-              <Button
-                onClick={handleSave}
-                disabled={updateUserBookMutation.isPending}
-                className="px-8 py-6 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-lg"
-              >
-                {updateUserBookMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Enregistrement...
-                  </>
+                {friendsUserBooks.length === 0 ? (
+                  <div className="text-center py-20">
+                    <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      Aucune amie n'a lu ce livre
+                    </h3>
+                    <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                      Soyez la première à partager votre avis !
+                    </p>
+                  </div>
                 ) : (
-                  <>
-                    <Save className="w-5 h-5 mr-2" />
-                    💾 Enregistrer
-                  </>
+                  <div className="space-y-6">
+                    {friendsUserBooks.map((friendBook) => {
+                      const friend = myFriends.find(f => f.friend_email === friendBook.created_by);
+                      const friendUser = allUsers.find(u => u.email === friendBook.created_by);
+                      const friendShelf = friendsShelves.find(s => 
+                        s.name === friendBook.custom_shelf && s.created_by === friendBook.created_by
+                      );
+
+                      return (
+                        <div key={friendBook.id} 
+                             className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
+                          {/* Friend Header */}
+                          <div className="flex items-start gap-4 mb-4">
+                            {/* Profile Picture */}
+                            <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
+                                 style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
+                              {friendUser?.profile_picture ? (
+                                <img src={friendUser.profile_picture} 
+                                     alt={friend?.friend_name || friendBook.created_by} 
+                                     className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white font-bold text-2xl">
+                                  {(friend?.friend_name || friendBook.created_by)?.[0]?.toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Friend Info */}
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                                {friend?.friend_name || friendBook.created_by?.split('@')[0]}
+                              </h3>
+                              
+                              {/* Status Badge */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[friendBook.status]}`}>
+                                  {friendBook.status}
+                                </span>
+                                
+                                {/* Reading Language */}
+                                {friendBook.reading_language && (
+                                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                    {LANGUAGE_FLAGS[friendBook.reading_language]} {friendBook.reading_language}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Rating */}
+                            {friendBook.rating && (
+                              <div className="flex items-center gap-1 bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-2 rounded-xl shadow-sm">
+                                <Star className="w-6 h-6 fill-current" style={{ color: '#FFD700' }} />
+                                <span className="text-2xl font-bold" style={{ color: '#FFD700' }}>
+                                  {friendBook.rating}
+                                </span>
+                                <span className="text-sm text-gray-600">/5</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Custom Shelf */}
+                          {friendShelf && (
+                            <div className="mb-4 p-3 rounded-xl flex items-center gap-2"
+                                 style={{ 
+                                   backgroundColor: friendShelf.color === 'rose' ? '#FFE4EC' :
+                                                   friendShelf.color === 'bleu' ? '#E6F3FF' :
+                                                   friendShelf.color === 'vert' ? '#E6FFF2' :
+                                                   friendShelf.color === 'violet' ? '#F0E6FF' :
+                                                   friendShelf.color === 'orange' ? '#FFE8D9' :
+                                                   friendShelf.color === 'rouge' ? '#FFE6E6' : '#FFE4EC'
+                                 }}>
+                              <span className="text-2xl">{friendShelf.icon}</span>
+                              <div>
+                                <p className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
+                                  Étagère : {friendShelf.name}
+                                </p>
+                                {friendShelf.description && (
+                                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                    {friendShelf.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reading Dates */}
+                          {(friendBook.start_date || friendBook.end_date) && (
+                            <div className="flex items-center gap-4 mb-4 text-sm" style={{ color: 'var(--warm-pink)' }}>
+                              {friendBook.start_date && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Début : {format(new Date(friendBook.start_date), 'dd/MM/yyyy', { locale: fr })}</span>
+                                </div>
+                              )}
+                              {friendBook.end_date && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Fin : {format(new Date(friendBook.end_date), 'dd/MM/yyyy', { locale: fr })}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Review */}
+                          {friendBook.review && (
+                            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+                              <h4 className="font-bold mb-2 flex items-center gap-2" 
+                                  style={{ color: 'var(--dark-text)' }}>
+                                <Sparkles className="w-4 h-4" />
+                                Avis
+                              </h4>
+                              <p className="text-sm leading-relaxed whitespace-pre-wrap" 
+                                 style={{ color: 'var(--dark-text)' }}>
+                                {friendBook.review}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Favorite Character */}
+                          {friendBook.favorite_character && (
+                            <div className="mt-4 p-3 rounded-xl flex items-center gap-2"
+                                 style={{ backgroundColor: '#FFF0F6' }}>
+                              <Heart className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                              <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
+                                <span className="font-bold">Personnage préféré :</span> {friendBook.favorite_character}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Music Playlist */}
+                          {friendBook.music_playlist && friendBook.music_playlist.length > 0 && (
+                            <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8' }}>
+                              <h4 className="font-bold mb-3 flex items-center gap-2 text-white">
+                                <Music className="w-5 h-5" />
+                                Playlist musicale ({friendBook.music_playlist.length})
+                              </h4>
+                              <div className="space-y-2">
+                                {friendBook.music_playlist.slice(0, 3).map((music, idx) => (
+                                  <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-white/20 backdrop-blur-sm">
+                                    <Music className="w-4 h-4 text-white flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-white line-clamp-1">
+                                        {music.title}
+                                      </p>
+                                      {music.artist && (
+                                        <p className="text-xs text-white/80 line-clamp-1">
+                                          {music.artist}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {music.link && (
+                                      <a href={music.link} target="_blank" rel="noopener noreferrer">
+                                        <Button size="sm" variant="ghost" className="text-white hover:bg-white/10">
+                                          <Play className="w-4 h-4" />
+                                        </Button>
+                                      </a>
+                                    )}
+                                  </div>
+                                ))}
+                                {friendBook.music_playlist.length > 3 && (
+                                  <p className="text-xs text-center text-white/80">
+                                    +{friendBook.music_playlist.length - 3} autres musiques
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-              </Button>
-            </div>
-          </div>
+
+                {/* Back Button */}
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("myinfo")}
+                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    Retour à mes informations
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
