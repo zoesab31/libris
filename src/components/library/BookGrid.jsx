@@ -64,24 +64,61 @@ export default function BookGrid({
 
   const sortedBooks = useMemo(() => {
     const sorted = [...userBooks];
+    
+    // First, separate "En cours" books from others
+    const enCoursBooks = sorted.filter(b => b.status === "En cours");
+    const otherBooks = sorted.filter(b => b.status !== "En cours");
+    
+    // Sort "En cours" books
+    let sortedEnCours = enCoursBooks;
     switch (sortBy) {
       case "recent":
-        return sorted.sort((a, b) => {
+        sortedEnCours = enCoursBooks.sort((a, b) => {
           const dateA = a.updated_date || a.created_date || "";
           const dateB = b.updated_date || b.created_date || "";
           return dateB.localeCompare(dateA);
         });
+        break;
       case "rating":
-        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        sortedEnCours = enCoursBooks.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
       case "title":
-        return sorted.sort((a, b) => {
+        sortedEnCours = enCoursBooks.sort((a, b) => {
           const bookA = allBooks.find(book => book.id === a.book_id);
           const bookB = allBooks.find(book => book.id === b.book_id);
           return (bookA?.title || "").localeCompare(bookB?.title || "");
         });
+        break;
       default:
-        return sorted;
+        break;
     }
+    
+    // Sort other books
+    let sortedOthers = otherBooks;
+    switch (sortBy) {
+      case "recent":
+        sortedOthers = otherBooks.sort((a, b) => {
+          const dateA = a.updated_date || a.created_date || "";
+          const dateB = b.updated_date || b.created_date || "";
+          return dateB.localeCompare(dateA);
+        });
+        break;
+      case "rating":
+        sortedOthers = otherBooks.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case "title":
+        sortedOthers = otherBooks.sort((a, b) => {
+          const bookA = allBooks.find(book => book.id === a.book_id);
+          const bookB = allBooks.find(book => book.id === b.book_id);
+          return (bookA?.title || "").localeCompare(bookB?.title || "");
+        });
+        break;
+      default:
+        break;
+    }
+    
+    // Return "En cours" books first, then others
+    return [...sortedEnCours, ...sortedOthers];
   }, [userBooks, sortBy, allBooks]);
 
   const getBookDetails = (userBook) => {

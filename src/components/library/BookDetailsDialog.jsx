@@ -592,9 +592,40 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
     enabled: open && myFriends.length > 0,
   });
 
-  // NEW: Fetch friends' UserBooks for this specific book
+  // Helper function to normalize book titles for comparison
+  const normalizeTitle = (title) => {
+    if (!title) return "";
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .replace(/tome|t\s*\d+|volume|vol\s*\d+/gi, '') // Remove tome/volume numbers
+      .trim();
+  };
+
+  // Helper function to check if two titles are similar
+  const areTitlesSimilar = (title1, title2) => {
+    const norm1 = normalizeTitle(title1);
+    const norm2 = normalizeTitle(title2);
+    
+    // Check if one contains the other or vice versa
+    if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+    
+    // Check if they have significant overlap (more than 70% of shorter title)
+    const minLength = Math.min(norm1.length, norm2.length);
+    if (minLength === 0) return norm1 === norm2; // Both empty or one empty
+    
+    let matches = 0;
+    for (let i = 0; i < Math.min(norm1.length, norm2.length); i++) {
+      if (norm1[i] === norm2[i]) matches++;
+    }
+    
+    return (matches / minLength) > 0.7;
+  };
+
+  // NEW: Fetch friends' UserBooks for this specific book OR similar titles
   const { data: friendsUserBooks = [] } = useQuery({
-    queryKey: ['friendsUserBooks', book?.id],
+    queryKey: ['friendsUserBooks', book?.id, book?.title],
     queryFn: async () => {
       if (!book || myFriends.length === 0) return [];
       
@@ -603,18 +634,40 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       console.log("🔍 DEBUG - My friends:", myFriends.map(f => ({ name: f.friend_name, email: f.friend_email })));
       
       const friendEmails = myFriends.map(f => f.friend_email);
+      
+      // Get ALL books from friends
       const allFriendBooks = await Promise.all(
         friendEmails.map(async (email) => {
-          const books = await base44.entities.UserBook.filter({ book_id: book.id, created_by: email });
-          console.log(`🔍 DEBUG - Books found for ${email}:`, books);
+          const books = await base44.entities.UserBook.filter({ created_by: email });
+          console.log(`🔍 DEBUG - Total books for ${email}:`, books.length);
           return books;
         })
       );
       
       const flatBooks = allFriendBooks.flat();
-      console.log("🔍 DEBUG - Total friend books found:", flatBooks);
+      console.log("🔍 DEBUG - Total friend books:", flatBooks.length);
       
-      return flatBooks;
+      // Get all book details to compare titles
+      const allBooksData = await base44.entities.Book.list();
+      console.log("🔍 DEBUG - Total books in database:", allBooksData.length);
+      
+      // Filter books with similar titles
+      const matchingBooks = flatBooks.filter(userBook => {
+        const friendBookData = allBooksData.find(b => b.id === userBook.book_id);
+        if (!friendBookData) return false;
+        
+        const isSimilar = areTitlesSimilar(book.title, friendBookData.title);
+        
+        if (isSimilar) {
+          console.log(`✅ MATCH FOUND - "${friendBookData.title}" matches "${book.title}" for user ${userBook.created_by}`);
+        }
+        
+        return isSimilar;
+      });
+      
+      console.log("🔍 DEBUG - Matching friend books found:", matchingBooks);
+      
+      return matchingBooks;
     },
     enabled: !!book && myFriends.length > 0 && open,
   });
