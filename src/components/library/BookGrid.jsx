@@ -69,53 +69,47 @@ export default function BookGrid({
     const enCoursBooks = sorted.filter(b => b.status === "En cours");
     const otherBooks = sorted.filter(b => b.status !== "En cours");
     
+    // Helper function to sort by reading date
+    const sortByReadingDate = (books) => {
+      return books.sort((a, b) => {
+        // Priority: end_date > start_date > created_date
+        const dateA = a.end_date || a.start_date || a.created_date || "";
+        const dateB = b.end_date || b.start_date || b.created_date || "";
+        return dateB.localeCompare(dateA); // Most recent first
+      });
+    };
+    
+    // Helper function to sort books by a given sort type
+    const sortBooksByType = (books, type) => {
+      // Create a shallow copy to avoid modifying the original array passed to the helper
+      const booksCopy = [...books]; 
+      switch (type) {
+        case "recent":
+          return booksCopy.sort((a, b) => {
+            const dateA = a.updated_date || a.created_date || "";
+            const dateB = b.updated_date || b.created_date || "";
+            return dateB.localeCompare(dateA);
+          });
+        case "reading_date":
+          return sortByReadingDate(booksCopy);
+        case "rating":
+          return booksCopy.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        case "title":
+          return booksCopy.sort((a, b) => {
+            const bookA = allBooks.find(book => book.id === a.book_id);
+            const bookB = allBooks.find(book => book.id === b.book_id);
+            return (bookA?.title || "").localeCompare(bookB?.title || "");
+          });
+        default:
+          return booksCopy;
+      }
+    };
+    
     // Sort "En cours" books
-    let sortedEnCours = enCoursBooks;
-    switch (sortBy) {
-      case "recent":
-        sortedEnCours = enCoursBooks.sort((a, b) => {
-          const dateA = a.updated_date || a.created_date || "";
-          const dateB = b.updated_date || b.created_date || "";
-          return dateB.localeCompare(dateA);
-        });
-        break;
-      case "rating":
-        sortedEnCours = enCoursBooks.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "title":
-        sortedEnCours = enCoursBooks.sort((a, b) => {
-          const bookA = allBooks.find(book => book.id === a.book_id);
-          const bookB = allBooks.find(book => book.id === b.book_id);
-          return (bookA?.title || "").localeCompare(bookB?.title || "");
-        });
-        break;
-      default:
-        break;
-    }
+    const sortedEnCours = sortBooksByType(enCoursBooks, sortBy);
     
     // Sort other books
-    let sortedOthers = otherBooks;
-    switch (sortBy) {
-      case "recent":
-        sortedOthers = otherBooks.sort((a, b) => {
-          const dateA = a.updated_date || a.created_date || "";
-          const dateB = b.updated_date || b.created_date || "";
-          return dateB.localeCompare(dateA);
-        });
-        break;
-      case "rating":
-        sortedOthers = otherBooks.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "title":
-        sortedOthers = otherBooks.sort((a, b) => {
-          const bookA = allBooks.find(book => book.id === a.book_id);
-          const bookB = allBooks.find(book => book.id === b.book_id);
-          return (bookA?.title || "").localeCompare(bookB?.title || "");
-        });
-        break;
-      default:
-        break;
-    }
+    const sortedOthers = sortBooksByType(otherBooks, sortBy);
     
     // Return "En cours" books first, then others
     return [...sortedEnCours, ...sortedOthers];
@@ -310,6 +304,7 @@ export default function BookGrid({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recent">Plus récents</SelectItem>
+              <SelectItem value="reading_date">Date de lecture</SelectItem>
               <SelectItem value="rating">Mieux notés</SelectItem>
               <SelectItem value="title">Par titre</SelectItem>
             </SelectContent>
