@@ -210,18 +210,35 @@ export default function Dashboard() {
     if (!userBook.start_date) return 0;
     
     const book = allBooks.find(b => b.id === userBook.book_id);
-    
-    // If current_page is set and book has page_count, use that for accurate progress
-    if (userBook.current_page && book?.page_count) {
-      return Math.min(Math.round((userBook.current_page / book.page_count) * 100), 95);
-    }
-    
-    // Otherwise, use time-based estimation
     const start = new Date(userBook.start_date);
     const now = new Date();
     const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
     
-    const progress = Math.min((daysReading / userAvgDays) * 100, 95); // Max 95% until finished
+    // If current_page is set and book has page_count, use hybrid approach
+    if (userBook.current_page && book?.page_count) {
+      const manualProgress = (userBook.current_page / book.page_count) * 100;
+      
+      // Calculate when the page was last updated
+      const lastUpdate = new Date(userBook.updated_date || userBook.start_date);
+      const daysSinceUpdate = Math.floor((now - lastUpdate) / (1000 * 60 * 60 * 24));
+      
+      // Calculate remaining pages and estimated days to finish
+      const pagesRemaining = book.page_count - userBook.current_page;
+      const pagesPerDay = book.page_count / userAvgDays; // Average pages per day
+      // Avoid division by zero if pagesPerDay is 0 or very small, or if userAvgDays is 0
+      const estimatedDaysRemaining = (pagesPerDay > 0) ? (pagesRemaining / pagesPerDay) : Infinity;
+      
+      // Add time-based progression since last update
+      const additionalProgress = (daysSinceUpdate > 0 && estimatedDaysRemaining > 0 && estimatedDaysRemaining !== Infinity)
+        ? (daysSinceUpdate / estimatedDaysRemaining) * (100 - manualProgress)
+        : 0;
+      
+      const totalProgress = manualProgress + additionalProgress;
+      return Math.min(Math.round(totalProgress), 95); // Max 95% until finished
+    }
+    
+    // Otherwise, use pure time-based estimation
+    const progress = Math.min((daysReading / userAvgDays) * 100, 95);
     return Math.round(progress);
   };
 
