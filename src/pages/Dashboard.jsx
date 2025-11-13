@@ -92,30 +92,31 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// StatsCard Component with new pastel design
-const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
+// StatsCard Component with harmonized pastel colors
+const StatsCard = ({ icon: Icon, value, label, color, onClick }) => (
   <div
     onClick={onClick}
     className="stats-card cursor-pointer relative overflow-hidden"
     style={{
-      background: gradient,
+      backgroundColor: color,
       borderRadius: '20px',
       padding: '1.5rem',
       height: '100px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
       transition: 'all 0.2s ease',
     }}
   >
     {/* Background Icon */}
     <Icon 
-      className="absolute -right-4 -bottom-4 opacity-10"
+      className="absolute -right-4 -bottom-4"
       style={{ 
         width: '80px', 
         height: '80px',
-        filter: 'blur(2px)'
+        color: '#FFFFFF',
+        opacity: 0.25
       }} 
     />
     
@@ -124,7 +125,7 @@ const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
       <div className="text-2xl md:text-3xl font-bold mb-1" style={{ color: '#FFFFFF' }}>
         {value}
       </div>
-      <p className="text-xs md:text-sm font-medium" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+      <p className="text-xs md:text-sm font-medium" style={{ color: '#FFFFFF' }}>
         {label}
       </p>
     </div>
@@ -450,8 +451,8 @@ export default function Dashboard() {
         }
 
         .stats-card:hover {
-          transform: scale(1.02);
-          box-shadow: 0 4px 12px rgba(255, 105, 180, 0.2);
+          transform: scale(1.01);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         }
 
         .quick-action:hover {
@@ -565,34 +566,34 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Stats Grid - New pastel design with exact gradients */}
+          {/* Stats Grid - Harmonized pastel solid colors */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               icon={BookOpen}
               value={booksReadThisYear}
               label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
-              gradient="linear-gradient(90deg, #FFD6E0 0%, #FFB6C8 100%)"
+              color="#F7C4D9"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
             <StatsCard
               icon={FileText}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              gradient="linear-gradient(90deg, #FFF3D9 0%, #FFE8A3 100%)"
+              color="#F8E9C8"
               onClick={() => navigate(createPageUrl("Statistics"))}
             />
             <StatsCard
               icon={Users}
               value={sharedReadingsCount}
               label="Lectures communes"
-              gradient="linear-gradient(90deg, #E2E8FF 0%, #C8D6FF 100%)"
+              color="#DCE7FF"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={BookmarkCheck}
               value={toReadCount}
               label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
-              gradient="linear-gradient(90deg, #F4D9FF 0%, #E6B8FF 100%)"
+              color="#E6D9FF"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
           </div>
