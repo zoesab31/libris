@@ -6,7 +6,7 @@ import { Users, MessageCircle, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function TopFriendsWidget({ user }) {
+export default function TopFriendsWidget({ user, compact = false }) {
   const navigate = useNavigate();
 
   // Fetch friends
@@ -84,16 +84,16 @@ export default function TopFriendsWidget({ user }) {
   if (topFriends.length === 0) return null;
 
   return (
-    <Card className="shadow-lg border-0 overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
-          <h3 className="text-lg font-bold" style={{ color: 'var(--dark-text)' }}>
-            Mes meilleures amies
+    <Card className={`shadow-lg border-0 overflow-hidden ${compact ? 'rounded-2xl' : 'rounded-3xl'}`}>
+      <CardContent className={compact ? "p-4" : "p-6"}>
+        <div className="flex items-center gap-2 mb-3">
+          <Users className={`${compact ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: 'var(--deep-pink)' }} />
+          <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-bold`} style={{ color: 'var(--dark-text)' }}>
+            👭 Mes meilleures amies
           </h3>
         </div>
         
-        <div className="space-y-3">
+        <div className={compact ? "space-y-2" : "space-y-3"}>
           {topFriends.map((friend) => {
             const friendUser = allUsers.find(u => u.email === friend.friend_email);
             
@@ -101,18 +101,18 @@ export default function TopFriendsWidget({ user }) {
               <div
                 key={friend.id}
                 onClick={() => navigate(createPageUrl("UserProfile") + `?userEmail=${friend.friend_email}`)}
-                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:shadow-md hover:-translate-y-1"
+                className={`flex items-center gap-2 ${compact ? 'p-2' : 'p-3'} rounded-xl cursor-pointer transition-all hover:shadow-md hover:-translate-y-1`}
                 style={{ backgroundColor: 'var(--cream)' }}
               >
                 {/* Profile Picture */}
-                <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
+                <div className={`${compact ? 'w-10 h-10' : 'w-14 h-14'} rounded-full overflow-hidden flex-shrink-0`}
                      style={{ background: 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
                   {friendUser?.profile_picture ? (
                     <img src={friendUser.profile_picture} 
                          alt={friend.friend_name} 
                          className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
+                    <div className={`w-full h-full flex items-center justify-center text-white font-bold ${compact ? 'text-base' : 'text-xl'}`}>
                       {friend.friend_name?.[0]?.toUpperCase()}
                     </div>
                   )}
@@ -120,17 +120,17 @@ export default function TopFriendsWidget({ user }) {
 
                 {/* Friend Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm truncate" style={{ color: 'var(--dark-text)' }}>
+                  <p className={`font-bold ${compact ? 'text-xs' : 'text-sm'} truncate`} style={{ color: 'var(--dark-text)' }}>
                     {friend.friend_name}
                   </p>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    <MessageCircle className="w-3 h-3" />
-                    <span>{friend.messageCount} message{friend.messageCount > 1 ? 's' : ''}</span>
+                  <div className={`flex items-center gap-1 ${compact ? 'text-[10px]' : 'text-xs'}`} style={{ color: 'var(--warm-pink)' }}>
+                    <MessageCircle className={`${compact ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                    <span>{friend.messageCount} msg</span>
                   </div>
                 </div>
 
                 {/* Arrow */}
-                <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--deep-pink)' }} />
+                <ArrowRight className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} flex-shrink-0`} style={{ color: 'var(--deep-pink)' }} />
               </div>
             );
           })}

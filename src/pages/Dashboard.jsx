@@ -570,11 +570,6 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* NEW: Top Friends Widget */}
-          <div className="mb-8">
-            <TopFriendsWidget user={user} />
-          </div>
-
           {/* Reading Goal */}
           <div className="mb-8">
             <ReadingGoalManager year={selectedYear} compact={false} />
@@ -785,6 +780,11 @@ export default function Dashboard() {
 
           {/* Right Column (1/3 on desktop, full width on mobile) */}
           <div className="space-y-4 md:space-y-6">
+            {/* NEW: Top Friends Widget - compact version above quick access */}
+            <div className="hidden md:block">
+              <TopFriendsWidget user={user} compact={true} />
+            </div>
+
             {/* Mobile - Playlist + Quick Access combined */}
             <div className="md:hidden">
               <h2 className="text-lg font-bold mb-3 px-1" style={{ color: '#2D3748' }}>
