@@ -334,88 +334,6 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <style>{`
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-          .profile-header-compact {
-            padding: 1rem;
-          }
-          
-          .profile-stats-mobile {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          }
-          
-          .stat-card-mobile {
-            text-align: center;
-            padding: 0.75rem;
-          }
-          
-          .stat-value-mobile {
-            font-size: 1.5rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-          }
-          
-          .stat-label-mobile {
-            font-size: 0.75rem;
-            line-height: 1.2;
-          }
-          
-          /* Compact tabs for mobile */
-          .tabs-mobile {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-          }
-          
-          .tabs-mobile::-webkit-scrollbar {
-            display: none;
-          }
-          
-          .tab-trigger-mobile {
-            white-space: nowrap;
-            font-size: 0.75rem !important;
-            padding: 0.5rem 0.75rem !important;
-            min-width: auto !important;
-          }
-          
-          .tab-trigger-mobile .lucide {
-            width: 14px !important;
-            height: 14px !important;
-            margin-right: 0.25rem !important;
-          }
-          
-          /* Library filters mobile */
-          .library-filters-mobile {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            padding-bottom: 0.5rem;
-          }
-          
-          .library-filters-mobile::-webkit-scrollbar {
-            display: none;
-          }
-          
-          .filter-button-mobile {
-            white-space: nowrap;
-            font-size: 0.75rem !important;
-            padding: 0.5rem 0.75rem !important;
-            min-width: auto !important;
-            flex-shrink: 0;
-          }
-        }
-      `}</style>
-
       {/* Simple header with back button */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-4">
         <Button variant="ghost" onClick={() => navigate(-1)} style={{ color: 'var(--deep-pink)' }}>
@@ -424,81 +342,9 @@ export default function UserProfile() {
         </Button>
       </div>
 
-      {/* Profile info - Optimized for mobile */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-6 md:pb-8 profile-header-compact">
-        {/* Mobile Layout */}
-        <div className="md:hidden space-y-4">
-          {/* Profile Picture + Name */}
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white bg-white mx-auto shadow-xl mb-3">
-              {profileUser.profile_picture ? (
-                <img 
-                  src={profileUser.profile_picture} 
-                  alt={displayName} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white"
-                     style={{ backgroundColor: accentColor }}>
-                  {displayName[0]?.toUpperCase() || 'A'}
-                </div>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-              {displayName}
-            </h1>
-            <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-              {userEmail}
-            </p>
-            
-            {/* Action Buttons */}
-            {!isOwnProfile && (
-              <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={handleChat}
-                  className="text-white font-medium text-sm"
-                  style={{ backgroundColor: accentColor }}
-                  size="sm"
-                >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  Chat
-                </Button>
-                <Button 
-                  variant="outline" 
-                  style={{ borderColor: accentColor, color: accentColor }}
-                  size="sm"
-                  className="text-sm"
-                >
-                  <Users className="w-3 h-3 mr-1" />
-                  Amie
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Stats - Mobile Optimized */}
-          <div className="profile-stats-mobile">
-            <div className="stat-card-mobile">
-              <p className="stat-value-mobile" style={{ color: accentColor }}>
-                {readBooks.length}
-              </p>
-              <p className="stat-label-mobile" style={{ color: 'var(--warm-pink)' }}>
-                Livres lus
-              </p>
-            </div>
-            <div className="stat-card-mobile">
-              <p className="stat-value-mobile" style={{ color: accentColor }}>
-                {totalPages.toLocaleString()}
-              </p>
-              <p className="stat-label-mobile" style={{ color: 'var(--warm-pink)' }}>
-                Pages lues
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Layout */}
-        <div className="hidden md:flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
+      {/* Profile info */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-8">
+        <div className="flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
           {/* Large profile picture */}
           <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white bg-white mx-auto md:mx-0 shadow-xl">
             {profileUser.profile_picture ? (
@@ -564,94 +410,7 @@ export default function UserProfile() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Mobile Tabs - Horizontal Scroll */}
-          <div className="md:hidden tabs-mobile mt-4">
-            <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 inline-flex">
-              <TabsTrigger 
-                value="library" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "library" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <BookOpen className="w-4 h-4 mr-1" />
-                Biblio
-              </TabsTrigger>
-              <TabsTrigger 
-                value="stats" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "stats" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <TrendingUp className="w-4 h-4 mr-1" />
-                Stats
-              </TabsTrigger>
-              <TabsTrigger 
-                value="series" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "series" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <BookOpen className="w-4 h-4 mr-1" />
-                Séries
-              </TabsTrigger>
-              <TabsTrigger 
-                value="quotes" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "quotes" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Quote className="w-4 h-4 mr-1" />
-                Citations
-              </TabsTrigger>
-              <TabsTrigger 
-                value="bingo" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "bingo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Sparkles className="w-4 h-4 mr-1" />
-                Bingo
-              </TabsTrigger>
-              <TabsTrigger 
-                value="characters" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "characters" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Heart className="w-4 h-4 mr-1" />
-                Persos
-              </TabsTrigger>
-              <TabsTrigger 
-                value="music" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "music" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Music className="w-4 h-4 mr-1" />
-                Musique
-              </TabsTrigger>
-              <TabsTrigger 
-                value="fanart" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "fanart" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Image className="w-4 h-4 mr-1" />
-                Fan Art
-              </TabsTrigger>
-              <TabsTrigger 
-                value="nailinspo" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "nailinspo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Palette className="w-4 h-4 mr-1" />
-                Ongles
-              </TabsTrigger>
-              <TabsTrigger 
-                value="map" 
-                className="rounded-lg font-bold tab-trigger-mobile"
-                style={activeTab === "map" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-              >
-                <Map className="w-4 h-4 mr-1" />
-                Map
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {/* Desktop Tabs - Normal */}
-          <TabsList className="hidden md:flex bg-white shadow-sm p-1 rounded-xl border-0 mt-8 flex-wrap">
+          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap">
             <TabsTrigger 
               value="library" 
               className="rounded-lg font-bold"
@@ -743,22 +502,22 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="library">
-            {/* Library sub-navigation - Mobile Optimized */}
-            <div className="library-filters-mobile md:flex md:gap-2 md:flex-wrap mb-6 mt-4">
+            {/* Library sub-navigation */}
+            <div className="mb-6 flex gap-2 flex-wrap">
               <button
                 onClick={() => {
                   setLibraryView("shelves");
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "shelves" && !selectedShelf ? accentColor : 'white',
                   color: libraryView === "shelves" && !selectedShelf ? 'white' : accentColor,
                   border: `2px solid ${accentColor}`
                 }}
               >
-                📚 Étagères ({userCustomShelves.length})
+                📚 Étagères perso ({userCustomShelves.length})
               </button>
               <button
                 onClick={() => {
@@ -766,7 +525,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "read" ? accentColor : 'white',
                   color: libraryView === "read" ? 'white' : accentColor,
@@ -781,7 +540,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "toread" ? accentColor : 'white',
                   color: libraryView === "toread" ? 'white' : accentColor,
@@ -796,7 +555,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "wishlist" ? accentColor : 'white',
                   color: libraryView === "wishlist" ? 'white' : accentColor,
@@ -811,7 +570,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "abandoned" ? accentColor : 'white',
                   color: libraryView === "abandoned" ? 'white' : accentColor,
@@ -826,7 +585,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "history" ? accentColor : 'white',
                   color: libraryView === "history" ? 'white' : accentColor,
@@ -841,7 +600,7 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="filter-button-mobile px-3 py-2 rounded-full text-xs font-medium transition-all"
+                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
                 style={{
                   backgroundColor: libraryView === "pal" && !selectedPAL ? accentColor : 'white',
                   color: libraryView === "pal" && !selectedPAL ? 'white' : accentColor,
