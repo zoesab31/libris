@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -269,7 +270,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                   backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="hover:bg-opacity-50 p-1.5 md:p-2 rounded-lg transition-colors" 
+            <SidebarTrigger className="hover:bg-opacity-50 p-3 md:p-2 rounded-lg transition-colors -m-1 md:m-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
             <h1 className="text-base md:text-xl font-bold md:hidden truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
               Nos Livres

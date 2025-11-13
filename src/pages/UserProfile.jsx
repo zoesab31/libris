@@ -334,6 +334,25 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+      <style>{`
+        /* Mobile filter pills responsive styles */
+        @media (max-width: 767px) {
+          .library-filters-mobile {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 0 8px;
+          }
+          
+          .library-filters-mobile button {
+            flex: 0 0 auto;
+            min-width: fit-content;
+            margin: 0;
+          }
+        }
+      `}</style>
+
       {/* Simple header with back button */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-4">
         <Button variant="ghost" onClick={() => navigate(-1)} style={{ color: 'var(--deep-pink)' }}>
@@ -502,8 +521,8 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="library">
-            {/* Library sub-navigation */}
-            <div className="mb-6 flex gap-2 flex-wrap">
+            {/* Library sub-navigation - MOBILE OPTIMIZED */}
+            <div className="mb-6 flex gap-2 flex-wrap md:flex-nowrap library-filters-mobile">
               <button
                 onClick={() => {
                   setLibraryView("shelves");

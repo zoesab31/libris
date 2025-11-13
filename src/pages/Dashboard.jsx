@@ -92,15 +92,15 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// Single unified Stats Card with 4 columns
+// Single unified Stats Card with 4 columns - NEW HARMONIZED DESIGN
 const UnifiedStatsCard = ({ stats }) => (
   <div
     className="unified-stats-card"
     style={{
-      backgroundColor: '#FADBEA',
+      backgroundColor: '#FDECF4',
       borderRadius: '24px',
-      padding: '2rem',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
+      padding: '2.5rem 2rem',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
     }}
   >
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -110,16 +110,16 @@ const UnifiedStatsCard = ({ stats }) => (
           onClick={stat.onClick}
           className="stat-column cursor-pointer text-center transition-transform duration-200 hover:scale-105"
         >
-          <div className="flex justify-center mb-3">
-            <stat.icon
-              className="w-8 h-8 md:w-10 md:h-10"
-              style={{ color: '#FFFFFF', opacity: 0.7 }}
+          <div className="flex justify-center mb-4">
+            <stat.icon 
+              className="w-10 h-10 md:w-12 md:h-12"
+              style={{ color: '#4A4A4A', opacity: 0.7 }} 
             />
           </div>
-          <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#FFFFFF' }}>
+          <div className="text-4xl md:text-5xl font-bold mb-2" style={{ color: '#4A4A4A' }}>
             {stat.value}
           </div>
-          <p className="text-sm md:text-base font-medium" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+          <p className="text-sm md:text-base font-normal" style={{ color: '#4A4A4A' }}>
             {stat.label}
           </p>
         </div>
@@ -479,7 +479,7 @@ export default function Dashboard() {
         }
 
         .unified-stats-card:hover {
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
         }
 
         .stat-column {
@@ -494,7 +494,7 @@ export default function Dashboard() {
           transform: translateY(-50%);
           height: 60%;
           width: 1px;
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(74, 74, 74, 0.15);
         }
 
         @media (max-width: 1024px) {
