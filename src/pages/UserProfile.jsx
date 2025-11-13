@@ -484,6 +484,14 @@ export default function UserProfile() {
               Playlist
             </TabsTrigger>
             <TabsTrigger 
+              value="fanart" 
+              className="rounded-lg font-bold"
+              style={activeTab === "fanart" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
+            >
+              <Image className="w-4 h-4 mr-2" />
+              Fan Art
+            </TabsTrigger>
+            <TabsTrigger 
               value="map" 
               className="rounded-lg font-bold"
               style={activeTab === "map" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
@@ -1347,6 +1355,51 @@ export default function UserProfile() {
               <div className="text-center py-12">
                 <Music className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <p style={{ color: 'var(--warm-pink)' }}>Aucune musique associée</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="fanart">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {userFanArts.map((fanart) => {
+                const book = fanart.book_id ? allBooks.find(b => b.id === fanart.book_id) : null;
+                
+                return (
+                  <div key={fanart.id} className="group relative rounded-xl overflow-hidden shadow-lg 
+                                         transition-all hover:shadow-2xl hover:-translate-y-1">
+                    <div className="aspect-square relative">
+                      <img 
+                        src={fanart.image_url} 
+                        alt={fanart.artist_name || "Fan art"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
+                                   opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                        {fanart.folder_path && (
+                          <p className="font-medium text-sm mb-1">📁 {fanart.folder_path}</p>
+                        )}
+                        {fanart.artist_name && (
+                          <p className="text-xs mb-1">🎨 {fanart.artist_name}</p>
+                        )}
+                        {book && (
+                          <p className="text-xs">📚 {book.title}</p>
+                        )}
+                        {fanart.note && (
+                          <p className="text-xs mt-1 line-clamp-2">💭 {fanart.note}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {userFanArts.length === 0 && (
+              <div className="text-center py-12">
+                <Image className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                <p style={{ color: 'var(--warm-pink)' }}>Aucun fan art</p>
               </div>
             )}
           </TabsContent>

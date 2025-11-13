@@ -4,13 +4,14 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell, X } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell, X, FileText, BookmarkCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
+import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 
 // Helper component for Book Details Dialog
 // This component is created to make the provided outline fully functional.
@@ -90,6 +91,19 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
     </Dialog>
   );
 };
+
+// New StatsCard Component
+const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
+  <Card className="rounded-2xl shadow-lg border-0 hover-lift cursor-pointer" onClick={onClick}>
+    <CardContent className={`p-4 md:p-5 flex items-center justify-between bg-gradient-to-br ${gradient} text-white`}>
+      <div>
+        <div className="text-xl md:text-2xl font-bold">{value}</div>
+        <p className="text-xs md:text-sm opacity-90">{label}</p>
+      </div>
+      <Icon className="w-6 h-6 md:w-8 md:h-8 opacity-75" />
+    </CardContent>
+  </Card>
+);
 
 
 export default function Dashboard() {
@@ -287,12 +301,15 @@ export default function Dashboard() {
       return sum;
     }, 0);
 
-  const sharedReadingsThisYear = allSharedReadings.filter(sr => {
-    if (!sr.start_date) return false;
-    const startYear = new Date(sr.start_date).getFullYear();
-    const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : startYear;
-    return startYear <= selectedYear && selectedYear <= endYear;
-  }).length;
+  // This was previously for the mobile stats carousel; now replaced by activeSharedReadingsCount for the new Stats Grid
+  // const sharedReadingsThisYear = allSharedReadings.filter(sr => {
+  //   if (!sr.start_date) return false;
+  //   const startYear = new Date(sr.start_date).getFullYear();
+  //   const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : startYear;
+  //   return startYear <= selectedYear && selectedYear <= endYear;
+  // }).length;
+
+  const activeSharedReadingsCount = allSharedReadings.filter(sr => sr.status === "En cours").length;
 
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
@@ -517,103 +534,52 @@ export default function Dashboard() {
                 </Link>
               </div>
             </div>
-
-            {/* Desktop Stats Grid */}
-            <div className="grid grid-cols-4 gap-6">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                     style={{ backgroundColor: '#FFE4EC' }}>
-                  <BookOpen className="w-6 h-6" style={{ color: '#FF69B4' }} />
-                </div>
-                <div>
-                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Livres lus</p>
-                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                     style={{ backgroundColor: '#F0E6FF' }}>
-                  <TrendingUp className="w-6 h-6" style={{ color: '#9B59B6' }} />
-                </div>
-                <div>
-                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Pages lues</p>
-                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                     style={{ backgroundColor: '#FFE8D9' }}>
-                  <Users className="w-6 h-6" style={{ color: '#FF9F7F' }} />
-                </div>
-                <div>
-                  <p className="text-sm" style={{ color: '#A0AEC0' }}>Lectures communes</p>
-                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-white shadow-md">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" 
-                     style={{ backgroundColor: '#FFF9E6' }}>
-                  <Star className="w-6 h-6" style={{ color: '#FFD700' }} />
-                </div>
-                <div>
-                  <p className="text-sm" style={{ color: '#A0AEC0' }}>À lire</p>
-                  <p className="text-2xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
-                </div>
-              </div>
-            </div>
+            {/* Removed: Old Desktop Stats Grid */}
           </div>
-        </div>
-      </div>
+          {/* Removed: Old Mobile Stats Carousel */}
 
-      {/* Mobile Stats Carousel - Scrollable horizontally */}
-      <div className="md:hidden px-4 pb-4">
-        <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
-          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
-            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
-                   style={{ backgroundColor: '#FFE4EC' }}>
-                <BookOpen className="w-5 h-5" style={{ color: '#FF69B4' }} />
-              </div>
-              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Livres lus</p>
-              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{booksReadThisYear}</p>
-            </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <StatsCard
+              icon={BookOpen}
+              value={booksReadThisYear}
+              label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
+              gradient="from-pink-500 to-rose-500"
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+            />
+            <StatsCard
+              icon={FileText}
+              value={totalPagesThisYear.toLocaleString()}
+              label="Pages lues"
+              gradient="from-purple-500 to-pink-500"
+              onClick={() => navigate(createPageUrl("Statistics"))}
+            />
+            <StatsCard
+              icon={Users}
+              value={activeSharedReadingsCount}
+              label="Lectures communes"
+              gradient="from-rose-500 to-pink-500"
+              onClick={() => navigate(createPageUrl("SharedReadings"))}
+            />
+            <StatsCard
+              icon={BookmarkCheck}
+              value={toReadCount}
+              label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
+              gradient="from-pink-500 to-purple-500"
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+            />
           </div>
 
-          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
-            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
-                   style={{ backgroundColor: '#F0E6FF' }}>
-                <TrendingUp className="w-5 h-5" style={{ color: '#9B59B6' }} />
-              </div>
-              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Pages lues</p>
-              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{totalPagesThisYear.toLocaleString()}</p>
-            </div>
+          {/* NEW: Top Friends Widget */}
+          <div className="mb-8">
+            <TopFriendsWidget user={user} />
           </div>
 
-          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
-            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
-                   style={{ backgroundColor: '#FFE8D9' }}>
-                <Users className="w-5 h-5" style={{ color: '#FF9F7F' }} />
-              </div>
-              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>Communes</p>
-              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{sharedReadingsThisYear}</p>
-            </div>
+          {/* Reading Goal */}
+          <div className="mb-8">
+            <ReadingGoalManager year={selectedYear} compact={false} />
           </div>
 
-          <div className="flex-shrink-0 w-[140px] scroll-snap-start">
-            <div className="p-3 rounded-2xl bg-white shadow-md h-full">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" 
-                   style={{ backgroundColor: '#FFF9E6' }}>
-                <Star className="w-5 h-5" style={{ color: '#FFD700' }} />
-              </div>
-              <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>À lire</p>
-              <p className="text-xl font-bold" style={{ color: '#2D3748' }}>{toReadCount}</p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -759,8 +725,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Défi lecture annuel - Now with editing capability */}
-            <ReadingGoalManager year={selectedYear} compact={false} />
+            {/* Removed: Défi lecture annuel - Now with editing capability, moved to above */}
 
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
@@ -845,7 +810,7 @@ export default function Dashboard() {
                           {musicItem.artist}
                         </p>
                         <p className="text-xs text-white text-opacity-80 line-clamp-1">
-                          {musicItem.book.title}
+                          📖 {musicItem.book.title}
                         </p>
                       </div>
                     </div>
