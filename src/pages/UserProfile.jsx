@@ -341,14 +341,18 @@ export default function UserProfile() {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
-            padding: 0 8px;
+            gap: 12px;
+            padding: 0 16px;
           }
           
           .library-filters-mobile button {
             flex: 0 0 auto;
             min-width: fit-content;
             margin: 0;
+            padding: 12px 20px !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            white-space: nowrap;
           }
         }
       `}</style>
@@ -392,14 +396,18 @@ export default function UserProfile() {
               <div className="flex gap-3 justify-center md:justify-start flex-wrap">
                 <Button
                   onClick={handleChat}
-                  className="text-white font-medium"
+                  className="text-white font-medium px-6 py-3"
                   style={{ backgroundColor: accentColor }}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageCircle className="w-5 h-5 mr-2" />
                   Chat
                 </Button>
-                <Button variant="outline" style={{ borderColor: accentColor, color: accentColor }}>
-                  <Users className="w-4 h-4 mr-2" />
+                <Button 
+                  variant="outline" 
+                  className="px-6 py-3"
+                  style={{ borderColor: accentColor, color: accentColor }}
+                >
+                  <Users className="w-5 h-5 mr-2" />
                   Amie
                 </Button>
               </div>
@@ -407,20 +415,20 @@ export default function UserProfile() {
           </div>
 
           {/* Stats */}
-          <div className="flex gap-6 mx-auto md:mx-0">
+          <div className="flex gap-8 mx-auto md:mx-0">
             <div className="text-center">
-              <p className="text-3xl font-bold" style={{ color: accentColor }}>
+              <p className="text-4xl md:text-3xl font-bold" style={{ color: accentColor }}>
                 {readBooks.length}
               </p>
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-base md:text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                 Livres lus
               </p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold" style={{ color: accentColor }}>
+              <p className="text-4xl md:text-3xl font-bold" style={{ color: accentColor }}>
                 {totalPages.toLocaleString()}
               </p>
-              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-base md:text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                 Pages lues
               </p>
             </div>
@@ -429,111 +437,114 @@ export default function UserProfile() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap">
+          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap gap-2 h-auto">
             <TabsTrigger 
               value="library" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "library" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <BookOpen className="w-4 h-4 mr-2" />
+              <BookOpen className="w-5 h-5 mr-2" />
               Bibliothèque
             </TabsTrigger>
             <TabsTrigger 
               value="series" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "series" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <BookOpen className="w-4 h-4 mr-2" />
+              <BookOpen className="w-5 h-5 mr-2" />
               Séries
             </TabsTrigger>
             <TabsTrigger 
               value="quotes" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "quotes" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Quote className="w-4 h-4 mr-2" />
+              <Quote className="w-5 h-5 mr-2" />
               Citations
             </TabsTrigger>
             <TabsTrigger 
               value="bingo" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "bingo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
+              <Sparkles className="w-5 h-5 mr-2" />
               Bingo
             </TabsTrigger>
             <TabsTrigger 
               value="stats" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "stats" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
+              <TrendingUp className="w-5 h-5 mr-2" />
               Stats
             </TabsTrigger>
             <TabsTrigger 
               value="tournament" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "tournament" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Trophy className="w-4 h-4 mr-2" />
+              <Trophy className="w-5 h-5 mr-2" />
               Tournoi
             </TabsTrigger>
             <TabsTrigger 
               value="nailinspo" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "nailinspo" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Palette className="w-4 h-4 mr-2" />
+              <Palette className="w-5 h-5 mr-2" />
               Ongles
             </TabsTrigger>
             <TabsTrigger 
               value="characters" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "characters" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Heart className="w-4 h-4 mr-2" />
+              <Heart className="w-5 h-5 mr-2" />
               Personnages
             </TabsTrigger>
             <TabsTrigger 
               value="music" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "music" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Music className="w-4 h-4 mr-2" />
+              <Music className="w-5 h-5 mr-2" />
               Playlist
             </TabsTrigger>
             <TabsTrigger 
               value="fanart" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "fanart" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Image className="w-4 h-4 mr-2" />
+              <Image className="w-5 h-5 mr-2" />
               Fan Art
             </TabsTrigger>
             <TabsTrigger 
               value="map" 
-              className="rounded-lg font-bold"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "map" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
-              <Map className="w-4 h-4 mr-2" />
+              <Map className="w-5 h-5 mr-2" />
               Map
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="library">
-            {/* Library sub-navigation - MOBILE OPTIMIZED */}
-            <div className="mb-6 flex gap-2 flex-wrap md:flex-nowrap library-filters-mobile">
+            {/* Library sub-navigation - MOBILE OPTIMIZED WITH LARGER TOUCH TARGETS */}
+            <div className="mb-6 library-filters-mobile">
               <button
                 onClick={() => {
                   setLibraryView("shelves");
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "shelves" && !selectedShelf ? accentColor : 'white',
                   color: libraryView === "shelves" && !selectedShelf ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📚 Étagères perso ({userCustomShelves.length})
@@ -544,11 +555,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "read" ? accentColor : 'white',
                   color: libraryView === "read" ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 ✅ Lus ({readBooks.length})
@@ -559,11 +573,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "toread" ? accentColor : 'white',
                   color: libraryView === "toread" ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📖 À lire ({toReadBooks.length})
@@ -574,11 +591,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "wishlist" ? accentColor : 'white',
                   color: libraryView === "wishlist" ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 💭 Wishlist ({wishlistBooks.length})
@@ -589,11 +609,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "abandoned" ? accentColor : 'white',
                   color: libraryView === "abandoned" ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 💀 Abandonnés ({abandonedBooks.length})
@@ -604,11 +627,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "history" ? accentColor : 'white',
                   color: libraryView === "history" ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📅 Historique ({years.reduce((sum, year) => sum + Object.values(readBooksByYearMonth[year] || {}).reduce((s, books) => s + books.length, 0), 0)})
@@ -619,11 +645,14 @@ export default function UserProfile() {
                   setSelectedShelf(null);
                   setSelectedPAL(null);
                 }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                className="rounded-full font-semibold transition-all"
                 style={{
                   backgroundColor: libraryView === "pal" && !selectedPAL ? accentColor : 'white',
                   color: libraryView === "pal" && !selectedPAL ? 'white' : accentColor,
-                  border: `2px solid ${accentColor}`
+                  border: `2px solid ${accentColor}`,
+                  padding: '12px 20px',
+                  fontSize: '15px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📚 PAL ({userPALs.length})
