@@ -41,13 +41,13 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
             <h3 className="font-bold text-lg mb-1" style={{ color: '#2D3748' }}>{book.title}</h3>
             <p className="text-sm text-gray-600 mb-2">{book.author}</p>
             {userBook.status && (
-              <p className="text-xs font-medium px-2 py-0.5 rounded-full inline-block mb-2" 
-                 style={{ 
-                   backgroundColor: userBook.status === "En cours" ? '#FFE4EC' : 
-                                    userBook.status === "Lu" ? '#E6FFFA' : 
+              <p className="text-xs font-medium px-2 py-0.5 rounded-full inline-block mb-2"
+                 style={{
+                   backgroundColor: userBook.status === "En cours" ? '#FFE4EC' :
+                                    userBook.status === "Lu" ? '#E6FFFA' :
                                     userBook.status === "À lire" ? '#F0E6FF' : '#FFD9D9',
-                   color: userBook.status === "En cours" ? '#FF69B4' : 
-                          userBook.status === "Lu" ? '#38B2AC' : 
+                   color: userBook.status === "En cours" ? '#FF69B4' :
+                          userBook.status === "Lu" ? '#38B2AC' :
                           userBook.status === "À lire" ? '#9B59B6' : '#DC2626'
                  }}>
                 {userBook.status}
@@ -66,9 +66,9 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
               <div className="flex items-center gap-1 mt-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="w-4 h-4"
-                        style={{ 
-                          fill: i < userBook.rating ? '#FFD700' : 'none', 
-                          stroke: '#FFD700' 
+                        style={{
+                          fill: i < userBook.rating ? '#FFD700' : 'none',
+                          stroke: '#FFD700'
                         }} />
                 ))}
               </div>
@@ -92,10 +92,10 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// New StatsCard Component
+// New StatsCard Component with pastel colors and rounded corners
 const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
-  <Card className="rounded-2xl shadow-lg border-0 hover-lift cursor-pointer" onClick={onClick}>
-    <CardContent className={`p-4 md:p-5 flex items-center justify-between bg-gradient-to-br ${gradient} text-white`}>
+  <Card className="rounded-3xl shadow-lg border-0 hover-lift cursor-pointer" onClick={onClick}>
+    <CardContent className={`p-4 md:p-5 flex items-center justify-between text-white ${gradient}`}>
       <div>
         <div className="text-xl md:text-2xl font-bold">{value}</div>
         <p className="text-xs md:text-sm opacity-90">{label}</p>
@@ -104,7 +104,6 @@ const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
     </CardContent>
   </Card>
 );
-
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -135,9 +134,9 @@ export default function Dashboard() {
   const { data: readingGoal } = useQuery({
     queryKey: ['readingGoal', selectedYear],
     queryFn: async () => {
-      const goals = await base44.entities.ReadingGoal.filter({ 
+      const goals = await base44.entities.ReadingGoal.filter({
         created_by: user?.email,
-        year: selectedYear 
+        year: selectedYear
       });
       return goals[0] || null;
     },
@@ -155,13 +154,13 @@ export default function Dashboard() {
     queryFn: async () => {
       const friendsEmails = myFriends.map(f => f.friend_email);
       if (friendsEmails.length === 0) return [];
-      
+
       const allFriendsBooks = await Promise.all(
-        friendsEmails.map(email => 
+        friendsEmails.map(email =>
           base44.entities.UserBook.filter({ created_by: email })
         )
       );
-      
+
       return allFriendsBooks.flat();
     },
     enabled: myFriends.length > 0,
@@ -181,76 +180,76 @@ export default function Dashboard() {
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
-  
+
   // Calculate average reading duration for any user
   const calculateAvgReadingDays = (userEmail) => {
     const userBooks = friendsBooks.filter(fb => fb.created_by === userEmail);
-    const completedBooks = userBooks.filter(b => 
+    const completedBooks = userBooks.filter(b =>
       b.status === "Lu" && b.start_date && b.end_date
     );
-    
+
     if (completedBooks.length === 0) return 14; // Default 14 days if no data
-    
+
     const totalDays = completedBooks.reduce((sum, book) => {
       const start = new Date(book.start_date);
       const end = new Date(book.end_date);
       const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
       return sum + Math.max(days, 1); // At least 1 day
     }, 0);
-    
+
     return Math.round(totalDays / completedBooks.length);
   };
 
   // Calculate average reading duration for current user
   const avgReadingDays = React.useMemo(() => {
-    const completedBooks = myBooks.filter(b => 
+    const completedBooks = myBooks.filter(b =>
       b.status === "Lu" && b.start_date && b.end_date
     );
-    
+
     if (completedBooks.length === 0) return 14; // Default 14 days if no data
-    
+
     const totalDays = completedBooks.reduce((sum, book) => {
       const start = new Date(book.start_date);
       const end = new Date(book.end_date);
       const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
       return sum + Math.max(days, 1); // At least 1 day
     }, 0);
-    
+
     return Math.round(totalDays / completedBooks.length);
   }, [myBooks]);
 
   // Calculate time-based progress for a book
   const getTimeBasedProgress = (userBook, userAvgDays = avgReadingDays) => {
     if (!userBook.start_date) return 0;
-    
+
     const book = allBooks.find(b => b.id === userBook.book_id);
     const start = new Date(userBook.start_date);
     const now = new Date();
     const daysReading = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-    
+
     // If current_page is set and book has page_count, use hybrid approach
     if (userBook.current_page && book?.page_count) {
       const manualProgress = (userBook.current_page / book.page_count) * 100;
-      
+
       // Calculate when the page was last updated
       const lastUpdate = new Date(userBook.updated_date || userBook.start_date);
       const daysSinceUpdate = Math.floor((now - lastUpdate) / (1000 * 60 * 60 * 24));
-      
+
       // Calculate remaining pages and estimated days to finish
       const pagesRemaining = book.page_count - userBook.current_page;
       const pagesPerDay = book.page_count / userAvgDays; // Average pages per day
       // Avoid division by zero if pagesPerDay is 0 or very small, or if userAvgDays is 0
       const estimatedDaysRemaining = (pagesPerDay > 0) ? (pagesRemaining / pagesPerDay) : Infinity;
-      
+
       // Add time-based progression since last update
       const additionalProgress = (daysSinceUpdate > 0 && estimatedDaysRemaining > 0 && estimatedDaysRemaining !== Infinity)
         ? (daysSinceUpdate / estimatedDaysRemaining) * (100 - manualProgress)
         : 0;
-      
+
       const totalProgress = manualProgress + additionalProgress;
       return Math.min(Math.round(totalProgress), 95); // Max 95% until finished
     }
-    
+
     // Otherwise, use pure time-based estimation
     const progress = Math.min((daysReading / userAvgDays) * 100, 95);
     return Math.round(progress);
@@ -277,7 +276,7 @@ export default function Dashboard() {
     }
     return null;
   };
-  
+
   const booksReadThisYear = myBooks.filter(b => {
     const effectiveDate = getEffectiveDate(b);
     if (!effectiveDate) return false;
@@ -301,15 +300,8 @@ export default function Dashboard() {
       return sum;
     }, 0);
 
-  // This was previously for the mobile stats carousel; now replaced by activeSharedReadingsCount for the new Stats Grid
-  // const sharedReadingsThisYear = allSharedReadings.filter(sr => {
-  //   if (!sr.start_date) return false;
-  //   const startYear = new Date(sr.start_date).getFullYear();
-  //   const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : startYear;
-  //   return startYear <= selectedYear && selectedYear <= endYear;
-  // }).length;
-
-  const activeSharedReadingsCount = allSharedReadings.filter(sr => sr.status === "En cours").length;
+  // Count ALL shared readings (not just active ones)
+  const sharedReadingsCount = allSharedReadings.length;
 
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
@@ -346,7 +338,7 @@ export default function Dashboard() {
   // Collect all music with book info and select random ones
   const randomMusicSelection = React.useMemo(() => {
     const allMusicWithBooks = [];
-    
+
     myBooks.forEach(userBook => {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book) return;
@@ -361,7 +353,7 @@ export default function Dashboard() {
           });
         });
       }
-      
+
       // Old format: music + music_link
       if (userBook.music && userBook.music_link) {
         allMusicWithBooks.push({
@@ -415,11 +407,11 @@ export default function Dashboard() {
             transform: translateY(0);
           }
         }
-        
+
         .hover-lift {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
+
         .hover-lift:hover {
           transform: translateY(-4px) scale(1.02);
           box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
@@ -435,7 +427,7 @@ export default function Dashboard() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-        
+
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -445,9 +437,26 @@ export default function Dashboard() {
           scroll-snap-type: x mandatory;
           scroll-behavior: smooth;
         }
-        
+
         .scroll-snap-start {
           scroll-snap-align: start;
+        }
+
+        /* Pastel gradient backgrounds */
+        .bg-pastel-pink {
+          background: linear-gradient(135deg, #FFB3D9 0%, #FFC9E3 100%);
+        }
+
+        .bg-pastel-purple {
+          background: linear-gradient(135deg, #E6B3E8 0%, #F0C6F2 100%);
+        }
+
+        .bg-pastel-blue {
+          background: linear-gradient(135deg, #B3D9FF 0%, #C9E3FF 100%);
+        }
+
+        .bg-pastel-yellow {
+          background: linear-gradient(135deg, #FFE6B3 0%, #FFF0C9 100%);
         }
       `}</style>
 
@@ -478,7 +487,7 @@ export default function Dashboard() {
               </select>
 
               <Link to={createPageUrl("MyLibrary")}>
-                <Button 
+                <Button
                   size="sm"
                   className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
                   style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
@@ -514,7 +523,7 @@ export default function Dashboard() {
                 </select>
 
                 <Link to={createPageUrl("MyLibrary")}>
-                  <Button 
+                  <Button
                     className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
                     style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                   >
@@ -524,7 +533,7 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to={createPageUrl("Statistics")}>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="shadow-md font-medium px-6 rounded-xl hover-lift"
                     style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
@@ -534,38 +543,36 @@ export default function Dashboard() {
                 </Link>
               </div>
             </div>
-            {/* Removed: Old Desktop Stats Grid */}
           </div>
-          {/* Removed: Old Mobile Stats Carousel */}
 
-          {/* Stats Grid */}
+          {/* Stats Grid - with pastel colors and rounded corners */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <StatsCard
               icon={BookOpen}
               value={booksReadThisYear}
               label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
-              gradient="from-pink-500 to-rose-500"
+              gradient="bg-pastel-pink"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
             <StatsCard
               icon={FileText}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              gradient="from-purple-500 to-pink-500"
+              gradient="bg-pastel-yellow"
               onClick={() => navigate(createPageUrl("Statistics"))}
             />
             <StatsCard
               icon={Users}
-              value={activeSharedReadingsCount}
+              value={sharedReadingsCount}
               label="Lectures communes"
-              gradient="from-rose-500 to-pink-500"
+              gradient="bg-pastel-blue"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={BookmarkCheck}
               value={toReadCount}
               label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
-              gradient="from-pink-500 to-purple-500"
+              gradient="bg-pastel-purple"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
           </div>
@@ -595,13 +602,13 @@ export default function Dashboard() {
                       {currentlyReading.slice(0, 3).map((userBook) => {
                         const book = allBooks.find(b => b.id === userBook.book_id);
                         if (!book) return null;
-                        const daysReading = userBook.start_date 
+                        const daysReading = userBook.start_date
                           ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
                           : 0;
                         const progress = getTimeBasedProgress(userBook);
-                        
+
                         return (
-                          <div key={userBook.id} 
+                          <div key={userBook.id}
                                className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
                                style={{ backgroundColor: '#FFF7FA' }}
                                onClick={() => setSelectedBookForDetails(userBook)}>
@@ -631,14 +638,14 @@ export default function Dashboard() {
                               )}
                               <div className="relative">
                                 <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                                  <div className="h-full rounded-full transition-all duration-500" 
-                                       style={{ 
+                                  <div className="h-full rounded-full transition-all duration-500"
+                                       style={{
                                          width: `${progress}%`,
                                          background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                        }} />
                                 </div>
                                 <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
-                                  {userBook.current_page && book.page_count 
+                                  {userBook.current_page && book.page_count
                                     ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                     : `⏱️ ~${progress}% (estimation temporelle)`
                                   }
@@ -652,16 +659,16 @@ export default function Dashboard() {
                         const book = allBooks.find(b => b.id === userBook.book_id);
                         const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                         if (!book || !friend) return null;
-                        
+
                         // Calculate friend's average reading days and progress
                         const friendAvgDays = calculateAvgReadingDays(userBook.created_by);
-                        const daysReading = userBook.start_date 
+                        const daysReading = userBook.start_date
                           ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
                           : 0;
                         const progress = getTimeBasedProgress(userBook, friendAvgDays);
-                        
+
                         return (
-                          <div key={userBook.id} 
+                          <div key={userBook.id}
                                className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
                                style={{ backgroundColor: '#F0E6FF' }}>
                             <div className="relative flex-shrink-0">
@@ -690,14 +697,14 @@ export default function Dashboard() {
                                   </p>
                                   <div className="relative">
                                     <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
-                                      <div className="h-full rounded-full transition-all duration-500" 
-                                           style={{ 
+                                      <div className="h-full rounded-full transition-all duration-500"
+                                           style={{
                                              width: `${progress}%`,
                                              background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
                                            }} />
                                     </div>
                                     <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
-                                      {userBook.current_page && book.page_count 
+                                      {userBook.current_page && book.page_count
                                         ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                         : `⏱️ ~${progress}% (estimation temporelle)`
                                       }
@@ -720,8 +727,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Removed: Défi lecture annuel - Now with editing capability, moved to above */}
-
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
               <CardContent className="p-4 md:p-6">
@@ -733,19 +738,19 @@ export default function Dashboard() {
                     recentActivity.map((activity) => {
                       const book = allBooks.find(b => b.id === activity.userBook.book_id);
                       if (!book) return null;
-                      
+
                       return (
-                        <div key={`${activity.userEmail}-${activity.userBook.id}`} 
+                        <div key={`${activity.userEmail}-${activity.userBook.id}`}
                              className="flex items-start gap-3 pb-3 border-b last:border-0"
                              style={{ borderColor: '#F7FAFC' }}>
                           <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
                                style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
-                            <BookOpen className="w-4 h-4 md:w-5 md:h-5" 
+                            <BookOpen className="w-4 h-4 md:w-5 md:h-5"
                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
-                              <span className="font-bold" 
+                              <span className="font-bold"
                                     style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
                                 {activity.userName}
                               </span> a terminé {book.title}
@@ -754,9 +759,9 @@ export default function Dashboard() {
                               <div className="flex items-center gap-1 mb-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
                                   <Star key={i} className="w-3 h-3 md:w-4 md:h-4"
-                                        style={{ 
-                                          fill: i < activity.userBook.rating ? '#FFD700' : 'none', 
-                                          stroke: '#FFD700' 
+                                        style={{
+                                          fill: i < activity.userBook.rating ? '#FFD700' : 'none',
+                                          stroke: '#FFD700'
                                         }} />
                                 ))}
                               </div>
@@ -797,7 +802,7 @@ export default function Dashboard() {
                          style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
                       {musicItem.book.cover_url && (
                         <div className="absolute inset-0 opacity-20">
-                          <img src={musicItem.book.cover_url} alt="" 
+                          <img src={musicItem.book.cover_url} alt=""
                                className="w-full h-full object-cover" />
                         </div>
                       )}
@@ -819,7 +824,7 @@ export default function Dashboard() {
 
                 {quickAccessItems.map((item) => (
                   <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
-                    <button 
+                    <button
                       className="w-full p-4 rounded-2xl text-center transition-all quick-action h-full"
                       style={{ backgroundColor: item.color }}>
                       <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
@@ -834,7 +839,7 @@ export default function Dashboard() {
             {randomMusicSelection.length > 0 && (
               <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
                 <Link to={createPageUrl("MusicPlaylist")}>
-                  <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity" 
+                  <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity"
                                style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
                     <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                       🎵 Ma Playlist Littéraire
@@ -846,7 +851,7 @@ export default function Dashboard() {
                           <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
                                style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
                             {musicItem.book.cover_url ? (
-                              <img src={musicItem.book.cover_url} alt={musicItem.book.title} 
+                              <img src={musicItem.book.cover_url} alt={musicItem.book.title}
                                    className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -854,7 +859,7 @@ export default function Dashboard() {
                               </div>
                             )}
                           </div>
-                          
+
                           {/* Music info */}
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm text-white line-clamp-1">
