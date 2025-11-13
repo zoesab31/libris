@@ -92,17 +92,43 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// New StatsCard Component with pastel colors and rounded corners
+// StatsCard Component with new pastel design
 const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
-  <Card className="rounded-3xl shadow-lg border-0 hover-lift cursor-pointer" onClick={onClick}>
-    <CardContent className={`p-4 md:p-5 flex items-center justify-between text-white ${gradient}`}>
-      <div>
-        <div className="text-xl md:text-2xl font-bold">{value}</div>
-        <p className="text-xs md:text-sm opacity-90">{label}</p>
+  <div
+    onClick={onClick}
+    className="stats-card cursor-pointer relative overflow-hidden"
+    style={{
+      background: gradient,
+      borderRadius: '20px',
+      padding: '1.5rem',
+      height: '100px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      transition: 'all 0.2s ease',
+    }}
+  >
+    {/* Background Icon */}
+    <Icon 
+      className="absolute -right-4 -bottom-4 opacity-10"
+      style={{ 
+        width: '80px', 
+        height: '80px',
+        filter: 'blur(2px)'
+      }} 
+    />
+    
+    {/* Content */}
+    <div className="relative z-10">
+      <div className="text-2xl md:text-3xl font-bold mb-1" style={{ color: '#FFFFFF' }}>
+        {value}
       </div>
-      <Icon className="w-6 h-6 md:w-8 md:h-8 opacity-75" />
-    </CardContent>
-  </Card>
+      <p className="text-xs md:text-sm font-medium" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+        {label}
+      </p>
+    </div>
+  </div>
 );
 
 export default function Dashboard() {
@@ -397,6 +423,12 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+          font-family: 'Poppins', sans-serif;
+        }
+
         @keyframes fadeInUp {
           from {
             opacity: 0;
@@ -407,14 +439,19 @@ export default function Dashboard() {
             transform: translateY(0);
           }
         }
-
+        
         .hover-lift {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-
+        
         .hover-lift:hover {
           transform: translateY(-4px) scale(1.02);
           box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
+        }
+
+        .stats-card:hover {
+          transform: scale(1.02);
+          box-shadow: 0 4px 12px rgba(255, 105, 180, 0.2);
         }
 
         .quick-action:hover {
@@ -427,7 +464,7 @@ export default function Dashboard() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-
+        
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -437,26 +474,9 @@ export default function Dashboard() {
           scroll-snap-type: x mandatory;
           scroll-behavior: smooth;
         }
-
+        
         .scroll-snap-start {
           scroll-snap-align: start;
-        }
-
-        /* Pastel gradient backgrounds */
-        .bg-pastel-pink {
-          background: linear-gradient(135deg, #FFB3D9 0%, #FFC9E3 100%);
-        }
-
-        .bg-pastel-purple {
-          background: linear-gradient(135deg, #E6B3E8 0%, #F0C6F2 100%);
-        }
-
-        .bg-pastel-blue {
-          background: linear-gradient(135deg, #B3D9FF 0%, #C9E3FF 100%);
-        }
-
-        .bg-pastel-yellow {
-          background: linear-gradient(135deg, #FFE6B3 0%, #FFF0C9 100%);
         }
       `}</style>
 
@@ -487,7 +507,7 @@ export default function Dashboard() {
               </select>
 
               <Link to={createPageUrl("MyLibrary")}>
-                <Button
+                <Button 
                   size="sm"
                   className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
                   style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
@@ -523,7 +543,7 @@ export default function Dashboard() {
                 </select>
 
                 <Link to={createPageUrl("MyLibrary")}>
-                  <Button
+                  <Button 
                     className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
                     style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                   >
@@ -533,7 +553,7 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to={createPageUrl("Statistics")}>
-                  <Button
+                  <Button 
                     variant="outline"
                     className="shadow-md font-medium px-6 rounded-xl hover-lift"
                     style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
@@ -545,34 +565,34 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Stats Grid - with pastel colors and rounded corners */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          {/* Stats Grid - New pastel design with exact gradients */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               icon={BookOpen}
               value={booksReadThisYear}
               label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
-              gradient="bg-pastel-pink"
+              gradient="linear-gradient(90deg, #FFD6E0 0%, #FFB6C8 100%)"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
             <StatsCard
               icon={FileText}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              gradient="bg-pastel-yellow"
+              gradient="linear-gradient(90deg, #FFF3D9 0%, #FFE8A3 100%)"
               onClick={() => navigate(createPageUrl("Statistics"))}
             />
             <StatsCard
               icon={Users}
               value={sharedReadingsCount}
               label="Lectures communes"
-              gradient="bg-pastel-blue"
+              gradient="linear-gradient(90deg, #E2E8FF 0%, #C8D6FF 100%)"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={BookmarkCheck}
               value={toReadCount}
               label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
-              gradient="bg-pastel-purple"
+              gradient="linear-gradient(90deg, #F4D9FF 0%, #E6B8FF 100%)"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
           </div>
@@ -590,142 +610,143 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6">
           {/* Left Column (2/3 on desktop, full width on mobile) */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6">
-            {/* Lectures en cours */}
-            <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
-              <CardContent className="p-4 md:p-6">
-                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
-                  📖 Lectures en cours
-                </h2>
-                <div className="space-y-3 md:space-y-4">
-                  {currentlyReading.length > 0 || friendsBooks.filter(b => b.status === "En cours").length > 0 ? (
-                    <>
-                      {currentlyReading.slice(0, 3).map((userBook) => {
-                        const book = allBooks.find(b => b.id === userBook.book_id);
-                        if (!book) return null;
-                        const daysReading = userBook.start_date
-                          ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
-                          : 0;
-                        const progress = getTimeBasedProgress(userBook);
 
-                        return (
-                          <div key={userBook.id}
-                               className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
-                               style={{ backgroundColor: '#FFF7FA' }}
-                               onClick={() => setSelectedBookForDetails(userBook)}>
-                            <div className="relative flex-shrink-0">
-                              <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
-                                   style={{ backgroundColor: '#FFE4EC' }}>
-                                {book.cover_url && (
-                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                                )}
-                              </div>
-                              <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
-                                    style={{ backgroundColor: '#FF69B4' }}>
-                                En cours
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
-                                {book.title}
-                              </h3>
-                              <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
-                                {book.author}
-                              </p>
-                              {userBook.start_date && (
-                                <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
-                                  {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
-                                </p>
-                              )}
-                              <div className="relative">
-                                <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                                  <div className="h-full rounded-full transition-all duration-500"
-                                       style={{
-                                         width: `${progress}%`,
-                                         background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
-                                       }} />
-                                </div>
-                                <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
-                                  {userBook.current_page && book.page_count
-                                    ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
-                                    : `⏱️ ~${progress}% (estimation temporelle)`
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {friendsBooks.filter(b => b.status === "En cours").slice(0, 2).map((userBook) => {
-                        const book = allBooks.find(b => b.id === userBook.book_id);
-                        const friend = myFriends.find(f => f.friend_email === userBook.created_by);
-                        if (!book || !friend) return null;
-
-                        // Calculate friend's average reading days and progress
-                        const friendAvgDays = calculateAvgReadingDays(userBook.created_by);
-                        const daysReading = userBook.start_date
-                          ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
-                          : 0;
-                        const progress = getTimeBasedProgress(userBook, friendAvgDays);
-
-                        return (
-                          <div key={userBook.id}
-                               className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
-                               style={{ backgroundColor: '#F0E6FF' }}>
-                            <div className="relative flex-shrink-0">
-                              <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
-                                   style={{ backgroundColor: '#E6B3E8' }}>
-                                {book.cover_url && (
-                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                                )}
-                              </div>
-                              <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
-                                    style={{ backgroundColor: '#9B59B6' }}>
-                                {friend.friend_name?.split(' ')[0]}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
-                                {book.title}
-                              </h3>
-                              <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
-                                {book.author}
-                              </p>
-                              {userBook.start_date && (
-                                <>
-                                  <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
-                                    {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
-                                  </p>
-                                  <div className="relative">
-                                    <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
-                                      <div className="h-full rounded-full transition-all duration-500"
-                                           style={{
-                                             width: `${progress}%`,
-                                             background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
-                                           }} />
+                  {/* Lectures en cours */}
+                  <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
+                    <CardContent className="p-4 md:p-6">
+                      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                        📖 Lectures en cours
+                      </h2>
+                      <div className="space-y-3 md:space-y-4">
+                        {currentlyReading.length > 0 || friendsBooks.filter(b => b.status === "En cours").length > 0 ? (
+                          <>
+                            {currentlyReading.slice(0, 3).map((userBook) => {
+                              const book = allBooks.find(b => b.id === userBook.book_id);
+                              if (!book) return null;
+                              const daysReading = userBook.start_date 
+                                ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
+                                : 0;
+                              const progress = getTimeBasedProgress(userBook);
+                              
+                              return (
+                                <div key={userBook.id} 
+                                     className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
+                                     style={{ backgroundColor: '#FFF7FA' }}
+                                     onClick={() => setSelectedBookForDetails(userBook)}>
+                                  <div className="relative flex-shrink-0">
+                                    <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
+                                         style={{ backgroundColor: '#FFE4EC' }}>
+                                      {book.cover_url && (
+                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                      )}
                                     </div>
-                                    <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
-                                      {userBook.current_page && book.page_count
-                                        ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
-                                        : `⏱️ ~${progress}% (estimation temporelle)`
-                                      }
-                                    </p>
+                                    <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                                          style={{ backgroundColor: '#FF69B4' }}>
+                                      En cours
+                                    </span>
                                   </div>
-                                </>
-                              )}
-                            </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
+                                      {book.title}
+                                    </h3>
+                                    <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
+                                      {book.author}
+                                    </p>
+                                    {userBook.start_date && (
+                                      <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
+                                        {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
+                                      </p>
+                                    )}
+                                    <div className="relative">
+                                      <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                                        <div className="h-full rounded-full transition-all duration-500" 
+                                             style={{ 
+                                               width: `${progress}%`,
+                                               background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
+                                             }} />
+                                      </div>
+                                      <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
+                                        {userBook.current_page && book.page_count 
+                                          ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
+                                          : `⏱️ ~${progress}% (estimation temporelle)`
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {friendsBooks.filter(b => b.status === "En cours").slice(0, 2).map((userBook) => {
+                              const book = allBooks.find(b => b.id === userBook.book_id);
+                              const friend = myFriends.find(f => f.friend_email === userBook.created_by);
+                              if (!book || !friend) return null;
+                              
+                              // Calculate friend's average reading days and progress
+                              const friendAvgDays = calculateAvgReadingDays(userBook.created_by);
+                              const daysReading = userBook.start_date 
+                                ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
+                                : 0;
+                              const progress = getTimeBasedProgress(userBook, friendAvgDays);
+                              
+                              return (
+                                <div key={userBook.id} 
+                                     className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
+                                     style={{ backgroundColor: '#F0E6FF' }}>
+                                  <div className="relative flex-shrink-0">
+                                    <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
+                                         style={{ backgroundColor: '#E6B3E8' }}>
+                                      {book.cover_url && (
+                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                      )}
+                                    </div>
+                                    <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                                          style={{ backgroundColor: '#9B59B6' }}>
+                                      {friend.friend_name?.split(' ')[0]}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
+                                      {book.title}
+                                    </h3>
+                                    <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
+                                      {book.author}
+                                    </p>
+                                    {userBook.start_date && (
+                                      <>
+                                        <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
+                                          {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
+                                        </p>
+                                        <div className="relative">
+                                          <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
+                                            <div className="h-full rounded-full transition-all duration-500" 
+                                                 style={{ 
+                                                   width: `${progress}%`,
+                                                   background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
+                                                 }} />
+                                          </div>
+                                          <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
+                                            {userBook.current_page && book.page_count 
+                                              ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
+                                              : `⏱️ ~${progress}% (estimation temporelle)`
+                                            }
+                                          </p>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </>
+                        ) : (
+                          <div className="text-center py-8 md:py-12">
+                            <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                            <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
                           </div>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <div className="text-center py-8 md:py-12">
-                      <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
-                      <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
