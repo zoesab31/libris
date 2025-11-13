@@ -94,8 +94,8 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
 
 // New StatsCard Component
 const StatsCard = ({ icon: Icon, value, label, gradient, onClick }) => (
-  <Card className="rounded-3xl shadow-md border-0 hover-lift cursor-pointer overflow-hidden" onClick={onClick}>
-    <CardContent className={`p-4 md:p-5 flex items-center justify-between ${gradient} text-white`}>
+  <Card className="rounded-2xl shadow-lg border-0 hover-lift cursor-pointer" onClick={onClick}>
+    <CardContent className={`p-4 md:p-5 flex items-center justify-between bg-gradient-to-br ${gradient} text-white`}>
       <div>
         <div className="text-xl md:text-2xl font-bold">{value}</div>
         <p className="text-xs md:text-sm opacity-90">{label}</p>
@@ -169,15 +169,7 @@ export default function Dashboard() {
 
   const { data: allSharedReadings = [] } = useQuery({
     queryKey: ['sharedReadings'],
-    queryFn: async () => {
-      // Get both created and participated readings
-      const createdReadings = await base44.entities.SharedReading.filter({ created_by: user?.email });
-      const participatedReadings = await base44.entities.SharedReading.filter({ participants: user?.email });
-      
-      // Combine and deduplicate
-      const allUserReadings = [...createdReadings, ...participatedReadings];
-      return Array.from(new Map(allUserReadings.map(reading => [reading.id, reading])).values());
-    },
+    queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
     enabled: !!user,
   });
 
@@ -309,8 +301,15 @@ export default function Dashboard() {
       return sum;
     }, 0);
 
-  // Count ALL shared readings (not just active ones)
-  const sharedReadingsCount = allSharedReadings.length;
+  // This was previously for the mobile stats carousel; now replaced by activeSharedReadingsCount for the new Stats Grid
+  // const sharedReadingsThisYear = allSharedReadings.filter(sr => {
+  //   if (!sr.start_date) return false;
+  //   const startYear = new Date(sr.start_date).getFullYear();
+  //   const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : startYear;
+  //   return startYear <= selectedYear && selectedYear <= endYear;
+  // }).length;
+
+  const activeSharedReadingsCount = allSharedReadings.filter(sr => sr.status === "En cours").length;
 
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
@@ -535,7 +534,9 @@ export default function Dashboard() {
                 </Link>
               </div>
             </div>
+            {/* Removed: Old Desktop Stats Grid */}
           </div>
+          {/* Removed: Old Mobile Stats Carousel */}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
@@ -543,28 +544,28 @@ export default function Dashboard() {
               icon={BookOpen}
               value={booksReadThisYear}
               label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
-              gradient="bg-gradient-to-br from-pink-300 to-pink-400"
+              gradient="from-pink-500 to-rose-500"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
             <StatsCard
               icon={FileText}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              gradient="bg-gradient-to-br from-purple-300 to-purple-400"
+              gradient="from-purple-500 to-pink-500"
               onClick={() => navigate(createPageUrl("Statistics"))}
             />
             <StatsCard
               icon={Users}
-              value={sharedReadingsCount}
+              value={activeSharedReadingsCount}
               label="Lectures communes"
-              gradient="bg-gradient-to-br from-rose-300 to-rose-400"
+              gradient="from-rose-500 to-pink-500"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={BookmarkCheck}
               value={toReadCount}
               label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
-              gradient="bg-gradient-to-br from-violet-300 to-violet-400"
+              gradient="from-pink-500 to-purple-500"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
           </div>
@@ -718,6 +719,8 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Removed: Défi lecture annuel - Now with editing capability, moved to above */}
 
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
