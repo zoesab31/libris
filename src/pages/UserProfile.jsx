@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music, Sparkles, TrendingUp, Trophy, Map } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
+import FriendBookDialog from "../components/library/FriendBookDialog";
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
@@ -20,6 +21,7 @@ export default function UserProfile() {
   const [selectedShelf, setSelectedShelf] = useState(null);
   const [expandedYears, setExpandedYears] = useState({});
   const [selectedPAL, setSelectedPAL] = useState(null);
+  const [selectedFriendBook, setSelectedFriendBook] = useState(null); // NEW
   
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
@@ -282,6 +284,11 @@ export default function UserProfile() {
 
   const handleChat = () => {
     navigate(createPageUrl("Chat"));
+  };
+
+  // NEW: Function to handle book click
+  const handleBookClick = (userBook) => {
+    setSelectedFriendBook(userBook);
   };
 
   if (!userEmail) {
@@ -651,7 +658,11 @@ export default function UserProfile() {
                     const book = allBooks.find(b => b.id === ub.book_id);
                     if (!book) return null;
                     return (
-                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                      <Card 
+                        key={ub.id} 
+                        className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                        onClick={() => handleBookClick(ub)}
+                      >
                         <div className="aspect-[2/3] relative">
                           {book.cover_url ? (
                             <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
@@ -698,7 +709,11 @@ export default function UserProfile() {
                     const book = allBooks.find(b => b.id === ub.book_id);
                     if (!book) return null;
                     return (
-                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                      <Card 
+                        key={ub.id} 
+                        className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                        onClick={() => handleBookClick(ub)}
+                      >
                         <div className="aspect-[2/3] relative">
                           {book.cover_url ? (
                             <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
@@ -764,7 +779,11 @@ export default function UserProfile() {
                                   if (!book) return null;
                                   const isDNF = ub.status === "Abandonné";
                                   return (
-                                    <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all relative">
+                                    <Card 
+                                      key={ub.id} 
+                                      className="overflow-hidden hover:shadow-lg transition-all relative cursor-pointer"
+                                      onClick={() => handleBookClick(ub)}
+                                    >
                                       {isDNF && (
                                         <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black flex items-center justify-center z-10">
                                           <span className="text-lg">💀</span>
@@ -931,7 +950,11 @@ export default function UserProfile() {
                     const book = allBooks.find(b => b.id === ub.book_id);
                     if (!book) return null;
                     return (
-                      <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                      <Card 
+                        key={ub.id} 
+                        className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                        onClick={() => handleBookClick(ub)}
+                      >
                         <div className="aspect-[2/3] relative">
                           {book.cover_url ? (
                             <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
@@ -961,7 +984,11 @@ export default function UserProfile() {
                   const book = allBooks.find(b => b.id === ub.book_id);
                   if (!book) return null;
                   return (
-                    <Card key={ub.id} className="overflow-hidden hover:shadow-lg transition-all">
+                    <Card 
+                      key={ub.id} 
+                      className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                      onClick={() => handleBookClick(ub)}
+                    >
                       <div className="aspect-[2/3] relative">
                         {book.cover_url ? (
                           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
@@ -1366,6 +1393,18 @@ export default function UserProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* NEW: Friend Book Dialog */}
+      {selectedFriendBook && (
+        <FriendBookDialog
+          friendUserBook={selectedFriendBook}
+          book={allBooks.find(b => b.id === selectedFriendBook.book_id)}
+          friendName={friendName}
+          friendUser={profileUser}
+          open={!!selectedFriendBook}
+          onOpenChange={(open) => !open && setSelectedFriendBook(null)}
+        />
+      )}
     </div>
   );
 }
