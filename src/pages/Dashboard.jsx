@@ -92,42 +92,38 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// StatsCard Component with harmonized pastel colors
-const StatsCard = ({ icon: Icon, value, label, color, onClick }) => (
+// Single unified Stats Card with 4 columns
+const UnifiedStatsCard = ({ stats }) => (
   <div
-    onClick={onClick}
-    className="stats-card cursor-pointer relative overflow-hidden"
+    className="unified-stats-card"
     style={{
-      backgroundColor: color,
-      borderRadius: '20px',
-      padding: '1.5rem',
-      height: '100px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
+      backgroundColor: '#FADBEA',
+      borderRadius: '24px',
+      padding: '2rem',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
-      transition: 'all 0.2s ease',
     }}
   >
-    {/* Background Icon */}
-    <Icon 
-      className="absolute -right-4 -bottom-4"
-      style={{ 
-        width: '80px', 
-        height: '80px',
-        color: '#FFFFFF',
-        opacity: 0.25
-      }} 
-    />
-    
-    {/* Content */}
-    <div className="relative z-10">
-      <div className="text-2xl md:text-3xl font-bold mb-1" style={{ color: '#FFFFFF' }}>
-        {value}
-      </div>
-      <p className="text-xs md:text-sm font-medium" style={{ color: '#FFFFFF' }}>
-        {label}
-      </p>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+      {stats.map((stat, index) => (
+        <div
+          key={index}
+          onClick={stat.onClick}
+          className="stat-column cursor-pointer text-center transition-transform duration-200 hover:scale-105"
+        >
+          <div className="flex justify-center mb-3">
+            <stat.icon
+              className="w-8 h-8 md:w-10 md:h-10"
+              style={{ color: '#FFFFFF', opacity: 0.7 }}
+            />
+          </div>
+          <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#FFFFFF' }}>
+            {stat.value}
+          </div>
+          <p className="text-sm md:text-base font-medium" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            {stat.label}
+          </p>
+        </div>
+      ))}
     </div>
   </div>
 );
@@ -421,6 +417,34 @@ export default function Dashboard() {
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
   ];
 
+  // Prepare stats for unified card
+  const statsData = [
+    {
+      icon: BookOpen,
+      value: booksReadThisYear,
+      label: `Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`,
+      onClick: () => navigate(createPageUrl("MyLibrary"))
+    },
+    {
+      icon: FileText,
+      value: totalPagesThisYear.toLocaleString(),
+      label: "Pages lues",
+      onClick: () => navigate(createPageUrl("Statistics"))
+    },
+    {
+      icon: Users,
+      value: sharedReadingsCount,
+      label: "Lectures communes",
+      onClick: () => navigate(createPageUrl("SharedReadings"))
+    },
+    {
+      icon: BookmarkCheck,
+      value: toReadCount,
+      label: `Livre${toReadCount > 1 ? 's' : ''} à lire`,
+      onClick: () => navigate(createPageUrl("MyLibrary"))
+    }
+  ];
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
       <style>{`
@@ -450,9 +474,33 @@ export default function Dashboard() {
           box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
         }
 
-        .stats-card:hover {
-          transform: scale(1.01);
+        .unified-stats-card {
+          transition: box-shadow 0.2s ease;
+        }
+
+        .unified-stats-card:hover {
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-column {
+          position: relative;
+        }
+
+        .stat-column:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          right: -1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          height: 60%;
+          width: 1px;
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 1024px) {
+          .stat-column:nth-child(2)::after {
+            display: none;
+          }
         }
 
         .quick-action:hover {
@@ -508,7 +556,7 @@ export default function Dashboard() {
               </select>
 
               <Link to={createPageUrl("MyLibrary")}>
-                <Button 
+                <Button
                   size="sm"
                   className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
                   style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
@@ -544,7 +592,7 @@ export default function Dashboard() {
                 </select>
 
                 <Link to={createPageUrl("MyLibrary")}>
-                  <Button 
+                  <Button
                     className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
                     style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                   >
@@ -554,7 +602,7 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to={createPageUrl("Statistics")}>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="shadow-md font-medium px-6 rounded-xl hover-lift"
                     style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
@@ -566,36 +614,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Stats Grid - Harmonized pastel solid colors */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatsCard
-              icon={BookOpen}
-              value={booksReadThisYear}
-              label={`Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`}
-              color="#F7C4D9"
-              onClick={() => navigate(createPageUrl("MyLibrary"))}
-            />
-            <StatsCard
-              icon={FileText}
-              value={totalPagesThisYear.toLocaleString()}
-              label="Pages lues"
-              color="#F8E9C8"
-              onClick={() => navigate(createPageUrl("Statistics"))}
-            />
-            <StatsCard
-              icon={Users}
-              value={sharedReadingsCount}
-              label="Lectures communes"
-              color="#DCE7FF"
-              onClick={() => navigate(createPageUrl("SharedReadings"))}
-            />
-            <StatsCard
-              icon={BookmarkCheck}
-              value={toReadCount}
-              label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
-              color="#E6D9FF"
-              onClick={() => navigate(createPageUrl("MyLibrary"))}
-            />
+          {/* Unified Stats Card - Single card with 4 columns */}
+          <div className="mb-8">
+            <UnifiedStatsCard stats={statsData} />
           </div>
 
           {/* Reading Goal */}
@@ -624,13 +645,13 @@ export default function Dashboard() {
                             {currentlyReading.slice(0, 3).map((userBook) => {
                               const book = allBooks.find(b => b.id === userBook.book_id);
                               if (!book) return null;
-                              const daysReading = userBook.start_date 
+                              const daysReading = userBook.start_date
                                 ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
                                 : 0;
                               const progress = getTimeBasedProgress(userBook);
                               
                               return (
-                                <div key={userBook.id} 
+                                <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
                                      style={{ backgroundColor: '#FFF7FA' }}
                                      onClick={() => setSelectedBookForDetails(userBook)}>
@@ -660,14 +681,14 @@ export default function Dashboard() {
                                     )}
                                     <div className="relative">
                                       <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                                        <div className="h-full rounded-full transition-all duration-500" 
-                                             style={{ 
+                                        <div className="h-full rounded-full transition-all duration-500"
+                                             style={{
                                                width: `${progress}%`,
                                                background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                              }} />
                                       </div>
                                       <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
-                                        {userBook.current_page && book.page_count 
+                                        {userBook.current_page && book.page_count
                                           ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                           : `⏱️ ~${progress}% (estimation temporelle)`
                                         }
@@ -684,13 +705,13 @@ export default function Dashboard() {
                               
                               // Calculate friend's average reading days and progress
                               const friendAvgDays = calculateAvgReadingDays(userBook.created_by);
-                              const daysReading = userBook.start_date 
+                              const daysReading = userBook.start_date
                                 ? Math.floor((new Date() - new Date(userBook.start_date)) / (1000 * 60 * 60 * 24))
                                 : 0;
                               const progress = getTimeBasedProgress(userBook, friendAvgDays);
                               
                               return (
-                                <div key={userBook.id} 
+                                <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
                                      style={{ backgroundColor: '#F0E6FF' }}>
                                   <div className="relative flex-shrink-0">
@@ -719,14 +740,14 @@ export default function Dashboard() {
                                         </p>
                                         <div className="relative">
                                           <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
-                                            <div className="h-full rounded-full transition-all duration-500" 
-                                                 style={{ 
+                                            <div className="h-full rounded-full transition-all duration-500"
+                                                 style={{
                                                    width: `${progress}%`,
                                                    background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
                                                  }} />
                                           </div>
                                           <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
-                                            {userBook.current_page && book.page_count 
+                                            {userBook.current_page && book.page_count
                                               ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                               : `⏱️ ~${progress}% (estimation temporelle)`
                                             }
