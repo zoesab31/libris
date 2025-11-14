@@ -574,7 +574,7 @@ export default function Dashboard() {
             <StatsCard
               icon={BookOpen}
               value={booksReadThisYear}
-              label={`Livre${booksReadThisYear > 1 ? 's' : ''} lus`}
+              label="Livres lus"
               iconBgColor="#FFB6D9"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
@@ -589,13 +589,13 @@ export default function Dashboard() {
               icon={Users}
               value={sharedReadingsCount}
               label="Lectures communes"
-              iconBgColor="#FFCBB3"
+              iconBgColor="#86EFAC"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={Star}
               value={toReadCount}
-              label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
+              label="À lire"
               iconBgColor="#FFE699"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
