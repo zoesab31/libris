@@ -14,7 +14,6 @@ import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 
 // Helper component for Book Details Dialog
-// This component is created to make the provided outline fully functional.
 const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   if (!userBook || !book) return null;
 
@@ -92,38 +91,46 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
   );
 };
 
-// Single unified Stats Card with 4 columns - NEW HARMONIZED DESIGN
-const UnifiedStatsCard = ({ stats }) => (
+// Individual Stats Card - Restored to match exact design from image
+const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick }) => (
   <div
-    className="unified-stats-card"
+    onClick={onClick}
+    className="stats-card cursor-pointer"
     style={{
-      backgroundColor: '#FDECF4',
-      borderRadius: '24px',
-      padding: '2.5rem 2rem',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: '8px',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
     }}
   >
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-      {stats.map((stat, index) => (
-        <div
-          key={index}
-          onClick={stat.onClick}
-          className="stat-column cursor-pointer text-center transition-transform duration-200 hover:scale-105"
-        >
-          <div className="flex justify-center mb-4">
-            <stat.icon 
-              className="w-10 h-10 md:w-12 md:h-12"
-              style={{ color: '#4A4A4A', opacity: 0.7 }} 
-            />
-          </div>
-          <div className="text-4xl md:text-5xl font-bold mb-2" style={{ color: '#4A4A4A' }}>
-            {stat.value}
-          </div>
-          <p className="text-sm md:text-base font-normal" style={{ color: '#4A4A4A' }}>
-            {stat.label}
-          </p>
-        </div>
-      ))}
+    {/* Icon in colored square */}
+    <div
+      style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        backgroundColor: iconBgColor,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Icon className="w-6 h-6" style={{ color: 'white' }} />
+    </div>
+
+    {/* Label */}
+    <p className="text-sm" style={{ color: '#6B7280' }}>
+      {label}
+    </p>
+
+    {/* Value */}
+    <div className="text-2xl font-bold" style={{ color: '#111827' }}>
+      {value}
     </div>
   </div>
 );
@@ -417,34 +424,6 @@ export default function Dashboard() {
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
   ];
 
-  // Prepare stats for unified card
-  const statsData = [
-    {
-      icon: BookOpen,
-      value: booksReadThisYear,
-      label: `Livre${booksReadThisYear > 1 ? 's' : ''} lu${booksReadThisYear > 1 ? 's' : ''}`,
-      onClick: () => navigate(createPageUrl("MyLibrary"))
-    },
-    {
-      icon: FileText,
-      value: totalPagesThisYear.toLocaleString(),
-      label: "Pages lues",
-      onClick: () => navigate(createPageUrl("Statistics"))
-    },
-    {
-      icon: Users,
-      value: sharedReadingsCount,
-      label: "Lectures communes",
-      onClick: () => navigate(createPageUrl("SharedReadings"))
-    },
-    {
-      icon: BookmarkCheck,
-      value: toReadCount,
-      label: `Livre${toReadCount > 1 ? 's' : ''} à lire`,
-      onClick: () => navigate(createPageUrl("MyLibrary"))
-    }
-  ];
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
       <style>{`
@@ -474,33 +453,9 @@ export default function Dashboard() {
           box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
         }
 
-        .unified-stats-card {
-          transition: box-shadow 0.2s ease;
-        }
-
-        .unified-stats-card:hover {
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-column {
-          position: relative;
-        }
-
-        .stat-column:not(:last-child)::after {
-          content: '';
-          position: absolute;
-          right: -1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          height: 60%;
-          width: 1px;
-          background: rgba(74, 74, 74, 0.15);
-        }
-
-        @media (max-width: 1024px) {
-          .stat-column:nth-child(2)::after {
-            display: none;
-          }
+        .stats-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
         }
 
         .quick-action:hover {
@@ -614,9 +569,36 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Unified Stats Card - Single card with 4 columns */}
-          <div className="mb-8">
-            <UnifiedStatsCard stats={statsData} />
+          {/* Stats Cards - 4 separate white cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatsCard
+              icon={BookOpen}
+              value={booksReadThisYear}
+              label={`Livre${booksReadThisYear > 1 ? 's' : ''} lus`}
+              iconBgColor="#FFB6D9"
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+            />
+            <StatsCard
+              icon={TrendingUp}
+              value={totalPagesThisYear.toLocaleString()}
+              label="Pages lues"
+              iconBgColor="#E6B3FF"
+              onClick={() => navigate(createPageUrl("Statistics"))}
+            />
+            <StatsCard
+              icon={Users}
+              value={sharedReadingsCount}
+              label="Lectures communes"
+              iconBgColor="#FFCBB3"
+              onClick={() => navigate(createPageUrl("SharedReadings"))}
+            />
+            <StatsCard
+              icon={Star}
+              value={toReadCount}
+              label={`Livre${toReadCount > 1 ? 's' : ''} à lire`}
+              iconBgColor="#FFE699"
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+            />
           </div>
 
           {/* Reading Goal */}
