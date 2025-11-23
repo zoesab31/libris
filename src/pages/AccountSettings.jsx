@@ -6,9 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle, Bell, Send } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
 import ImageCropper from "@/components/profile/ImageCropper";
 
 export default function AccountSettings() {
@@ -18,9 +17,6 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [notifEmail, setNotifEmail] = useState("");
-  const [notifTitle, setNotifTitle] = useState("");
-  const [notifBody, setNotifBody] = useState("");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -161,34 +157,6 @@ export default function AccountSettings() {
     } else {
       toast.error("Veuillez taper exactement 'supprimer mon compte'");
     }
-  };
-
-  const sendNotificationMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await base44.functions.invoke('sendManualNotification', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      toast.success("Notification envoyée avec succès !");
-      setNotifEmail("");
-      setNotifTitle("");
-      setNotifBody("");
-    },
-    onError: (error) => {
-      toast.error("Erreur : " + (error.response?.data?.error || error.message));
-    }
-  });
-
-  const handleSendNotification = () => {
-    if (!notifEmail.trim() || !notifTitle.trim() || !notifBody.trim()) {
-      toast.error("Tous les champs sont requis");
-      return;
-    }
-    sendNotificationMutation.mutate({
-      recipient_email: notifEmail,
-      title: notifTitle,
-      body: notifBody
-    });
   };
 
   const isDark = user?.theme === 'dark';
@@ -335,81 +303,6 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Admin: Send Notifications */}
-          {user?.role === 'admin' && (
-            <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid var(--deep-pink)' }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Bell className="w-5 h-5" />
-                  Envoyer une notification
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--beige)' }}>
-                  <p className="text-sm font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
-                    📲 Notification push manuelle
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    Envoyez une notification FCM à n'importe quelle utilisatrice de l'application
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <Label>Email du destinataire</Label>
-                    <Input
-                      type="email"
-                      value={notifEmail}
-                      onChange={(e) => setNotifEmail(e.target.value)}
-                      placeholder="amie@exemple.com"
-                      disabled={sendNotificationMutation.isPending}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Titre de la notification</Label>
-                    <Input
-                      value={notifTitle}
-                      onChange={(e) => setNotifTitle(e.target.value)}
-                      placeholder="Nouvelle du jour"
-                      disabled={sendNotificationMutation.isPending}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Message</Label>
-                    <Textarea
-                      value={notifBody}
-                      onChange={(e) => setNotifBody(e.target.value)}
-                      placeholder="Découvrez la nouvelle version de l'app ! 🎉"
-                      rows={3}
-                      disabled={sendNotificationMutation.isPending}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleSendNotification}
-                    disabled={sendNotificationMutation.isPending || !notifEmail || !notifTitle || !notifBody}
-                    className="w-full text-white"
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  >
-                    {sendNotificationMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer la notification
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Delete Account - DANGER ZONE */}
           <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid #DC2626' }}>
