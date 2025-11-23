@@ -2,16 +2,16 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Map, Plus, MapPin, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Map, Plus, MapPin } from "lucide-react";
 import AddLocationDialog from "../components/maps/AddLocationDialog";
 import LocationCard from "../components/maps/LocationCard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Maps() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
-  const [activeTab, setActiveTab] = useState("my_locations"); // New state for tabs
+  const [locationFilter, setLocationFilter] = useState("all"); // "all" | "mine" | "friends"
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -60,10 +60,15 @@ export default function Maps() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: activeTab === "friends_locations",
+    enabled: myFriends.length > 0,
   });
 
-  const currentLocations = activeTab === "my_locations" ? locations : friendsLocations;
+  // Combine all locations based on filter
+  const currentLocations = locationFilter === "all" 
+    ? [...locations, ...friendsLocations]
+    : locationFilter === "mine" 
+    ? locations 
+    : friendsLocations;
 
   const filteredLocations = filterCategory === "all" 
     ? currentLocations 
@@ -91,14 +96,21 @@ export default function Maps() {
                 Lieux de Lecture 📍
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {activeTab === "my_locations" 
-                  ? `${locations.length} lieu${locations.length > 1 ? 'x' : ''} enregistré${locations.length > 1 ? 's' : ''}`
-                  : `${friendsLocations.length} lieu${friendsLocations.length > 1 ? 'x' : ''} de vos amies`
-                }
+                {currentLocations.length} lieu{currentLocations.length > 1 ? 'x' : ''} enregistré{currentLocations.length > 1 ? 's' : ''}
               </p>
             </div>
           </div>
-          {activeTab === "my_locations" && (
+          <div className="flex gap-3">
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les lieux ({locations.length + friendsLocations.length})</SelectItem>
+                <SelectItem value="mine">Mes lieux ({locations.length})</SelectItem>
+                <SelectItem value="friends">Lieux de mes amies ({friendsLocations.length})</SelectItem>
+              </SelectContent>
+            </Select>
             <Button 
               onClick={() => setShowAddDialog(true)}
               className="shadow-lg text-white font-medium px-6 rounded-xl"
@@ -106,36 +118,8 @@ export default function Maps() {
               <Plus className="w-5 h-5 mr-2" />
               Ajouter un lieu
             </Button>
-          )}
+          </div>
         </div>
-
-        {/* NEW: Tabs for My Locations vs Friends' Locations */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-          <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
-            <TabsTrigger
-              value="my_locations"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
-              style={activeTab === "my_locations" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              <MapPin className="w-4 h-4 mr-2" />
-              Mes lieux ({locations.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="friends_locations"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
-              style={activeTab === "friends_locations" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Lieux de mes amies ({friendsLocations.length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -158,10 +142,11 @@ export default function Maps() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredLocations.map((location) => {
               const book = location.book_id ? allBooks.find(b => b.id === location.book_id) : null;
-              const friend = activeTab === "friends_locations" 
+              const isFriendLocation = location.created_by !== user?.email;
+              const friend = isFriendLocation 
                 ? myFriends.find(f => f.friend_email === location.created_by)
                 : null;
-              const friendUser = activeTab === "friends_locations"
+              const friendUser = isFriendLocation
                 ? allUsers.find(u => u.email === location.created_by)
                 : null;
               
@@ -172,7 +157,7 @@ export default function Maps() {
                   book={book}
                   friend={friend}
                   friendUser={friendUser}
-                  showFriendInfo={activeTab === "friends_locations"}
+                  showFriendInfo={isFriendLocation}
                 />
               );
             })}
@@ -181,18 +166,13 @@ export default function Maps() {
           <div className="text-center py-20">
             <MapPin className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {activeTab === "friends_locations" && friendsLocations.length === 0
-                ? "Vos amies n'ont pas encore de lieux enregistrés"
-                : filterCategory === "all" 
-                  ? "Aucun lieu enregistré" 
-                  : `Aucun lieu "${filterCategory}"`
+              {filterCategory === "all" 
+                ? "Aucun lieu enregistré" 
+                : `Aucun lieu "${filterCategory}"`
               }
             </h3>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {activeTab === "friends_locations"
-                ? "Encouragez vos amies à enregistrer leurs lieux de lecture préférés !"
-                : "Commencez à enregistrer vos endroits préférés pour lire"
-              }
+              Commencez à enregistrer vos endroits préférés pour lire
             </p>
           </div>
         )}
