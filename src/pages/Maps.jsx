@@ -112,7 +112,7 @@ export default function Maps() {
         {/* Filter buttons */}
         <div className="flex gap-2 mb-6">
           <Button
-            variant={!showFriendsOnly ? "default" : "outline"}
+            variant={showFriendsOnly ? "outline" : "default"}
             onClick={() => setShowFriendsOnly(false)}
             className="flex-1"
             style={!showFriendsOnly ? {
@@ -121,10 +121,10 @@ export default function Maps() {
             } : {}}
           >
             <MapPin className="w-4 h-4 mr-2" />
-            Tous ({allLocations.length})
+            Mes lieux ({locations.length})
           </Button>
           <Button
-            variant={showFriendsOnly ? "default" : "outline"}
+            variant={!showFriendsOnly ? "outline" : "default"}
             onClick={() => setShowFriendsOnly(true)}
             className="flex-1"
             style={showFriendsOnly ? {
@@ -133,7 +133,7 @@ export default function Maps() {
             } : {}}
           >
             <Users className="w-4 h-4 mr-2" />
-            Amies ({friendsLocations.length})
+            Tous ({allLocations.length})
           </Button>
         </div>
 
