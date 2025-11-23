@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Image as ImageIcon, X, Eye, EyeOff } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Eye, EyeOff, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -67,6 +67,16 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
       setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, photos: [] });
       setPhotoPreview([]);
       setUploadedPhotos([]);
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId) => base44.entities.ReadingComment.delete(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      queryClient.invalidateQueries({ queryKey: ['readingComments'] });
+      queryClient.invalidateQueries({ queryKey: ['bookComments', bookId] });
+      toast.success("🗑️ Commentaire supprimé !");
     },
   });
 
@@ -301,33 +311,48 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                       )}
                     </div>
                   </div>
-                  {c.is_spoiler && !shouldAutoReveal && (
+                  <div className="flex items-center gap-2">
+                    {c.is_spoiler && !shouldAutoReveal && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleSpoiler(c.id)}
+                        className="text-xs font-medium"
+                        style={{ color: 'var(--deep-pink)' }}
+                      >
+                        {isSpoilerRevealed ? (
+                          <>
+                            <EyeOff className="w-3 h-3 mr-1" />
+                            Masquer
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3 h-3 mr-1" />
+                            Révéler spoiler
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {c.is_spoiler && shouldAutoReveal && (
+                      <span className="text-xs px-2 py-1 rounded-full" 
+                            style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                        ✅ Révélé (amie a lu)
+                      </span>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => toggleSpoiler(c.id)}
-                      className="text-xs font-medium"
-                      style={{ color: 'var(--deep-pink)' }}
+                      onClick={() => {
+                        if (window.confirm("Êtes-vous sûre de vouloir supprimer ce commentaire ?")) {
+                          deleteCommentMutation.mutate(c.id);
+                        }
+                      }}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      disabled={deleteCommentMutation.isPending}
                     >
-                      {isSpoilerRevealed ? (
-                        <>
-                          <EyeOff className="w-3 h-3 mr-1" />
-                          Masquer
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-3 h-3 mr-1" />
-                          Révéler spoiler
-                        </>
-                      )}
+                      <Trash2 className="w-4 h-4" />
                     </Button>
-                  )}
-                  {c.is_spoiler && shouldAutoReveal && (
-                    <span className="text-xs px-2 py-1 rounded-full" 
-                          style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
-                      ✅ Révélé (amie a lu)
-                    </span>
-                  )}
+                  </div>
                 </div>
 
                 {c.is_spoiler && !isSpoilerRevealed ? (
