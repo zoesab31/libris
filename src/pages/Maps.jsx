@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Map, Plus, MapPin, Users } from "lucide-react";
 import AddLocationDialog from "../components/maps/AddLocationDialog";
 import LocationCard from "../components/maps/LocationCard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 export default function Maps() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
-  const [activeTab, setActiveTab] = useState("my_locations"); // New state for tabs
+  const [showFriendsOnly, setShowFriendsOnly] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
