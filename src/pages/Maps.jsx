@@ -85,7 +85,7 @@ export default function Maps() {
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
@@ -96,51 +96,46 @@ export default function Maps() {
                 Lieux de Lecture 📍
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {activeTab === "my_locations" 
-                  ? `${locations.length} lieu${locations.length > 1 ? 'x' : ''} enregistré${locations.length > 1 ? 's' : ''}`
-                  : `${friendsLocations.length} lieu${friendsLocations.length > 1 ? 'x' : ''} de vos amies`
-                }
+                {filteredLocations.length} lieu{filteredLocations.length > 1 ? 'x' : ''}
               </p>
             </div>
           </div>
-          {activeTab === "my_locations" && (
-            <Button 
-              onClick={() => setShowAddDialog(true)}
-              className="shadow-lg text-white font-medium px-6 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <Plus className="w-5 h-5 mr-2" />
-              Ajouter un lieu
-            </Button>
-          )}
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            className="shadow-lg text-white font-medium px-6 rounded-xl"
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+            <Plus className="w-5 h-5 mr-2" />
+            Ajouter un lieu
+          </Button>
         </div>
 
-        {/* NEW: Tabs for My Locations vs Friends' Locations */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-          <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
-            <TabsTrigger
-              value="my_locations"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
-              style={activeTab === "my_locations" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              <MapPin className="w-4 h-4 mr-2" />
-              Mes lieux ({locations.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="friends_locations"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
-              style={activeTab === "friends_locations" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: '#FFFFFF'
-              } : { color: '#000000' }}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Lieux de mes amies ({friendsLocations.length})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Filter buttons */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={!showFriendsOnly ? "default" : "outline"}
+            onClick={() => setShowFriendsOnly(false)}
+            className="flex-1"
+            style={!showFriendsOnly ? {
+              background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+              color: 'white'
+            } : {}}
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            Tous ({allLocations.length})
+          </Button>
+          <Button
+            variant={showFriendsOnly ? "default" : "outline"}
+            onClick={() => setShowFriendsOnly(true)}
+            className="flex-1"
+            style={showFriendsOnly ? {
+              background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+              color: 'white'
+            } : {}}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Amies ({friendsLocations.length})
+          </Button>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
