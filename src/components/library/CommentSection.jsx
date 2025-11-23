@@ -63,7 +63,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   };
 
   const createCommentMutation = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async () => {
       let photoUrls = [];
       if (uploadedPhotos.length > 0) {
         for (const photo of uploadedPhotos) {
@@ -73,11 +73,14 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
       }
 
       await base44.entities.ReadingComment.create({
-        ...data,
+        comment: comment.comment,
+        chapter: comment.chapter || undefined,
+        page_number: comment.page_number ? parseInt(comment.page_number) : undefined,
+        mood: comment.mood || undefined,
+        is_spoiler: comment.is_spoiler,
         book_id: bookId,
         user_book_id: userBookId,
-        photos: photoUrls.length > 0 ? photoUrls : undefined,
-        page_number: data.page_number ? parseInt(data.page_number) : undefined
+        photos: photoUrls.length > 0 ? photoUrls : undefined
       });
     },
     onSuccess: () => {
@@ -280,7 +283,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             </div>
 
             <Button
-              onClick={() => createCommentMutation.mutate(comment)}
+              onClick={() => createCommentMutation.mutate()}
               disabled={!comment.comment || createCommentMutation.isPending}
               className="text-white font-medium shadow-md"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
