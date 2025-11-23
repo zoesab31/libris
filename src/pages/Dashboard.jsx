@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell, X, FileText, BookmarkCheck } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Map, Trophy, Palette, Library, Target, ArrowRight, Calendar, User, Bell, X, FileText, BookmarkCheck, MapPin, Image as ImageIcon, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -155,15 +155,14 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Book.list(),
   });
 
+  // Fetch various activity types
   const { data: comments = [] } = useQuery({
     queryKey: ['recentComments'],
     queryFn: async () => {
-      // Get current user's comments
       const myComments = await base44.entities.ReadingComment.filter({ 
         created_by: user?.email 
       }, '-created_date', 10);
 
-      // Get friends' comments on books I have
       const myBookIds = myBooks.map(b => b.book_id);
       const allComments = await base44.entities.ReadingComment.list('-created_date', 50);
       const friendsComments = allComments.filter(comment => 
@@ -171,12 +170,35 @@ export default function Dashboard() {
         myBookIds.includes(comment.book_id)
       );
 
-      // Combine and sort
       return [...myComments, ...friendsComments]
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 10);
     },
     enabled: !!user && myBooks.length > 0,
+  });
+
+  const { data: recentLocations = [] } = useQuery({
+    queryKey: ['recentLocations'],
+    queryFn: () => base44.entities.ReadingLocation.list('-created_date', 5),
+    enabled: !!user,
+  });
+
+  const { data: recentQuotes = [] } = useQuery({
+    queryKey: ['recentQuotes'],
+    queryFn: () => base44.entities.Quote.list('-created_date', 5),
+    enabled: !!user,
+  });
+
+  const { data: recentFanArt = [] } = useQuery({
+    queryKey: ['recentFanArt'],
+    queryFn: () => base44.entities.FanArt.list('-created_date', 5),
+    enabled: !!user,
+  });
+
+  const { data: recentNailInspo = [] } = useQuery({
+    queryKey: ['recentNailInspo'],
+    queryFn: () => base44.entities.NailInspo.list('-created_date', 5),
+    enabled: !!user,
   });
 
   const { data: readingGoal } = useQuery({
@@ -394,10 +416,54 @@ export default function Dashboard() {
       };
     });
 
-    return [...myActivity, ...friendsActivity, ...commentsActivity]
+    const locationsActivity = recentLocations
+      .filter(l => l.created_by === user?.email)
+      .map(l => ({
+        type: 'location',
+        location: l,
+        userName: displayName,
+        userEmail: user?.email,
+        isFriend: false,
+        date: l.created_date
+      }));
+
+    const quotesActivity = recentQuotes
+      .filter(q => q.created_by === user?.email)
+      .map(q => ({
+        type: 'quote',
+        quote: q,
+        userName: displayName,
+        userEmail: user?.email,
+        isFriend: false,
+        date: q.created_date
+      }));
+
+    const fanArtActivity = recentFanArt
+      .filter(f => f.created_by === user?.email)
+      .map(f => ({
+        type: 'fanart',
+        fanart: f,
+        userName: displayName,
+        userEmail: user?.email,
+        isFriend: false,
+        date: f.created_date
+      }));
+
+    const nailInspoActivity = recentNailInspo
+      .filter(n => n.created_by === user?.email)
+      .map(n => ({
+        type: 'nailinspo',
+        nailinspo: n,
+        userName: displayName,
+        userEmail: user?.email,
+        isFriend: false,
+        date: n.created_date
+      }));
+
+    return [...myActivity, ...friendsActivity, ...commentsActivity, ...locationsActivity, ...quotesActivity, ...fanArtActivity, ...nailInspoActivity]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 10);
-  }, [myBooks, friendsBooks, myFriends, displayName, user, comments]);
+      .slice(0, 15);
+  }, [myBooks, friendsBooks, myFriends, displayName, user, comments, recentLocations, recentQuotes, recentFanArt, recentNailInspo]);
 
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
@@ -869,10 +935,148 @@ export default function Dashboard() {
                             </div>
                           </div>
                         );
-                      }
-                      return null;
-                    })
-                  ) : (
+                        } else if (activity.type === 'location') {
+                        const book = allBooks.find(b => b.id === activity.location.book_id);
+
+                        return (
+                          <div key={`location-${activity.location.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: '#E8F4F8' }}>
+                              <MapPin className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#4299E1' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#4299E1' }}>
+                                  {activity.userName}
+                                </span> a ajouté un lieu : {activity.location.location_name}
+                              </p>
+                              {activity.location.category && (
+                                <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>
+                                  📍 {activity.location.category}
+                                </p>
+                              )}
+                              {book && (
+                                <p className="text-xs" style={{ color: '#4299E1' }}>
+                                  📖 {book.title}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                        } else if (activity.type === 'quote') {
+                        const book = allBooks.find(b => b.id === activity.quote.book_id);
+
+                        return (
+                          <div key={`quote-${activity.quote.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: '#E6FFFA' }}>
+                              <QuoteIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#38B2AC' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#38B2AC' }}>
+                                  {activity.userName}
+                                </span> a ajouté une citation
+                              </p>
+                              <p className="text-xs italic mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
+                                "{activity.quote.quote_text}"
+                              </p>
+                              {book && (
+                                <p className="text-xs" style={{ color: '#38B2AC' }}>
+                                  📖 {book.title}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                        } else if (activity.type === 'fanart') {
+                        const book = allBooks.find(b => b.id === activity.fanart.book_id);
+
+                        return (
+                          <div key={`fanart-${activity.fanart.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: '#F0E6FF' }}>
+                              <ImageIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#9B59B6' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#9B59B6' }}>
+                                  {activity.userName}
+                                </span> a ajouté un fan art
+                              </p>
+                              {activity.fanart.folder_path && (
+                                <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>
+                                  📁 {activity.fanart.folder_path}
+                                </p>
+                              )}
+                              {book && (
+                                <p className="text-xs" style={{ color: '#9B59B6' }}>
+                                  📖 {book.title}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
+                            {activity.fanart.image_url && (
+                              <img src={activity.fanart.image_url} alt="Fan art" 
+                                   className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover flex-shrink-0" />
+                            )}
+                          </div>
+                        );
+                        } else if (activity.type === 'nailinspo') {
+                        const book = allBooks.find(b => b.id === activity.nailinspo.book_id);
+
+                        return (
+                          <div key={`nailinspo-${activity.nailinspo.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: '#FFE8D9' }}>
+                              <Sparkles className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#FF9F7F' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#FF9F7F' }}>
+                                  {activity.userName}
+                                </span> a ajouté une inspiration ongles
+                              </p>
+                              {activity.nailinspo.title && (
+                                <p className="text-xs mb-1" style={{ color: '#2D3748' }}>
+                                  💅 {activity.nailinspo.title}
+                                </p>
+                              )}
+                              {book && (
+                                <p className="text-xs" style={{ color: '#FF9F7F' }}>
+                                  📖 {book.title}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
+                            {activity.nailinspo.image_url && (
+                              <img src={activity.nailinspo.image_url} alt="Nail inspo" 
+                                   className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover flex-shrink-0" />
+                            )}
+                          </div>
+                        );
+                        }
+                        return null;
+                        })
+                        ) : (
                     <div className="text-center py-6 md:py-8">
                       <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune activité récente</p>
                     </div>

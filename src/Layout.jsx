@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -269,10 +268,15 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                   borderColor: isDark ? '#2d3748' : 'var(--beige)',
                   backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="hover:bg-opacity-50 p-3 md:p-2 rounded-lg transition-colors -m-1 md:m-0" 
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
-            <h1 className="text-base md:text-xl font-bold md:hidden truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
+            <h1 className="text-base md:text-xl font-bold md:hidden truncate cursor-pointer" 
+                style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}
+                onClick={() => {
+                  const trigger = document.querySelector('[data-sidebar-trigger]');
+                  if (trigger) trigger.click();
+                }}>
               Nos Livres
             </h1>
           </div>

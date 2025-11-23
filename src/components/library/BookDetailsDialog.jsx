@@ -512,7 +512,8 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("myinfo"); // New state for tabs
+  const [activeTab, setActiveTab] = useState("myinfo");
+  const [friendsFilter, setFriendsFilter] = useState("all"); // "all" or "friends_only"
 
   const [editedData, setEditedData] = useState({
     status: userBook?.status || "À lire",
@@ -1256,17 +1257,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     color: '#FFFFFF'
                   } : { color: '#000000' }}
                 >
-                  💬 Commentaires
-                </TabsTrigger>
-                <TabsTrigger
-                  value="friends"
-                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
-                  style={activeTab === "friends" ? {
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                    color: '#FFFFFF'
-                  } : { color: '#000000' }}
-                >
-                  👭 Amies ({friendsUserBooks.length})
+                  💬 Avis ({friendsUserBooks.length + 1})
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1765,37 +1756,58 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
             </TabsContent>
 
             <TabsContent value="comments">
-              <div className="p-8">
-                <CommentSection 
-                  bookId={book.id}
-                  userBookId={userBook.id}
-                  existingComments={bookComments}
-                  friendsUserBooks={friendsUserBooks}
-                  myFriends={myFriends}
-                  allUsers={allUsers}
-                />
-              </div>
-            </TabsContent>
+              <div className="p-4 md:p-8">
+                {/* Filter Toggle */}
+                <div className="flex gap-2 mb-6">
+                  <Button
+                    variant={friendsFilter === "all" ? "default" : "outline"}
+                    onClick={() => setFriendsFilter("all")}
+                    className="flex-1 text-sm md:text-base"
+                    style={friendsFilter === "all" ? {
+                      background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                      color: 'white'
+                    } : {}}
+                  >
+                    Tous les avis
+                  </Button>
+                  <Button
+                    variant={friendsFilter === "friends_only" ? "default" : "outline"}
+                    onClick={() => setFriendsFilter("friends_only")}
+                    className="flex-1 text-sm md:text-base"
+                    style={friendsFilter === "friends_only" ? {
+                      background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                      color: 'white'
+                    } : {}}
+                  >
+                    Amies ({friendsUserBooks.length})
+                  </Button>
+                </div>
 
-            <TabsContent value="friends">
-              <div className="p-8 space-y-6">
-                <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Users className="w-6 h-6" />
-                  Avis de mes amies sur "{book.title}"
-                </h2>
-
-                {friendsUserBooks.length === 0 ? (
-                  <div className="text-center py-20">
-                    <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                    <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                      Aucune amie n'a lu ce livre
+                {friendsFilter === "all" && (
+                  <>
+                    <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                      💬 Mes commentaires
                     </h3>
-                    <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                      Soyez la première à partager votre avis !
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
+                    <CommentSection 
+                      bookId={book.id}
+                      userBookId={userBook.id}
+                      existingComments={bookComments}
+                      friendsUserBooks={friendsUserBooks}
+                      myFriends={myFriends}
+                      allUsers={allUsers}
+                    />
+                  </>
+                )}
+
+                {/* Friends Reviews Section */}
+                {(friendsFilter === "all" || friendsFilter === "friends_only") && friendsUserBooks.length > 0 && (
+                  <div className={friendsFilter === "all" ? "mt-8" : ""}>
+                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                      <Users className="w-5 h-5" />
+                      Avis de mes amies
+                    </h3>
+
+                    <div className="space-y-4 md:space-y-6">
                     {friendsUserBooks.map((friendBook) => {
                       const friend = myFriends.find(f => f.friend_email === friendBook.created_by);
                       const friendUser = allUsers.find(u => u.email === friendBook.created_by);
