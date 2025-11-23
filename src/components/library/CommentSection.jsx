@@ -38,13 +38,19 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
     mutationFn: async () => {
       let photoUrls = [];
       if (uploadedPhotos.length > 0) {
-        for (const photo of uploadedPhotos) {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
-          photoUrls.push(file_url);
+        try {
+          for (const photo of uploadedPhotos) {
+            const result = await base44.integrations.Core.UploadFile({ file: photo });
+            photoUrls.push(result.file_url);
+          }
+        } catch (error) {
+          console.error("Error uploading photos:", error);
+          toast.error("Erreur lors de l'upload des photos");
+          throw error;
         }
       }
 
-      await base44.entities.ReadingComment.create({
+      return await base44.entities.ReadingComment.create({
         comment: comment.comment,
         chapter: comment.chapter || undefined,
         page_number: comment.page_number ? parseInt(comment.page_number) : undefined,
@@ -63,6 +69,10 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
       setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, photos: [] });
       setPhotoPreview([]);
       setUploadedPhotos([]);
+    },
+    onError: (error) => {
+      console.error("Error creating comment:", error);
+      toast.error("Erreur lors de la publication du commentaire");
     },
   });
 
@@ -329,15 +339,26 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                 </div>
 
                 {c.is_spoiler && !isSpoilerRevealed ? (
-                  <div className="p-6 rounded-lg text-center border-2 cursor-pointer hover:bg-red-50 transition-colors" 
-                       style={{ backgroundColor: '#FFF5F5', borderColor: '#FEE2E2' }}
-                       onClick={() => toggleSpoiler(c.id)}>
-                    <p className="text-base font-bold mb-1" style={{ color: '#DC2626' }}>
-                      ⚠️ Spoiler masqué
-                    </p>
-                    <p className="text-sm" style={{ color: '#991B1B' }}>
-                      Cliquez pour révéler si vous avez lu le livre
-                    </p>
+                  <div>
+                    <div className="p-6 rounded-lg text-center border-2 cursor-pointer hover:bg-red-50 transition-colors" 
+                         style={{ backgroundColor: '#FFF5F5', borderColor: '#FEE2E2' }}
+                         onClick={() => toggleSpoiler(c.id)}>
+                      <p className="text-base font-bold mb-1" style={{ color: '#DC2626' }}>
+                        ⚠️ Spoiler masqué
+                      </p>
+                      <p className="text-sm" style={{ color: '#991B1B' }}>
+                        Cliquez pour révéler si vous avez lu le livre
+                      </p>
+                    </div>
+                    {/* Photos masquées aussi */}
+                    {c.photos && c.photos.length > 0 && (
+                      <div className="mt-3 p-4 rounded-lg text-center" 
+                           style={{ backgroundColor: '#FFF5F5' }}>
+                        <p className="text-xs font-medium" style={{ color: '#DC2626' }}>
+                          📷 {c.photos.length} photo{c.photos.length > 1 ? 's' : ''} masquée{c.photos.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
