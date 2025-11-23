@@ -182,7 +182,7 @@ export default function Maps() {
           <div className="text-center py-20">
             <MapPin className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {activeTab === "friends_locations" && friendsLocations.length === 0
+              {showFriendsOnly && friendsLocations.length === 0
                 ? "Vos amies n'ont pas encore de lieux enregistrés"
                 : filterCategory === "all" 
                   ? "Aucun lieu enregistré" 
@@ -190,7 +190,7 @@ export default function Maps() {
               }
             </h3>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {activeTab === "friends_locations"
+              {showFriendsOnly
                 ? "Encouragez vos amies à enregistrer leurs lieux de lecture préférés !"
                 : "Commencez à enregistrer vos endroits préférés pour lire"
               }
