@@ -82,6 +82,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recentComments'] });
+      queryClient.invalidateQueries({ queryKey: ['readingComments'] });
       queryClient.invalidateQueries({ queryKey: ['bookComments', bookId] });
       toast.success("✅ Commentaire ajouté !");
       setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, photos: [] });
