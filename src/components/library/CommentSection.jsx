@@ -20,7 +20,7 @@ const MOODS = [
   { emoji: "🥰", label: "Amour" }
 ];
 
-export default function CommentSection({ bookId, userBookId, existingComments = [] }) {
+export default function CommentSection({ bookId, userBookId, existingComments = [], friendsUserBooks = [], myFriends = [], allUsers = [] }) {
   const queryClient = useQueryClient();
   const [comment, setComment] = useState({
     comment: "",
@@ -34,6 +34,9 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   const [uploadedPhotos, setUploadedPhotos] = useState([]);
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
+
+  // Check if any friend has read this book (status = "Lu")
+  const friendHasReadBook = friendsUserBooks.some(fub => fub.status === "Lu");
 
   // Autosave on unmount or when leaving
   useEffect(() => {
@@ -295,7 +298,9 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
           </h3>
           
           {existingComments.map((c) => {
-            const isSpoilerRevealed = revealedSpoilers.has(c.id);
+            // Auto-reveal if friend has read the book
+            const shouldAutoReveal = friendHasReadBook;
+            const isSpoilerRevealed = shouldAutoReveal || revealedSpoilers.has(c.id);
             
             return (
               <div
@@ -319,7 +324,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                       )}
                     </div>
                   </div>
-                  {c.is_spoiler && (
+                  {c.is_spoiler && !shouldAutoReveal && (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -340,13 +345,20 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                       )}
                     </Button>
                   )}
+                  {c.is_spoiler && shouldAutoReveal && (
+                    <span className="text-xs px-2 py-1 rounded-full" 
+                          style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                      ✅ Révélé (amie a lu)
+                    </span>
+                  )}
                 </div>
 
                 {c.is_spoiler && !isSpoilerRevealed ? (
-                  <div className="p-4 rounded-lg text-center border-2" 
-                       style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--beige)' }}>
+                  <div className="p-4 rounded-lg text-center border-2 cursor-pointer hover:bg-pink-50 transition-colors" 
+                       style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--beige)' }}
+                       onClick={() => toggleSpoiler(c.id)}>
                     <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
-                      ⚠️ Contenu masqué (spoiler)
+                      ⚠️ Cliquez pour révéler le spoiler
                     </p>
                   </div>
                 ) : (

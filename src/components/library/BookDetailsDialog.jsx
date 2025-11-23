@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -32,12 +31,14 @@ import {
   Plus,
   Play,
   Layers,
-  Search
+  Search,
+  MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
+import CommentSection from "./CommentSection";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -583,6 +584,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
       status: "Acceptée" 
     }),
     enabled: !!user && open,
+  });
+
+  // Fetch book comments
+  const { data: bookComments = [] } = useQuery({
+    queryKey: ['bookComments', book?.id],
+    queryFn: () => base44.entities.ReadingComment.filter({ 
+      book_id: book?.id,
+      created_by: user?.email
+    }, '-created_date'),
+    enabled: !!book && !!user && open,
   });
 
   // NEW: Fetch all User entities to get profile pictures
@@ -1229,23 +1240,33 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
               <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
                 <TabsTrigger
                   value="myinfo"
-                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
                   style={activeTab === "myinfo" ? {
                     background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                     color: '#FFFFFF'
                   } : { color: '#000000' }}
                 >
-                  📝 Mes informations
+                  📝 Mes infos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="comments"
+                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
+                  style={activeTab === "comments" ? {
+                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    color: '#FFFFFF'
+                  } : { color: '#000000' }}
+                >
+                  💬 Commentaires
                 </TabsTrigger>
                 <TabsTrigger
                   value="friends"
-                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
                   style={activeTab === "friends" ? {
                     background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                     color: '#FFFFFF'
                   } : { color: '#000000' }}
                 >
-                  👭 Avis de mes amies ({friendsUserBooks.length})
+                  👭 Amies ({friendsUserBooks.length})
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1740,6 +1761,19 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     )}
                   </Button>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="comments">
+              <div className="p-8">
+                <CommentSection 
+                  bookId={book.id}
+                  userBookId={userBook.id}
+                  existingComments={bookComments}
+                  friendsUserBooks={friendsUserBooks}
+                  myFriends={myFriends}
+                  allUsers={allUsers}
+                />
               </div>
             </TabsContent>
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -158,7 +157,26 @@ export default function Dashboard() {
 
   const { data: comments = [] } = useQuery({
     queryKey: ['recentComments'],
-    queryFn: () => base44.entities.ReadingComment.list('-created_date', 5),
+    queryFn: async () => {
+      // Get current user's comments
+      const myComments = await base44.entities.ReadingComment.filter({ 
+        created_by: user?.email 
+      }, '-created_date', 10);
+
+      // Get friends' comments on books I have
+      const myBookIds = myBooks.map(b => b.book_id);
+      const allComments = await base44.entities.ReadingComment.list('-created_date', 50);
+      const friendsComments = allComments.filter(comment => 
+        comment.created_by !== user?.email &&
+        myBookIds.includes(comment.book_id)
+      );
+
+      // Combine and sort
+      return [...myComments, ...friendsComments]
+        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+        .slice(0, 10);
+    },
+    enabled: !!user && myBooks.length > 0,
   });
 
   const { data: readingGoal } = useQuery({
@@ -339,10 +357,12 @@ export default function Dashboard() {
     const myActivity = myBooks
       .filter(b => b.status === "Lu" && b.end_date)
       .map(b => ({
+        type: 'finished',
         userBook: b,
         userName: displayName,
         userEmail: user?.email,
-        isFriend: false
+        isFriend: false,
+        date: b.end_date
       }));
 
     const friendsActivity = friendsBooks
@@ -350,17 +370,34 @@ export default function Dashboard() {
       .map(b => {
         const friend = myFriends.find(f => f.friend_email === b.created_by);
         return {
+          type: 'finished',
           userBook: b,
           userName: friend?.friend_name?.split(' ')[0] || friend?.friend_email,
           userEmail: b.created_by,
-          isFriend: true
+          isFriend: true,
+          date: b.end_date
         };
       });
 
-    return [...myActivity, ...friendsActivity]
-      .sort((a, b) => new Date(b.userBook.end_date) - new Date(a.userBook.end_date))
-      .slice(0, 8);
-  }, [myBooks, friendsBooks, myFriends, displayName, user]);
+    const commentsActivity = comments.map(c => {
+      const friend = myFriends.find(f => f.friend_email === c.created_by);
+      const isFriend = c.created_by !== user?.email;
+      return {
+        type: 'comment',
+        comment: c,
+        userName: isFriend 
+          ? (friend?.friend_name?.split(' ')[0] || c.created_by?.split('@')[0])
+          : displayName,
+        userEmail: c.created_by,
+        isFriend: isFriend,
+        date: c.created_date
+      };
+    });
+
+    return [...myActivity, ...friendsActivity, ...commentsActivity]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 10);
+  }, [myBooks, friendsBooks, myFriends, displayName, user, comments]);
 
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
   const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
@@ -760,43 +797,80 @@ export default function Dashboard() {
                 </h2>
                 <div className="space-y-3 md:space-y-4">
                   {recentActivity.length > 0 ? (
-                    recentActivity.map((activity) => {
-                      const book = allBooks.find(b => b.id === activity.userBook.book_id);
-                      if (!book) return null;
+                    recentActivity.map((activity, idx) => {
+                      if (activity.type === 'finished') {
+                        const book = allBooks.find(b => b.id === activity.userBook.book_id);
+                        if (!book) return null;
 
-                      return (
-                        <div key={`${activity.userEmail}-${activity.userBook.id}`}
-                             className="flex items-start gap-3 pb-3 border-b last:border-0"
-                             style={{ borderColor: '#F7FAFC' }}>
-                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                               style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
-                            <BookOpen className="w-4 h-4 md:w-5 md:h-5"
-                                     style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
+                        return (
+                          <div key={`finished-${activity.userEmail}-${activity.userBook.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
+                              <BookOpen className="w-4 h-4 md:w-5 md:h-5"
+                                       style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold"
+                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
+                                  {activity.userName}
+                                </span> a terminé {book.title}
+                              </p>
+                              {activity.userBook.rating && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star key={i} className="w-3 h-3 md:w-4 md:h-4"
+                                          style={{
+                                            fill: i < activity.userBook.rating ? '#FFD700' : 'none',
+                                            stroke: '#FFD700'
+                                          }} />
+                                  ))}
+                                </div>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
-                              <span className="font-bold"
-                                    style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
-                                {activity.userName}
-                              </span> a terminé {book.title}
-                            </p>
-                            {activity.userBook.rating && (
-                              <div className="flex items-center gap-1 mb-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className="w-3 h-3 md:w-4 md:h-4"
-                                        style={{
-                                          fill: i < activity.userBook.rating ? '#FFD700' : 'none',
-                                          stroke: '#FFD700'
-                                        }} />
-                                ))}
-                              </div>
-                            )}
-                            <p className="text-xs" style={{ color: '#A0AEC0' }}>
-                              {format(new Date(activity.userBook.end_date), 'dd MMM yyyy', { locale: fr })}
-                            </p>
+                        );
+                      } else if (activity.type === 'comment') {
+                        const book = allBooks.find(b => b.id === activity.comment.book_id);
+                        if (!book) return null;
+
+                        return (
+                          <div key={`comment-${activity.comment.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: activity.isFriend ? '#FFF4E6' : '#E6F7FF' }}>
+                              <MessageCircle className="w-4 h-4 md:w-5 md:h-5"
+                                       style={{ color: activity.isFriend ? '#FF9F7F' : '#4299E1' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold"
+                                      style={{ color: activity.isFriend ? '#FF9F7F' : '#4299E1' }}>
+                                  {activity.userName}
+                                </span> a ajouté un commentaire sur {book.title}
+                              </p>
+                              {activity.comment.mood && (
+                                <p className="text-xl mb-1">{activity.comment.mood}</p>
+                              )}
+                              {activity.comment.chapter && (
+                                <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                  {activity.comment.chapter}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      );
+                        );
+                      }
+                      return null;
                     })
                   ) : (
                     <div className="text-center py-6 md:py-8">
