@@ -2,16 +2,20 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, User } from "lucide-react";
+import { Heart, Plus, User, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddBookBoyfriendDialog from "../components/profile/AddBookBoyfriendDialog";
 import BookBoyfriendCard from "../components/profile/BookBoyfriendCard";
+import AddFavoriteCoupleDialog from "../components/profile/AddFavoriteCoupleDialog";
+import FavoriteCoupleCard from "../components/profile/FavoriteCoupleCard";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddCoupleDialog, setShowAddCoupleDialog] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState(null);
-  const [selectedGender, setSelectedGender] = useState("male");
+  const [editingCouple, setEditingCouple] = useState(null);
+  const [selectedTab, setSelectedTab] = useState("male");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -20,6 +24,12 @@ export default function Profile() {
   const { data: bookBoyfriends = [], isLoading } = useQuery({
     queryKey: ['bookBoyfriends'],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: user?.email }, 'rank'),
+    enabled: !!user,
+  });
+
+  const { data: favoriteCouples = [] } = useQuery({
+    queryKey: ['favoriteCouples'],
+    queryFn: () => base44.entities.FavoriteCouple.filter({ created_by: user?.email }, 'rank'),
     enabled: !!user,
   });
 
@@ -41,6 +51,16 @@ export default function Profile() {
     setEditingCharacter(null);
   };
 
+  const handleEditCouple = (couple) => {
+    setEditingCouple(couple);
+    setShowAddCoupleDialog(true);
+  };
+
+  const handleCloseCoupleDialog = () => {
+    setShowAddCoupleDialog(false);
+    setEditingCouple(null);
+  };
+
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
@@ -55,44 +75,59 @@ export default function Profile() {
                 Mes Personnages Préférés 💕
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} adoré{bookBoyfriends.length > 1 ? 's' : ''}
+                {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} • {favoriteCouples.length} couple{favoriteCouples.length > 1 ? 's' : ''}
               </p>
             </div>
           </div>
-          <Button 
-            onClick={() => setShowAddDialog(true)}
-            className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
-            <Plus className="w-5 h-5 mr-2" />
-            Ajouter un personnage
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => selectedTab === "couples" ? setShowAddCoupleDialog(true) : setShowAddDialog(true)}
+              className="shadow-lg text-white font-medium px-6 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              {selectedTab === "couples" ? "Ajouter un couple" : "Ajouter un personnage"}
+            </Button>
+          </div>
         </div>
 
-        <Tabs value={selectedGender} onValueChange={setSelectedGender}>
-          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 grid grid-cols-3">
             <TabsTrigger 
               value="male" 
               className="rounded-lg font-bold data-[state=active]:text-white"
-              style={selectedGender === "male" ? {
+              style={selectedTab === "male" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
                 color: '#FFFFFF'
               } : {
                 color: '#000000'
               }}
             >
-              Personnages masculins ({maleCharacters.length})
+              Masculins ({maleCharacters.length})
             </TabsTrigger>
             <TabsTrigger 
               value="female" 
               className="rounded-lg font-bold data-[state=active]:text-white"
-              style={selectedGender === "female" ? {
+              style={selectedTab === "female" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
                 color: '#FFFFFF'
               } : {
                 color: '#000000'
               }}
             >
-              Personnages féminins ({femaleCharacters.length})
+              Féminins ({femaleCharacters.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="couples" 
+              className="rounded-lg font-bold data-[state=active]:text-white"
+              style={selectedTab === "couples" ? {
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
+              <Users className="w-4 h-4 mr-1 inline" />
+              Couples ({favoriteCouples.length})
             </TabsTrigger>
           </TabsList>
 
@@ -151,6 +186,41 @@ export default function Profile() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="couples">
+            {favoriteCouples.length > 0 ? (
+              <div className="space-y-4">
+                {favoriteCouples.map((couple) => {
+                  const book = allBooks.find(b => b.id === couple.book_id);
+                  return (
+                    <FavoriteCoupleCard 
+                      key={couple.id} 
+                      couple={couple} 
+                      book={book}
+                      onEdit={handleEditCouple}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucun couple préféré
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Ajoutez vos couples préférés ! 💕
+                </p>
+                <Button 
+                  onClick={() => setShowAddCoupleDialog(true)}
+                  className="shadow-lg text-white font-medium px-6 rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter un couple
+                </Button>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
 
         <AddBookBoyfriendDialog 
@@ -159,6 +229,14 @@ export default function Profile() {
           books={allBooks}
           existingCharacters={bookBoyfriends}
           editingCharacter={editingCharacter}
+        />
+
+        <AddFavoriteCoupleDialog 
+          open={showAddCoupleDialog}
+          onOpenChange={handleCloseCoupleDialog}
+          books={allBooks}
+          existingCouples={favoriteCouples}
+          editingCouple={editingCouple}
         />
       </div>
     </div>
