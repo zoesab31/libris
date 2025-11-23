@@ -158,10 +158,11 @@ export default function Maps() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredLocations.map((location) => {
               const book = location.book_id ? allBooks.find(b => b.id === location.book_id) : null;
-              const friend = activeTab === "friends_locations" 
+              const isFriendLocation = location.created_by !== user?.email;
+              const friend = isFriendLocation 
                 ? myFriends.find(f => f.friend_email === location.created_by)
                 : null;
-              const friendUser = activeTab === "friends_locations"
+              const friendUser = isFriendLocation
                 ? allUsers.find(u => u.email === location.created_by)
                 : null;
               
@@ -172,7 +173,7 @@ export default function Maps() {
                   book={book}
                   friend={friend}
                   friendUser={friendUser}
-                  showFriendInfo={activeTab === "friends_locations"}
+                  showFriendInfo={isFriendLocation}
                 />
               );
             })}
