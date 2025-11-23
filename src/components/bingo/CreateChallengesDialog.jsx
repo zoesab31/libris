@@ -8,9 +8,9 @@ import { Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-export default function CreateChallengesDialog({ open, onOpenChange, existingChallenges, defaultChallenges }) {
+export default function CreateChallengesDialog({ open, onOpenChange, existingChallenges, defaultChallenges, selectedYear, gridSize }) {
   const queryClient = useQueryClient();
-  const [challenges, setChallenges] = useState(Array(25).fill(""));
+  const [challenges, setChallenges] = useState(Array(gridSize || 25).fill(""));
   const [mode, setMode] = useState('custom'); // Controls the active tab: 'default' or 'custom'
 
   useEffect(() => {
@@ -33,8 +33,10 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
       
       const createPromises = challenges.map((title, index) => 
         base44.entities.BingoChallenge.create({
-          title: title || `Défi ${index + 1}`, // Use current challenges state for creation
+          title: title || `Défi ${index + 1}`,
           position: index,
+          year: selectedYear || new Date().getFullYear(),
+          grid_size: gridSize || 25,
           is_completed: false,
         })
       );
