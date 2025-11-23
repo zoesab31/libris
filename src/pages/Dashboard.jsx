@@ -532,6 +532,7 @@ export default function Dashboard() {
   const quickAccessItems = [
     { name: "Bibliothèque", icon: Library, color: '#FFE4EC', iconColor: '#FF69B4', url: "MyLibrary" },
     { name: "Lectures communes", icon: Users, color: '#F0E6FF', iconColor: '#9B59B6', url: "SharedReadings" },
+    { name: "Mes Amies", icon: Heart, color: '#FFE8D9', iconColor: '#FF9F7F', url: "Friends" },
     { name: "Tournoi", icon: Trophy, color: '#FFF9E6', iconColor: '#FFD700', url: "BookTournament" },
     { name: "Maps", icon: Map, color: '#E8F4F8', iconColor: '#4299E1', url: "Maps" },
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
@@ -1138,9 +1139,9 @@ export default function Dashboard() {
                 {quickAccessItems.map((item) => (
                   <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
                     <button
-                      className="w-full p-4 rounded-2xl text-center transition-all quick-action h-[100px] flex flex-col items-center justify-center"
+                      className="w-full p-4 rounded-2xl text-center transition-all quick-action h-full"
                       style={{ backgroundColor: item.color }}>
-                      <item.icon className="w-6 h-6 mb-2" style={{ color: item.iconColor }} />
+                      <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
                       <p className="text-xs font-medium leading-tight" style={{ color: '#2D3748' }}>{item.name}</p>
                     </button>
                   </Link>
