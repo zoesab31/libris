@@ -58,17 +58,24 @@ export default function Maps() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: activeTab === "friends_locations",
+    enabled: !!user,
   });
 
-  const currentLocations = activeTab === "my_locations" ? locations : friendsLocations;
+  // Combine all locations
+  const allLocations = [...locations, ...friendsLocations];
 
+  // Filter by friends toggle
+  const locationsByFriendFilter = showFriendsOnly 
+    ? friendsLocations 
+    : allLocations;
+
+  // Filter by category
   const filteredLocations = filterCategory === "all" 
-    ? currentLocations 
-    : currentLocations.filter(loc => loc.category === filterCategory);
+    ? locationsByFriendFilter 
+    : locationsByFriendFilter.filter(loc => loc.category === filterCategory);
 
   // Stats by category
-  const statsByCategory = currentLocations.reduce((acc, loc) => {
+  const statsByCategory = locationsByFriendFilter.reduce((acc, loc) => {
     acc[loc.category] = (acc[loc.category] || 0) + 1;
     return acc;
   }, {});
