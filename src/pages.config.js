@@ -19,7 +19,7 @@ import BookTournament from './pages/BookTournament';
 import Series from './pages/Series';
 import MusicPlaylist from './pages/MusicPlaylist';
 import OneSignalGuide from './pages/OneSignalGuide';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -49,5 +49,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
