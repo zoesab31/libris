@@ -231,16 +231,16 @@ export default function PALManager({ open, onOpenChange, pals }) {
 
               <div className="col-span-2">
                 <Label>Emoji</Label>
-                <Select value={icon} onValueChange={setIcon}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["📚", "📖", "📕", "📗", "📘", "📙", "🎯", "⭐", "💫", "✨", "🌟", "🔖"].map(e => (
-                      <SelectItem key={e} value={e}>{e}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  value={icon}
+                  onChange={(e) => setIcon(e.target.value)}
+                  placeholder="Choisissez un emoji (ex: 📚, 🎯, ⭐)"
+                  className="text-2xl text-center"
+                  maxLength={2}
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                  💡 Tapez ou collez l'emoji de votre choix
+                </p>
               </div>
             </div>
 
