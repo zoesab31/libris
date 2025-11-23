@@ -1139,9 +1139,9 @@ export default function Dashboard() {
                 {quickAccessItems.map((item) => (
                   <Link key={item.name} to={createPageUrl(item.url)} className="flex-shrink-0 w-[120px] scroll-snap-start">
                     <button
-                      className="w-full p-4 rounded-2xl text-center transition-all quick-action h-full"
+                      className="w-full p-4 rounded-2xl text-center transition-all quick-action h-[100px] flex flex-col items-center justify-center"
                       style={{ backgroundColor: item.color }}>
-                      <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
+                      <item.icon className="w-6 h-6 mb-2" style={{ color: item.iconColor }} />
                       <p className="text-xs font-medium leading-tight" style={{ color: '#2D3748' }}>{item.name}</p>
                     </button>
                   </Link>
