@@ -1977,20 +1977,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 )}
 
-                {/* Back Button */}
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setActiveTab("myinfo")}
-                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Retour à mes informations
-                  </Button>
-                </div>
+                {friendsFilter === "friends_only" && friendsUserBooks.length === 0 && (
+                  <div className="text-center py-12 md:py-20">
+                    <Users className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <h3 className="text-xl md:text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                      Aucune amie n'a lu ce livre
+                    </h3>
+                    <p className="text-base md:text-lg" style={{ color: 'var(--warm-pink)' }}>
+                      Soyez la première !
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
