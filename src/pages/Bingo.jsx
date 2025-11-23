@@ -194,7 +194,7 @@ export default function Bingo() {
           onOpenChange={setShowCreate}
           existingChallenges={challenges}
           defaultChallenges={DEFAULT_CHALLENGES}
-          year={selectedYear}
+          selectedYear={selectedYear}
           gridSize={selectedGridSize}
         />
 
