@@ -376,8 +376,17 @@ export default function Dashboard() {
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
 
   const recentActivity = React.useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const isCurrentMonth = (dateString) => {
+      const date = new Date(dateString);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    };
+
     const myActivity = myBooks
-      .filter(b => b.status === "Lu" && b.end_date)
+      .filter(b => b.status === "Lu" && b.end_date && isCurrentMonth(b.end_date))
       .map(b => ({
         type: 'finished',
         userBook: b,
@@ -388,7 +397,7 @@ export default function Dashboard() {
       }));
 
     const friendsActivity = friendsBooks
-      .filter(b => b.status === "Lu" && b.end_date)
+      .filter(b => b.status === "Lu" && b.end_date && isCurrentMonth(b.end_date))
       .map(b => {
         const friend = myFriends.find(f => f.friend_email === b.created_by);
         return {
@@ -401,23 +410,25 @@ export default function Dashboard() {
         };
       });
 
-    const commentsActivity = comments.map(c => {
-      const friend = myFriends.find(f => f.friend_email === c.created_by);
-      const isFriend = c.created_by !== user?.email;
-      return {
-        type: 'comment',
-        comment: c,
-        userName: isFriend 
-          ? (friend?.friend_name?.split(' ')[0] || c.created_by?.split('@')[0])
-          : displayName,
-        userEmail: c.created_by,
-        isFriend: isFriend,
-        date: c.created_date
-      };
-    });
+    const commentsActivity = comments
+      .filter(c => isCurrentMonth(c.created_date))
+      .map(c => {
+        const friend = myFriends.find(f => f.friend_email === c.created_by);
+        const isFriend = c.created_by !== user?.email;
+        return {
+          type: 'comment',
+          comment: c,
+          userName: isFriend 
+            ? (friend?.friend_name?.split(' ')[0] || c.created_by?.split('@')[0])
+            : displayName,
+          userEmail: c.created_by,
+          isFriend: isFriend,
+          date: c.created_date
+        };
+      });
 
     const locationsActivity = recentLocations
-      .filter(l => l.created_by === user?.email)
+      .filter(l => l.created_by === user?.email && isCurrentMonth(l.created_date))
       .map(l => ({
         type: 'location',
         location: l,
@@ -428,7 +439,7 @@ export default function Dashboard() {
       }));
 
     const quotesActivity = recentQuotes
-      .filter(q => q.created_by === user?.email)
+      .filter(q => q.created_by === user?.email && isCurrentMonth(q.created_date))
       .map(q => ({
         type: 'quote',
         quote: q,
@@ -439,7 +450,7 @@ export default function Dashboard() {
       }));
 
     const fanArtActivity = recentFanArt
-      .filter(f => f.created_by === user?.email)
+      .filter(f => f.created_by === user?.email && isCurrentMonth(f.created_date))
       .map(f => ({
         type: 'fanart',
         fanart: f,
@@ -450,7 +461,7 @@ export default function Dashboard() {
       }));
 
     const nailInspoActivity = recentNailInspo
-      .filter(n => n.created_by === user?.email)
+      .filter(n => n.created_by === user?.email && isCurrentMonth(n.created_date))
       .map(n => ({
         type: 'nailinspo',
         nailinspo: n,
