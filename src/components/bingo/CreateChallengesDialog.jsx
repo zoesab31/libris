@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,10 +53,10 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-full md:max-w-3xl max-h-[90vh] overflow-y-auto mx-2 md:mx-0">
         <DialogHeader>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--dark-text)' }}>
-            {existingChallenges.length > 0 ? "Modifier mon Bingo" : "Créer mon Bingo de lecture"}
+          <DialogTitle className="text-xl md:text-2xl" style={{ color: 'var(--dark-text)' }}>
+            {existingChallenges.length > 0 ? "Modifier mon Bingo" : "Créer mon Bingo"}
           </DialogTitle>
         </DialogHeader>
 
@@ -103,7 +102,7 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
           {/* Existing challenge input grid now as "Custom" tab content */}
           <TabsContent value="custom">
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                 {challenges.map((challenge, index) => (
                   <div key={index}>
                     <Input
@@ -114,8 +113,14 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
                         setChallenges(newChallenges);
                       }}
                       placeholder={`Défi ${index + 1}`}
-                      className={index === 12 ? "border-yellow-400 bg-yellow-50" : ""}
+                      className={`text-sm md:text-base ${index === 12 ? "border-pink-400 bg-pink-50 font-bold text-center" : ""}`}
+                      disabled={index === 12}
                     />
+                    {index === 12 && (
+                      <p className="text-xs mt-1 text-center" style={{ color: 'var(--warm-pink)' }}>
+                        Case centrale (année)
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -123,18 +128,18 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
               <Button
                 onClick={() => createMutation.mutate()}
                 disabled={createMutation.isPending || challenges.filter(c => c.trim()).length < 10}
-                className="w-full text-white font-medium py-6 text-lg"
+                className="w-full text-white font-medium py-4 md:py-6 text-base md:text-lg"
                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}
               >
                 {createMutation.isPending ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Création en cours...
+                    <Loader2 className="w-4 md:w-5 h-4 md:h-5 mr-2 animate-spin" />
+                    <span className="text-sm md:text-base">Création...</span>
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-5 h-5 mr-2" />
-                    {existingChallenges.length > 0 ? "Mettre à jour le Bingo" : "Créer mon Bingo"}
+                    <Wand2 className="w-4 md:w-5 h-4 md:h-5 mr-2" />
+                    <span className="text-sm md:text-base">{existingChallenges.length > 0 ? "Mettre à jour" : "Créer"}</span>
                   </>
                 )}
               </Button>

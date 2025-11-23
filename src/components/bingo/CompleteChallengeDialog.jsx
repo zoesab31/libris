@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -79,9 +78,9 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-full md:max-w-md mx-2 md:mx-0">
         <DialogHeader>
-          <DialogTitle style={{ color: 'var(--deep-brown)' }}>
+          <DialogTitle className="text-base md:text-lg" style={{ color: 'var(--deep-brown)' }}>
             {challenge.title}
           </DialogTitle>
         </DialogHeader>
@@ -166,18 +165,18 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 md:gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="flex-1 text-sm md:text-base py-5 md:py-3"
             >
               Annuler
             </Button>
             <Button
               onClick={handleComplete}
               disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
-              className="flex-1 font-medium"
+              className="flex-1 font-medium text-sm md:text-base py-5 md:py-3"
               style={{ 
                 background: challenge.is_completed 
                   ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
@@ -187,13 +186,13 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             >
               {challenge.is_completed ? (
                 <>
-                  <X className="w-4 h-4 mr-2" />
-                  Marquer incomplet
+                  <X className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="text-xs md:text-base">Incomplet</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Valider le défi
+                  <Check className="w-4 h-4 mr-1 md:mr-2" />
+                  <span className="text-xs md:text-base">Valider</span>
                 </>
               )}
             </Button>

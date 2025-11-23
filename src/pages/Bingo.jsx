@@ -80,29 +80,29 @@ export default function Bingo() {
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+    <div className="p-3 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+        <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
                  style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-              <Trophy className="w-7 h-7 text-white" />
+              <Trophy className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Bingo Lecture {selectedYear}
+              <h1 className="text-xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+                Bingo {selectedYear}
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {completedCount} / {totalCount} défis complétés
+              <p className="text-sm md:text-lg" style={{ color: 'var(--warm-pink)' }}>
+                {completedCount} / {totalCount} défis
               </p>
             </div>
           </div>
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 md:gap-3 flex-wrap">
             {/* Year Selector */}
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-4 py-2 rounded-lg border-2 font-medium"
+              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base"
               style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
             >
               {years.map(year => (
@@ -114,63 +114,66 @@ export default function Bingo() {
             <select
               value={selectedGridSize}
               onChange={(e) => setSelectedGridSize(parseInt(e.target.value))}
-              className="px-4 py-2 rounded-lg border-2 font-medium"
+              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base"
               style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
             >
-              <option value={16}>4x4 (16 cases)</option>
-              <option value={25}>5x5 (25 cases)</option>
+              <option value={16}>4x4</option>
+              <option value={25}>5x5</option>
             </select>
 
-            {hasBingo && (
+            <Button 
+              onClick={() => setShowCreate(true)}
+              className="shadow-lg text-white font-medium px-4 md:px-6 py-2 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
+              <Sparkles className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
+              <span className="text-sm md:text-base">{challenges.length === 0 ? "Créer" : "Modifier"}</span>
+            </Button>
+            {challenges.length > 0 && (
               <Button 
                 variant="outline"
-                onClick={() => resetMutation.mutate()}
+                onClick={() => {
+                  if (window.confirm("Êtes-vous sûre de vouloir réinitialiser tout le Bingo ?")) {
+                    resetMutation.mutate();
+                  }
+                }}
                 disabled={resetMutation.isPending}
+                className="px-4 md:px-6 py-2"
                 style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Recommencer
-              </Button>
-            )}
-            {!hasBingo && (
-              <Button 
-                onClick={() => setShowCreate(true)}
-                className="shadow-lg text-white font-medium px-6 rounded-xl"
-                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-                <Sparkles className="w-5 h-5 mr-2" />
-                {challenges.length === 0 ? "Créer mon Bingo" : "Modifier"}
+                <RefreshCw className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
+                <span className="text-sm md:text-base">Réinitialiser</span>
               </Button>
             )}
           </div>
         </div>
 
         {challenges.length === 0 ? (
-          <div className="text-center py-20">
-            <Trophy className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--gold)' }} />
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              Créez votre Bingo de lecture {selectedYear} !
+          <div className="text-center py-12 md:py-20">
+            <Trophy className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 opacity-20" style={{ color: 'var(--gold)' }} />
+            <h3 className="text-xl md:text-2xl font-bold mb-2 px-4" style={{ color: 'var(--dark-text)' }}>
+              Créez votre Bingo {selectedYear} !
             </h3>
-            <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-              Relevez {selectedGridSize} défis littéraires cette année
+            <p className="text-base md:text-lg mb-4 md:mb-6 px-4" style={{ color: 'var(--warm-pink)' }}>
+              Relevez {selectedGridSize} défis littéraires
             </p>
             <Button 
               onClick={() => setShowCreate(true)}
-              className="shadow-lg text-white font-medium px-8 py-6 text-lg rounded-xl"
+              className="shadow-lg text-white font-medium px-6 md:px-8 py-4 md:py-6 text-base md:text-lg rounded-xl"
               style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-              <Sparkles className="w-6 h-6 mr-2" />
+              <Sparkles className="w-5 md:w-6 h-5 md:h-6 mr-2" />
               Commencer
             </Button>
           </div>
         ) : (
           <>
             {completedCount === totalCount && (
-              <div className="mb-8 p-6 rounded-2xl text-center shadow-lg animate-pulse"
+              <div className="mb-6 md:mb-8 p-4 md:p-6 rounded-2xl text-center shadow-lg animate-pulse"
                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
                   🎉 BINGO COMPLÉTÉ ! 🎉
                 </h2>
-                <p className="text-white opacity-90">
-                  Félicitations ! Vous avez relevé tous les défis {selectedYear} !
+                <p className="text-sm md:text-base text-white opacity-90">
+                  Tous les défis {selectedYear} relevés !
                 </p>
               </div>
             )}
