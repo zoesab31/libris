@@ -66,8 +66,8 @@ export default function Maps() {
 
   // Filter by friends toggle
   const locationsByFriendFilter = showFriendsOnly 
-    ? friendsLocations 
-    : allLocations;
+    ? allLocations 
+    : locations;
 
   // Filter by category
   const filteredLocations = filterCategory === "all" 
