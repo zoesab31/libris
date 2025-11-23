@@ -33,10 +33,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   const [photoPreview, setPhotoPreview] = useState([]);
   const [uploadedPhotos, setUploadedPhotos] = useState([]);
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Check if any friend has read this book (status = "Lu")
-  const friendHasReadBook = friendsUserBooks.some(fub => fub.status === "Lu");
 
   const createCommentMutation = useMutation({
     mutationFn: async () => {
@@ -101,15 +97,15 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   };
 
   const toggleSpoiler = (commentId) => {
-    setRevealedSpoilers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(commentId)) {
-        newSet.delete(commentId);
-      } else {
+    const confirmed = window.confirm("⚠️ Avez-vous lu le livre ? Ce commentaire contient des spoilers.");
+    
+    if (confirmed) {
+      setRevealedSpoilers(prev => {
+        const newSet = new Set(prev);
         newSet.add(commentId);
-      }
-      return newSet;
-    });
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -285,9 +281,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
           </h3>
           
           {existingComments.map((c) => {
-            // Auto-reveal if friend has read the book
-            const shouldAutoReveal = friendHasReadBook;
-            const isSpoilerRevealed = shouldAutoReveal || revealedSpoilers.has(c.id);
+            const isSpoilerRevealed = revealedSpoilers.has(c.id);
             
             return (
               <div
@@ -297,7 +291,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    {c.mood && <span className="text-2xl">{c.mood}</span>}
+                    {!c.is_spoiler && c.mood && <span className="text-2xl">{c.mood}</span>}
                     <div>
                       {c.chapter && (
                         <p className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
@@ -312,31 +306,10 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {c.is_spoiler && !shouldAutoReveal && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleSpoiler(c.id)}
-                        className="text-xs font-medium"
-                        style={{ color: 'var(--deep-pink)' }}
-                      >
-                        {isSpoilerRevealed ? (
-                          <>
-                            <EyeOff className="w-3 h-3 mr-1" />
-                            Masquer
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="w-3 h-3 mr-1" />
-                            Révéler spoiler
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    {c.is_spoiler && shouldAutoReveal && (
-                      <span className="text-xs px-2 py-1 rounded-full" 
-                            style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
-                        ✅ Révélé (amie a lu)
+                    {c.is_spoiler && (
+                      <span className="text-xs px-2 py-1 rounded-full font-medium" 
+                            style={{ backgroundColor: '#FFE6E6', color: '#DC2626' }}>
+                        ⚠️ Spoiler
                       </span>
                     )}
                     <Button
@@ -356,15 +329,23 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                 </div>
 
                 {c.is_spoiler && !isSpoilerRevealed ? (
-                  <div className="p-4 rounded-lg text-center border-2 cursor-pointer hover:bg-pink-50 transition-colors" 
-                       style={{ backgroundColor: 'var(--cream)', borderColor: 'var(--beige)' }}
+                  <div className="p-6 rounded-lg text-center border-2 cursor-pointer hover:bg-red-50 transition-colors" 
+                       style={{ backgroundColor: '#FFF5F5', borderColor: '#FEE2E2' }}
                        onClick={() => toggleSpoiler(c.id)}>
-                    <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
-                      ⚠️ Cliquez pour révéler le spoiler
+                    <p className="text-base font-bold mb-1" style={{ color: '#DC2626' }}>
+                      ⚠️ Spoiler masqué
+                    </p>
+                    <p className="text-sm" style={{ color: '#991B1B' }}>
+                      Cliquez pour révéler si vous avez lu le livre
                     </p>
                   </div>
                 ) : (
                   <>
+                    {c.is_spoiler && isSpoilerRevealed && c.mood && (
+                      <div className="mb-2">
+                        <span className="text-2xl">{c.mood}</span>
+                      </div>
+                    )}
                     <p className="text-sm mb-3" style={{ color: 'var(--dark-text)' }}>
                       {c.comment}
                     </p>
