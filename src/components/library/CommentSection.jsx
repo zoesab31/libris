@@ -38,30 +38,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
   // Check if any friend has read this book (status = "Lu")
   const friendHasReadBook = friendsUserBooks.some(fub => fub.status === "Lu");
 
-  // Autosave on unmount or when leaving
-  useEffect(() => {
-    return () => {
-      if (comment.comment.trim()) {
-        handleAutoSave();
-      }
-    };
-  }, [comment]);
-
-  const handleAutoSave = async () => {
-    if (!comment.comment.trim() || isSaving) return;
-    
-    setIsSaving(true);
-    try {
-      await createCommentMutation.mutateAsync();
-      toast.success("💾 Sauvegardé automatiquement");
-    } catch (error) {
-      toast.error("Erreur de sauvegarde, réessai...");
-      setTimeout(() => handleAutoSave(), 2000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const createCommentMutation = useMutation({
     mutationFn: async () => {
       let photoUrls = [];
@@ -145,7 +121,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                 id="chapter"
                 value={comment.chapter}
                 onChange={(e) => setComment({...comment, chapter: e.target.value})}
-                onBlur={handleAutoSave}
                 placeholder="Chapitre 5"
                 className="border-2"
                 style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
@@ -160,7 +135,6 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                 type="number"
                 value={comment.page_number}
                 onChange={(e) => setComment({...comment, page_number: e.target.value})}
-                onBlur={handleAutoSave}
                 placeholder="42"
                 className="border-2"
                 style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
@@ -173,14 +147,13 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
               Votre commentaire
             </Label>
             <Textarea
-              id="comment"
-              value={comment.comment}
-              onChange={(e) => setComment({...comment, comment: e.target.value})}
-              onBlur={handleAutoSave}
-              placeholder="Vos impressions, théories, émotions..."
-              rows={4}
-              className="resize-none border-2"
-              style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
+            id="comment"
+            value={comment.comment}
+            onChange={(e) => setComment({...comment, comment: e.target.value})}
+            placeholder="Vos impressions, théories, émotions..."
+            rows={4}
+            className="resize-none border-2"
+            style={{ borderColor: 'var(--beige)', backgroundColor: 'white' }}
             />
           </div>
 
