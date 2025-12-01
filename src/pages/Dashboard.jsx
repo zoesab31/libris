@@ -602,27 +602,16 @@ export default function Dashboard() {
       <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ backgroundColor: '#FFF7FA' }}>
         <div className="max-w-[1600px] mx-auto">
           {/* Mobile Header */}
-          <div className="flex flex-col gap-3 md:hidden">
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: '#2D3748' }}>
-                Bonjour {displayName} 🌷
-              </h1>
-              <p className="text-sm" style={{ color: '#A0AEC0' }}>
-                Bienvenue dans ton univers littéraire
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="flex-1 px-3 py-2 rounded-xl border-0 font-medium shadow-md text-sm"
-                style={{ backgroundColor: 'white', color: '#2D3748' }}
-              >
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+          <div className="flex flex-col gap-4 md:hidden">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold" style={{ color: '#2D3748' }}>
+                  Bonjour {displayName} 🌷
+                </h1>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>
+                  Bienvenue dans ton univers littéraire
+                </p>
+              </div>
 
               <Link to={createPageUrl("MyLibrary")}>
                 <Button
@@ -633,6 +622,33 @@ export default function Dashboard() {
                   <Plus className="w-4 h-4" />
                 </Button>
               </Link>
+            </div>
+
+            {/* Séparateur visuel + Sélecteur d'année */}
+            <div className="pt-3 border-t" style={{ borderColor: '#FFE4EC' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium" style={{ color: '#A0AEC0' }}>📅 Année :</span>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="flex-1 px-4 py-2.5 rounded-xl border-2 font-semibold text-sm"
+                  style={{ backgroundColor: 'white', color: '#FF69B4', borderColor: '#FFE4EC' }}
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                <Link to={createPageUrl("Statistics")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl"
+                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
+                  >
+                    📈
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -916,10 +932,41 @@ export default function Dashboard() {
                         const book = allBooks.find(b => b.id === activity.comment.book_id);
                         if (!book) return null;
 
+                        // Si c'est un spoiler d'un ami, afficher version réduite
+                        if (activity.isFriend && activity.comment.is_spoiler) {
+                          return (
+                            <div key={`comment-${activity.comment.id}`}
+                                 className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                                 style={{ borderColor: '#F7FAFC' }}
+                                 onClick={() => navigate(`${createPageUrl("MyLibrary")}?bookId=${book.id}&tab=comments`)}>
+                              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                   style={{ backgroundColor: '#FFE6E6' }}>
+                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#DC2626' }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                  <span className="font-bold" style={{ color: '#FF9F7F' }}>
+                                    {activity.userName}
+                                  </span> a ajouté un commentaire sur {book.title}
+                                </p>
+                                <div className="p-2 rounded-lg" style={{ backgroundColor: '#FFF5F5' }}>
+                                  <p className="text-xs font-medium" style={{ color: '#DC2626' }}>
+                                    ⚠️ Spoiler masqué - Cliquez pour voir le livre
+                                  </p>
+                                </div>
+                                <p className="text-xs mt-1" style={{ color: '#A0AEC0' }}>
+                                  {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div key={`comment-${activity.comment.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0"
-                               style={{ borderColor: '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                               style={{ borderColor: '#F7FAFC' }}
+                               onClick={() => navigate(`${createPageUrl("MyLibrary")}?bookId=${book.id}&tab=comments`)}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
                                  style={{ backgroundColor: activity.isFriend ? '#FFF4E6' : '#E6F7FF' }}>
                               <MessageCircle className="w-4 h-4 md:w-5 md:h-5"
@@ -930,15 +977,40 @@ export default function Dashboard() {
                                 <span className="font-bold"
                                       style={{ color: activity.isFriend ? '#FF9F7F' : '#4299E1' }}>
                                   {activity.userName}
-                                </span> a ajouté un commentaire sur {book.title}
+                                </span> a commenté {book.title}
                               </p>
                               {activity.comment.mood && (
                                 <p className="text-xl mb-1">{activity.comment.mood}</p>
                               )}
                               {activity.comment.chapter && (
-                                <p className="text-xs" style={{ color: '#A0AEC0' }}>
-                                  {activity.comment.chapter}
+                                <p className="text-xs font-medium mb-1" style={{ color: '#9B59B6' }}>
+                                  📖 {activity.comment.chapter}
                                 </p>
+                              )}
+                              {/* Afficher le commentaire */}
+                              <p className="text-sm mb-2 line-clamp-3" style={{ color: '#2D3748' }}>
+                                {activity.comment.comment}
+                              </p>
+                              {/* Afficher les photos si présentes */}
+                              {((activity.comment.photos && activity.comment.photos.length > 0) || activity.comment.photo_url) && (
+                                <div className="flex gap-2 mb-2 flex-wrap">
+                                  {activity.comment.photo_url && (
+                                    <img src={activity.comment.photo_url} alt="Photo" 
+                                         className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg shadow-sm" />
+                                  )}
+                                  {activity.comment.photos && activity.comment.photos.slice(0, 3).map((photo, idx) => (
+                                    <img key={idx} src={photo} alt={`Photo ${idx + 1}`}
+                                         className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg shadow-sm" />
+                                  ))}
+                                  {activity.comment.photos && activity.comment.photos.length > 3 && (
+                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex items-center justify-center"
+                                         style={{ backgroundColor: '#FFE4EC' }}>
+                                      <span className="text-xs font-bold" style={{ color: '#FF69B4' }}>
+                                        +{activity.comment.photos.length - 3}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                               <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
