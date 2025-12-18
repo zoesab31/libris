@@ -673,7 +673,7 @@ export default function Dashboard() {
                 <Button
                   size="sm"
                   className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                  style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -703,7 +703,11 @@ export default function Dashboard() {
                     size="sm"
                     variant="outline"
                     className="rounded-xl"
-                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
+                    style={{ 
+                      borderColor: isDark ? '#2A2637' : '#E6B3E8', 
+                      color: isDark ? '#8B7CF6' : '#9B59B6',
+                      backgroundColor: isDark ? '#1A1628' : 'white'
+                    }}
                   >
                     📈
                   </Button>
@@ -743,7 +747,7 @@ export default function Dashboard() {
                 <Link to={createPageUrl("MyLibrary")}>
                   <Button
                     className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
-                    style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                    style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     Ajouter un livre
@@ -754,7 +758,11 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     className="shadow-md font-medium px-6 rounded-xl hover-lift"
-                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
+                    style={{ 
+                      borderColor: isDark ? '#2A2637' : '#E6B3E8', 
+                      color: isDark ? '#8B7CF6' : '#9B59B6',
+                      backgroundColor: isDark ? '#1A1628' : 'white'
+                    }}
                   >
                     📈 Voir mes stats
                   </Button>
