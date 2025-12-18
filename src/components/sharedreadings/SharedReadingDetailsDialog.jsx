@@ -306,16 +306,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="border-b pb-4" style={{ borderColor: '#E6B3E8' }}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
-                {reading.title}
-              </DialogTitle>
-              <p style={{ color: 'var(--warm-brown)' }}>
-                {book?.title} - {book?.author}
-              </p>
-            </div>
-            {user?.email === reading.created_by && (
+          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
+            {reading.title}
+          </DialogTitle>
+          <p style={{ color: 'var(--warm-brown)' }}>
+            {book?.title} - {book?.author}
+          </p>
+          {user?.email === reading.created_by && (
+            <div className="mt-3">
               <Button
                 variant="destructive"
                 size="sm"
@@ -327,10 +325,10 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                 disabled={deleteReadingMutation.isPending}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Supprimer
+                Supprimer la lecture
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </DialogHeader>
 
         <Tabs defaultValue="discussion" className="flex-1 flex flex-col overflow-hidden">
