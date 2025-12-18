@@ -331,55 +331,55 @@ export default function Layout({ children, currentPageName }) {
     <SidebarProvider defaultOpen={false}>
       <style>{`
         :root {
-          --cream: #FFF5F9;
-          --beige: #FFE1F0;
+          --cream: #FFF0F6;
+          --beige: #FFD6E8;
           --soft-pink: #FF69B4;
           --warm-pink: #FF1493;
-          --deep-pink: #FF0080;
-          --gold: #FFD700;
-          --rose-gold: #FFC0CB;
-          --dark-text: #D81B60;
-          --lavender: #E6B3E8;
-          --peach: #FFCCCB;
+          --deep-pink: #E91E63;
+          --gold: #FFB6C1;
+          --rose-gold: #FFB3D9;
+          --dark-text: #C2185B;
+          --lavender: #F8BBD0;
+          --peach: #FFCCE5;
         }
 
         .dark-theme {
           --cream: #1a1a2e;
-          --beige: #16213e;
-          --soft-pink: #ff6b9d;
-          --warm-pink: #ff3d7f;
-          --deep-pink: #ff0066;
-          --gold: #ffd700;
+          --beige: #2d1b2e;
+          --soft-pink: #ff69b4;
+          --warm-pink: #ff1493;
+          --deep-pink: #ff0080;
+          --gold: #ffb6d9;
           --rose-gold: #ff9eb3;
-          --dark-text: #ffc0cb;
-          --lavender: #c77dff;
+          --dark-text: #ffb3d9;
+          --lavender: #e91e63;
           --peach: #ff8fa3;
         }
 
         .dark-theme body {
-          background-color: var(--cream);
+          background: linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 100%);
           color: var(--dark-text);
         }
 
         .dark-theme .sidebar-container {
-          background-color: #0f1419 !important;
-          border-right-color: #2d3748 !important;
+          background: linear-gradient(180deg, #1a1a2e 0%, #2d1b2e 100%) !important;
+          border-right-color: #ff1493 !important;
         }
 
         .dark-theme .sidebar-header {
-          border-bottom-color: #2d3748 !important;
+          border-bottom-color: #ff69b4 !important;
         }
 
         .dark-theme .sidebar-footer {
-          border-top-color: #2d3748 !important;
+          border-top-color: #ff69b4 !important;
         }
 
         .dark-theme .sidebar-link {
-          color: #cbd5e0;
+          color: #ffb3d9;
         }
 
         .dark-theme .sidebar-link:hover {
-          background-color: rgba(255, 107, 157, 0.1);
+          background-color: rgba(255, 20, 147, 0.2);
         }
 
         /* Book title and author display utilities */

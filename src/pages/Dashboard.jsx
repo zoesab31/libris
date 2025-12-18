@@ -576,7 +576,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
@@ -636,7 +636,7 @@ export default function Dashboard() {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ backgroundColor: '#FFF7FA' }}>
+      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE1F0 50%, #FFD6E8 100%)', backdropFilter: 'blur(10px)' }}>
         <div className="max-w-[1600px] mx-auto">
           {/* Mobile Header */}
           <div className="flex flex-col gap-4 md:hidden">
