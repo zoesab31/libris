@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle, Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
 
@@ -17,12 +17,22 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [notifications, setNotifications] = useState({
+    friend_messages: true,
+    reading_goal: true,
+    shared_readings: true,
+    book_comments: true,
+    friend_requests: true
+  });
   const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(u => {
       setUser(u);
       setDisplayName(u.display_name || "");
+      if (u.notification_preferences) {
+        setNotifications(u.notification_preferences);
+      }
     }).catch(() => {});
   }, []);
 
@@ -67,6 +77,12 @@ export default function AccountSettings() {
   const toggleTheme = () => {
     const newTheme = user?.theme === 'dark' ? 'light' : 'dark';
     updateProfileMutation.mutate({ theme: newTheme });
+  };
+
+  const toggleNotification = (key) => {
+    const newNotifications = { ...notifications, [key]: !notifications[key] };
+    setNotifications(newNotifications);
+    updateProfileMutation.mutate({ notification_preferences: newNotifications });
   };
 
   const deleteAccountMutation = useMutation({
@@ -278,6 +294,92 @@ export default function AccountSettings() {
                   checked={isDark}
                   onCheckedChange={toggleTheme}
                   disabled={updateProfileMutation.isPending}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notifications */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                <Bell className="w-5 h-5" />
+                Notifications automatiques
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                    💬 Messages d'amies
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    Recevoir une notification pour les nouveaux messages
+                  </p>
+                </div>
+                <Switch
+                  checked={notifications.friend_messages}
+                  onCheckedChange={() => toggleNotification('friend_messages')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                    🎯 Objectif de lecture
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    M'alerter quand j'atteins mon objectif annuel
+                  </p>
+                </div>
+                <Switch
+                  checked={notifications.reading_goal}
+                  onCheckedChange={() => toggleNotification('reading_goal')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                    📚 Lectures communes
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    Recevoir une notification au démarrage d'une LC
+                  </p>
+                </div>
+                <Switch
+                  checked={notifications.shared_readings}
+                  onCheckedChange={() => toggleNotification('shared_readings')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                    💭 Commentaires
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    Nouveaux commentaires sur mes livres
+                  </p>
+                </div>
+                <Switch
+                  checked={notifications.book_comments}
+                  onCheckedChange={() => toggleNotification('book_comments')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
+                    👥 Demandes d'amitié
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                    Nouvelles demandes d'amitié
+                  </p>
+                </div>
+                <Switch
+                  checked={notifications.friend_requests}
+                  onCheckedChange={() => toggleNotification('friend_requests')}
                 />
               </div>
             </CardContent>
