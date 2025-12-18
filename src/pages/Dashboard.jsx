@@ -242,6 +242,24 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: sharedReadingMessages = [] } = useQuery({
+    queryKey: ['allSharedReadingMessages'],
+    queryFn: async () => {
+      const myReadings = await base44.entities.SharedReading.list();
+      const readingsIParticipateIn = myReadings.filter(sr => 
+        sr.participants?.includes(user?.email) || sr.created_by === user?.email
+      );
+      
+      if (readingsIParticipateIn.length === 0) return [];
+      
+      const allMessages = await base44.entities.SharedReadingMessage.list('-created_date', 50);
+      return allMessages.filter(msg => 
+        readingsIParticipateIn.some(sr => sr.id === msg.shared_reading_id)
+      );
+    },
+    enabled: !!user,
+  });
+
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
@@ -471,7 +489,26 @@ export default function Dashboard() {
         date: n.created_date
       }));
 
-    return [...myActivity, ...friendsActivity, ...commentsActivity, ...locationsActivity, ...quotesActivity, ...fanArtActivity, ...nailInspoActivity]
+    const sharedReadingActivity = sharedReadingMessages
+      .filter(msg => isCurrentMonth(msg.created_date))
+      .map(msg => {
+        const reading = allSharedReadings.find(sr => sr.id === msg.shared_reading_id);
+        const friend = myFriends.find(f => f.friend_email === msg.created_by);
+        const isFriend = msg.created_by !== user?.email;
+        return {
+          type: 'shared_reading_message',
+          message: msg,
+          reading: reading,
+          userName: isFriend 
+            ? (friend?.friend_name?.split(' ')[0] || msg.created_by?.split('@')[0])
+            : displayName,
+          userEmail: msg.created_by,
+          isFriend: isFriend,
+          date: msg.created_date
+        };
+      });
+
+    return [...myActivity, ...friendsActivity, ...commentsActivity, ...locationsActivity, ...quotesActivity, ...fanArtActivity, ...nailInspoActivity, ...sharedReadingActivity]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 15);
   }, [myBooks, friendsBooks, myFriends, displayName, user, comments, recentLocations, recentQuotes, recentFanArt, recentNailInspo]);
@@ -1154,6 +1191,47 @@ export default function Dashboard() {
                               <img src={activity.nailinspo.image_url} alt="Nail inspo" 
                                    className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover flex-shrink-0" />
                             )}
+                          </div>
+                        );
+                        } else if (activity.type === 'shared_reading_message') {
+                        const book = activity.reading ? allBooks.find(b => b.id === activity.reading.book_id) : null;
+
+                        return (
+                          <div key={`shared-reading-${activity.message.id}`}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                               style={{ borderColor: '#F7FAFC' }}
+                               onClick={() => navigate(createPageUrl("SharedReadings"))}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
+                              <Users className="w-4 h-4 md:w-5 md:h-5"
+                                       style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold"
+                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
+                                  {activity.userName}
+                                </span> a réagi dans {activity.reading?.title || 'une lecture commune'}
+                              </p>
+                              {activity.message.chapter && (
+                                <p className="text-xs font-medium mb-1" style={{ color: '#9B59B6' }}>
+                                  📖 {activity.message.chapter}
+                                </p>
+                              )}
+                              {!activity.message.is_spoiler && (
+                                <p className="text-sm mb-2 line-clamp-2" style={{ color: '#2D3748' }}>
+                                  {activity.message.message}
+                                </p>
+                              )}
+                              {book && (
+                                <p className="text-xs" style={{ color: '#9B59B6' }}>
+                                  📚 {book.title}
+                                </p>
+                              )}
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
+                                {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
+                              </p>
+                            </div>
                           </div>
                         );
                         }

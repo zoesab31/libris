@@ -1,49 +1,55 @@
-import Dashboard from './pages/Dashboard';
-import MyLibrary from './pages/MyLibrary';
-import Bingo from './pages/Bingo';
-import Authors from './pages/Authors';
-import Quotes from './pages/Quotes';
-import FanArt from './pages/FanArt';
-import NailInspo from './pages/NailInspo';
-import Discover from './pages/Discover';
-import Maps from './pages/Maps';
-import Profile from './pages/Profile';
-import SharedReadings from './pages/SharedReadings';
 import AccountSettings from './pages/AccountSettings';
-import Friends from './pages/Friends';
-import ShelfView from './pages/ShelfView';
-import Chat from './pages/Chat';
-import UserProfile from './pages/UserProfile';
-import Statistics from './pages/Statistics';
+import Authors from './pages/Authors';
+import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
-import Series from './pages/Series';
+import Chat from './pages/Chat';
+import Dashboard from './pages/Dashboard';
+import Discover from './pages/Discover';
+import FanArt from './pages/FanArt';
+import Friends from './pages/Friends';
+import Home from './pages/Home';
+import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
+import MyLibrary from './pages/MyLibrary';
+import NailInspo from './pages/NailInspo';
 import OneSignalGuide from './pages/OneSignalGuide';
+import Profile from './pages/Profile';
+import Quotes from './pages/Quotes';
+import Series from './pages/Series';
+import SeriesTracking from './pages/SeriesTracking';
+import SharedReadings from './pages/SharedReadings';
+import ShelfView from './pages/ShelfView';
+import Statistics from './pages/Statistics';
+import UserProfile from './pages/UserProfile';
+import VirtualLibrary from './pages/VirtualLibrary';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "MyLibrary": MyLibrary,
-    "Bingo": Bingo,
-    "Authors": Authors,
-    "Quotes": Quotes,
-    "FanArt": FanArt,
-    "NailInspo": NailInspo,
-    "Discover": Discover,
-    "Maps": Maps,
-    "Profile": Profile,
-    "SharedReadings": SharedReadings,
     "AccountSettings": AccountSettings,
-    "Friends": Friends,
-    "ShelfView": ShelfView,
-    "Chat": Chat,
-    "UserProfile": UserProfile,
-    "Statistics": Statistics,
+    "Authors": Authors,
+    "Bingo": Bingo,
     "BookTournament": BookTournament,
-    "Series": Series,
+    "Chat": Chat,
+    "Dashboard": Dashboard,
+    "Discover": Discover,
+    "FanArt": FanArt,
+    "Friends": Friends,
+    "Home": Home,
+    "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
+    "MyLibrary": MyLibrary,
+    "NailInspo": NailInspo,
     "OneSignalGuide": OneSignalGuide,
+    "Profile": Profile,
+    "Quotes": Quotes,
+    "Series": Series,
+    "SeriesTracking": SeriesTracking,
+    "SharedReadings": SharedReadings,
+    "ShelfView": ShelfView,
+    "Statistics": Statistics,
+    "UserProfile": UserProfile,
+    "VirtualLibrary": VirtualLibrary,
 }
 
 export const pagesConfig = {
