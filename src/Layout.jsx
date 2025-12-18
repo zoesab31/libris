@@ -98,6 +98,13 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
   const { setOpen } = useSidebar();
 
+  // Apply theme immediately without lag
+  useEffect(() => {
+    const theme = user?.theme || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.setProperty('color-scheme', theme);
+  }, [user?.theme]);
+
   // Fetch unread messages count
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unreadMessagesCount', user?.email],
@@ -310,16 +317,19 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (user?.theme === 'dark') {
-      document.documentElement.classList.add('dark-theme');
-    } else {
-      document.documentElement.classList.remove('dark-theme');
+    // Load theme from localStorage immediately for instant rendering
+    const savedTheme = localStorage.getItem('app-theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
     }
-  }, [user?.theme]);
+    
+    base44.auth.me().then(u => {
+      setUser(u);
+      const theme = u?.theme || 'light';
+      localStorage.setItem('app-theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }).catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     base44.auth.logout();
@@ -330,7 +340,8 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider defaultOpen={false}>
       <style>{`
-        :root {
+        :root,
+        [data-theme="light"] {
           --cream: #FFF0F6;
           --beige: #FFD6E8;
           --soft-pink: #FF69B4;
@@ -341,44 +352,55 @@ export default function Layout({ children, currentPageName }) {
           --dark-text: #C2185B;
           --lavender: #F8BBD0;
           --peach: #FFCCE5;
+          --bg-gradient: linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%);
+          --sidebar-bg: white;
+          --sidebar-border: var(--beige);
+          --text-primary: #2D3748;
+          --text-secondary: #718096;
         }
 
-        .dark-theme {
-          --cream: #1a1a2e;
-          --beige: #2d1b2e;
-          --soft-pink: #ff69b4;
+        [data-theme="dark"] {
+          --cream: #0f0a1e;
+          --beige: #1a0f2e;
+          --soft-pink: #ff4d94;
           --warm-pink: #ff1493;
           --deep-pink: #ff0080;
           --gold: #ffb6d9;
           --rose-gold: #ff9eb3;
-          --dark-text: #ffb3d9;
-          --lavender: #e91e63;
+          --dark-text: #ffcceb;
+          --lavender: #ff69b4;
           --peach: #ff8fa3;
+          --bg-gradient: linear-gradient(135deg, #0f0a1e 0%, #1a0f2e 100%);
+          --sidebar-bg: linear-gradient(180deg, #0f0a1e 0%, #1a0f2e 100%);
+          --sidebar-border: #ff1493;
+          --text-primary: #ffcceb;
+          --text-secondary: #ffb3d9;
         }
 
-        .dark-theme body {
-          background: linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 100%);
-          color: var(--dark-text);
+        body {
+          background: var(--bg-gradient);
+          color: var(--text-primary);
+          transition: none;
         }
 
-        .dark-theme .sidebar-container {
-          background: linear-gradient(180deg, #1a1a2e 0%, #2d1b2e 100%) !important;
-          border-right-color: #ff1493 !important;
+        .sidebar-container {
+          background: var(--sidebar-bg) !important;
+          border-right-color: var(--sidebar-border) !important;
         }
 
-        .dark-theme .sidebar-header {
+        [data-theme="dark"] .sidebar-header {
           border-bottom-color: #ff69b4 !important;
         }
 
-        .dark-theme .sidebar-footer {
+        [data-theme="dark"] .sidebar-footer {
           border-top-color: #ff69b4 !important;
         }
 
-        .dark-theme .sidebar-link {
+        [data-theme="dark"] .sidebar-link {
           color: #ffb3d9;
         }
 
-        .dark-theme .sidebar-link:hover {
+        [data-theme="dark"] .sidebar-link:hover {
           background-color: rgba(255, 20, 147, 0.2);
         }
 

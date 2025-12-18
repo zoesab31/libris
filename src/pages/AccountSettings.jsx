@@ -19,8 +19,8 @@ export default function AccountSettings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [notifications, setNotifications] = useState({
     friend_messages: true,
-    reading_goal: true,
-    shared_readings: true,
+    shared_reading_messages: true,
+    friend_finished_book: true,
     book_comments: true,
     friend_requests: true
   });
@@ -326,30 +326,30 @@ export default function AccountSettings() {
               <div className="flex items-center justify-between py-2">
                 <div>
                   <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
-                    🎯 Objectif de lecture
+                    💬 Messages dans les LC
                   </p>
                   <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                    M'alerter quand j'atteins mon objectif annuel
+                    Nouveaux messages de mes amies dans les lectures communes
                   </p>
                 </div>
                 <Switch
-                  checked={notifications.reading_goal}
-                  onCheckedChange={() => toggleNotification('reading_goal')}
+                  checked={notifications.shared_reading_messages}
+                  onCheckedChange={() => toggleNotification('shared_reading_messages')}
                 />
               </div>
 
               <div className="flex items-center justify-between py-2">
                 <div>
                   <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
-                    📚 Lectures communes
+                    📖 Livres terminés
                   </p>
                   <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                    Recevoir une notification au démarrage d'une LC
+                    Une amie a terminé un livre et donné son avis
                   </p>
                 </div>
                 <Switch
-                  checked={notifications.shared_readings}
-                  onCheckedChange={() => toggleNotification('shared_readings')}
+                  checked={notifications.friend_finished_book}
+                  onCheckedChange={() => toggleNotification('friend_finished_book')}
                 />
               </div>
 
