@@ -180,7 +180,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
               <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}>
+              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
                 Nos Livres
               </h2>
               <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }}>
@@ -244,10 +244,10 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}>
+                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
                       {user.full_name || 'Lectrice'}
                     </p>
-                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#C6C4D4' : 'var(--deep-pink)' }}>
+                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#C9C6E3' : 'var(--deep-pink)' }}>
                       {user.email}
                     </p>
                   </div>
@@ -281,7 +281,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
             <h1 className="text-base md:text-xl font-bold md:hidden truncate cursor-pointer" 
-                style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}
+                style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}
                 onClick={() => {
                   const trigger = document.querySelector('[data-sidebar-trigger]');
                   if (trigger) trigger.click();
@@ -372,15 +372,15 @@ export default function Layout({ children, currentPageName }) {
           --deep-pink: #D97FA6;
           --gold: #B88AA3;
           --rose-gold: #D97FA6;
-          --dark-text: #F2F1F7;
-          --lavender: #C6C4D4;
-          --peach: #9A97B0;
+          --dark-text: #F3F2FA;
+          --lavender: #C9C6E3;
+          --peach: #9C97B8;
           --bg-gradient: linear-gradient(135deg, #0F0C1A 0%, #1A1628 100%);
           --sidebar-bg: #0C0915;
           --sidebar-border: #2A2637;
-          --text-primary: #F2F1F7;
-          --text-secondary: #C6C4D4;
-          --text-tertiary: #9A97B0;
+          --text-primary: #F3F2FA;
+          --text-secondary: #C9C6E3;
+          --text-tertiary: #9C97B8;
           --card-bg: #1A1628;
           --card-border: #2A2637;
           --hover-bg: #211E2F;
@@ -408,12 +408,12 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] .sidebar-link {
-          color: #C6C4D4;
+          color: #C9C6E3;
         }
 
         [data-theme="dark"] .sidebar-link:hover {
           background-color: #1A1628 !important;
-          color: #F2F1F7;
+          color: #F3F2FA;
         }
 
         [data-theme="dark"] .stats-card {
