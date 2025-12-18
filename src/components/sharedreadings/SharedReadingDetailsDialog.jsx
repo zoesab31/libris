@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check, Upload, X, Loader2, Heart, Smile, Music, BookOpen } from "lucide-react";
+import { Send, AlertTriangle, Trash2, Eye, EyeOff, UserPlus, Mail, Search, Check, Upload, X, Loader2, Heart, Smile, Music, BookOpen, Edit2, Calendar } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedStartDate, setEditedStartDate] = useState("");
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -88,6 +90,13 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       setSelectedDay(getCurrentDay());
     }
   }, [numberOfDays]);
+
+  // Initialize edit date when opening dialog
+  useEffect(() => {
+    if (open && reading.start_date) {
+      setEditedStartDate(reading.start_date);
+    }
+  }, [open, reading.start_date]);
 
   // Get day status
   const getDayStatus = (day) => {
@@ -157,6 +166,57 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       setUploadingPhoto(false);
     }
   };
+
+  const updateStartDateMutation = useMutation({
+    mutationFn: async (newStartDate) => {
+      // Calculate new end date to maintain the same duration
+      if (reading.end_date && reading.start_date) {
+        const originalDuration = differenceInDays(new Date(reading.end_date), new Date(reading.start_date));
+        const newEndDate = new Date(newStartDate);
+        newEndDate.setDate(newEndDate.getDate() + originalDuration);
+        
+        await base44.entities.SharedReading.update(reading.id, {
+          start_date: newStartDate,
+          end_date: newEndDate.toISOString().split('T')[0]
+        });
+      } else {
+        await base44.entities.SharedReading.update(reading.id, {
+          start_date: newStartDate
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
+      setIsEditing(false);
+      toast.success("✅ Date de début modifiée !");
+    },
+    onError: (error) => {
+      console.error("Error updating date:", error);
+      toast.error("Erreur lors de la modification");
+    }
+  });
+
+  const deleteReadingMutation = useMutation({
+    mutationFn: async () => {
+      // Delete all messages first
+      const allMessages = await base44.entities.SharedReadingMessage.filter({ 
+        shared_reading_id: reading.id 
+      });
+      await Promise.all(allMessages.map(msg => base44.entities.SharedReadingMessage.delete(msg.id)));
+      
+      // Then delete the reading
+      await base44.entities.SharedReading.delete(reading.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
+      toast.success("🗑️ Lecture commune supprimée");
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error("Error deleting reading:", error);
+      toast.error("Erreur lors de la suppression");
+    }
+  });
 
   const inviteFriendsMutation = useMutation({
     mutationFn: async (friendsToInvite) => {
@@ -246,12 +306,31 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="border-b pb-4" style={{ borderColor: '#E6B3E8' }}>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
-            {reading.title}
-          </DialogTitle>
-          <p style={{ color: 'var(--warm-brown)' }}>
-            {book?.title} - {book?.author}
-          </p>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
+                {reading.title}
+              </DialogTitle>
+              <p style={{ color: 'var(--warm-brown)' }}>
+                {book?.title} - {book?.author}
+              </p>
+            </div>
+            {user?.email === reading.created_by && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm("Êtes-vous sûre de vouloir supprimer cette lecture commune ? Tous les messages seront également supprimés.")) {
+                    deleteReadingMutation.mutate();
+                  }
+                }}
+                disabled={deleteReadingMutation.isPending}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <Tabs defaultValue="discussion" className="flex-1 flex flex-col overflow-hidden">
@@ -621,24 +700,85 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           <TabsContent value="program" className="py-4 overflow-y-auto">
             <div className="space-y-4">
               <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                <h3 className="font-semibold mb-3" style={{ color: 'var(--deep-brown)' }}>
-                  📅 Programme de lecture
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold" style={{ color: 'var(--deep-brown)' }}>
+                    📅 Programme de lecture
+                  </h3>
+                  {user?.email === reading.created_by && !isEditing && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                  )}
+                </div>
                 {reading.start_date && reading.end_date ? (
-                  <div className="space-y-2 text-sm">
-                    <p style={{ color: 'var(--warm-brown)' }}>
-                      <strong>Début :</strong> {format(new Date(reading.start_date), 'dd MMMM yyyy', { locale: fr })}
-                    </p>
-                    <p style={{ color: 'var(--warm-brown)' }}>
-                      <strong>Fin :</strong> {format(new Date(reading.end_date), 'dd MMMM yyyy', { locale: fr })}
-                    </p>
-                    <p style={{ color: 'var(--warm-brown)' }}>
-                      <strong>Durée :</strong> {numberOfDays} jour{numberOfDays > 1 ? 's' : ''}
-                    </p>
-                    {reading.chapters_per_day && (
-                      <p style={{ color: 'var(--warm-brown)' }}>
-                        <strong>Rythme :</strong> {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} par jour
-                      </p>
+                  <div className="space-y-3 text-sm">
+                    {isEditing ? (
+                      <div className="space-y-3 p-3 rounded-lg" style={{ backgroundColor: 'white' }}>
+                        <div>
+                          <Label className="mb-2 flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Nouvelle date de début
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editedStartDate}
+                            onChange={(e) => setEditedStartDate(e.target.value)}
+                          />
+                          <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                            💡 La durée sera conservée
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => updateStartDateMutation.mutate(editedStartDate)}
+                            disabled={!editedStartDate || updateStartDateMutation.isPending}
+                            className="flex-1"
+                            style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}
+                          >
+                            {updateStartDateMutation.isPending ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Modification...
+                              </>
+                            ) : (
+                              'Enregistrer'
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditing(false);
+                              setEditedStartDate(reading.start_date);
+                            }}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ color: 'var(--warm-brown)' }}>
+                          <strong>Début :</strong> {format(new Date(reading.start_date), 'dd MMMM yyyy', { locale: fr })}
+                        </p>
+                        <p style={{ color: 'var(--warm-brown)' }}>
+                          <strong>Fin :</strong> {format(new Date(reading.end_date), 'dd MMMM yyyy', { locale: fr })}
+                        </p>
+                        <p style={{ color: 'var(--warm-brown)' }}>
+                          <strong>Durée :</strong> {numberOfDays} jour{numberOfDays > 1 ? 's' : ''}
+                        </p>
+                        {reading.chapters_per_day && (
+                          <p style={{ color: 'var(--warm-brown)' }}>
+                            <strong>Rythme :</strong> {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} par jour
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
