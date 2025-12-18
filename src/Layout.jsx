@@ -165,14 +165,14 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       <Sidebar 
         className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
         style={{ 
-          borderColor: isDark ? '#2d3748' : 'var(--beige)',
-          backgroundColor: isDark ? '#0f1419' : 'white'
+          borderColor: isDark ? '#2A2637' : 'var(--beige)',
+          backgroundColor: isDark ? '#0C0915' : 'white'
         }}>
         <SidebarHeader 
           className="border-b p-3 md:p-6 sidebar-header" 
           style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
+            borderColor: isDark ? '#2A2637' : 'var(--beige)',
+            backgroundColor: isDark ? '#0C0915' : 'transparent'
           }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
@@ -180,17 +180,17 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
               <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
+              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}>
                 Nos Livres
               </h2>
-              <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
+              <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }}>
                 Notre bibliothèque 🌸
               </p>
             </div>
           </div>
         </SidebarHeader>
         
-        <SidebarContent className="p-2 md:p-3" style={{ backgroundColor: isDark ? '#0f1419' : 'transparent' }}>
+        <SidebarContent className="p-2 md:p-3" style={{ backgroundColor: isDark ? '#0C0915' : 'transparent' }}>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -225,8 +225,8 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
         <SidebarFooter 
           className="border-t p-2 md:p-4 sidebar-footer" 
           style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
+            borderColor: isDark ? '#2A2637' : 'var(--beige)',
+            backgroundColor: isDark ? '#0C0915' : 'transparent'
           }}>
           {user && (
             <div className="space-y-2">
@@ -244,10 +244,10 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
+                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}>
                       {user.full_name || 'Lectrice'}
                     </p>
-                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
+                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#C6C4D4' : 'var(--deep-pink)' }}>
                       {user.email}
                     </p>
                   </div>
@@ -257,8 +257,9 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors"
                 style={{ 
-                  backgroundColor: isDark ? '#16213e' : 'var(--beige)',
-                  color: isDark ? '#ff6b9d' : 'var(--deep-pink)'
+                  backgroundColor: isDark ? '#1A1628' : 'var(--beige)',
+                  color: isDark ? '#8B7CF6' : 'var(--deep-pink)',
+                  border: isDark ? '1px solid #2A2637' : 'none'
                 }}
               >
                 <LogOut className="w-3 h-3 md:w-4 h-4" />
@@ -272,14 +273,15 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       <main className="flex-1 flex flex-col min-w-0">
         <header className="border-b px-3 md:px-6 py-2 md:py-4 flex items-center justify-between sticky top-0 z-10" 
                 style={{ 
-                  borderColor: isDark ? '#2d3748' : 'var(--beige)',
-                  backgroundColor: isDark ? '#0f1419' : 'white'
+                  borderColor: isDark ? '#2A2637' : 'var(--beige)',
+                  backgroundColor: isDark ? 'rgba(15, 12, 26, 0.95)' : 'white',
+                  backdropFilter: isDark ? 'blur(10px)' : 'none'
                 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
             <h1 className="text-base md:text-xl font-bold md:hidden truncate cursor-pointer" 
-                style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}
+                style={{ color: isDark ? '#F2F1F7' : 'var(--dark-text)' }}
                 onClick={() => {
                   const trigger = document.querySelector('[data-sidebar-trigger]');
                   if (trigger) trigger.click();
@@ -291,7 +293,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <div className="flex items-center gap-1 md:gap-3">
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
-                  <MessageCircle className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                  <MessageCircle className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
                           style={{ backgroundColor: '#FF0000' }}>
@@ -363,24 +365,25 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] {
-          --cream: #0F1115;
-          --beige: #2A2F3A;
-          --soft-pink: #D96C9A;
-          --warm-pink: #C75B87;
-          --deep-pink: #B54876;
+          --cream: #0F0C1A;
+          --beige: #2A2637;
+          --soft-pink: #8B7CF6;
+          --warm-pink: #7C6FE0;
+          --deep-pink: #D97FA6;
           --gold: #B88AA3;
-          --rose-gold: #A87B93;
-          --dark-text: #E6E8EE;
-          --lavender: #9B7A8F;
-          --peach: #8B6A7F;
-          --bg-gradient: linear-gradient(135deg, #0F1115 0%, #161A22 100%);
-          --sidebar-bg: #0A0D10;
-          --sidebar-border: #2A2F3A;
-          --text-primary: #E6E8EE;
-          --text-secondary: #A0A4B8;
-          --card-bg: #1B1F2A;
-          --card-border: #2A2F3A;
-          --hover-bg: #242831;
+          --rose-gold: #D97FA6;
+          --dark-text: #F2F1F7;
+          --lavender: #C6C4D4;
+          --peach: #9A97B0;
+          --bg-gradient: linear-gradient(135deg, #0F0C1A 0%, #1A1628 100%);
+          --sidebar-bg: #0C0915;
+          --sidebar-border: #2A2637;
+          --text-primary: #F2F1F7;
+          --text-secondary: #C6C4D4;
+          --text-tertiary: #9A97B0;
+          --card-bg: #1A1628;
+          --card-border: #2A2637;
+          --hover-bg: #211E2F;
         }
 
         body {
@@ -395,37 +398,37 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] .sidebar-header {
-          border-bottom-color: #2A2F3A !important;
+          border-bottom-color: #2A2637 !important;
           background: transparent !important;
         }
 
         [data-theme="dark"] .sidebar-footer {
-          border-top-color: #2A2F3A !important;
+          border-top-color: #2A2637 !important;
           background: transparent !important;
         }
 
         [data-theme="dark"] .sidebar-link {
-          color: #A0A4B8;
+          color: #C6C4D4;
         }
 
         [data-theme="dark"] .sidebar-link:hover {
-          background-color: #1B1F2A !important;
-          color: #E6E8EE;
+          background-color: #1A1628 !important;
+          color: #F2F1F7;
         }
 
         [data-theme="dark"] .stats-card {
-          background: #1B1F2A !important;
-          border: 1px solid #2A2F3A !important;
+          background: #1A1628 !important;
+          border: 1px solid #2A2637 !important;
         }
 
         [data-theme="dark"] .stats-card:hover {
-          background: #242831 !important;
-          border-color: #343945 !important;
+          background: #211E2F !important;
+          border-color: #353243 !important;
         }
 
         [data-theme="dark"] header {
-          background: #0F1115 !important;
-          border-color: #2A2F3A !important;
+          background: rgba(15, 12, 26, 0.95) !important;
+          border-color: #2A2637 !important;
         }
 
         [data-theme="dark"] main > div {
@@ -446,30 +449,42 @@ export default function Layout({ children, currentPageName }) {
 
         /* Progress bars */
         [data-theme="dark"] .progress-bg {
-          background: #2A2F3A !important;
+          background: #2A2637 !important;
         }
 
         [data-theme="dark"] .progress-fill {
-          background: linear-gradient(90deg, #D96C9A, #B54876) !important;
+          background: linear-gradient(90deg, #8B7CF6, #D97FA6) !important;
         }
 
         /* Buttons */
         [data-theme="dark"] button[style*="gradient"] {
-          background: linear-gradient(135deg, #D96C9A, #B54876) !important;
+          background: linear-gradient(135deg, #8B7CF6, #D97FA6) !important;
         }
 
         /* Activity items */
         [data-theme="dark"] .activity-item {
-          border-color: #2A2F3A !important;
+          border-color: #2A2637 !important;
         }
 
         [data-theme="dark"] .activity-item:hover {
           background: var(--hover-bg) !important;
         }
 
-        /* Icon backgrounds */
-        [data-theme="dark"] [style*="background: linear-gradient"] {
-          opacity: 0.9;
+        /* Icon backgrounds - dark mode specific colors */
+        [data-theme="dark"] .icon-bg-pink {
+          background: rgba(139, 124, 246, 0.15) !important;
+        }
+
+        [data-theme="dark"] .icon-bg-purple {
+          background: rgba(217, 127, 166, 0.15) !important;
+        }
+
+        [data-theme="dark"] .icon-bg-green {
+          background: rgba(107, 154, 127, 0.15) !important;
+        }
+
+        [data-theme="dark"] .icon-bg-yellow {
+          background: rgba(184, 138, 111, 0.15) !important;
         }
 
         /* Book title and author display utilities */
