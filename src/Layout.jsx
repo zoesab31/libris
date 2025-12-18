@@ -357,24 +357,30 @@ export default function Layout({ children, currentPageName }) {
           --sidebar-border: var(--beige);
           --text-primary: #2D3748;
           --text-secondary: #718096;
+          --card-bg: white;
+          --card-border: #FFE4EC;
+          --hover-bg: #FFF7FA;
         }
 
         [data-theme="dark"] {
-          --cream: #0f0a1e;
-          --beige: #1a0f2e;
-          --soft-pink: #ff4d94;
-          --warm-pink: #ff1493;
-          --deep-pink: #ff0080;
-          --gold: #ffb6d9;
-          --rose-gold: #ff9eb3;
-          --dark-text: #ffcceb;
-          --lavender: #ff69b4;
-          --peach: #ff8fa3;
-          --bg-gradient: linear-gradient(135deg, #0f0a1e 0%, #1a0f2e 100%);
-          --sidebar-bg: linear-gradient(180deg, #0f0a1e 0%, #1a0f2e 100%);
-          --sidebar-border: #ff1493;
-          --text-primary: #ffcceb;
-          --text-secondary: #ffb3d9;
+          --cream: #0F1115;
+          --beige: #2A2F3A;
+          --soft-pink: #D96C9A;
+          --warm-pink: #C75B87;
+          --deep-pink: #B54876;
+          --gold: #B88AA3;
+          --rose-gold: #A87B93;
+          --dark-text: #E6E8EE;
+          --lavender: #9B7A8F;
+          --peach: #8B6A7F;
+          --bg-gradient: linear-gradient(135deg, #0F1115 0%, #161A22 100%);
+          --sidebar-bg: #0A0D10;
+          --sidebar-border: #2A2F3A;
+          --text-primary: #E6E8EE;
+          --text-secondary: #A0A4B8;
+          --card-bg: #1B1F2A;
+          --card-border: #2A2F3A;
+          --hover-bg: #242831;
         }
 
         body {
@@ -389,19 +395,81 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] .sidebar-header {
-          border-bottom-color: #ff69b4 !important;
+          border-bottom-color: #2A2F3A !important;
+          background: transparent !important;
         }
 
         [data-theme="dark"] .sidebar-footer {
-          border-top-color: #ff69b4 !important;
+          border-top-color: #2A2F3A !important;
+          background: transparent !important;
         }
 
         [data-theme="dark"] .sidebar-link {
-          color: #ffb3d9;
+          color: #A0A4B8;
         }
 
         [data-theme="dark"] .sidebar-link:hover {
-          background-color: rgba(255, 20, 147, 0.2);
+          background-color: #1B1F2A !important;
+          color: #E6E8EE;
+        }
+
+        [data-theme="dark"] .stats-card {
+          background: #1B1F2A !important;
+          border: 1px solid #2A2F3A !important;
+        }
+
+        [data-theme="dark"] .stats-card:hover {
+          background: #242831 !important;
+          border-color: #343945 !important;
+        }
+
+        [data-theme="dark"] header {
+          background: #0F1115 !important;
+          border-color: #2A2F3A !important;
+        }
+
+        [data-theme="dark"] main > div {
+          background: transparent !important;
+        }
+
+        /* Cards */
+        [data-theme="dark"] .shadow-lg,
+        [data-theme="dark"] .rounded-2xl,
+        [data-theme="dark"] .rounded-3xl {
+          background: var(--card-bg) !important;
+          border: 1px solid var(--card-border);
+        }
+
+        [data-theme="dark"] .bg-white {
+          background: var(--card-bg) !important;
+        }
+
+        /* Progress bars */
+        [data-theme="dark"] .progress-bg {
+          background: #2A2F3A !important;
+        }
+
+        [data-theme="dark"] .progress-fill {
+          background: linear-gradient(90deg, #D96C9A, #B54876) !important;
+        }
+
+        /* Buttons */
+        [data-theme="dark"] button[style*="gradient"] {
+          background: linear-gradient(135deg, #D96C9A, #B54876) !important;
+        }
+
+        /* Activity items */
+        [data-theme="dark"] .activity-item {
+          border-color: #2A2F3A !important;
+        }
+
+        [data-theme="dark"] .activity-item:hover {
+          background: var(--hover-bg) !important;
+        }
+
+        /* Icon backgrounds */
+        [data-theme="dark"] [style*="background: linear-gradient"] {
+          opacity: 0.9;
         }
 
         /* Book title and author display utilities */

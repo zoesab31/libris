@@ -91,48 +91,53 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
 };
 
 // Individual Stats Card - Restored to match exact design from image
-const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick }) => (
-  <div
-    onClick={onClick}
-    className="stats-card cursor-pointer"
-    style={{
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      padding: '20px 24px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      gap: '8px',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    }}
-  >
-    {/* Icon in colored square */}
+const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick }) => {
+  const isDark = user?.theme === 'dark';
+
+  return (
     <div
+      onClick={onClick}
+      className="stats-card cursor-pointer"
       style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '12px',
-        backgroundColor: iconBgColor,
+        backgroundColor: isDark ? '#1B1F2A' : 'white',
+        border: isDark ? '1px solid #2A2F3A' : 'none',
+        borderRadius: '16px',
+        padding: '20px 24px',
+        boxShadow: isDark ? 'none' : '0 4px 12px rgba(0, 0, 0, 0.05)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '8px',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
       }}
     >
-      <Icon className="w-6 h-6" style={{ color: 'white' }} />
-    </div>
+      {/* Icon in colored square */}
+      <div
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '12px',
+          backgroundColor: isDark ? `${iconBgColor}40` : iconBgColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon className="w-6 h-6" style={{ color: isDark ? iconBgColor : 'white' }} />
+      </div>
 
-    {/* Label */}
-    <p className="text-sm" style={{ color: '#6B7280' }}>
-      {label}
-    </p>
+      {/* Label */}
+      <p className="text-sm" style={{ color: isDark ? '#A0A4B8' : '#6B7280' }}>
+        {label}
+      </p>
 
-    {/* Value */}
-    <div className="text-2xl font-bold" style={{ color: '#111827' }}>
-      {value}
+      {/* Value */}
+      <div className="text-2xl font-bold" style={{ color: isDark ? '#E6E8EE' : '#111827' }}>
+        {value}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -581,7 +586,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+    <div className="min-h-screen" style={{ background: isDark ? 'linear-gradient(135deg, #0F1115 0%, #161A22 100%)' : 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
@@ -599,19 +604,20 @@ export default function Dashboard() {
             transform: translateY(0);
           }
         }
-        
+
         .hover-lift {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
+
         .hover-lift:hover {
           transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
+          box-shadow: ${isDark ? '0 12px 24px rgba(217, 108, 154, 0.1)' : '0 12px 24px rgba(255, 105, 180, 0.15)'};
         }
 
         .stats-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+          background: ${isDark ? '#242831' : 'white'} !important;
+          border-color: ${isDark ? '#343945' : 'transparent'} !important;
         }
 
         .quick-action:hover {
@@ -641,7 +647,13 @@ export default function Dashboard() {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE1F0 50%, #FFD6E8 100%)', backdropFilter: 'blur(10px)' }}>
+      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ 
+        background: isDark 
+          ? 'rgba(15, 17, 21, 0.95)' 
+          : 'linear-gradient(135deg, #FFF0F6 0%, #FFE1F0 50%, #FFD6E8 100%)', 
+        backdropFilter: 'blur(10px)',
+        borderBottom: isDark ? '1px solid #2A2F3A' : 'none'
+      }}>
         <div className="max-w-[1600px] mx-auto">
           {/* Mobile Header */}
           <div className="flex flex-col gap-4 md:hidden">
@@ -747,28 +759,28 @@ export default function Dashboard() {
               icon={BookOpen}
               value={booksReadThisYear}
               label="Livres lus"
-              iconBgColor="#FFB6D9"
+              iconBgColor={isDark ? "#D96C9A" : "#FFB6D9"}
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
             <StatsCard
               icon={TrendingUp}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              iconBgColor="#E6B3FF"
+              iconBgColor={isDark ? "#9B7A8F" : "#E6B3FF"}
               onClick={() => navigate(createPageUrl("Statistics"))}
             />
             <StatsCard
               icon={Users}
               value={sharedReadingsCount}
               label="Lectures communes"
-              iconBgColor="#86EFAC"
+              iconBgColor={isDark ? "#6B9A7F" : "#86EFAC"}
               onClick={() => navigate(createPageUrl("SharedReadings"))}
             />
             <StatsCard
               icon={Star}
               value={toReadCount}
               label="À lire"
-              iconBgColor="#FFE699"
+              iconBgColor={isDark ? "#B88A6F" : "#FFE699"}
               onClick={() => navigate(createPageUrl("MyLibrary"))}
             />
           </div>
@@ -807,7 +819,10 @@ export default function Dashboard() {
                               return (
                                 <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
-                                     style={{ backgroundColor: '#FFF7FA' }}
+                                     style={{ 
+                                       backgroundColor: isDark ? '#1B1F2A' : '#FFF7FA',
+                                       border: isDark ? '1px solid #2A2F3A' : 'none'
+                                     }}
                                      onClick={() => setSelectedBookForDetails(userBook)}>
                                   <div className="relative flex-shrink-0">
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
@@ -834,11 +849,11 @@ export default function Dashboard() {
                                       </p>
                                     )}
                                     <div className="relative">
-                                      <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
-                                        <div className="h-full rounded-full transition-all duration-500"
+                                      <div className="w-full h-1.5 md:h-2 rounded-full progress-bg" style={{ backgroundColor: isDark ? '#2A2F3A' : '#FFE4EC' }}>
+                                        <div className="h-full rounded-full transition-all duration-500 progress-fill"
                                              style={{
                                                width: `${progress}%`,
-                                               background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
+                                               background: isDark ? 'linear-gradient(90deg, #D96C9A, #B54876)' : 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                              }} />
                                       </div>
                                       <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
@@ -867,7 +882,10 @@ export default function Dashboard() {
                               return (
                                 <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
-                                     style={{ backgroundColor: '#F0E6FF' }}>
+                                     style={{ 
+                                       backgroundColor: isDark ? '#1B1F2A' : '#F0E6FF',
+                                       border: isDark ? '1px solid #2A2F3A' : 'none'
+                                     }}>
                                   <div className="relative flex-shrink-0">
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                          style={{ backgroundColor: '#E6B3E8' }}>
@@ -893,11 +911,11 @@ export default function Dashboard() {
                                           {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
                                         </p>
                                         <div className="relative">
-                                          <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
-                                            <div className="h-full rounded-full transition-all duration-500"
+                                          <div className="w-full h-1.5 md:h-2 rounded-full progress-bg" style={{ backgroundColor: isDark ? '#2A2F3A' : '#E6B3E8' }}>
+                                            <div className="h-full rounded-full transition-all duration-500 progress-fill"
                                                  style={{
                                                    width: `${progress}%`,
-                                                   background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
+                                                   background: isDark ? 'linear-gradient(90deg, #9B7A8F, #8B6A7F)' : 'linear-gradient(90kg, #9B59B6, #B794F6)'
                                                  }} />
                                           </div>
                                           <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
@@ -939,8 +957,8 @@ export default function Dashboard() {
 
                         return (
                           <div key={`finished-${activity.userEmail}-${activity.userBook.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0"
-                               style={{ borderColor: '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
+                               style={{ borderColor: isDark ? '#2A2F3A' : '#F7FAFC' }}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
                                  style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
                               <BookOpen className="w-4 h-4 md:w-5 md:h-5"
@@ -1374,7 +1392,12 @@ export default function Dashboard() {
 
             {/* Citation & humeur du jour */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
-              <CardContent className="p-6 md:p-6 text-center" style={{ background: 'linear-gradient(135deg, #E0E7FF, #FCE7F3)' }}>
+              <CardContent className="p-6 md:p-6 text-center" style={{ 
+                background: isDark 
+                  ? 'linear-gradient(135deg, #1B1F2A, #242831)' 
+                  : 'linear-gradient(135deg, #E0E7FF, #FCE7F3)',
+                border: isDark ? '1px solid #2A2F3A' : 'none'
+              }}>
                 <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4" style={{ color: '#2D3748' }}>
                   💭 Citation du jour
                 </h2>
