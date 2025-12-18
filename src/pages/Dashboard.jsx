@@ -91,7 +91,7 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
 };
 
 // Individual Stats Card - Restored to match exact design from image
-const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick }) => {
+const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick, user }) => {
   const isDark = user?.theme === 'dark';
 
   return (
@@ -585,6 +585,8 @@ export default function Dashboard() {
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
   ];
 
+  const isDark = user?.theme === 'dark';
+
   return (
     <div className="min-h-screen" style={{ background: isDark ? 'linear-gradient(135deg, #0F1115 0%, #161A22 100%)' : 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <style>{`
@@ -761,6 +763,7 @@ export default function Dashboard() {
               label="Livres lus"
               iconBgColor={isDark ? "#D96C9A" : "#FFB6D9"}
               onClick={() => navigate(createPageUrl("MyLibrary"))}
+              user={user}
             />
             <StatsCard
               icon={TrendingUp}
@@ -768,6 +771,7 @@ export default function Dashboard() {
               label="Pages lues"
               iconBgColor={isDark ? "#9B7A8F" : "#E6B3FF"}
               onClick={() => navigate(createPageUrl("Statistics"))}
+              user={user}
             />
             <StatsCard
               icon={Users}
@@ -775,6 +779,7 @@ export default function Dashboard() {
               label="Lectures communes"
               iconBgColor={isDark ? "#6B9A7F" : "#86EFAC"}
               onClick={() => navigate(createPageUrl("SharedReadings"))}
+              user={user}
             />
             <StatsCard
               icon={Star}
@@ -782,6 +787,7 @@ export default function Dashboard() {
               label="À lire"
               iconBgColor={isDark ? "#B88A6F" : "#FFE699"}
               onClick={() => navigate(createPageUrl("MyLibrary"))}
+              user={user}
             />
           </div>
 
@@ -1324,10 +1330,14 @@ export default function Dashboard() {
 
             {/* Desktop - Playlist littéraire with random music */}
             {randomMusicSelection.length > 0 && (
-              <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
-                <Link to={createPageUrl("MusicPlaylist")}>
-                  <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity"
-                               style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+             <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
+               <Link to={createPageUrl("MusicPlaylist")}>
+                 <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ 
+                                background: isDark 
+                                  ? 'linear-gradient(135deg, #9B7A8F, #D96C9A)' 
+                                  : 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' 
+                              }}>
                     <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                       🎵 Ma Playlist Littéraire
                     </h2>
