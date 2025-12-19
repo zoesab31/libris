@@ -92,26 +92,11 @@ const navigationItems = [
     url: createPageUrl("Discover"),
     icon: Sparkles,
   },
-  ];
-
-  const adminItems = [
-  {
-    title: "👑 Admin Utilisateurs",
-    url: createPageUrl("AdminUsers"),
-    icon: Users,
-  },
-  ];
+];
 
 function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
   const { setOpen } = useSidebar();
-
-  // Apply theme immediately without lag
-  useEffect(() => {
-    const theme = user?.theme || 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.style.setProperty('color-scheme', theme);
-  }, [user?.theme]);
 
   // Fetch unread messages count
   const { data: unreadCount = 0 } = useQuery({
@@ -171,15 +156,16 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
   return (
     <>
       <Sidebar 
-        className="border-r sidebar-container"
+        className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
         style={{ 
-          borderColor: 'var(--sidebar-border)',
-          backgroundColor: 'var(--sidebar-bg)'
+          borderColor: isDark ? '#2d3748' : 'var(--beige)',
+          backgroundColor: isDark ? '#0f1419' : 'white'
         }}>
         <SidebarHeader 
           className="border-b p-3 md:p-6 sidebar-header" 
           style={{ 
-            borderColor: 'var(--sidebar-border)'
+            borderColor: isDark ? '#2d3748' : 'var(--beige)',
+            backgroundColor: isDark ? '#0f1419' : 'transparent'
           }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
@@ -197,33 +183,10 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           </div>
         </SidebarHeader>
         
-        <SidebarContent className="p-2 md:p-3">
+        <SidebarContent className="p-2 md:p-3" style={{ backgroundColor: isDark ? '#0f1419' : 'transparent' }}>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {user?.role === 'admin' && adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
-                        location.pathname === item.url 
-                          ? 'text-white shadow-md' 
-                          : 'hover:bg-opacity-50'
-                      }`}
-                      style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, #DC2626, #EF4444)'
-                      } : {
-                        color: isDark ? '#cbd5e0' : 'inherit',
-                        backgroundColor: 'transparent'
-                      }}
-                    >
-                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
-                        <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                        <span className="font-medium text-xs md:text-base">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
                 {navigationItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
@@ -255,7 +218,8 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
         <SidebarFooter 
           className="border-t p-2 md:p-4 sidebar-footer" 
           style={{ 
-            borderColor: 'var(--sidebar-border)'
+            borderColor: isDark ? '#2d3748' : 'var(--beige)',
+            backgroundColor: isDark ? '#0f1419' : 'transparent'
           }}>
           {user && (
             <div className="space-y-2">
@@ -301,8 +265,8 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       <main className="flex-1 flex flex-col min-w-0">
         <header className="border-b px-3 md:px-6 py-2 md:py-4 flex items-center justify-between sticky top-0 z-10" 
                 style={{ 
-                  borderColor: 'var(--sidebar-border)',
-                  backgroundColor: isDark ? '#0f0a1e' : 'white'
+                  borderColor: isDark ? '#2d3748' : 'var(--beige)',
+                  backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
@@ -346,19 +310,16 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Load theme from localStorage immediately for instant rendering
-    const savedTheme = localStorage.getItem('app-theme');
-    if (savedTheme) {
-      document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-    
-    base44.auth.me().then(u => {
-      setUser(u);
-      const theme = u?.theme || 'light';
-      localStorage.setItem('app-theme', theme);
-      document.documentElement.setAttribute('data-theme', theme);
-    }).catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user?.theme === 'dark') {
+      document.documentElement.classList.add('dark-theme');
+    } else {
+      document.documentElement.classList.remove('dark-theme');
+    }
+  }, [user?.theme]);
 
   const handleLogout = () => {
     base44.auth.logout();
@@ -369,8 +330,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider defaultOpen={false}>
       <style>{`
-        :root,
-        [data-theme="light"] {
+        :root {
           --cream: #FFF0F6;
           --beige: #FFD6E8;
           --soft-pink: #FF69B4;
@@ -381,76 +341,45 @@ export default function Layout({ children, currentPageName }) {
           --dark-text: #C2185B;
           --lavender: #F8BBD0;
           --peach: #FFCCE5;
-          --bg-gradient: linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%);
-          --sidebar-bg: white;
-          --sidebar-border: var(--beige);
-          --text-primary: #2D3748;
-          --text-secondary: #718096;
         }
 
-        [data-theme="dark"] {
-          --cream: #120b1f;
-          --beige: #1d0f2b;
-          --soft-pink: #ff6b9d;
-          --warm-pink: #ff4081;
-          --deep-pink: #f06292;
-          --gold: #ffb3d9;
-          --rose-gold: #ffa0c9;
-          --dark-text: #fce4ec;
-          --lavender: #ff80ab;
-          --peach: #ff9eb3;
-          --bg-gradient: linear-gradient(135deg, #0a0514 0%, #1a0f2e 100%);
-          --sidebar-bg: linear-gradient(180deg, #0f0a1e 0%, #1a0f2e 100%);
-          --sidebar-border: #ff4081;
-          --text-primary: #fce4ec;
-          --text-secondary: #f8bbd0;
+        .dark-theme {
+          --cream: #1a1a2e;
+          --beige: #2d1b2e;
+          --soft-pink: #ff69b4;
+          --warm-pink: #ff1493;
+          --deep-pink: #ff0080;
+          --gold: #ffb6d9;
+          --rose-gold: #ff9eb3;
+          --dark-text: #ffb3d9;
+          --lavender: #e91e63;
+          --peach: #ff8fa3;
         }
 
-        body {
-          background: var(--bg-gradient);
-          color: var(--text-primary);
-          transition: none;
+        .dark-theme body {
+          background: linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 100%);
+          color: var(--dark-text);
         }
 
-        .sidebar-container {
-          background: var(--sidebar-bg) !important;
-          border-right-color: var(--sidebar-border) !important;
+        .dark-theme .sidebar-container {
+          background: linear-gradient(180deg, #1a1a2e 0%, #2d1b2e 100%) !important;
+          border-right-color: #ff1493 !important;
         }
 
-        [data-theme="dark"] .sidebar-header {
-          border-bottom-color: #ff4081 !important;
+        .dark-theme .sidebar-header {
+          border-bottom-color: #ff69b4 !important;
         }
 
-        [data-theme="dark"] .sidebar-footer {
-          border-top-color: #ff4081 !important;
+        .dark-theme .sidebar-footer {
+          border-top-color: #ff69b4 !important;
         }
 
-        [data-theme="dark"] .sidebar-link {
-          color: #f8bbd0;
+        .dark-theme .sidebar-link {
+          color: #ffb3d9;
         }
 
-        [data-theme="dark"] .sidebar-link:hover {
-          background-color: rgba(255, 64, 129, 0.15);
-        }
-
-        [data-theme="dark"] .card,
-        [data-theme="dark"] .bg-white {
-          background-color: #1a0f2e !important;
-          border-color: #2d1b3f !important;
-        }
-
-        [data-theme="dark"] input,
-        [data-theme="dark"] textarea,
-        [data-theme="dark"] select {
-          background-color: #0f0a1e !important;
-          border-color: #2d1b3f !important;
-          color: #fce4ec !important;
-        }
-
-        [data-theme="dark"] .text-gray-600,
-        [data-theme="dark"] .text-gray-700,
-        [data-theme="dark"] .text-gray-800 {
-          color: #f8bbd0 !important;
+        .dark-theme .sidebar-link:hover {
+          background-color: rgba(255, 20, 147, 0.2);
         }
 
         /* Book title and author display utilities */

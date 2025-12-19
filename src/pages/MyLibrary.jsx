@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,6 @@ export default function MyLibrary() {
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
-    staleTime: 5 * 60 * 1000,
   });
 
   const { data: customShelves = [] } = useQuery({

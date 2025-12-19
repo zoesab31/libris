@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -338,7 +339,6 @@ export default function BookGrid({
                         src={book.cover_url}
                         alt={book.title}
                         className="w-full h-full object-cover"
-                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

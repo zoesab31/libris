@@ -32,15 +32,13 @@ import {
   Play,
   Layers,
   Search,
-  MessageSquare,
-  Lightbulb
+  MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
 import CommentSection from "./CommentSection";
-import ReadingRecapDialog from "./ReadingRecapDialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -541,7 +539,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
   const [newMusic, setNewMusic] = useState({ title: "", artist: "", link: "" });
   const [isAddingMusic, setIsAddingMusic] = useState(false);
   const [showSeriesDialog, setShowSeriesDialog] = useState(false);
-  const [showRecapDialog, setShowRecapDialog] = useState(false);
 
   useEffect(() => {
     if (userBook) {
@@ -1234,19 +1231,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Rappel de lecture IA */}
-                {editedData.status === "En cours" && (editedData.current_page || userBook?.chapter) && (
-                  <Button
-                    onClick={() => setShowRecapDialog(true)}
-                    variant="outline"
-                    className="w-full border-2 hover:shadow-md transition-all"
-                    style={{ borderColor: 'var(--soft-pink)' }}
-                  >
-                    <Lightbulb className="w-4 h-4 mr-2" style={{ color: 'var(--deep-pink)' }} />
-                    <span style={{ color: 'var(--dark-text)' }}>Rappel de lecture (sans spoiler)</span>
-                  </Button>
-                )}
               </div>
             </div>
           </div>
@@ -1811,7 +1795,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
                       friendsUserBooks={friendsUserBooks}
                       myFriends={myFriends}
                       allUsers={allUsers}
-                      currentUserBook={userBook}
                     />
                   </>
                 )}
@@ -2022,14 +2005,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange }
         book={book}
         currentSeries={currentSeries}
         allSeries={bookSeries}
-      />
-
-      {/* Reading Recap Dialog */}
-      <ReadingRecapDialog
-        open={showRecapDialog}
-        onOpenChange={setShowRecapDialog}
-        book={book}
-        userBook={userBook}
       />
     </>
   );

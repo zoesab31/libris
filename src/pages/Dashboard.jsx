@@ -153,7 +153,6 @@ export default function Dashboard() {
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Fetch various activity types
@@ -218,11 +217,10 @@ export default function Dashboard() {
     queryKey: ['myFriends'],
     queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
     enabled: !!user,
-    staleTime: 2 * 60 * 1000, // 2 minutes cache
   });
 
   const { data: friendsBooks = [] } = useQuery({
-    queryKey: ['friendsBooks', myFriends.map(f => f.friend_email).join(',')],
+    queryKey: ['friendsBooks'],
     queryFn: async () => {
       const friendsEmails = myFriends.map(f => f.friend_email);
       if (friendsEmails.length === 0) return [];
@@ -236,14 +234,12 @@ export default function Dashboard() {
       return allFriendsBooks.flat();
     },
     enabled: myFriends.length > 0,
-    staleTime: 3 * 60 * 1000, // 3 minutes cache
   });
 
   const { data: allSharedReadings = [] } = useQuery({
     queryKey: ['sharedReadings'],
     queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 2 * 60 * 1000,
   });
 
   const { data: sharedReadingMessages = [] } = useQuery({
@@ -268,7 +264,6 @@ export default function Dashboard() {
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000,
   });
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
@@ -813,7 +808,7 @@ export default function Dashboard() {
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                          style={{ backgroundColor: '#FFE4EC' }}>
                                       {book.cover_url && (
-                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                       )}
                                     </div>
                                     <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"
@@ -872,7 +867,7 @@ export default function Dashboard() {
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                          style={{ backgroundColor: '#E6B3E8' }}>
                                       {book.cover_url && (
-                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
+                                        <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                       )}
                                     </div>
                                     <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-bold text-white shadow-lg"

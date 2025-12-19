@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -23,13 +24,11 @@ export default function Statistics() {
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
     enabled: !!user,
-    staleTime: 2 * 60 * 1000,
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
-    staleTime: 5 * 60 * 1000,
   });
 
   const { data: myFriends = [] } = useQuery({
