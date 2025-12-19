@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Image as ImageIcon, X, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Eye, EyeOff, Trash2, Lock, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ const MOODS = [
   { emoji: "🥰", label: "Amour" }
 ];
 
-export default function CommentSection({ bookId, userBookId, existingComments = [], friendsUserBooks = [], myFriends = [], allUsers = [] }) {
+export default function CommentSection({ bookId, userBookId, existingComments = [], friendsUserBooks = [], myFriends = [], allUsers = [], currentUserBook = null }) {
   const queryClient = useQueryClient();
   const [comment, setComment] = useState({
     comment: "",
@@ -28,6 +28,8 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
     page_number: "",
     mood: "",
     is_spoiler: false,
+    spoiler_visibility: "immediate",
+    spoiler_chapter: "",
     photos: []
   });
   const [photoPreview, setPhotoPreview] = useState([]);
@@ -56,6 +58,8 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
         page_number: comment.page_number ? parseInt(comment.page_number) : undefined,
         mood: comment.mood || undefined,
         is_spoiler: comment.is_spoiler,
+        spoiler_visibility: comment.is_spoiler ? comment.spoiler_visibility : undefined,
+        spoiler_chapter: (comment.is_spoiler && comment.spoiler_visibility === "after_chapter") ? comment.spoiler_chapter : undefined,
         book_id: bookId,
         user_book_id: userBookId,
         photos: photoUrls.length > 0 ? photoUrls : undefined
@@ -66,7 +70,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
       queryClient.invalidateQueries({ queryKey: ['readingComments'] });
       queryClient.invalidateQueries({ queryKey: ['bookComments', bookId] });
       toast.success("✅ Commentaire ajouté !");
-      setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, photos: [] });
+      setComment({ comment: "", chapter: "", page_number: "", mood: "", is_spoiler: false, spoiler_visibility: "immediate", spoiler_chapter: "", photos: [] });
       setPhotoPreview([]);
       setUploadedPhotos([]);
     },
@@ -116,6 +120,23 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
         return newSet;
       });
     }
+  };
+
+  // Helper function to check if comment should be visible
+  const isCommentVisible = (c) => {
+    if (!c.is_spoiler || c.spoiler_visibility === "immediate") return true;
+    
+    if (c.spoiler_visibility === "after_finish") {
+      return currentUserBook?.status === "Lu";
+    }
+    
+    if (c.spoiler_visibility === "after_chapter" && c.spoiler_chapter) {
+      if (!currentUserBook?.chapter) return false;
+      // Simple string comparison - could be improved with chapter parsing
+      return currentUserBook.chapter >= c.spoiler_chapter;
+    }
+    
+    return false;
   };
 
   return (
@@ -259,7 +280,7 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t-2" style={{ borderColor: 'var(--beige)' }}>
+          <div className="space-y-4 pt-4 border-t-2" style={{ borderColor: 'var(--beige)' }}>
             <div className="flex items-center gap-2">
               <Switch
                 id="spoiler"
@@ -271,10 +292,68 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
               </Label>
             </div>
 
+            {comment.is_spoiler && (
+              <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: '#FFF3E0' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-4 h-4" style={{ color: '#F57C00' }} />
+                  <p className="text-sm font-bold" style={{ color: '#E65100' }}>
+                    Quand cette note sera-t-elle visible ?
+                  </p>
+                </div>
+
+                <Select
+                  value={comment.spoiler_visibility}
+                  onValueChange={(value) => setComment({...comment, spoiler_visibility: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="immediate">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        <span>Visible immédiatement</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="after_chapter">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        <span>Après un chapitre spécifique</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="after_finish">
+                      <div className="flex items-center gap-2">
+                        <EyeOff className="w-4 h-4" />
+                        <span>Uniquement après avoir fini</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {comment.spoiler_visibility === "after_chapter" && (
+                  <div>
+                    <Label className="text-xs mb-1 block" style={{ color: '#E65100' }}>
+                      Visible après le chapitre :
+                    </Label>
+                    <Input
+                      value={comment.spoiler_chapter}
+                      onChange={(e) => setComment({...comment, spoiler_chapter: e.target.value})}
+                      placeholder="Ex: Chapitre 15, Partie 3..."
+                      className="border-orange-300"
+                    />
+                  </div>
+                )}
+
+                <p className="text-xs" style={{ color: '#F57C00' }}>
+                  💡 La note sera automatiquement révélée quand vous atteindrez le seuil défini
+                </p>
+              </div>
+            )}
+
             <Button
               onClick={() => createCommentMutation.mutate()}
               disabled={!comment.comment || createCommentMutation.isPending}
-              className="text-white font-medium shadow-md"
+              className="w-full text-white font-medium shadow-md"
               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
               {createCommentMutation.isPending ? "Ajout..." : "Publier"}
@@ -292,7 +371,8 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
           
           {existingComments.map((c) => {
             const isSpoilerRevealed = revealedSpoilers.has(c.id);
-            
+            const commentVisible = isCommentVisible(c);
+
             return (
               <div
                 key={c.id}
@@ -338,17 +418,26 @@ export default function CommentSection({ bookId, userBookId, existingComments = 
                   </div>
                 </div>
 
-                {c.is_spoiler && !isSpoilerRevealed ? (
+                {c.is_spoiler && !isSpoilerRevealed && !commentVisible ? (
                   <div>
-                    <div className="p-6 rounded-lg text-center border-2 cursor-pointer hover:bg-red-50 transition-colors" 
-                         style={{ backgroundColor: '#FFF5F5', borderColor: '#FEE2E2' }}
-                         onClick={() => toggleSpoiler(c.id)}>
+                    <div className="p-6 rounded-lg text-center border-2" 
+                         style={{ backgroundColor: '#FFF5F5', borderColor: '#FEE2E2' }}>
+                      <Lock className="w-8 h-8 mx-auto mb-2 text-red-600" />
                       <p className="text-base font-bold mb-1" style={{ color: '#DC2626' }}>
-                        ⚠️ Spoiler masqué
+                        📝 Note masquée — spoiler
                       </p>
-                      <p className="text-sm" style={{ color: '#991B1B' }}>
-                        Cliquez pour révéler si vous avez lu le livre
+                      <p className="text-sm mb-2" style={{ color: '#991B1B' }}>
+                        {c.spoiler_visibility === "after_finish" && "Visible après avoir terminé le livre"}
+                        {c.spoiler_visibility === "after_chapter" && `Visible après ${c.spoiler_chapter}`}
                       </p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleSpoiler(c.id)}
+                        className="text-xs text-red-700 hover:text-red-900"
+                      >
+                        Révéler quand même (spoiler)
+                      </Button>
                     </div>
                     {/* Photos masquées aussi */}
                     {c.photos && c.photos.length > 0 && (
