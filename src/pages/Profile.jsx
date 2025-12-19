@@ -62,78 +62,76 @@ export default function Profile() {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
-              <Heart className="w-7 h-7 text-white" />
-            </div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header avec background rose gradient */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Mes Personnages Préférés 💕
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                💕 Mes Personnages Préférés
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
                 {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} • {favoriteCouples.length} couple{favoriteCouples.length > 1 ? 's' : ''}
               </p>
             </div>
-          </div>
-          <div className="flex gap-2">
             <Button 
               onClick={() => selectedTab === "couples" ? setShowAddCoupleDialog(true) : setShowAddDialog(true)}
-              className="shadow-lg text-white font-medium px-6 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
+              className="shadow-xl text-pink-600 font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
+              style={{ backgroundColor: 'white' }}>
               <Plus className="w-5 h-5 mr-2" />
-              {selectedTab === "couples" ? "Ajouter un couple" : "Ajouter un personnage"}
+              {selectedTab === "couples" ? "Couple" : "Personnage"}
             </Button>
           </div>
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 grid grid-cols-3">
+          <TabsList className="bg-white shadow-xl p-2 rounded-2xl border-0 mb-8 grid grid-cols-3 w-full">
             <TabsTrigger 
               value="male" 
-              className="rounded-lg font-bold data-[state=active]:text-white"
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
               style={selectedTab === "male" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                 color: '#FFFFFF'
               } : {
                 color: '#000000'
               }}
             >
+              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
               Masculins ({maleCharacters.length})
             </TabsTrigger>
             <TabsTrigger 
               value="female" 
-              className="rounded-lg font-bold data-[state=active]:text-white"
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
               style={selectedTab === "female" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                 color: '#FFFFFF'
               } : {
                 color: '#000000'
               }}
             >
+              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
               Féminins ({femaleCharacters.length})
             </TabsTrigger>
             <TabsTrigger 
               value="couples" 
-              className="rounded-lg font-bold data-[state=active]:text-white"
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
               style={selectedTab === "couples" ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))',
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                 color: '#FFFFFF'
               } : {
                 color: '#000000'
               }}
             >
-              <Users className="w-4 h-4 mr-1 inline" />
+              <Users className="w-4 h-4 mr-1 md:mr-2 inline" />
               Couples ({favoriteCouples.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="male">
             {maleCharacters.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                 {maleCharacters.map((char) => {
                   const book = allBooks.find(b => b.id === char.book_id);
                   return (
@@ -147,21 +145,28 @@ export default function Profile() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-20">
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
                 <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucun personnage masculin
                 </h3>
-                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
                   Ajoutez vos book boyfriends préférés
                 </p>
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter maintenant
+                </Button>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="female">
             {femaleCharacters.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                 {femaleCharacters.map((char) => {
                   const book = allBooks.find(b => b.id === char.book_id);
                   return (
@@ -175,21 +180,28 @@ export default function Profile() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-20">
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
                 <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucun personnage féminin
                 </h3>
-                <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
                   Ajoutez vos personnages féminins préférés
                 </p>
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter maintenant
+                </Button>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="couples">
             {favoriteCouples.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                 {favoriteCouples.map((couple) => {
                   const book = allBooks.find(b => b.id === couple.book_id);
                   return (
@@ -203,7 +215,7 @@ export default function Profile() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-20">
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
                 <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucun couple préféré
@@ -213,8 +225,8 @@ export default function Profile() {
                 </p>
                 <Button 
                   onClick={() => setShowAddCoupleDialog(true)}
-                  className="shadow-lg text-white font-medium px-6 rounded-xl"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--soft-pink))' }}>
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
                   <Plus className="w-5 h-5 mr-2" />
                   Ajouter un couple
                 </Button>

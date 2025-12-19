@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +21,6 @@ export default function Quotes() {
     queryKey: ['quotes'],
     queryFn: async () => {
       const allQuotes = await base44.entities.Quote.filter({ created_by: user?.email });
-      // Sort quotes by page_number in descending order (highest first)
       return allQuotes.sort((a, b) => (b.page_number || 0) - (a.page_number || 0));
     },
     enabled: !!user,
@@ -33,6 +31,24 @@ export default function Quotes() {
     queryFn: () => base44.entities.Book.list(),
   });
 
+  const { data: myBooks = [] } = useQuery({
+    queryKey: ['myBooks'],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Find current reading or last read book
+  const priorityBookId = React.useMemo(() => {
+    const currentReading = myBooks.find(b => b.status === "En cours");
+    if (currentReading) return currentReading.book_id;
+    
+    const lastRead = myBooks
+      .filter(b => b.status === "Lu" && b.end_date)
+      .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))[0];
+    
+    return lastRead?.book_id;
+  }, [myBooks]);
+
   // Group quotes by book
   const quotesByBook = quotes.reduce((acc, quote) => {
     const book = allBooks.find(b => b.id === quote.book_id);
@@ -40,7 +56,8 @@ export default function Quotes() {
       if (!acc[book.id]) {
         acc[book.id] = {
           book,
-          quotes: []
+          quotes: [],
+          isPriority: book.id === priorityBookId
         };
       }
       acc[book.id].quotes.push(quote);
@@ -48,9 +65,16 @@ export default function Quotes() {
     return acc;
   }, {});
 
+  // Sort books: priority book first, then others
+  const sortedQuotesByBook = Object.values(quotesByBook).sort((a, b) => {
+    if (a.isPriority && !b.isPriority) return -1;
+    if (!a.isPriority && b.isPriority) return 1;
+    return 0;
+  });
+
   const filteredQuotes = selectedBook === "all" 
-    ? Object.values(quotesByBook)
-    : Object.values(quotesByBook).filter(group => group.book.id === selectedBook);
+    ? sortedQuotesByBook
+    : sortedQuotesByBook.filter(group => group.book.id === selectedBook);
 
   const searchedQuotes = filteredQuotes.filter(group => 
     group.book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -99,9 +123,16 @@ export default function Quotes() {
 
         {searchedQuotes.length > 0 ? (
           <div className="space-y-8">
-            {searchedQuotes.map(({ book, quotes }) => (
-              <div key={book.id}>
-                <div className="flex items-center gap-3 mb-4">
+            {searchedQuotes.map(({ book, quotes, isPriority }) => (
+              <div key={book.id} className={isPriority ? "relative" : ""}>
+                {isPriority && (
+                  <div className="absolute -top-2 left-4 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg z-10"
+                       style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                    📖 En cours / Dernier lu
+                  </div>
+                )}
+                <div className={`flex items-center gap-3 mb-4 p-4 rounded-xl ${isPriority ? 'shadow-lg' : ''}`}
+                     style={{ backgroundColor: isPriority ? '#FFF0F6' : 'transparent' }}>
                   <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
                        style={{ backgroundColor: 'var(--beige)' }}>
                     {book.cover_url ? (

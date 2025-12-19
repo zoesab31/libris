@@ -253,6 +253,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     }
   });
 
+  const getCurrentDay = () => {
+    if (!reading.start_date) return 1;
+    const now = new Date();
+    const start = new Date(reading.start_date);
+    const daysPassed = differenceInDays(now, start) + 1;
+    return Math.max(1, Math.min(daysPassed, numberOfDays));
+  };
+
   const toggleSpoiler = (messageId) => {
     setRevealedSpoilers(prev => {
       const newSet = new Set(prev);
@@ -499,7 +507,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                               </p>
                             )}
 
-                            {msg.is_spoiler && !isSpoilerRevealed ? (
+                            {msg.is_spoiler && !isSpoilerRevealed && msg.day_number >= getCurrentDay() ? (
                               <div className="text-center py-2">
                                 <Button
                                   size="sm"
