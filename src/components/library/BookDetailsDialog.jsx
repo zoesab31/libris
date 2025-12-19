@@ -1259,17 +1259,27 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               <TabsList className="bg-white shadow-2xl p-2 rounded-2xl border-0 w-full">
                 <TabsTrigger
                   value="myinfo"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-sm md:text-base transition-all"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
                   style={activeTab === "myinfo" ? {
                     background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#FFFFFF'
                   } : { color: '#2D3748' }}
                 >
-                  📝 Mes infos
+                  📝 Ma lecture
+                </TabsTrigger>
+                <TabsTrigger
+                  value="bookinfo"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
+                  style={activeTab === "bookinfo" ? {
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                    color: '#FFFFFF'
+                  } : { color: '#2D3748' }}
+                >
+                  📚 Le livre
                 </TabsTrigger>
                 <TabsTrigger
                   value="comments"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-sm md:text-base transition-all"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
                   style={activeTab === "comments" ? {
                     background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#FFFFFF'
@@ -1281,128 +1291,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             </div>
 
             <TabsContent value="myinfo">
-              {/* CORPS PRINCIPAL - 2 colonnes */}
-              <div className="p-4 md:p-8 grid md:grid-cols-2 gap-4 md:gap-6 animate-slide-in">
-                {/* COLONNE GAUCHE */}
-                <div className="space-y-4 md:space-y-6">
-                  {/* Card: Genres & Tags */}
+              {/* CORPS PRINCIPAL */}
+              <div className="p-4 md:p-8 space-y-4 md:space-y-6 animate-slide-in">
+                <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                  {/* Card: Note et dates */}
                   <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
                     <div className="h-1 rounded-full mb-4" 
                          style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
                     <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Tag className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Genres
-                    </h3>
-                    <GenreTagInput
-                      value={book.custom_genres || []}
-                      onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
-                    />
-                  </div>
-
-                  {/* Card: Format */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <FileText className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Format
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-                      {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => {
-                            const currentTags = book.tags || [];
-                            const newTags = currentTags.includes(tag)
-                              ? currentTags.filter(t => t !== tag)
-                              : [...currentTags, tag];
-                            updateBookMutation.mutate({ tags: newTags });
-                          }}
-                          className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all hover:scale-110 ${
-                            (book.tags || []).includes(tag)
-                              ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl'
-                              : 'bg-pink-50 text-pink-800 border-2 border-pink-200 hover:border-pink-400'
-                          }`}
-                        >
-                          {tag === "Audio" && "🎧"}
-                          {tag === "Numérique" && "📱"}
-                          {tag === "Broché" && "📕"}
-                          {tag === "Relié" && "📘"}
-                          {tag === "Poche" && "📙"}
-                          {tag === "Wattpad" && "🌟"}
-                          {" "}{tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Card: Personnage préféré */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Heart className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Personnage préféré
-                    </h3>
-                    <Input
-                      value={editedData.favorite_character || ""}
-                      onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                      placeholder="Votre book boyfriend/girlfriend..."
-                      className="focus-glow rounded-2xl text-base"
-                    />
-                  </div>
-
-                  {/* Card: Ajouter à une saga */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Layers className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Saga
-                    </h3>
-
-                    {currentSeries ? (
-                      <div className="space-y-3">
-                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Layers className="w-5 h-5" />
-                            <span className="font-bold">{currentSeries.series_name}</span>
-                          </div>
-                          <p className="text-sm opacity-90">
-                            {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} livre{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => setShowSeriesDialog(true)}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Changer de saga
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={() => setShowSeriesDialog(true)}
-                        className="w-full text-white"
-                        style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
-                      >
-                        <Layers className="w-4 h-4 mr-2" />
-                        Ajouter à une saga
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* COLONNE DROITE */}
-                <div className="space-y-4 md:space-y-6">
-                  {/* Card: Lecture */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Sparkles className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Ma lecture
+                      <Star className="w-5 h-5" style={{ color: '#FFD700' }} />
+                      Note et dates
                     </h3>
 
                     <div className="space-y-4">
@@ -1542,6 +1440,89 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                           />
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Card: Personnage & Saga */}
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Heart className="w-5 h-5" style={{ color: '#FF1493' }} />
+                      Personnage & Saga
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-bold mb-2 block" style={{ color: '#666' }}>
+                          Personnage préféré
+                        </Label>
+                        <Input
+                          value={editedData.favorite_character || ""}
+                          onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
+                          placeholder="Votre book boyfriend/girlfriend..."
+                          className="focus-glow rounded-2xl text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-sm font-bold mb-2 block" style={{ color: '#666' }}>
+                          Saga associée
+                        </Label>
+                        {currentSeries ? (
+                          <div className="space-y-3">
+                            <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Layers className="w-5 h-5" />
+                                <span className="font-bold">{currentSeries.series_name}</span>
+                              </div>
+                              <p className="text-sm opacity-90">
+                                {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} livre{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => setShowSeriesDialog(true)}
+                              variant="outline"
+                              className="w-full rounded-2xl"
+                            >
+                              Changer de saga
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            onClick={() => setShowSeriesDialog(true)}
+                            className="w-full text-white rounded-2xl"
+                            style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
+                          >
+                            <Layers className="w-4 h-4 mr-2" />
+                            Ajouter à une saga
+                          </Button>
+                        )}
+                      </div>
+
+                      {customShelves.length > 0 && (
+                        <div>
+                          <Label className="text-sm font-bold mb-2 block" style={{ color: '#666' }}>
+                            Étagère personnalisée
+                          </Label>
+                          <Select
+                            value={editedData.custom_shelf || ""}
+                            onValueChange={(value) => setEditedData({...editedData, custom_shelf: value || undefined})}
+                          >
+                            <SelectTrigger className="focus-glow rounded-2xl">
+                              <SelectValue placeholder="Aucune" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={null}>Aucune</SelectItem>
+                              {customShelves.map(s => (
+                                <SelectItem key={s.id} value={s.name}>
+                                  {s.icon} {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1687,10 +1668,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* SECTION INFÉRIEURE */}
-              <div className="p-4 md:p-8 space-y-4 md:space-y-6 bg-gradient-to-b from-transparent to-pink-50/30">
+                {/* SECTION AVIS */}
                 {/* Avis */}
                 <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
                   <div className="h-1 rounded-full mb-4" 
@@ -1707,44 +1686,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   />
                 </div>
 
-                {/* Infos techniques */}
-                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                  <div className="h-1 rounded-full mb-4" 
-                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                    <Info className="w-5 h-5" style={{ color: '#FF1493' }} />
-                    Infos techniques
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                    {book.page_count && (
-                      <div className="text-center p-3 bg-white rounded-xl shadow">
-                        <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                          {book.page_count}
-                        </p>
-                        <p className="text-sm text-gray-600">pages</p>
-                      </div>
-                    )}
-                    {book.publication_year && (
-                      <div className="text-center p-3 bg-white rounded-xl shadow">
-                        <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                          {book.publication_year}
-                        </p>
-                        <p className="text-sm text-gray-600">année</p>
-                      </div>
-                    )}
-                    {book.genre && (
-                      <div className="text-center p-3 bg-white rounded-xl shadow">
-                        <p className="text-lg font-bold" style={{ color: 'var(--deep-pink)' }}>
-                          {book.genre}
-                        </p>
-                        <p className="text-sm text-gray-600">genre</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Boutons d'action - Sticky au bas */}
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t-2 border-pink-100 p-4 md:p-6 rounded-t-3xl shadow-2xl">
+                {/* Boutons d'action */}
+                <div className="bg-white/95 backdrop-blur-sm border-t-2 border-pink-100 p-4 md:p-6 rounded-2xl shadow-2xl">
                   <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
                     <Button
                       variant="outline"
@@ -1786,6 +1729,98 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         </>
                       )}
                     </Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="bookinfo">
+              <div className="p-4 md:p-8 space-y-4 md:space-y-6 animate-slide-in">
+                {/* Card: Genres & Tags */}
+                <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                  <div className="h-1 rounded-full mb-4" 
+                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                    <Tag className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    Genres personnalisés
+                  </h3>
+                  <GenreTagInput
+                    value={book.custom_genres || []}
+                    onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
+                  />
+                </div>
+
+                {/* Card: Format */}
+                <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                  <div className="h-1 rounded-full mb-4" 
+                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                    <FileText className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    Format de lecture
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                    {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          const currentTags = book.tags || [];
+                          const newTags = currentTags.includes(tag)
+                            ? currentTags.filter(t => t !== tag)
+                            : [...currentTags, tag];
+                          updateBookMutation.mutate({ tags: newTags });
+                        }}
+                        className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all hover:scale-110 ${
+                          (book.tags || []).includes(tag)
+                            ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl'
+                            : 'bg-pink-50 text-pink-800 border-2 border-pink-200 hover:border-pink-400'
+                        }`}
+                      >
+                        {tag === "Audio" && "🎧"}
+                        {tag === "Numérique" && "📱"}
+                        {tag === "Broché" && "📕"}
+                        {tag === "Relié" && "📘"}
+                        {tag === "Poche" && "📙"}
+                        {tag === "Wattpad" && "🌟"}
+                        {" "}{tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Infos techniques */}
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                  <div className="h-1 rounded-full mb-4" 
+                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                    <Info className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    Informations techniques
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                    {book.page_count && (
+                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
+                        <p className="text-3xl font-bold" style={{ color: '#FF1493' }}>
+                          {book.page_count}
+                        </p>
+                        <p className="text-sm font-medium text-gray-600">pages</p>
+                      </div>
+                    )}
+                    {book.publication_year && (
+                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
+                        <p className="text-3xl font-bold" style={{ color: '#FF1493' }}>
+                          {book.publication_year}
+                        </p>
+                        <p className="text-sm font-medium text-gray-600">année</p>
+                      </div>
+                    )}
+                    {book.language && (
+                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
+                        <p className="text-2xl font-bold" style={{ color: '#FF1493' }}>
+                          {LANGUAGE_FLAGS[book.language]} {book.language}
+                        </p>
+                        <p className="text-sm font-medium text-gray-600">langue</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
