@@ -1026,7 +1026,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 rounded-3xl">
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 rounded-3xl">
           <style>{`
             .focus-glow:focus {
               box-shadow: 0 0 0 4px rgba(255, 20, 147, 0.3);
@@ -1254,7 +1254,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
           </div>
 
           {/* Tabs modernes */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4 md:px-8 pt-6 pb-2 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm">
               <TabsList className="bg-white shadow-2xl p-2 rounded-2xl border-0 w-full">
                 <TabsTrigger
@@ -1280,7 +1280,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </TabsList>
             </div>
 
-            <TabsContent value="myinfo" className="flex-1 overflow-y-auto">
+            <TabsContent value="myinfo">
               {/* CORPS PRINCIPAL - 2 colonnes */}
               <div className="p-4 md:p-8 grid md:grid-cols-2 gap-4 md:gap-6 animate-slide-in">
                 {/* COLONNE GAUCHE */}
