@@ -263,16 +263,16 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       </Sidebar>
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="border-b px-3 md:px-6 py-2 md:py-4 flex items-center justify-between sticky top-0 z-10" 
+        <header className="border-b px-3 md:px-6 py-3 md:py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm" 
                 style={{ 
-                  borderColor: isDark ? '#2d3748' : 'var(--beige)',
+                  borderColor: isDark ? '#ff1493' : '#FFE1F0',
                   backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
-            <h1 className="text-base md:text-xl font-bold md:hidden truncate cursor-pointer" 
-                style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}
+            <h1 className="text-lg md:text-xl font-bold md:hidden truncate cursor-pointer" 
+                style={{ color: isDark ? '#ffc0cb' : '#FF1493' }}
                 onClick={() => {
                   const trigger = document.querySelector('[data-sidebar-trigger]');
                   if (trigger) trigger.click();
@@ -455,37 +455,48 @@ export default function Layout({ children, currentPageName }) {
         /* Responsive text sizing */
         @media (max-width: 640px) {
           .book-title-display {
-            font-size: clamp(12px, 3vw, 14px);
+            font-size: clamp(13px, 3.5vw, 15px);
           }
-          
+
           .book-author-display {
-            font-size: clamp(10px, 2.5vw, 12px);
+            font-size: clamp(11px, 3vw, 13px);
           }
         }
 
         @media (min-width: 641px) and (max-width: 1024px) {
           .book-title-display {
-            font-size: clamp(13px, 2.4vw, 15px);
+            font-size: clamp(14px, 2.4vw, 16px);
           }
-          
+
           .book-author-display {
-            font-size: clamp(11px, 2vw, 13px);
+            font-size: clamp(12px, 2vw, 14px);
           }
         }
 
         @media (min-width: 1025px) {
           .book-title-display {
-            font-size: clamp(14px, 1.2vw, 16px);
+            font-size: clamp(15px, 1.2vw, 17px);
           }
-          
+
           .book-author-display {
-            font-size: clamp(12px, 1vw, 14px);
+            font-size: clamp(13px, 1vw, 15px);
           }
         }
 
         @media (max-width: 768px) {
           .mobile-hide {
             display: none;
+          }
+
+          /* Better mobile spacing */
+          body {
+            font-size: 16px; /* Prevents iOS zoom on inputs */
+          }
+
+          /* Touch-friendly buttons */
+          button, a {
+            min-height: 44px;
+            min-width: 44px;
           }
         }
       `}</style>

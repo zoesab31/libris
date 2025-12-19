@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,9 +28,19 @@ export default function MyLibrary() {
   const [expandedPALYears, setExpandedPALYears] = useState({});
   const [showPALs, setShowPALs] = useState(false);
   const [selectedPAL, setSelectedPAL] = useState(null);
+  const [initialTab, setInitialTab] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+    
+    // Check URL params for direct book access
+    const params = new URLSearchParams(window.location.search);
+    const bookId = params.get('bookId');
+    const tab = params.get('tab');
+    
+    if (bookId && tab) {
+      setInitialTab(tab);
+    }
   }, []);
 
   const { data: myBooks = [], isLoading } = useQuery({
@@ -56,6 +65,24 @@ export default function MyLibrary() {
     queryFn: () => base44.entities.ReadingList.filter({ created_by: user?.email }),
     enabled: !!user,
   });
+
+  // Handle direct book navigation from URL
+  useEffect(() => {
+    if (!user || !allBooks.length || !myBooks.length) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const bookId = params.get('bookId');
+    
+    if (bookId) {
+      const userBook = myBooks.find(ub => ub.book_id === bookId);
+      if (userBook) {
+        setSelectedUserBook(userBook);
+      }
+      
+      // Clear URL params after opening
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [user, allBooks, myBooks]);
 
   // Helper function to check if abandoned book counts (>50%)
   const abandonedBookCounts = (userBook) => {
@@ -962,6 +989,7 @@ export default function MyLibrary() {
             book={allBooks.find(b => b.id === selectedUserBook.book_id)}
             open={!!selectedUserBook}
             onOpenChange={(open) => !open && setSelectedUserBook(null)}
+            initialTab={initialTab || "myinfo"}
           />
         )}
 

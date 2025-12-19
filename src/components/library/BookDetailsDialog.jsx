@@ -509,11 +509,17 @@ function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries 
   );
 }
 
-export default function BookDetailsDialog({ userBook, book, open, onOpenChange }) {
+export default function BookDetailsDialog({ userBook, book, open, onOpenChange, initialTab = "myinfo" }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("myinfo");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [friendsFilter, setFriendsFilter] = useState("all"); // "all" or "friends_only"
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   const [editedData, setEditedData] = useState({
     status: userBook?.status || "À lire",
