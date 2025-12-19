@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -129,7 +128,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     ? customGenresData.map(g => g.name)
     : GENRES;
 
-  // Debounced search with Google Books API - IMPROVED IMAGE QUALITY
+  // Debounced search with Google Books API - IMPROVED IMAGE QUALITY + OPTIMIZED
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -513,6 +512,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                                 alt={book.title}
                                 className="w-full h-full object-cover"
                                 loading="lazy"
+                                decoding="async"
                                 onError={(e) => {
                                   e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?';
                                 }}
@@ -823,6 +823,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                         src={bookData.cover_url} 
                         alt="Aperçu" 
                         className="w-32 h-48 object-cover rounded-lg shadow-md"
+                        loading="lazy"
+                        decoding="async"
                         onError={(e) => {
                           e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?'; // Fallback if image fails
                         }}
