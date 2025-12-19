@@ -1026,36 +1026,44 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 rounded-3xl">
           <style>{`
             .focus-glow:focus {
-              box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2);
-              border-color: var(--warm-pink);
+              box-shadow: 0 0 0 4px rgba(255, 20, 147, 0.3);
+              border-color: #FF1493;
             }
-            .section-divider {
-              border-bottom: 2px solid;
-              border-image: linear-gradient(90deg, var(--warm-pink), var(--lavender)) 1;
-              margin-bottom: 1.5rem;
-              padding-bottom: 0.5rem;
+            @keyframes slide-in {
+              from { opacity: 0; transform: translateY(10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-slide-in {
+              animation: slide-in 0.3s ease-out;
             }
           `}</style>
 
-          {/* HEADER - Couverture + Infos principales */}
-          <div className="p-8 bg-white/80 backdrop-blur-sm border-b-2 border-pink-200">
-            <div className="flex gap-8 items-start">
+          {/* HERO HEADER avec gradient */}
+          <div className="relative overflow-hidden" 
+               style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl" 
+                   style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+            </div>
+            
+            <div className="relative p-6 md:p-8">
+              <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
               {/* Couverture avec badge langue */}
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 mx-auto md:mx-0">
                 {editingCover ? (
-                  <div className="space-y-3 w-48">
-                    <div className="w-48 h-72 rounded-2xl overflow-hidden shadow-2xl"
-                         style={{ backgroundColor: 'var(--beige)' }}>
+                  <div className="space-y-3 w-40 md:w-48">
+                    <div className="w-40 h-60 md:w-48 md:h-72 rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white"
+                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
                       {newCoverUrl ? (
                         <img src={newCoverUrl} alt="Preview" className="w-full h-full object-cover" />
                       ) : book?.cover_url ? (
                         <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                          <BookOpen className="w-12 h-12 text-white" />
                         </div>
                       )}
                     </div>
@@ -1121,26 +1129,29 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
                 ) : (
                   <>
-                    <div className="absolute -top-3 -left-3 z-10 px-3 py-1 rounded-full shadow-lg text-2xl bg-white border-2 border-pink-200">
+                    <div className="absolute -top-2 -left-2 z-10 w-12 h-12 rounded-2xl shadow-2xl text-3xl bg-white flex items-center justify-center ring-4 ring-white">
                       {LANGUAGE_FLAGS[editedData.reading_language || "Français"]}
                     </div>
-                    <div className="relative group w-48">
-                      <div className="w-48 h-72 rounded-2xl overflow-hidden shadow-2xl transform transition-transform duration-300 group-hover:scale-105"
-                           style={{ backgroundColor: 'var(--beige)' }}>
+                    <div className="relative group w-40 md:w-48">
+                      <div className="w-40 h-60 md:w-48 md:h-72 rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-300 group-hover:scale-105 ring-4 ring-white"
+                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
                         {book?.cover_url ? (
                           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
+                            <BookOpen className="w-12 h-12 text-white" />
                           </div>
                         )}
                       </div>
                       <button
                         onClick={() => setEditingCover(true)}
-                        className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100
-                                  transition-opacity flex items-center justify-center rounded-2xl"
+                        className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100
+                                  transition-all flex items-center justify-center rounded-3xl"
                       >
-                        <Edit className="w-8 h-8 text-white" />
+                        <div className="text-center">
+                          <Edit className="w-10 h-10 text-white mb-2 mx-auto" />
+                          <p className="text-white font-bold text-sm">Modifier</p>
+                        </div>
                       </button>
                     </div>
                   </>
@@ -1148,24 +1159,24 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </div>
 
               {/* Infos principales */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-4 text-center md:text-left">
                 <div>
-                  <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg leading-tight">
                     {book.title}
                   </h1>
 
                   {isEditingAuthor ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-center md:justify-start">
                       <Input
                         value={newAuthor}
                         onChange={(e) => setNewAuthor(e.target.value)}
                         placeholder="Nom de l'auteur"
-                        className="focus-glow"
+                        className="max-w-xs bg-white"
                       />
                       <Button
                         size="sm"
                         onClick={() => updateBookAuthorMutation.mutate(newAuthor)}
-                        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white"
+                        className="bg-white text-pink-600 hover:bg-gray-100"
                       >
                         ✓
                       </Button>
@@ -1173,6 +1184,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         size="sm"
                         variant="ghost"
                         onClick={() => setIsEditingAuthor(false)}
+                        className="text-white hover:bg-white/20"
                       >
                         ✕
                       </Button>
@@ -1180,17 +1192,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   ) : (
                     <button
                       onClick={startEditingAuthor}
-                      className="text-xl flex items-center gap-2 hover:underline transition-all"
-                      style={{ color: 'var(--warm-pink)' }}
+                      className="text-lg md:text-2xl flex items-center gap-2 hover:underline transition-all text-white text-opacity-90 mx-auto md:mx-0"
                     >
                       par {book.author}
-                      <Edit className="w-4 h-4 opacity-50 hover:opacity-100" />
+                      <Edit className="w-4 h-4 opacity-70 hover:opacity-100" />
                     </button>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className={`px-4 py-2 rounded-full font-semibold text-sm border-2 ${statusColors[editedData.status]}`}>
+                <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                  <div className={`px-5 py-2.5 rounded-2xl font-bold text-base shadow-xl ${statusColors[editedData.status]}`}>
                     {editedData.status}
                   </div>
 
@@ -1198,7 +1209,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     value={editedData.reading_language || "Français"}
                     onValueChange={(value) => setEditedData({...editedData, reading_language: value})}
                   >
-                    <SelectTrigger className="w-48 focus-glow">
+                    <SelectTrigger className="w-52 bg-white rounded-2xl shadow-xl font-bold">
                       <SelectValue>
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4" />
@@ -1220,14 +1231,14 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                    Statut du livre
+                  <Label className="text-sm font-bold mb-2 block text-white text-opacity-90">
+                    Changer le statut
                   </Label>
                   <Select
                     value={editedData.status}
                     onValueChange={(value) => setEditedData({...editedData, status: value})}
                   >
-                    <SelectTrigger className="focus-glow">
+                    <SelectTrigger className="bg-white rounded-2xl shadow-xl font-bold">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1238,46 +1249,49 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </Select>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
-          {/* NEW: Tabs for My Info vs Friends Reviews */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="px-8 pt-4 bg-white/50">
-              <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full">
+          {/* Tabs modernes */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 md:px-8 pt-6 pb-2 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm">
+              <TabsList className="bg-white shadow-2xl p-2 rounded-2xl border-0 w-full">
                 <TabsTrigger
                   value="myinfo"
-                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-sm md:text-base transition-all"
                   style={activeTab === "myinfo" ? {
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#FFFFFF'
-                  } : { color: '#000000' }}
+                  } : { color: '#2D3748' }}
                 >
                   📝 Mes infos
                 </TabsTrigger>
                 <TabsTrigger
                   value="comments"
-                  className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-xs md:text-sm"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-sm md:text-base transition-all"
                   style={activeTab === "comments" ? {
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#FFFFFF'
-                  } : { color: '#000000' }}
+                  } : { color: '#2D3748' }}
                 >
                   💬 Avis ({friendsUserBooks.length + 1})
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <TabsContent value="myinfo">
+            <TabsContent value="myinfo" className="flex-1 overflow-y-auto">
               {/* CORPS PRINCIPAL - 2 colonnes */}
-              <div className="p-8 grid md:grid-cols-2 gap-6">
+              <div className="p-4 md:p-8 grid md:grid-cols-2 gap-4 md:gap-6 animate-slide-in">
                 {/* COLONNE GAUCHE */}
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {/* Card: Genres & Tags */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <Tag className="w-5 h-5" />
-                      Genres personnalisés
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Tag className="w-5 h-5" style={{ color: '#FF1493' }} />
+                      Genres
                     </h3>
                     <GenreTagInput
                       value={book.custom_genres || []}
@@ -1286,12 +1300,14 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Format */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <FileText className="w-5 h-5" />
-                      Format de lecture
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <FileText className="w-5 h-5" style={{ color: '#FF1493' }} />
+                      Format
                     </h3>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                       {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
                         <button
                           key={tag}
@@ -1303,10 +1319,10 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                               : [...currentTags, tag];
                             updateBookMutation.mutate({ tags: newTags });
                           }}
-                          className={`p-3 rounded-xl text-sm font-medium transition-all hover:scale-105 ${
+                          className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all hover:scale-110 ${
                             (book.tags || []).includes(tag)
-                              ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
-                              : 'bg-pink-50 text-pink-800 border-2 border-pink-200'
+                              ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl'
+                              : 'bg-pink-50 text-pink-800 border-2 border-pink-200 hover:border-pink-400'
                           }`}
                         >
                           {tag === "Audio" && "🎧"}
@@ -1322,23 +1338,27 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Personnage préféré */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <Heart className="w-5 h-5" />
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Heart className="w-5 h-5" style={{ color: '#FF1493' }} />
                       Personnage préféré
                     </h3>
                     <Input
                       value={editedData.favorite_character || ""}
                       onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
                       placeholder="Votre book boyfriend/girlfriend..."
-                      className="focus-glow"
+                      className="focus-glow rounded-2xl text-base"
                     />
                   </div>
 
                   {/* Card: Ajouter à une saga */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <Layers className="w-5 h-5" />
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Layers className="w-5 h-5" style={{ color: '#FF1493' }} />
                       Saga
                     </h3>
 
@@ -1375,11 +1395,13 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 </div>
 
                 {/* COLONNE DROITE */}
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {/* Card: Lecture */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <Sparkles className="w-5 h-5" />
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Sparkles className="w-5 h-5" style={{ color: '#FF1493' }} />
                       Ma lecture
                     </h3>
 
@@ -1524,10 +1546,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Music Section - Updated for series sync */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                      <Music className="w-5 h-5" />
-                      Playlist musicale ({editedData.music_playlist.length})
+                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                    <div className="h-1 rounded-full mb-4" 
+                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                      <Music className="w-5 h-5" style={{ color: '#FF1493' }} />
+                      Playlist ({editedData.music_playlist.length})
                       {currentSeries && (
                         <span className="text-xs px-2 py-1 rounded-full ml-auto"
                               style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
@@ -1666,28 +1690,32 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </div>
 
               {/* SECTION INFÉRIEURE */}
-              <div className="p-8 space-y-6 bg-white/50">
+              <div className="p-4 md:p-8 space-y-4 md:space-y-6 bg-gradient-to-b from-transparent to-pink-50/30">
                 {/* Avis */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                  <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
+                <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                  <div className="h-1 rounded-full mb-4" 
+                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
                     💭 Mon avis
                   </h3>
                   <Textarea
                     value={editedData.review || ""}
                     onChange={(e) => setEditedData({...editedData, review: e.target.value})}
                     placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
-                    rows={5}
-                    className="focus-glow resize-none"
+                    rows={6}
+                    className="focus-glow resize-none rounded-2xl text-base"
                   />
                 </div>
 
                 {/* Infos techniques */}
-                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 shadow-lg border-2 border-pink-100">
-                  <h3 className="flex items-center gap-2 text-lg font-bold mb-4 section-divider" style={{ color: 'var(--dark-text)' }}>
-                    <Info className="w-5 h-5" />
-                    Informations techniques
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-3xl p-5 md:p-6 shadow-2xl border-0">
+                  <div className="h-1 rounded-full mb-4" 
+                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                    <Info className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    Infos techniques
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     {book.page_count && (
                       <div className="text-center p-3 bg-white rounded-xl shadow">
                         <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
@@ -1715,48 +1743,50 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
                 </div>
 
-                {/* Boutons d'action */}
-                <div className="flex justify-center gap-4 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Retour
-                  </Button>
+                {/* Boutons d'action - Sticky au bas */}
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t-2 border-pink-100 p-4 md:p-6 rounded-t-3xl shadow-2xl">
+                  <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold hover:scale-105 transition-transform rounded-2xl"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Retour
+                    </Button>
 
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
-                        deleteUserBookMutation.mutate();
-                      }
-                    }}
-                    disabled={deleteUserBookMutation.isPending}
-                    className="px-8 py-6 text-lg font-medium hover:scale-105 transition-transform"
-                  >
-                    <Trash2 className="w-5 h-5 mr-2" />
-                    Supprimer
-                  </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
+                          deleteUserBookMutation.mutate();
+                        }
+                      }}
+                      disabled={deleteUserBookMutation.isPending}
+                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold hover:scale-105 transition-transform rounded-2xl shadow-xl"
+                    >
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      Supprimer
+                    </Button>
 
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateUserBookMutation.isPending}
-                    className="px-8 py-6 text-lg font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-lg"
-                  >
-                    {updateUserBookMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Enregistrement...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5 mr-2" />
-                        💾 Enregistrer
-                      </>
-                    )}
-                  </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={updateUserBookMutation.isPending}
+                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-2xl rounded-2xl"
+                    >
+                      {updateUserBookMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5 mr-2" />
+                          Enregistrer
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>
