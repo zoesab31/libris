@@ -163,16 +163,15 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
   return (
     <>
       <Sidebar 
-        className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
+        className="border-r sidebar-container"
         style={{ 
-          borderColor: isDark ? '#2d3748' : 'var(--beige)',
-          backgroundColor: isDark ? '#0f1419' : 'white'
+          borderColor: 'var(--sidebar-border)',
+          backgroundColor: 'var(--sidebar-bg)'
         }}>
         <SidebarHeader 
           className="border-b p-3 md:p-6 sidebar-header" 
           style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
+            borderColor: 'var(--sidebar-border)'
           }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
@@ -190,7 +189,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           </div>
         </SidebarHeader>
         
-        <SidebarContent className="p-2 md:p-3" style={{ backgroundColor: isDark ? '#0f1419' : 'transparent' }}>
+        <SidebarContent className="p-2 md:p-3">
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -225,8 +224,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
         <SidebarFooter 
           className="border-t p-2 md:p-4 sidebar-footer" 
           style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
+            borderColor: 'var(--sidebar-border)'
           }}>
           {user && (
             <div className="space-y-2">
@@ -272,8 +270,8 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       <main className="flex-1 flex flex-col min-w-0">
         <header className="border-b px-3 md:px-6 py-2 md:py-4 flex items-center justify-between sticky top-0 z-10" 
                 style={{ 
-                  borderColor: isDark ? '#2d3748' : 'var(--beige)',
-                  backgroundColor: isDark ? '#0f1419' : 'white'
+                  borderColor: 'var(--sidebar-border)',
+                  backgroundColor: isDark ? '#0f0a1e' : 'white'
                 }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
@@ -360,21 +358,21 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] {
-          --cream: #0f0a1e;
-          --beige: #1a0f2e;
-          --soft-pink: #ff4d94;
-          --warm-pink: #ff1493;
-          --deep-pink: #ff0080;
-          --gold: #ffb6d9;
-          --rose-gold: #ff9eb3;
-          --dark-text: #ffcceb;
-          --lavender: #ff69b4;
-          --peach: #ff8fa3;
-          --bg-gradient: linear-gradient(135deg, #0f0a1e 0%, #1a0f2e 100%);
+          --cream: #120b1f;
+          --beige: #1d0f2b;
+          --soft-pink: #ff6b9d;
+          --warm-pink: #ff4081;
+          --deep-pink: #f06292;
+          --gold: #ffb3d9;
+          --rose-gold: #ffa0c9;
+          --dark-text: #fce4ec;
+          --lavender: #ff80ab;
+          --peach: #ff9eb3;
+          --bg-gradient: linear-gradient(135deg, #0a0514 0%, #1a0f2e 100%);
           --sidebar-bg: linear-gradient(180deg, #0f0a1e 0%, #1a0f2e 100%);
-          --sidebar-border: #ff1493;
-          --text-primary: #ffcceb;
-          --text-secondary: #ffb3d9;
+          --sidebar-border: #ff4081;
+          --text-primary: #fce4ec;
+          --text-secondary: #f8bbd0;
         }
 
         body {
@@ -389,19 +387,39 @@ export default function Layout({ children, currentPageName }) {
         }
 
         [data-theme="dark"] .sidebar-header {
-          border-bottom-color: #ff69b4 !important;
+          border-bottom-color: #ff4081 !important;
         }
 
         [data-theme="dark"] .sidebar-footer {
-          border-top-color: #ff69b4 !important;
+          border-top-color: #ff4081 !important;
         }
 
         [data-theme="dark"] .sidebar-link {
-          color: #ffb3d9;
+          color: #f8bbd0;
         }
 
         [data-theme="dark"] .sidebar-link:hover {
-          background-color: rgba(255, 20, 147, 0.2);
+          background-color: rgba(255, 64, 129, 0.15);
+        }
+
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .bg-white {
+          background-color: #1a0f2e !important;
+          border-color: #2d1b3f !important;
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] select {
+          background-color: #0f0a1e !important;
+          border-color: #2d1b3f !important;
+          color: #fce4ec !important;
+        }
+
+        [data-theme="dark"] .text-gray-600,
+        [data-theme="dark"] .text-gray-700,
+        [data-theme="dark"] .text-gray-800 {
+          color: #f8bbd0 !important;
         }
 
         /* Book title and author display utilities */
