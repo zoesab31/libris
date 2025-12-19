@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle, Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
+import BackupManager from "@/components/account/BackupManager";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -384,6 +385,9 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Backup Manager */}
+          <BackupManager user={user} />
 
           {/* Account Info */}
           <Card className="border-0 shadow-lg">
