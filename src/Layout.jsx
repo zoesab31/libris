@@ -176,7 +176,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                 style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
               <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-white" />
             </div>
             <div>
@@ -204,9 +204,9 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                           : 'hover:bg-opacity-50'
                       }`}
                       style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
+                        background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
                       } : {
-                        color: isDark ? '#cbd5e0' : 'inherit',
+                        color: isDark ? '#C9C6E3' : 'inherit',
                         backgroundColor: 'transparent'
                       }}
                     >
