@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ export default function QuoteCard({ quote }) {
   });
 
   return (
-    <Card className="shadow-lg border-0 transition-all hover:shadow-xl" style={{ backgroundColor: 'white' }}>
+    <Card className="shadow-2xl border-0 transition-all hover:shadow-2xl hover:-translate-y-2 rounded-3xl" style={{ backgroundColor: 'white' }}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <Quote className="w-8 h-8 opacity-20" style={{ color: 'var(--warm-pink)' }} />

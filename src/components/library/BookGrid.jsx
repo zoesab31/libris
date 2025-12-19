@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -327,10 +326,11 @@ export default function BookGrid({
             return (
               <div key={userBook.id} className="relative group">
                 <Card
-                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-2 ${
+                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2 hover:scale-105 rounded-2xl ${
                     isSelected ? 'ring-4 ring-pink-500' : ''
                   }`}
                   onClick={() => handleBookClick(userBook)}
+                  style={{ boxShadow: '0 4px 12px rgba(255, 20, 147, 0.1)' }}
                 >
                   <div className="relative w-full aspect-[2/3] overflow-hidden"
                        style={{ backgroundColor: 'var(--beige)' }}>

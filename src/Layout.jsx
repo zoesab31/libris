@@ -390,7 +390,8 @@ export default function Layout({ children, currentPageName }) {
           overflow: hidden;
           overflow-wrap: anywhere;
           word-break: break-word;
-          line-height: 1.25;
+          line-height: 1.3;
+          font-weight: 600;
         }
 
         .book-author-display {
@@ -495,9 +496,19 @@ export default function Layout({ children, currentPageName }) {
 
           /* Touch-friendly buttons */
           button, a {
-            min-height: 44px;
-            min-width: 44px;
+            min-height: 48px;
+            min-width: 48px;
           }
+
+          /* Better mobile padding */
+          .card-mobile {
+            padding: 1rem !important;
+          }
+        }
+
+        /* Smooth transitions globally */
+        * {
+          transition: background-color 0.2s ease, transform 0.2s ease;
         }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>

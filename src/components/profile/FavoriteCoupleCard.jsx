@@ -5,7 +5,7 @@ import { Heart, Edit, BookOpen } from "lucide-react";
 
 export default function FavoriteCoupleCard({ couple, book, onEdit }) {
   return (
-    <Card className="overflow-hidden shadow-xl border-0 hover:scale-[1.02] transition-all duration-300 group" 
+    <Card className="overflow-hidden shadow-2xl border-0 hover:scale-105 hover:-translate-y-2 transition-all duration-300 group rounded-3xl" 
           style={{ backgroundColor: 'white' }}>
       <CardContent className="p-0">
         {/* Image avec overlay */}
