@@ -12,8 +12,6 @@ export default function ReadingGoalManager({ year, compact = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newGoal, setNewGoal] = useState("");
   const queryClient = useQueryClient();
-  
-  const isDark = user?.theme === 'dark';
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -114,8 +112,8 @@ export default function ReadingGoalManager({ year, compact = false }) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }} />
-              <h3 className="font-bold text-sm" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
+              <Target className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+              <h3 className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
                 Objectif {year}
               </h3>
             </div>
@@ -126,7 +124,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
                 onClick={startEditing}
                 className="h-7 w-7"
               >
-                <Edit className="w-3 h-3" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }} />
+                <Edit className="w-3 h-3" style={{ color: 'var(--deep-pink)' }} />
               </Button>
             )}
           </div>
@@ -148,7 +146,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
                   onClick={handleSave}
                   disabled={saveGoalMutation.isPending}
                   className="flex-1 h-7 text-xs text-white"
-                  style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
                 >
                   <Check className="w-3 h-3 mr-1" />
                   OK
@@ -169,18 +167,18 @@ export default function ReadingGoalManager({ year, compact = false }) {
           ) : readingGoal ? (
             <>
               <div className="text-center mb-2">
-                <p className="text-2xl font-bold" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
+                <p className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
                   {booksReadThisYear} / {readingGoal.goal_count}
                 </p>
-                <p className="text-xs" style={{ color: isDark ? '#8B7CF6' : 'var(--warm-pink)' }}>
+                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
                   {progress}% complété
                 </p>
               </div>
-              <div className="w-full h-2 rounded-full" style={{ backgroundColor: isDark ? '#2A2637' : 'var(--beige)' }}>
+              <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
                 <div className="h-full rounded-full transition-all duration-500"
                      style={{ 
                        width: `${Math.min(progress, 100)}%`,
-                       background: isDark ? 'linear-gradient(90deg, #8B7CF6, #D97FA6)' : 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
                      }} />
               </div>
             </>
@@ -189,7 +187,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
               size="sm"
               onClick={() => setIsEditing(true)}
               className="w-full h-8 text-xs text-white"
-              style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
               Définir un objectif
             </Button>
@@ -205,8 +203,8 @@ export default function ReadingGoalManager({ year, compact = false }) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Target className="w-6 h-6" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }} />
-            <h3 className="font-bold text-xl" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
+            <Target className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+            <h3 className="font-bold text-xl" style={{ color: 'var(--dark-text)' }}>
               🎯 Objectif de lecture {year}
             </h3>
           </div>
@@ -216,7 +214,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
               size="icon"
               onClick={startEditing}
             >
-              <Edit className="w-4 h-4" style={{ color: isDark ? '#8B7CF6' : 'var(--deep-pink)' }} />
+              <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
             </Button>
           )}
         </div>
@@ -236,7 +234,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
                 onClick={handleSave}
                 disabled={saveGoalMutation.isPending}
                 className="flex-1 text-white"
-                style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
               >
                 <Check className="w-4 h-4 mr-2" />
                 Enregistrer
@@ -256,23 +254,23 @@ export default function ReadingGoalManager({ year, compact = false }) {
         ) : readingGoal ? (
           <>
             <div className="text-center mb-6">
-              <p className="text-4xl font-bold mb-2" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
+              <p className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                 {booksReadThisYear} / {readingGoal.goal_count}
               </p>
-              <p className="text-lg" style={{ color: isDark ? '#8B7CF6' : 'var(--warm-pink)' }}>
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                 {progress}% complété
               </p>
             </div>
             <div className="mb-4">
-              <div className="w-full h-4 rounded-full" style={{ backgroundColor: isDark ? '#2A2637' : 'var(--beige)' }}>
+              <div className="w-full h-4 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
                 <div className="h-full rounded-full transition-all duration-500"
                      style={{ 
                        width: `${Math.min(progress, 100)}%`,
-                       background: isDark ? 'linear-gradient(90deg, #8B7CF6, #D97FA6)' : 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
                      }} />
               </div>
             </div>
-            <p className="text-center font-medium" style={{ color: isDark ? '#F3F2FA' : 'var(--dark-text)' }}>
+            <p className="text-center font-medium" style={{ color: 'var(--dark-text)' }}>
               {readingGoal.goal_count - booksReadThisYear > 0 
                 ? `Plus que ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} à lire ! 📚`
                 : `Objectif atteint ! 🎉`
@@ -281,14 +279,14 @@ export default function ReadingGoalManager({ year, compact = false }) {
           </>
         ) : (
           <div className="text-center py-8">
-            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: isDark ? '#8B7CF6' : 'var(--warm-pink)' }} />
-            <p className="mb-4" style={{ color: isDark ? '#C9C6E3' : 'var(--warm-pink)' }}>
+            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <p className="mb-4" style={{ color: 'var(--warm-pink)' }}>
               Aucun objectif défini pour {year}
             </p>
             <Button
               onClick={() => setIsEditing(true)}
               className="text-white"
-              style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
             >
               Définir mon objectif
             </Button>

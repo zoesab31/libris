@@ -91,53 +91,48 @@ const BookDetailsDialog = ({ userBook, book, open, onOpenChange }) => {
 };
 
 // Individual Stats Card - Restored to match exact design from image
-const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick, user }) => {
-  const isDark = user?.theme === 'dark';
-
-  return (
+const StatsCard = ({ icon: Icon, value, label, iconBgColor, onClick }) => (
+  <div
+    onClick={onClick}
+    className="stats-card cursor-pointer"
+    style={{
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: '8px',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    }}
+  >
+    {/* Icon in colored square */}
     <div
-      onClick={onClick}
-      className="stats-card cursor-pointer"
       style={{
-        backgroundColor: isDark ? '#1A1628' : 'white',
-        border: isDark ? '1px solid #2A2637' : 'none',
-        borderRadius: '16px',
-        padding: '20px 24px',
-        boxShadow: isDark ? 'none' : '0 4px 12px rgba(0, 0, 0, 0.05)',
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        backgroundColor: iconBgColor,
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '8px',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
-      >
-      {/* Icon in colored square */}
-      <div
-        style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
-          backgroundColor: isDark ? `${iconBgColor}25` : iconBgColor,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon className="w-6 h-6" style={{ color: iconBgColor }} />
-      </div>
-
-      {/* Label */}
-      <p className="text-sm" style={{ color: isDark ? '#A0A4B8' : '#6B7280' }}>
-        {label}
-      </p>
-
-      {/* Value */}
-      <div className="text-2xl font-bold" style={{ color: isDark ? '#E6E8EE' : '#111827' }}>
-        {value}
-      </div>
+    >
+      <Icon className="w-6 h-6" style={{ color: 'white' }} />
     </div>
-  );
-};
+
+    {/* Label */}
+    <p className="text-sm" style={{ color: '#6B7280' }}>
+      {label}
+    </p>
+
+    {/* Value */}
+    <div className="text-2xl font-bold" style={{ color: '#111827' }}>
+      {value}
+    </div>
+  </div>
+);
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -585,10 +580,8 @@ export default function Dashboard() {
     { name: "Citations", icon: QuoteIcon, color: '#E6FFFA', iconColor: '#38B2AC', url: "Quotes" }
   ];
 
-  const isDark = user?.theme === 'dark';
-
   return (
-    <div className="min-h-screen" style={{ background: isDark ? 'linear-gradient(135deg, #0F1115 0%, #161A22 100%)' : 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
@@ -606,25 +599,24 @@ export default function Dashboard() {
             transform: translateY(0);
           }
         }
-
+        
         .hover-lift {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-
+        
         .hover-lift:hover {
           transform: translateY(-4px) scale(1.02);
-          box-shadow: ${isDark ? '0 12px 24px rgba(139, 124, 246, 0.2)' : '0 12px 24px rgba(255, 105, 180, 0.15)'};
+          box-shadow: 0 12px 24px rgba(255, 105, 180, 0.15);
         }
 
         .stats-card:hover {
           transform: translateY(-2px);
-          background: ${isDark ? '#211E2F' : 'white'} !important;
-          border-color: ${isDark ? '#353243' : 'transparent'} !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
         }
 
         .quick-action:hover {
           transform: scale(1.05);
-          box-shadow: ${isDark ? '0 8px 16px rgba(139, 124, 246, 0.15)' : '0 8px 16px rgba(0, 0, 0, 0.1)'};
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
 
         /* Hide scrollbar but keep functionality */
@@ -649,22 +641,16 @@ export default function Dashboard() {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ 
-        background: isDark 
-          ? 'rgba(15, 12, 26, 0.95)' 
-          : 'linear-gradient(135deg, #FFF0F6 0%, #FFE1F0 50%, #FFD6E8 100%)', 
-        backdropFilter: 'blur(10px)',
-        borderBottom: isDark ? '1px solid #2A2637' : 'none'
-      }}>
+      <div className="px-4 md:px-12 py-4 md:py-6 sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE1F0 50%, #FFD6E8 100%)', backdropFilter: 'blur(10px)' }}>
         <div className="max-w-[1600px] mx-auto">
           {/* Mobile Header */}
           <div className="flex flex-col gap-4 md:hidden">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                <h1 className="text-2xl font-bold" style={{ color: '#2D3748' }}>
                   Bonjour {displayName} 🌷
                 </h1>
-                <p className="text-sm" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                <p className="text-sm" style={{ color: '#A0AEC0' }}>
                   Bienvenue dans ton univers littéraire
                 </p>
               </div>
@@ -673,7 +659,7 @@ export default function Dashboard() {
                 <Button
                   size="sm"
                   className="shadow-md text-white font-medium rounded-xl whitespace-nowrap"
-                  style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                  style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -683,16 +669,12 @@ export default function Dashboard() {
             {/* Séparateur visuel + Sélecteur d'année */}
             <div className="pt-3 border-t" style={{ borderColor: '#FFE4EC' }}>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>📅 Année :</span>
+                <span className="text-sm font-medium" style={{ color: '#A0AEC0' }}>📅 Année :</span>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                   className="flex-1 px-4 py-2.5 rounded-xl border-2 font-semibold text-sm"
-                  style={{ 
-                    backgroundColor: isDark ? '#1A1628' : 'white', 
-                    color: isDark ? '#8B7CF6' : '#FF69B4', 
-                    borderColor: isDark ? '#2A2637' : '#FFE4EC' 
-                  }}
+                  style={{ backgroundColor: 'white', color: '#FF69B4', borderColor: '#FFE4EC' }}
                 >
                   {years.map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -703,11 +685,7 @@ export default function Dashboard() {
                     size="sm"
                     variant="outline"
                     className="rounded-xl"
-                    style={{ 
-                      borderColor: isDark ? '#2A2637' : '#E6B3E8', 
-                      color: isDark ? '#8B7CF6' : '#9B59B6',
-                      backgroundColor: isDark ? '#1A1628' : 'white'
-                    }}
+                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
                   >
                     📈
                   </Button>
@@ -720,10 +698,10 @@ export default function Dashboard() {
           <div className="hidden md:block">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: '#2D3748' }}>
                   Bonjour {displayName} 🌷
                 </h1>
-                <p className="text-lg" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                <p className="text-lg" style={{ color: '#A0AEC0' }}>
                   Bienvenue dans ton univers littéraire
                 </p>
               </div>
@@ -733,11 +711,7 @@ export default function Dashboard() {
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                   className="px-4 py-2 rounded-xl border-0 font-medium shadow-md"
-                  style={{ 
-                    backgroundColor: isDark ? '#1A1628' : 'white', 
-                    color: isDark ? '#F3F2FA' : '#2D3748',
-                    border: isDark ? '1px solid #2A2637' : 'none'
-                  }}
+                  style={{ backgroundColor: 'white', color: '#2D3748' }}
                 >
                   {years.map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -747,7 +721,7 @@ export default function Dashboard() {
                 <Link to={createPageUrl("MyLibrary")}>
                   <Button
                     className="shadow-md text-white font-medium px-6 rounded-xl hover-lift"
-                    style={{ background: isDark ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' : 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
+                    style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)' }}
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     Ajouter un livre
@@ -758,11 +732,7 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     className="shadow-md font-medium px-6 rounded-xl hover-lift"
-                    style={{ 
-                      borderColor: isDark ? '#2A2637' : '#E6B3E8', 
-                      color: isDark ? '#8B7CF6' : '#9B59B6',
-                      backgroundColor: isDark ? '#1A1628' : 'white'
-                    }}
+                    style={{ borderColor: '#E6B3E8', color: '#9B59B6' }}
                   >
                     📈 Voir mes stats
                   </Button>
@@ -777,33 +747,29 @@ export default function Dashboard() {
               icon={BookOpen}
               value={booksReadThisYear}
               label="Livres lus"
-              iconBgColor={isDark ? "#8B7CF6" : "#FFB6D9"}
+              iconBgColor="#FFB6D9"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
-              user={user}
             />
             <StatsCard
               icon={TrendingUp}
               value={totalPagesThisYear.toLocaleString()}
               label="Pages lues"
-              iconBgColor={isDark ? "#D97FA6" : "#E6B3FF"}
+              iconBgColor="#E6B3FF"
               onClick={() => navigate(createPageUrl("Statistics"))}
-              user={user}
             />
             <StatsCard
               icon={Users}
               value={sharedReadingsCount}
               label="Lectures communes"
-              iconBgColor={isDark ? "#8B7CF6" : "#86EFAC"}
+              iconBgColor="#86EFAC"
               onClick={() => navigate(createPageUrl("SharedReadings"))}
-              user={user}
             />
             <StatsCard
               icon={Star}
               value={toReadCount}
               label="À lire"
-              iconBgColor={isDark ? "#D97FA6" : "#FFE699"}
+              iconBgColor="#FFE699"
               onClick={() => navigate(createPageUrl("MyLibrary"))}
-              user={user}
             />
           </div>
 
@@ -824,8 +790,8 @@ export default function Dashboard() {
                   {/* Lectures en cours */}
                   <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
                     <CardContent className="p-4 md:p-6">
-                      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                       📖 Lectures en cours
+                      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                        📖 Lectures en cours
                       </h2>
                       <div className="space-y-3 md:space-y-4">
                         {currentlyReading.length > 0 || friendsBooks.filter(b => b.status === "En cours").length > 0 ? (
@@ -841,10 +807,7 @@ export default function Dashboard() {
                               return (
                                 <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
-                                     style={{ 
-                                       backgroundColor: isDark ? '#1A1628' : '#FFF7FA',
-                                       border: isDark ? '1px solid #2A2637' : 'none'
-                                     }}
+                                     style={{ backgroundColor: '#FFF7FA' }}
                                      onClick={() => setSelectedBookForDetails(userBook)}>
                                   <div className="relative flex-shrink-0">
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
@@ -859,26 +822,26 @@ export default function Dashboard() {
                                     </span>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                                   <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                                    <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                       {book.title}
                                     </h3>
-                                    <p className="text-xs md:text-sm mb-2" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                                    <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
                                       {book.author}
                                     </p>
                                     {userBook.start_date && (
-                                      <p className="text-xs mb-2 md:mb-3" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                      <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
                                         {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
                                       </p>
                                     )}
                                     <div className="relative">
-                                      <div className="w-full h-1.5 md:h-2 rounded-full progress-bg" style={{ backgroundColor: isDark ? '#2A2F3A' : '#FFE4EC' }}>
-                                        <div className="h-full rounded-full transition-all duration-500 progress-fill"
+                                      <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                                        <div className="h-full rounded-full transition-all duration-500"
                                              style={{
                                                width: `${progress}%`,
-                                               background: isDark ? 'linear-gradient(90deg, #8B7CF6, #D97FA6)' : 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
+                                               background: 'linear-gradient(90deg, #FF69B4, #FFB6C8)'
                                              }} />
                                       </div>
-                                      <p className="text-xs mt-1" style={{ color: isDark ? '#8B7CF6' : '#FF69B4' }}>
+                                      <p className="text-xs mt-1" style={{ color: '#FF69B4' }}>
                                         {userBook.current_page && book.page_count
                                           ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                           : `⏱️ ~${progress}% (estimation temporelle)`
@@ -904,10 +867,7 @@ export default function Dashboard() {
                               return (
                                 <div key={userBook.id}
                                      className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift"
-                                     style={{ 
-                                       backgroundColor: isDark ? '#1A1628' : '#F0E6FF',
-                                       border: isDark ? '1px solid #2A2637' : 'none'
-                                     }}>
+                                     style={{ backgroundColor: '#F0E6FF' }}>
                                   <div className="relative flex-shrink-0">
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                          style={{ backgroundColor: '#E6B3E8' }}>
@@ -921,26 +881,26 @@ export default function Dashboard() {
                                     </span>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                                    <h3 className="font-bold text-sm md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                       {book.title}
                                     </h3>
-                                    <p className="text-xs md:text-sm mb-2" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                                    <p className="text-xs md:text-sm mb-2" style={{ color: '#A0AEC0' }}>
                                       {book.author}
                                     </p>
                                     {userBook.start_date && (
                                       <>
-                                        <p className="text-xs mb-2 md:mb-3" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                        <p className="text-xs mb-2 md:mb-3" style={{ color: '#9B59B6' }}>
                                           {format(new Date(userBook.start_date), 'dd/MM/yyyy', { locale: fr })} • Jour {daysReading}
                                         </p>
                                         <div className="relative">
-                                          <div className="w-full h-1.5 md:h-2 rounded-full progress-bg" style={{ backgroundColor: isDark ? '#2A2637' : '#E6B3E8' }}>
-                                            <div className="h-full rounded-full transition-all duration-500 progress-fill"
+                                          <div className="w-full h-1.5 md:h-2 rounded-full" style={{ backgroundColor: '#E6B3E8' }}>
+                                            <div className="h-full rounded-full transition-all duration-500"
                                                  style={{
                                                    width: `${progress}%`,
-                                                   background: isDark ? 'linear-gradient(90deg, #8B7CF6, #D97FA6)' : 'linear-gradient(90deg, #9B59B6, #B794F6)'
+                                                   background: 'linear-gradient(90deg, #9B59B6, #B794F6)'
                                                  }} />
                                           </div>
-                                          <p className="text-xs mt-1" style={{ color: isDark ? '#D97FA6' : '#9B59B6' }}>
+                                          <p className="text-xs mt-1" style={{ color: '#9B59B6' }}>
                                             {userBook.current_page && book.page_count
                                               ? `📖 Page ${userBook.current_page}/${book.page_count} • ${progress}%`
                                               : `⏱️ ~${progress}% (estimation temporelle)`
@@ -956,8 +916,8 @@ export default function Dashboard() {
                           </>
                         ) : (
                           <div className="text-center py-8 md:py-12">
-                            <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: isDark ? '#8B7CF6' : '#FF69B4' }} />
-                            <p className="text-sm md:text-base" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>Aucune lecture en cours</p>
+                            <BookOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 opacity-20" style={{ color: '#FF69B4' }} />
+                            <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune lecture en cours</p>
                           </div>
                         )}
                       </div>
@@ -967,7 +927,7 @@ export default function Dashboard() {
             {/* Activité récente */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
               <CardContent className="p-4 md:p-6">
-                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   🕓 Activité récente
                 </h2>
                 <div className="space-y-3 md:space-y-4">
@@ -979,20 +939,20 @@ export default function Dashboard() {
 
                         return (
                           <div key={`finished-${activity.userEmail}-${activity.userBook.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
-                               style={{ borderColor: isDark ? '#2A2637' : '#F7FAFC' }}>
-                           <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: isDark ? (activity.isFriend ? 'rgba(139, 124, 246, 0.15)' : 'rgba(217, 127, 166, 0.15)') : (activity.isFriend ? '#F0E6FF' : '#FFE4EC') }}>
-                             <BookOpen className="w-4 h-4 md:w-5 md:h-5"
-                                      style={{ color: isDark ? (activity.isFriend ? '#8B7CF6' : '#D97FA6') : (activity.isFriend ? '#9B59B6' : '#FF69B4') }} />
-                           </div>
-                           <div className="flex-1 min-w-0">
-                             <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                               <span className="font-bold"
-                                     style={{ color: isDark ? (activity.isFriend ? '#8B7CF6' : '#D97FA6') : (activity.isFriend ? '#9B59B6' : '#FF69B4') }}>
-                                 {activity.userName}
-                               </span> a terminé {book.title}
-                             </p>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                 style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
+                              <BookOpen className="w-4 h-4 md:w-5 md:h-5"
+                                       style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold"
+                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
+                                  {activity.userName}
+                                </span> a terminé {book.title}
+                              </p>
                               {activity.userBook.rating && (
                                 <div className="flex items-center gap-1 mb-1">
                                   {Array.from({ length: 5 }).map((_, i) => (
@@ -1004,7 +964,7 @@ export default function Dashboard() {
                                   ))}
                                 </div>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9A97B0' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1018,30 +978,25 @@ export default function Dashboard() {
                         if (activity.isFriend && activity.comment.is_spoiler) {
                           return (
                             <div key={`comment-${activity.comment.id}`}
-                                 className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer rounded-lg p-2 -m-2 transition-colors activity-item"
-                                 style={{ 
-                                   borderColor: isDark ? '#2A2637' : '#F7FAFC',
-                                   backgroundColor: 'transparent'
-                                 }}
-                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#211E2F' : '#F9FAFB'}
-                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                 className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                                 style={{ borderColor: '#F7FAFC' }}
                                  onClick={() => navigate(`${createPageUrl("MyLibrary")}?bookId=${book.id}&tab=comments`)}>
                               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                   style={{ backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FFE6E6' }}>
-                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#F87171' : '#DC2626' }} />
+                                   style={{ backgroundColor: '#FFE6E6' }}>
+                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#DC2626' }} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                                  <span className="font-bold" style={{ color: isDark ? '#D97FA6' : '#FF9F7F' }}>
+                                <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                  <span className="font-bold" style={{ color: '#FF9F7F' }}>
                                     {activity.userName}
                                   </span> a ajouté un commentaire sur {book.title}
                                 </p>
-                                <div className="p-2 rounded-lg" style={{ backgroundColor: isDark ? 'rgba(220, 38, 38, 0.1)' : '#FFF5F5' }}>
-                                  <p className="text-xs font-medium" style={{ color: isDark ? '#F87171' : '#DC2626' }}>
+                                <div className="p-2 rounded-lg" style={{ backgroundColor: '#FFF5F5' }}>
+                                  <p className="text-xs font-medium" style={{ color: '#DC2626' }}>
                                     ⚠️ Spoiler masqué - Cliquez pour voir le livre
                                   </p>
                                 </div>
-                                <p className="text-xs mt-1" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                                <p className="text-xs mt-1" style={{ color: '#A0AEC0' }}>
                                   {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                                 </p>
                               </div>
@@ -1051,23 +1006,18 @@ export default function Dashboard() {
 
                         return (
                           <div key={`comment-${activity.comment.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer rounded-lg p-2 -m-2 transition-colors activity-item"
-                               style={{ 
-                                 borderColor: isDark ? '#2A2637' : '#F7FAFC',
-                                 backgroundColor: 'transparent'
-                               }}
-                               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#211E2F' : '#F9FAFB'}
-                               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                               style={{ borderColor: '#F7FAFC' }}
                                onClick={() => navigate(`${createPageUrl("MyLibrary")}?bookId=${book.id}&tab=comments`)}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? (activity.isFriend ? 'rgba(217, 127, 166, 0.15)' : 'rgba(139, 124, 246, 0.15)') : (activity.isFriend ? '#FFF4E6' : '#E6F7FF') }}>
+                                 style={{ backgroundColor: activity.isFriend ? '#FFF4E6' : '#E6F7FF' }}>
                               <MessageCircle className="w-4 h-4 md:w-5 md:h-5"
-                                       style={{ color: isDark ? (activity.isFriend ? '#D97FA6' : '#8B7CF6') : (activity.isFriend ? '#FF9F7F' : '#4299E1') }} />
+                                       style={{ color: activity.isFriend ? '#FF9F7F' : '#4299E1' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
                                 <span className="font-bold"
-                                      style={{ color: isDark ? (activity.isFriend ? '#D97FA6' : '#8B7CF6') : (activity.isFriend ? '#FF9F7F' : '#4299E1') }}>
+                                      style={{ color: activity.isFriend ? '#FF9F7F' : '#4299E1' }}>
                                   {activity.userName}
                                 </span> a commenté {book.title}
                               </p>
@@ -1075,12 +1025,12 @@ export default function Dashboard() {
                                 <p className="text-xl mb-1">{activity.comment.mood}</p>
                               )}
                               {activity.comment.chapter && (
-                                <p className="text-xs font-medium mb-1" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: '#9B59B6' }}>
                                   📖 {activity.comment.chapter}
                                 </p>
                               )}
                               {/* Afficher le commentaire */}
-                              <p className="text-sm mb-2 line-clamp-3" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                              <p className="text-sm mb-2 line-clamp-3" style={{ color: '#2D3748' }}>
                                 {activity.comment.comment}
                               </p>
                               {/* Afficher les photos si présentes */}
@@ -1104,7 +1054,7 @@ export default function Dashboard() {
                                   )}
                                 </div>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1115,29 +1065,29 @@ export default function Dashboard() {
 
                         return (
                           <div key={`location-${activity.location.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
-                               style={{ borderColor: isDark ? '#2A2637' : '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? 'rgba(139, 124, 246, 0.15)' : '#E8F4F8' }}>
-                              <MapPin className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#8B7CF6' : '#4299E1' }} />
+                                 style={{ backgroundColor: '#E8F4F8' }}>
+                              <MapPin className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#4299E1' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                                <span className="font-bold" style={{ color: isDark ? '#8B7CF6' : '#4299E1' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#4299E1' }}>
                                   {activity.userName}
                                 </span> a ajouté un lieu : {activity.location.location_name}
                               </p>
                               {activity.location.category && (
-                                <p className="text-xs mb-1" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                                <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>
                                   📍 {activity.location.category}
                                 </p>
                               )}
                               {book && (
-                                <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#4299E1' }}>
+                                <p className="text-xs" style={{ color: '#4299E1' }}>
                                   📖 {book.title}
                                 </p>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1148,27 +1098,27 @@ export default function Dashboard() {
 
                         return (
                           <div key={`quote-${activity.quote.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
-                               style={{ borderColor: isDark ? '#2A2637' : '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? 'rgba(139, 124, 246, 0.15)' : '#E6FFFA' }}>
-                              <QuoteIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#8B7CF6' : '#38B2AC' }} />
+                                 style={{ backgroundColor: '#E6FFFA' }}>
+                              <QuoteIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#38B2AC' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                                <span className="font-bold" style={{ color: isDark ? '#8B7CF6' : '#38B2AC' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#38B2AC' }}>
                                   {activity.userName}
                                 </span> a ajouté une citation
                               </p>
-                              <p className="text-xs italic mb-1 line-clamp-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                              <p className="text-xs italic mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                 "{activity.quote.quote_text}"
                               </p>
                               {book && (
-                                <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#38B2AC' }}>
+                                <p className="text-xs" style={{ color: '#38B2AC' }}>
                                   📖 {book.title}
                                 </p>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1179,29 +1129,29 @@ export default function Dashboard() {
 
                         return (
                           <div key={`fanart-${activity.fanart.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
-                               style={{ borderColor: isDark ? '#2A2637' : '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? 'rgba(217, 127, 166, 0.15)' : '#F0E6FF' }}>
-                              <ImageIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#D97FA6' : '#9B59B6' }} />
+                                 style={{ backgroundColor: '#F0E6FF' }}>
+                              <ImageIcon className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#9B59B6' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                                <span className="font-bold" style={{ color: isDark ? '#D97FA6' : '#9B59B6' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#9B59B6' }}>
                                   {activity.userName}
                                 </span> a ajouté un fan art
                               </p>
                               {activity.fanart.folder_path && (
-                                <p className="text-xs mb-1" style={{ color: isDark ? '#C9C6E3' : '#A0AEC0' }}>
+                                <p className="text-xs mb-1" style={{ color: '#A0AEC0' }}>
                                   📁 {activity.fanart.folder_path}
                                 </p>
                               )}
                               {book && (
-                                <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                <p className="text-xs" style={{ color: '#9B59B6' }}>
                                   📖 {book.title}
                                 </p>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1216,29 +1166,29 @@ export default function Dashboard() {
 
                         return (
                           <div key={`nailinspo-${activity.nailinspo.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 activity-item"
-                               style={{ borderColor: isDark ? '#2A2637' : '#F7FAFC' }}>
+                               className="flex items-start gap-3 pb-3 border-b last:border-0"
+                               style={{ borderColor: '#F7FAFC' }}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? 'rgba(217, 127, 166, 0.15)' : '#FFE8D9' }}>
-                              <Sparkles className="w-4 h-4 md:w-5 md:h-5" style={{ color: isDark ? '#D97FA6' : '#FF9F7F' }} />
+                                 style={{ backgroundColor: '#FFE8D9' }}>
+                              <Sparkles className="w-4 h-4 md:w-5 md:h-5" style={{ color: '#FF9F7F' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
-                                <span className="font-bold" style={{ color: isDark ? '#D97FA6' : '#FF9F7F' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
+                                <span className="font-bold" style={{ color: '#FF9F7F' }}>
                                   {activity.userName}
                                 </span> a ajouté une inspiration ongles
                               </p>
                               {activity.nailinspo.title && (
-                                <p className="text-xs mb-1" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                                <p className="text-xs mb-1" style={{ color: '#2D3748' }}>
                                   💅 {activity.nailinspo.title}
                                 </p>
                               )}
                               {book && (
-                                <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#FF9F7F' }}>
+                                <p className="text-xs" style={{ color: '#FF9F7F' }}>
                                   📖 {book.title}
                                 </p>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1253,42 +1203,37 @@ export default function Dashboard() {
 
                         return (
                           <div key={`shared-reading-${activity.message.id}`}
-                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer rounded-lg p-2 -m-2 transition-colors activity-item"
-                               style={{ 
-                                 borderColor: isDark ? '#2A2637' : '#F7FAFC',
-                                 backgroundColor: 'transparent'
-                               }}
-                               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? '#211E2F' : '#F9FAFB'}
-                               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                               className="flex items-start gap-3 pb-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                               style={{ borderColor: '#F7FAFC' }}
                                onClick={() => navigate(createPageUrl("SharedReadings"))}>
                             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                 style={{ backgroundColor: isDark ? (activity.isFriend ? 'rgba(139, 124, 246, 0.15)' : 'rgba(217, 127, 166, 0.15)') : (activity.isFriend ? '#F0E6FF' : '#FFE4EC') }}>
+                                 style={{ backgroundColor: activity.isFriend ? '#F0E6FF' : '#FFE4EC' }}>
                               <Users className="w-4 h-4 md:w-5 md:h-5"
-                                       style={{ color: isDark ? (activity.isFriend ? '#8B7CF6' : '#D97FA6') : (activity.isFriend ? '#9B59B6' : '#FF69B4') }} />
+                                       style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                              <p className="font-medium mb-1 text-sm md:text-base" style={{ color: '#2D3748' }}>
                                 <span className="font-bold"
-                                      style={{ color: isDark ? (activity.isFriend ? '#8B7CF6' : '#D97FA6') : (activity.isFriend ? '#9B59B6' : '#FF69B4') }}>
+                                      style={{ color: activity.isFriend ? '#9B59B6' : '#FF69B4' }}>
                                   {activity.userName}
                                 </span> a réagi dans {activity.reading?.title || 'une lecture commune'}
                               </p>
                               {activity.message.chapter && (
-                                <p className="text-xs font-medium mb-1" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: '#9B59B6' }}>
                                   📖 {activity.message.chapter}
                                 </p>
                               )}
                               {!activity.message.is_spoiler && (
-                                <p className="text-sm mb-2 line-clamp-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                                <p className="text-sm mb-2 line-clamp-2" style={{ color: '#2D3748' }}>
                                   {activity.message.message}
                                 </p>
                               )}
                               {book && (
-                                <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#9B59B6' }}>
+                                <p className="text-xs" style={{ color: '#9B59B6' }}>
                                   📚 {book.title}
                                 </p>
                               )}
-                              <p className="text-xs" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>
+                              <p className="text-xs" style={{ color: '#A0AEC0' }}>
                                 {format(new Date(activity.date), 'dd MMM yyyy', { locale: fr })}
                               </p>
                             </div>
@@ -1299,7 +1244,7 @@ export default function Dashboard() {
                         })
                         ) : (
                     <div className="text-center py-6 md:py-8">
-                      <p className="text-sm md:text-base" style={{ color: isDark ? '#9C97B8' : '#A0AEC0' }}>Aucune activité récente</p>
+                      <p className="text-sm md:text-base" style={{ color: '#A0AEC0' }}>Aucune activité récente</p>
                     </div>
                   )}
                 </div>
@@ -1316,7 +1261,7 @@ export default function Dashboard() {
 
             {/* Mobile - Playlist + Quick Access combined */}
             <div className="md:hidden">
-              <h2 className="text-lg font-bold mb-3 px-1" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+              <h2 className="text-lg font-bold mb-3 px-1" style={{ color: '#2D3748' }}>
                 ⚡ Accès rapide
               </h2>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2">
@@ -1361,14 +1306,10 @@ export default function Dashboard() {
 
             {/* Desktop - Playlist littéraire with random music */}
             {randomMusicSelection.length > 0 && (
-             <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
-               <Link to={createPageUrl("MusicPlaylist")}>
-                 <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ 
-                                background: isDark 
-                                  ? 'linear-gradient(135deg, #8B7CF6, #D97FA6)' 
-                                  : 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' 
-                              }}>
+              <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
+                <Link to={createPageUrl("MusicPlaylist")}>
+                  <CardContent className="p-6 cursor-pointer hover:opacity-90 transition-opacity"
+                               style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
                     <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                       🎵 Ma Playlist Littéraire
                     </h2>
@@ -1414,19 +1355,16 @@ export default function Dashboard() {
             {/* Desktop - Accès rapide */}
             <Card className="hidden md:block shadow-lg border-0 rounded-3xl overflow-hidden">
               <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
                   ⚡ Accès rapide
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {quickAccessItems.map((item) => (
                     <Link key={item.name} to={createPageUrl(item.url)}>
                       <button className="w-full p-4 rounded-2xl text-center transition-all quick-action"
-                              style={{ 
-                                backgroundColor: isDark ? '#1A1628' : item.color,
-                                border: isDark ? '1px solid #2A2637' : 'none'
-                              }}>
-                        <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: isDark ? '#8B7CF6' : item.iconColor }} />
-                        <p className="text-sm font-medium" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>{item.name}</p>
+                              style={{ backgroundColor: item.color }}>
+                        <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: item.iconColor }} />
+                        <p className="text-sm font-medium" style={{ color: '#2D3748' }}>{item.name}</p>
                       </button>
                     </Link>
                   ))}
@@ -1436,31 +1374,26 @@ export default function Dashboard() {
 
             {/* Citation & humeur du jour */}
             <Card className="shadow-lg border-0 rounded-2xl md:rounded-3xl overflow-hidden">
-              <CardContent className="p-6 md:p-6 text-center" style={{ 
-                background: isDark 
-                  ? 'linear-gradient(135deg, #1B1F2A, #242831)' 
-                  : 'linear-gradient(135deg, #E0E7FF, #FCE7F3)',
-                border: isDark ? '1px solid #2A2F3A' : 'none'
-              }}>
-                <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+              <CardContent className="p-6 md:p-6 text-center" style={{ background: 'linear-gradient(135deg, #E0E7FF, #FCE7F3)' }}>
+                <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4" style={{ color: '#2D3748' }}>
                   💭 Citation du jour
                 </h2>
                 {randomQuote && quoteBook ? (
                   <>
-                    <p className="text-base md:text-lg italic mb-3 md:mb-4 leading-relaxed" style={{ color: isDark ? '#F3F2FA' : '#2D3748' }}>
+                    <p className="text-base md:text-lg italic mb-3 md:mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
                       "{randomQuote.quote_text}"
                     </p>
-                    <p className="text-sm font-medium" style={{ color: isDark ? '#C9C6E3' : '#9B59B6' }}>
+                    <p className="text-sm font-medium" style={{ color: '#9B59B6' }}>
                       — {quoteBook.title}
                     </p>
                   </>
                 ) : (
-                  <p className="text-base md:text-lg italic" style={{ color: isDark ? '#F3F2FA' : '#A0AEC0' }}>
+                  <p className="text-base md:text-lg italic" style={{ color: '#A0AEC0' }}>
                     "Lire, c'est vivre mille vies avant de mourir."
                   </p>
                 )}
-                <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t" style={{ borderColor: isDark ? '#2A2637' : 'rgba(0,0,0,0.1)' }}>
-                  <p className="text-sm font-medium" style={{ color: isDark ? '#C9C6E3' : '#2D3748' }}>
+                <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+                  <p className="text-sm font-medium" style={{ color: '#2D3748' }}>
                     🌤️ Humeur du jour : Paisible et inspirée ✨
                   </p>
                 </div>
