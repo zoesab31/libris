@@ -120,29 +120,66 @@ export default function Dashboard() {
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 50%, #FFF0F6 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF5F7 0%, #FFE4EC 30%, #FFF0F6 60%, #FFE4EC 100%)' }}>
       <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
+          50% { transform: translateY(-8px); }
         }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 4px 24px rgba(255, 20, 147, 0.15); }
-          50% { box-shadow: 0 8px 32px rgba(255, 20, 147, 0.25); }
+        @keyframes pulse-soft {
+          0%, 100% { 
+            box-shadow: 0 4px 24px rgba(255, 20, 147, 0.12);
+            transform: scale(1);
+          }
+          50% { 
+            box-shadow: 0 8px 32px rgba(255, 20, 147, 0.2);
+            transform: scale(1.01);
+          }
         }
         @keyframes shimmer {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
         }
+        @keyframes progressFill {
+          from { width: 0%; }
+          to { width: var(--progress-width); }
+        }
+        
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        
         .hover-lift {
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .hover-lift:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 24px 48px rgba(255, 20, 147, 0.18);
+          transform: translateY(-8px);
+          box-shadow: 0 20px 40px rgba(255, 20, 147, 0.15);
         }
+        
         .stat-card {
-          transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
           overflow: hidden;
         }
@@ -153,27 +190,48 @@ export default function Dashboard() {
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          transition: left 0.5s;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+          transition: left 0.6s ease;
         }
         .stat-card:hover::before {
           left: 100%;
         }
         .stat-card:hover {
-          transform: translateY(-6px) scale(1.03);
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 20px 50px rgba(255, 20, 147, 0.18);
         }
+        
         .reading-card {
-          transition: all 0.35s ease;
+          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
           border: 2px solid transparent;
+          opacity: 0;
+          animation: fadeInUp 0.5s ease-out forwards;
         }
+        .reading-card:nth-child(1) { animation-delay: 0.1s; }
+        .reading-card:nth-child(2) { animation-delay: 0.2s; }
+        .reading-card:nth-child(3) { animation-delay: 0.3s; }
         .reading-card:hover {
-          border-color: rgba(255, 20, 147, 0.2);
-          transform: translateY(-4px);
-          box-shadow: 0 12px 32px rgba(255, 20, 147, 0.15);
+          border-color: rgba(255, 20, 147, 0.25);
+          transform: translateY(-6px);
+          box-shadow: 0 16px 40px rgba(255, 20, 147, 0.2);
+          background-color: #FFF !important;
         }
+        
         .badge-float {
           animation: float 3s ease-in-out infinite;
+        }
+        
+        .icon-pulse:hover {
+          animation: pulse-soft 0.6s ease-in-out;
+        }
+        
+        .progress-bar-animated {
+          animation: progressFill 1s ease-out forwards;
+        }
+        
+        .card-entrance {
+          opacity: 0;
+          animation: fadeInUp 0.6s ease-out forwards;
         }
       `}</style>
 
@@ -189,96 +247,96 @@ export default function Dashboard() {
         <div className="relative p-6 md:p-16">
           <div className="max-w-7xl mx-auto">
             {/* Titre principal avec badge premium */}
-            <div className="mb-10 md:mb-14">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 badge-float"
+            <div className="mb-10 md:mb-14 card-entrance">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full mb-6 badge-float"
                    style={{ 
-                     background: 'linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1))',
-                     border: '1px solid rgba(255, 20, 147, 0.2)'
+                     background: 'rgba(255, 255, 255, 0.7)',
+                     border: '2px solid rgba(255, 20, 147, 0.2)',
+                     backdropFilter: 'blur(10px)',
+                     boxShadow: '0 4px 16px rgba(255, 20, 147, 0.1)'
                    }}>
-                <Sparkles className="w-4 h-4" style={{ color: '#FF1493' }} />
-                <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
+                <Sparkles className="w-4 h-4 icon-pulse" style={{ color: '#FF1493' }} />
+                <span className="text-sm font-bold" style={{ color: '#C2185B' }}>
                   Votre espace littéraire
                 </span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight" 
+              <h1 className="text-5xl md:text-7xl font-black mb-4 leading-tight" 
                   style={{ 
-                    background: 'linear-gradient(135deg, #FF1493 0%, #FF69B4 50%, #FFB6C8 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    letterSpacing: '-0.02em'
+                    color: '#C2185B',
+                    letterSpacing: '-0.02em',
+                    textShadow: '0 2px 20px rgba(255, 20, 147, 0.1)'
                   }}>
                 Bonjour {displayName} ✨
               </h1>
-              <p className="text-xl md:text-2xl font-medium" style={{ color: '#7a7a7a', lineHeight: '1.5' }}>
+              <p className="text-xl md:text-2xl font-medium" style={{ color: '#E91E63', lineHeight: '1.5' }}>
                 Plongez dans votre univers de lecture
               </p>
             </div>
 
-            {/* Stats Cards en grille moderne */}
+            {/* Stats Cards en grille moderne - IDENTITÉ ROSE */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
-              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer animate-fade-in-up"
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
-                   style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                   style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)', boxShadow: '0 10px 30px rgba(255, 20, 147, 0.15)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center icon-pulse"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', backdropFilter: 'blur(10px)' }}>
                     <BookOpen className="w-7 h-7 text-white" />
                   </div>
-                  <Flame className="w-6 h-6 text-white opacity-40" />
+                  <Flame className="w-6 h-6 text-white opacity-50" />
                 </div>
                 <p className="text-4xl md:text-5xl font-black text-white mb-2">
                   {booksReadThisYear}
                 </p>
-                <p className="text-sm font-medium text-white opacity-90">Livres lus en {selectedYear}</p>
+                <p className="text-sm font-medium text-white opacity-95">Livres lus en {selectedYear}</p>
               </div>
 
-              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer animate-fade-in-up delay-100"
                    onClick={() => navigate(createPageUrl("Statistics"))}
-                   style={{ background: 'linear-gradient(135deg, #E91E63, #F48FB1)' }}>
+                   style={{ background: 'linear-gradient(135deg, #FF69B4, #FFB6C8)', boxShadow: '0 10px 30px rgba(255, 105, 180, 0.15)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center icon-pulse"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', backdropFilter: 'blur(10px)' }}>
                     <TrendingUp className="w-7 h-7 text-white" />
                   </div>
-                  <Zap className="w-6 h-6 text-white opacity-40" />
+                  <Zap className="w-6 h-6 text-white opacity-50" />
                 </div>
                 <p className="text-4xl md:text-5xl font-black text-white mb-2">
                   {totalPagesThisYear.toLocaleString()}
                 </p>
-                <p className="text-sm font-medium text-white opacity-90">Pages dévorées</p>
+                <p className="text-sm font-medium text-white opacity-95">Pages dévorées</p>
               </div>
 
-              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer animate-fade-in-up delay-200"
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
-                   style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
+                   style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)', boxShadow: '0 10px 30px rgba(255, 182, 200, 0.15)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center icon-pulse"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', backdropFilter: 'blur(10px)' }}>
                     <Users className="w-7 h-7 text-white" />
                   </div>
-                  <Heart className="w-6 h-6 text-white opacity-40" />
+                  <Heart className="w-6 h-6 text-white opacity-50" />
                 </div>
                 <p className="text-4xl md:text-5xl font-black text-white mb-2">
                   {myFriends.length}
                 </p>
-                <p className="text-sm font-medium text-white opacity-90">Amies littéraires</p>
+                <p className="text-sm font-medium text-white opacity-95">Amies littéraires</p>
               </div>
 
-              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-6 md:p-8 rounded-3xl cursor-pointer animate-fade-in-up delay-300"
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
-                   style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)' }}>
+                   style={{ background: 'linear-gradient(135deg, #FFC0CB, #FFD6E0)', boxShadow: '0 10px 30px rgba(255, 192, 203, 0.15)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center icon-pulse"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', backdropFilter: 'blur(10px)' }}>
                     <Target className="w-7 h-7 text-white" />
                   </div>
-                  <Clock className="w-6 h-6 text-white opacity-40" />
+                  <Clock className="w-6 h-6 text-white opacity-50" />
                 </div>
                 <p className="text-4xl md:text-5xl font-black text-white mb-2">
                   {toReadCount}
                 </p>
-                <p className="text-sm font-medium text-white opacity-90">Dans la pile</p>
+                <p className="text-sm font-medium text-white opacity-95">Dans la pile</p>
               </div>
             </div>
 
@@ -322,28 +380,29 @@ export default function Dashboard() {
             {/* Objectif de lecture */}
             <ReadingGoalManager year={selectedYear} compact={false} />
 
-            {/* Lectures en cours - SECTION PRINCIPALE */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-shadow duration-500">
+            {/* Lectures en cours - SECTION PRINCIPALE ROSE */}
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500 card-entrance delay-400"
+                  style={{ background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 246, 0.95))', backdropFilter: 'blur(10px)' }}>
               <div className="h-2" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)' }} />
               <CardContent className="p-8 md:p-10">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl icon-pulse"
                          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
                       <BookOpen className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#2D3748', letterSpacing: '-0.01em' }}>
+                      <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#C2185B', letterSpacing: '-0.01em' }}>
                         En cours de lecture
                       </h2>
-                      <p className="text-sm font-medium mt-1" style={{ color: '#888' }}>
+                      <p className="text-sm font-semibold mt-1" style={{ color: '#E91E63' }}>
                         Vos aventures du moment
                       </p>
                     </div>
                   </div>
                   {currentlyReading.length > 0 && (
                     <span className="px-5 py-2.5 rounded-full text-base font-black text-white shadow-xl badge-float"
-                          style={{ backgroundColor: '#FF1493' }}>
+                          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)', boxShadow: '0 4px 20px rgba(255, 20, 147, 0.3)' }}>
                       {currentlyReading.length}
                     </span>
                   )}
@@ -362,12 +421,18 @@ export default function Dashboard() {
                       return (
                         <div key={userBook.id}
                              className="reading-card cursor-pointer p-6 md:p-7 rounded-3xl"
-                             style={{ backgroundColor: '#FFF7FA' }}
+                             style={{ 
+                               backgroundColor: '#FFF7FA',
+                               border: '2px solid rgba(255, 20, 147, 0.08)'
+                             }}
                              onClick={() => setSelectedBookForDetails(userBook)}>
                           <div className="flex gap-5">
                             <div className="relative flex-shrink-0">
                               <div className="w-24 h-32 md:w-32 md:h-44 rounded-2xl overflow-hidden shadow-2xl"
-                                   style={{ backgroundColor: '#FFE4EC' }}>
+                                   style={{ 
+                                     backgroundColor: '#FFE4EC',
+                                     boxShadow: '0 8px 24px rgba(255, 20, 147, 0.15)'
+                                   }}>
                                 {book.cover_url && (
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                 )}
@@ -377,10 +442,10 @@ export default function Dashboard() {
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                               <div>
                                 <h3 className="font-black text-xl md:text-2xl mb-2 line-clamp-2" 
-                                    style={{ color: '#2D3748', letterSpacing: '-0.01em' }}>
+                                    style={{ color: '#C2185B', letterSpacing: '-0.01em' }}>
                                   {book.title}
                                 </h3>
-                                <p className="text-base md:text-lg font-medium mb-4" style={{ color: '#888' }}>
+                                <p className="text-base md:text-lg font-semibold mb-4" style={{ color: '#E91E63' }}>
                                   {book.author}
                                 </p>
                               </div>
@@ -391,17 +456,23 @@ export default function Dashboard() {
                                     <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
                                       Page {userBook.current_page} / {book.page_count}
                                     </span>
-                                    <span className="text-3xl font-black" style={{ color: '#FF1493' }}>
+                                    <span className="text-3xl font-black" 
+                                          style={{ 
+                                            background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent'
+                                          }}>
                                       {progress}%
                                     </span>
                                   </div>
                                   <div className="relative h-3.5 rounded-full overflow-hidden"
                                        style={{ backgroundColor: '#FFE4EC' }}>
-                                    <div className="h-full rounded-full transition-all duration-700"
+                                    <div className="h-full rounded-full progress-bar-animated"
                                          style={{
+                                           '--progress-width': `${progress}%`,
                                            width: `${progress}%`,
-                                           background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)',
-                                           boxShadow: '0 2px 8px rgba(255, 20, 147, 0.3)'
+                                           background: 'linear-gradient(90deg, #4CAF50, #66BB6A)',
+                                           boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)'
                                          }} />
                                   </div>
                                 </div>
@@ -436,21 +507,22 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Amies qui lisent en ce moment */}
+            {/* Amies qui lisent en ce moment - SECONDAIRE LAVANDE */}
             {friendsBooks.filter(b => b.status === "En cours").length > 0 && (
-              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-shadow duration-500">
-                <div className="h-2" style={{ background: 'linear-gradient(90deg, #9B59B6, #BA68C8, #E1BEE7)' }} />
+              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500 card-entrance"
+                    style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(10px)' }}>
+                <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #E1BEE7, #F3E5F5)' }} />
                 <CardContent className="p-8 md:p-10">
                   <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
-                         style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
-                      <Users className="w-8 h-8 text-white" />
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg icon-pulse"
+                         style={{ background: 'linear-gradient(135deg, #E1BEE7, #F3E5F5)' }}>
+                      <Users className="w-7 h-7" style={{ color: '#9B59B6' }} />
                     </div>
                     <div>
-                      <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#2D3748', letterSpacing: '-0.01em' }}>
+                      <h2 className="text-2xl md:text-3xl font-black" style={{ color: '#C2185B', letterSpacing: '-0.01em' }}>
                         Tes amies lisent
                       </h2>
-                      <p className="text-sm font-medium mt-1" style={{ color: '#888' }}>
+                      <p className="text-sm font-semibold mt-1" style={{ color: '#E91E63' }}>
                         Découvrez leurs lectures
                       </p>
                     </div>
@@ -468,34 +540,37 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="hover-lift p-4 rounded-2xl"
-                             style={{ backgroundColor: '#F3E5F5' }}>
+                             className="hover-lift p-4 rounded-2xl transition-all"
+                             style={{ 
+                               backgroundColor: '#FFF0F6',
+                               border: '1px solid rgba(225, 190, 231, 0.3)'
+                             }}>
                           <div className="flex gap-3 mb-3">
                             <div className="w-16 h-24 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
-                                 style={{ backgroundColor: '#E1BEE7' }}>
+                                 style={{ backgroundColor: '#FFE4EC' }}>
                               {book.cover_url && (
                                 <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold mb-1" style={{ color: '#9B59B6' }}>
+                              <p className="text-sm font-bold mb-1" style={{ color: '#E91E63' }}>
                                 {friend.friend_name?.split(' ')[0]}
                               </p>
-                              <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
+                              <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#C2185B' }}>
                                 {book.title}
                               </h4>
-                              <p className="text-xs" style={{ color: '#666' }}>
+                              <p className="text-xs font-medium" style={{ color: '#E91E63' }}>
                                 {book.author}
                               </p>
                             </div>
                           </div>
 
                           {progress > 0 && (
-                            <div className="relative h-2 rounded-full" style={{ backgroundColor: '#E1BEE7' }}>
-                              <div className="h-full rounded-full"
+                            <div className="relative h-2 rounded-full" style={{ backgroundColor: '#FFE4EC' }}>
+                              <div className="h-full rounded-full transition-all duration-500"
                                    style={{
                                      width: `${progress}%`,
-                                     background: 'linear-gradient(90deg, #9B59B6, #BA68C8)'
+                                     background: 'linear-gradient(90deg, #4CAF50, #66BB6A)'
                                    }} />
                             </div>
                           )}
@@ -510,43 +585,44 @@ export default function Dashboard() {
 
           {/* Colonne droite */}
           <div className="space-y-6 md:space-y-8">
-            {/* Citation du jour */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500">
-              <div className="h-2" style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }} />
+            {/* Citation du jour - ROSE DOUX */}
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500 card-entrance"
+                  style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)' }}>
+              <div className="h-1.5" style={{ background: 'linear-gradient(90deg, #FFB6C8, #FFC0CB)' }} />
               <CardContent className="p-8 md:p-10 text-center"
-                           style={{ background: 'linear-gradient(135deg, #FFF9E6, #FFECB3)' }}>
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                     style={{ backgroundColor: 'rgba(255, 215, 0, 0.3)' }}>
-                  <QuoteIcon className="w-8 h-8" style={{ color: '#FFD700' }} />
+                           style={{ background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.5), rgba(255, 228, 236, 0.5))' }}>
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center icon-pulse"
+                     style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)', boxShadow: '0 4px 16px rgba(255, 182, 200, 0.3)' }}>
+                  <QuoteIcon className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                <h2 className="text-2xl font-black mb-4" style={{ color: '#C2185B' }}>
                   Citation du jour
                 </h2>
                 {randomQuote && quoteBook ? (
                   <>
-                    <p className="text-base md:text-lg italic mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
+                    <p className="text-base md:text-lg italic mb-4 leading-relaxed font-medium" style={{ color: '#C2185B' }}>
                       "{randomQuote.quote_text}"
                     </p>
-                    <p className="text-sm font-bold" style={{ color: '#FFD700' }}>
+                    <p className="text-sm font-bold" style={{ color: '#FF1493' }}>
                       — {quoteBook.title}
                     </p>
                   </>
                 ) : (
-                  <p className="text-lg italic" style={{ color: '#666' }}>
+                  <p className="text-lg italic font-medium" style={{ color: '#E91E63' }}>
                     "Lire, c'est vivre mille vies avant de mourir."
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Playlist musicale */}
+            {/* Playlist musicale - ROSE */}
             {allMusicWithBooks.length > 0 && (
-              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden cursor-pointer hover-lift"
-                    onClick={() => navigate(createPageUrl("MusicPlaylist"))}>
-                <CardContent className="p-8 md:p-10"
-                             style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
-                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                    <Music className="w-6 h-6" />
+              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden cursor-pointer hover-lift card-entrance delay-100"
+                    onClick={() => navigate(createPageUrl("MusicPlaylist"))}
+                    style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)', boxShadow: '0 10px 30px rgba(255, 182, 200, 0.2)' }}>
+                <CardContent className="p-8 md:p-10">
+                  <h2 className="text-2xl font-black mb-4 text-white flex items-center gap-2">
+                    <Music className="w-7 h-7 icon-pulse" />
                     Ta Playlist
                   </h2>
                   <div className="space-y-3">
@@ -578,42 +654,55 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Accès rapide */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-shadow duration-500">
+            {/* Accès rapide - ROSE */}
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500 card-entrance delay-200"
+                  style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)' }}>
               <CardContent className="p-8 md:p-10">
-                <h2 className="text-2xl font-black mb-6" style={{ color: '#2D3748' }}>
+                <h2 className="text-2xl font-black mb-6" style={{ color: '#C2185B' }}>
                   ⚡ Raccourcis
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
                   <Link to={createPageUrl("SharedReadings")}>
                     <div className="p-5 rounded-2xl text-center hover-lift cursor-pointer transition-all"
-                         style={{ backgroundColor: '#FFF0F6', border: '2px solid transparent' }}>
-                      <Users className="w-10 h-10 mx-auto mb-3" style={{ color: '#FF1493' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Lectures communes</p>
+                         style={{ 
+                           background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.8), rgba(255, 228, 236, 0.8))',
+                           border: '2px solid rgba(255, 20, 147, 0.1)'
+                         }}>
+                      <Users className="w-10 h-10 mx-auto mb-3 icon-pulse" style={{ color: '#FF1493' }} />
+                      <p className="text-sm font-bold" style={{ color: '#C2185B' }}>Lectures communes</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Quotes")}>
                     <div className="p-5 rounded-2xl text-center hover-lift cursor-pointer transition-all"
-                         style={{ backgroundColor: '#FFF9E6', border: '2px solid transparent' }}>
-                      <QuoteIcon className="w-10 h-10 mx-auto mb-3" style={{ color: '#FFD700' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Citations</p>
+                         style={{ 
+                           background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.8), rgba(255, 228, 236, 0.8))',
+                           border: '2px solid rgba(255, 105, 180, 0.1)'
+                         }}>
+                      <QuoteIcon className="w-10 h-10 mx-auto mb-3 icon-pulse" style={{ color: '#FF69B4' }} />
+                      <p className="text-sm font-bold" style={{ color: '#C2185B' }}>Citations</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("BookTournament")}>
                     <div className="p-5 rounded-2xl text-center hover-lift cursor-pointer transition-all"
-                         style={{ backgroundColor: '#FFF5E6', border: '2px solid transparent' }}>
-                      <Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: '#FF9F7F' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
+                         style={{ 
+                           background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.8), rgba(255, 228, 236, 0.8))',
+                           border: '2px solid rgba(255, 182, 200, 0.1)'
+                         }}>
+                      <Trophy className="w-10 h-10 mx-auto mb-3 icon-pulse" style={{ color: '#FFB6C8' }} />
+                      <p className="text-sm font-bold" style={{ color: '#C2185B' }}>Tournoi</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Profile")}>
                     <div className="p-5 rounded-2xl text-center hover-lift cursor-pointer transition-all"
-                         style={{ backgroundColor: '#FFE6F0', border: '2px solid transparent' }}>
-                      <Heart className="w-10 h-10 mx-auto mb-3" style={{ color: '#E91E63' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
+                         style={{ 
+                           background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.8), rgba(255, 228, 236, 0.8))',
+                           border: '2px solid rgba(233, 30, 99, 0.1)'
+                         }}>
+                      <Heart className="w-10 h-10 mx-auto mb-3 icon-pulse" style={{ color: '#E91E63' }} />
+                      <p className="text-sm font-bold" style={{ color: '#C2185B' }}>Mes Persos</p>
                     </div>
                   </Link>
                 </div>
