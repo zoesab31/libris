@@ -30,90 +30,92 @@ export default function BookBoyfriendCard({ character, book, onEdit }) {
   };
 
   return (
-    <Card className="shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all" 
+    <Card className="shadow-xl border-0 overflow-hidden hover:scale-[1.02] transition-all duration-300 group" 
           style={{ backgroundColor: 'white' }}>
       <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row">
-          {/* Image section */}
-          <div className="relative md:w-1/3">
-            <div className="aspect-[3/4] md:h-full">
-              {character.image_url ? (
+        <div className="relative">
+          {/* Image avec overlay gradient */}
+          <div className="relative h-80 md:h-96 overflow-hidden">
+            {character.image_url ? (
+              <>
                 <img 
                   src={character.image_url} 
                   alt={character.character_name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--beige)' }}>
-                  <Heart className="w-16 h-16" style={{ color: 'var(--warm-brown)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80" />
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center"
+                   style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                <Heart className="w-20 h-20 text-white opacity-50" />
+              </div>
+            )}
+            
+            {/* Rank badge */}
+            <div className="absolute top-4 right-4 w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl"
+                 style={{ 
+                   backgroundColor: rankColors[character.rank] || '#FFB6C8',
+                 }}>
+              {rankEmojis[character.rank] || `#${character.rank}`}
+            </div>
+
+            {/* Nom du personnage en bas */}
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                {character.character_name}
+              </h3>
+              {book && (
+                <div className="flex items-center gap-2 text-white text-opacity-90">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="text-sm md:text-base font-medium">{book.title}</span>
                 </div>
               )}
             </div>
-            {/* Rank badge */}
-            <div className="absolute top-4 left-4 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
-                 style={{ 
-                   backgroundColor: rankColors[character.rank] || 'var(--soft-brown)',
-                   color: 'white'
-                 }}>
-              {rankEmojis[character.rank] || `#${character.rank}`}
+
+            {/* Action buttons */}
+            <div className="absolute top-4 left-4 flex gap-2">
+              <Button
+                size="icon"
+                onClick={() => onEdit(character)}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
+              >
+                <Edit className="w-4 h-4" style={{ color: '#FF1493' }} />
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button>
             </div>
           </div>
 
           {/* Content section */}
-          <div className="flex-1 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--deep-brown)' }}>
-                  {character.character_name}
-                </h3>
-                {book && (
-                  <div className="flex items-center gap-2 text-sm mb-3" style={{ color: 'var(--warm-brown)' }}>
-                    <BookOpen className="w-4 h-4" />
-                    <span>{book.title} - {book.author}</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(character)}
-                >
-                  <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate()}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </Button>
-              </div>
-            </div>
-
+          <div className="p-6 space-y-4">
             {character.why_i_love_him && (
-              <div className="mb-4">
-                <h4 className="font-semibold mb-2 flex items-center gap-2" 
-                    style={{ color: 'var(--deep-brown)' }}>
-                  <Heart className="w-4 h-4" style={{ color: 'var(--rose-gold)' }} />
+              <div className="p-4 rounded-2xl" style={{ background: 'linear-gradient(135deg, #FFF0F6, #FFE4EC)' }}>
+                <h4 className="font-bold mb-2 flex items-center gap-2 text-base" 
+                    style={{ color: '#FF1493' }}>
+                  <Heart className="w-5 h-5" />
                   Pourquoi je l'adore
                 </h4>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-brown)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#2D3748' }}>
                   {character.why_i_love_him}
                 </p>
               </div>
             )}
 
             {character.best_quote && (
-              <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm" 
-                    style={{ color: 'var(--deep-brown)' }}>
+              <div className="p-4 rounded-2xl border-2" style={{ borderColor: '#FFE4EC', backgroundColor: 'white' }}>
+                <h4 className="font-bold mb-2 flex items-center gap-2 text-sm" 
+                    style={{ color: '#FF1493' }}>
                   <QuoteIcon className="w-4 h-4" />
                   Citation préférée
                 </h4>
-                <p className="text-sm italic leading-relaxed" style={{ color: 'var(--deep-brown)' }}>
+                <p className="text-sm italic leading-relaxed" style={{ color: '#2D3748' }}>
                   "{character.best_quote}"
                 </p>
               </div>
