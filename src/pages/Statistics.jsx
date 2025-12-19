@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -263,56 +262,68 @@ export default function Statistics() {
   const friendName = myFriends.find(f => f.friend_email === selectedFriend)?.friend_name || selectedFriend?.split('@')[0];
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--deep-pink))' }}>
-              <BarChart className="w-7 h-7 text-white" />
-            </div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header moderne */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Statistiques {viewMode === 'single' ? selectedYear : viewMode === 'all' ? 'Globales' : viewMode === 'friends' && selectedFriend ? `vs ${friendName}` : 'Comparaison'}
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                📊 Statistiques {viewMode === 'single' ? selectedYear : viewMode === 'all' ? 'Globales' : viewMode === 'friends' && selectedFriend ? `vs ${friendName}` : ''}
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
                 {viewMode === 'friends' && selectedFriend 
                   ? `Comparaison avec ${friendName}`
-                  : `${booksThisYear.length} livre${booksThisYear.length > 1 ? 's' : ''} lu${booksThisYear.length > 1 ? 's' : ''}`
+                  : `${booksThisYear.length} livre${booksThisYear.length > 1 ? 's' : ''} analysé${booksThisYear.length > 1 ? 's' : ''}`
                 }
               </p>
             </div>
-          </div>
 
           {/* View Mode Selector */}
           <div className="flex gap-2 flex-wrap">
             <Button
               variant={viewMode === 'single' ? 'default' : 'outline'}
               onClick={() => setViewMode('single')}
+              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
               style={viewMode === 'single' ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: 'white'
-              } : { color: '#000000', borderColor: 'var(--beige)' }}
+                backgroundColor: 'white',
+                color: '#FF1493'
+              } : { 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderColor: 'white'
+              }}
             >
-              Année unique
+              Année
             </Button>
             <Button
               variant={viewMode === 'all' ? 'default' : 'outline'}
               onClick={() => setViewMode('all')}
+              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
               style={viewMode === 'all' ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: 'white'
-              } : { color: '#000000', borderColor: 'var(--beige)' }}
+                backgroundColor: 'white',
+                color: '#FF1493'
+              } : { 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderColor: 'white'
+              }}
             >
               Toutes
             </Button>
             <Button
               variant={viewMode === 'compare' ? 'default' : 'outline'}
               onClick={() => setViewMode('compare')}
+              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
               style={viewMode === 'compare' ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: 'white'
-              } : { color: '#000000', borderColor: 'var(--beige)' }}
+                backgroundColor: 'white',
+                color: '#FF1493'
+              } : { 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderColor: 'white'
+              }}
             >
               Comparer
             </Button>
@@ -320,15 +331,21 @@ export default function Statistics() {
               variant={viewMode === 'friends' ? 'default' : 'outline'}
               onClick={() => {
                 setViewMode('friends');
-                setSelectedYear(new Date().getFullYear()); // Reset selected year for friend comparison
+                setSelectedYear(new Date().getFullYear());
               }}
+              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
               style={viewMode === 'friends' ? {
-                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                color: 'white'
-              } : { color: '#000000', borderColor: 'var(--beige)' }}
+                backgroundColor: 'white',
+                color: '#FF1493'
+              } : { 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                borderColor: 'white'
+              }}
             >
-              👭 Vs Amies
+              👭 Amies
             </Button>
+          </div>
           </div>
         </div>
 
@@ -388,11 +405,15 @@ export default function Statistics() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-4 py-2 rounded-lg border-2 font-medium"
-              style={{ borderColor: 'var(--beige)', color: '#000000' }}
+              className="px-6 py-3 rounded-2xl font-bold shadow-lg text-lg"
+              style={{ 
+                backgroundColor: 'white',
+                color: '#FF1493',
+                border: '2px solid #FFE1F0'
+              }}
             >
               {years.map(year => (
-                <option key={year} value={year}>{year}</option>
+                <option key={year} value={year}>📅 {year}</option>
               ))}
             </select>
           </div>
@@ -567,86 +588,113 @@ export default function Statistics() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
-                    <BookOpen className="w-4 h-4" />
-                    Livres lus
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
+              <Card className="border-0 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-2xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE4EC' }}>
+                      <BookOpen className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold" style={{ color: '#666' }}>Livres lus</p>
+                  </div>
+                  <p className="text-3xl md:text-4xl font-bold" style={{ color: '#FF1493' }}>
                     {booksThisYear.length}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
-                    <FileText className="w-4 h-4" />
-                    Pages lues
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+              <Card className="border-0 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-2xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #E91E63, #F48FB1)' }} />
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FCE4EC' }}>
+                      <FileText className="w-5 h-5" style={{ color: '#E91E63' }} />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold" style={{ color: '#666' }}>Pages</p>
+                  </div>
+                  <p className="text-3xl md:text-4xl font-bold" style={{ color: '#E91E63' }}>
                     {totalPages.toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
-                    <TrendingUp className="w-4 h-4" />
-                    Note moyenne
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>
-                    {avgRating} / 5
+              <Card className="border-0 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-2xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }} />
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFF9E6' }}>
+                      <TrendingUp className="w-5 h-5" style={{ color: '#FFD700' }} />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold" style={{ color: '#666' }}>Note moy.</p>
+                  </div>
+                  <p className="text-3xl md:text-4xl font-bold" style={{ color: '#FFD700' }}>
+                    {avgRating}/5
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'var(--warm-brown)' }}>
-                    <Calendar className="w-4 h-4" />
-                    Par mois
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+              <Card className="border-0 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-2xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #9B59B6, #E1BEE7)' }} />
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#F3E5F5' }}>
+                      <Calendar className="w-5 h-5" style={{ color: '#9B59B6' }} />
+                    </div>
+                    <p className="text-xs md:text-sm font-bold" style={{ color: '#666' }}>Par mois</p>
+                  </div>
+                  <p className="text-3xl md:text-4xl font-bold" style={{ color: '#9B59B6' }}>
                     {(booksThisYear.length / 12).toFixed(1)}
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle style={{ color: 'var(--dark-text)' }}>Livres par mois</CardTitle>
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
+              <Card className="border-0 shadow-2xl rounded-3xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)' }} />
+                <CardHeader className="pb-0">
+                  <CardTitle className="text-xl font-bold" style={{ color: '#2D3748' }}>
+                    📈 Livres par mois
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsBarChart data={booksPerMonth}>
-                      <XAxis dataKey="name" stroke="var(--warm-pink)" />
-                      <YAxis stroke="var(--warm-pink)" />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="var(--deep-pink)" radius={[8, 8, 0, 0]} />
+                      <XAxis dataKey="name" stroke="#FF1493" style={{ fontSize: '12px', fontWeight: 'bold' }} />
+                      <YAxis stroke="#FF1493" style={{ fontSize: '12px', fontWeight: 'bold' }} />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '2px solid #FFE1F0',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 12px rgba(255, 20, 147, 0.2)'
+                        }}
+                      />
+                      <Bar dataKey="count" fill="url(#pinkGradient)" radius={[12, 12, 0, 0]} />
+                      <defs>
+                        <linearGradient id="pinkGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#FF1493" />
+                          <stop offset="100%" stopColor="#FFB6C8" />
+                        </linearGradient>
+                      </defs>
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle style={{ color: 'var(--dark-text)' }}>Répartition par genre</CardTitle>
+              <Card className="border-0 shadow-2xl rounded-3xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)' }} />
+                <CardHeader className="pb-0">
+                  <CardTitle className="text-xl font-bold" style={{ color: '#2D3748' }}>
+                    🎭 Genres favoris
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
@@ -681,11 +729,14 @@ export default function Statistics() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle style={{ color: 'var(--dark-text)' }}>Langues de lecture</CardTitle>
+              <Card className="border-0 shadow-2xl rounded-3xl overflow-hidden">
+                <div className="h-2" style={{ background: 'linear-gradient(90deg, #9B59B6, #BA68C8, #E1BEE7)' }} />
+                <CardHeader className="pb-0">
+                  <CardTitle className="text-xl font-bold" style={{ color: '#2D3748' }}>
+                    🌍 Langues
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie

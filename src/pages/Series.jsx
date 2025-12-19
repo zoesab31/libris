@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -127,100 +126,109 @@ export default function Series() {
   const sortedSeriesWithAbandoned = [...sortedSeries, ...abandonedSeries];
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, #B8E6D5, #A8D5E5)' }}>
-            <BookOpen className="w-7 h-7 text-white" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-              Séries à compléter 🌿
-            </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              Suivez vos sagas, tomes lus et à venir
-            </p>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header moderne */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                📚 Séries à compléter
+              </h1>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
+                Suivez vos sagas, tomes lus et à venir
+              </p>
+            </div>
+            <Button 
+              onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
+              className="shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform text-pink-600"
+              style={{ backgroundColor: 'white' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              Ajouter
+            </Button>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="mb-6 p-4 rounded-xl shadow-md" style={{ backgroundColor: 'white' }}>
-          <div className="flex flex-wrap gap-6 items-center justify-center">
+        {/* Legend améliorée */}
+        <div className="mb-6 p-4 md:p-6 rounded-2xl shadow-xl" style={{ backgroundColor: 'white' }}>
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-4 md:gap-6 items-center justify-center">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: '#FFB6C8' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+              <div className="w-8 h-8 rounded-full shadow-md" style={{ backgroundColor: '#FFB6C8' }} />
+              <span className="text-xs md:text-sm font-bold" style={{ color: '#2D3748' }}>
                 À acheter
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: '#E0E7FF' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+              <div className="w-8 h-8 rounded-full shadow-md" style={{ backgroundColor: '#E0E7FF' }} />
+              <span className="text-xs md:text-sm font-bold" style={{ color: '#2D3748' }}>
                 Non lu
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: '#B8E6D5' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+              <div className="w-8 h-8 rounded-full shadow-md" style={{ backgroundColor: '#B8E6D5' }} />
+              <span className="text-xs md:text-sm font-bold" style={{ color: '#2D3748' }}>
                 Lu
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full border-2" style={{ borderColor: '#D1D5DB', backgroundColor: 'transparent' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-                Pas encore sorti ⏳
+              <div className="w-8 h-8 rounded-full border-2 shadow-md" style={{ borderColor: '#D1D5DB', backgroundColor: 'white' }} />
+              <span className="text-xs md:text-sm font-bold" style={{ color: '#2D3748' }}>
+                Pas encore sorti
               </span>
             </div>
           </div>
         </div>
 
-        {/* Statistics - Now clickable for filtering */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {/* Statistics Cards améliorées */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
           <Card 
-            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
-              filterType === null ? 'ring-4 ring-purple-300' : ''
+            className={`border-0 shadow-xl hover:shadow-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1 rounded-2xl ${
+              filterType === null ? 'ring-4' : ''
             }`}
             onClick={() => setFilterType(null)}
+            style={{ ringColor: '#9B59B6' }}
           >
-            <div className="h-2" style={{ background: 'linear-gradient(90deg, #A8D5E5, #B8E6D5)' }} />
-            <CardContent className="p-4">
-              <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>Total</p>
-              <p className="text-3xl font-bold" style={{ color: 'var(--dark-text)' }}>{totalSeries}</p>
+            <div className="h-2" style={{ background: 'linear-gradient(90deg, #9B59B6, #BA68C8)' }} />
+            <CardContent className="p-4 md:p-6">
+              <p className="text-xs md:text-sm font-bold mb-2" style={{ color: '#666' }}>Total</p>
+              <p className="text-3xl md:text-4xl font-bold" style={{ color: '#9B59B6' }}>{totalSeries}</p>
             </CardContent>
           </Card>
 
           <Card 
-            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
-              filterType === 'completed' ? 'ring-4 ring-green-300' : ''
+            className={`border-0 shadow-xl hover:shadow-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1 rounded-2xl ${
+              filterType === 'completed' ? 'ring-4' : ''
             }`}
             onClick={() => setFilterType(filterType === 'completed' ? null : 'completed')}
+            style={{ ringColor: '#4ADE80' }}
           >
-            <div className="h-2" style={{ background: 'linear-gradient(90deg, #B8E6D5, #98D8C8)' }} />
-            <CardContent className="p-4">
-              <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>Complètes</p>
-              <p className="text-3xl font-bold" style={{ color: '#4ADE80' }}>{completedSeriesCount}</p>
+            <div className="h-2" style={{ background: 'linear-gradient(90deg, #4ADE80, #86EFAC)' }} />
+            <CardContent className="p-4 md:p-6">
+              <p className="text-xs md:text-sm font-bold mb-2" style={{ color: '#666' }}>Complètes</p>
+              <p className="text-3xl md:text-4xl font-bold" style={{ color: '#4ADE80' }}>{completedSeriesCount}</p>
             </CardContent>
           </Card>
 
           <Card 
-            className={`border-0 shadow-lg overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${
-              filterType === 'inProgress' ? 'ring-4 ring-blue-300' : ''
+            className={`border-0 shadow-xl hover:shadow-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1 rounded-2xl ${
+              filterType === 'inProgress' ? 'ring-4' : ''
             }`}
             onClick={() => setFilterType(filterType === 'inProgress' ? null : 'inProgress')}
+            style={{ ringColor: '#60A5FA' }}
           >
-            <div className="h-2" style={{ background: 'linear-gradient(90deg, #E0E7FF, #C7D2FE)' }} />
-            <CardContent className="p-4">
-              <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>En cours</p>
-              <p className="text-3xl font-bold" style={{ color: '#A8D5E5' }}>{inProgressSeriesCount}</p>
+            <div className="h-2" style={{ background: 'linear-gradient(90deg, #60A5FA, #93C5FD)' }} />
+            <CardContent className="p-4 md:p-6">
+              <p className="text-xs md:text-sm font-bold mb-2" style={{ color: '#666' }}>En cours</p>
+              <p className="text-3xl md:text-4xl font-bold" style={{ color: '#60A5FA' }}>{inProgressSeriesCount}</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg overflow-hidden">
-            <div className="h-2" style={{ background: 'linear-gradient(90deg, #FFB6C8, #FFA6B8)' }} />
-            <CardContent className="p-4">
-              <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>À acheter</p>
-              <p className="text-3xl font-bold" style={{ color: '#FF8FAB' }}>{toBuyCount}</p>
+          <Card className="border-0 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-2xl overflow-hidden">
+            <div className="h-2" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+            <CardContent className="p-4 md:p-6">
+              <p className="text-xs md:text-sm font-bold mb-2" style={{ color: '#666' }}>À acheter</p>
+              <p className="text-3xl md:text-4xl font-bold" style={{ color: '#FF1493' }}>{toBuyCount}</p>
             </CardContent>
           </Card>
         </div>
@@ -245,29 +253,34 @@ export default function Series() {
           </div>
         )}
 
-        {/* Search, Sort and Add Button - ALL ON ONE LINE */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Search, Sort */}
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
-                    style={{ color: 'var(--warm-pink)' }} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
+                    style={{ color: '#FF1493' }} />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une série ou un auteur..."
-              className="pl-10 border-2"
-              style={{ borderColor: '#E0E7FF' }}
+              placeholder="Rechercher une série..."
+              className="pl-12 py-6 text-base md:text-lg rounded-2xl border-2 shadow-lg font-medium"
+              style={{ 
+                borderColor: '#FFE1F0',
+                backgroundColor: 'white'
+              }}
             />
           </div>
           <div className="flex gap-2">
             <Button
               variant={sortBy === "name" ? "default" : "outline"}
               onClick={() => setSortBy("name")}
+              className="flex-1 md:flex-none rounded-xl font-bold shadow-lg px-4 md:px-6 py-3"
               style={sortBy === "name" ? {
-                background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)',
+                background: 'linear-gradient(135deg, #9B59B6, #BA68C8)',
                 color: 'white'
               } : {
-                borderColor: '#E0E7FF',
-                color: 'var(--dark-text)'
+                borderColor: '#FFE1F0',
+                color: '#2D3748',
+                backgroundColor: 'white'
               }}
             >
               A-Z
@@ -275,23 +288,18 @@ export default function Series() {
             <Button
               variant={sortBy === "progress" ? "default" : "outline"}
               onClick={() => setSortBy("progress")}
+              className="flex-1 md:flex-none rounded-xl font-bold shadow-lg px-4 md:px-6 py-3"
               style={sortBy === "progress" ? {
-                background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)',
+                background: 'linear-gradient(135deg, #9B59B6, #BA68C8)',
                 color: 'white'
               } : {
-                borderColor: '#E0E7FF',
-                color: 'var(--dark-text)'
+                borderColor: '#FFE1F0',
+                color: '#2D3748',
+                backgroundColor: 'white'
               }}
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
+              <TrendingUp className="w-4 h-4 mr-1 md:mr-2" />
               Progression
-            </Button>
-            <Button 
-              onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
-              className="shadow-lg text-white font-medium px-6 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}>
-              <Plus className="w-5 h-5 mr-2" />
-              Ajouter une série
             </Button>
           </div>
         </div>

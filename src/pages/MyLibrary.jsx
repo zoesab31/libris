@@ -248,48 +248,55 @@ export default function MyLibrary() {
   };
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <Library className="w-7 h-7 text-white" />
-            </div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header rose gradient */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Ma Bibliothèque
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                📚 Ma Bibliothèque
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
                 {myBooks.length} livre{myBooks.length > 1 ? 's' : ''} dans votre collection
               </p>
             </div>
-          </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3 flex-wrap">
             {!selectionMode ? (
               <>
                 <Button
                   variant="outline"
                   onClick={() => setShowShelves(true)}
-                  className="font-medium"
-                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                  className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    borderColor: 'white'
+                  }}
                 >
-                  Gérer mes étagères
+                  <span className="hidden md:inline">Étagères</span>
+                  <span className="md:hidden">📚</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setSelectionMode(true)}
-                  className="font-medium"
-                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                  className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    borderColor: 'white'
+                  }}
                 >
-                  Sélectionner
+                  <span className="hidden md:inline">Sélectionner</span>
+                  <span className="md:hidden">✓</span>
                 </Button>
                 <Button
                   onClick={() => setShowAddBook(true)}
-                  className="shadow-lg text-white font-medium px-6 rounded-xl"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                  <Plus className="w-5 h-5 mr-2" />
-                  Ajouter un livre
+                  className="shadow-xl font-bold px-6 md:px-8 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform"
+                  style={{ backgroundColor: 'white', color: '#FF1493' }}>
+                  <Plus className="w-5 h-5 mr-1 md:mr-2" />
+                  <span className="hidden md:inline">Livre</span>
                 </Button>
               </>
             ) : (
@@ -300,122 +307,131 @@ export default function MyLibrary() {
                     setSelectionMode(false);
                     setSelectedBooks([]);
                   }}
+                  className="font-bold rounded-xl shadow-lg"
+                  style={{ 
+                    backgroundColor: 'white',
+                    color: '#FF1493'
+                  }}
                 >
                   Annuler
                 </Button>
                 {selectedBooks.length > 0 && (
                   <Button
-                    className="shadow-lg text-white font-medium"
+                    className="shadow-xl text-white font-bold rounded-xl"
                     style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
                     onClick={() => {
-                      if (window.confirm(`Êtes-vous sûre de vouloir supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-                        // This will be handled by BookGrid
+                      if (window.confirm(`Supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
                       }
                     }}
                   >
-                    Supprimer {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
+                    Supprimer {selectedBooks.length}
                   </Button>
                 )}
               </>
             )}
           </div>
+          </div>
         </div>
 
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 flex-wrap h-auto">
+            <TabsList className="bg-white shadow-xl p-2 rounded-2xl border-0 flex-wrap h-auto gap-1">
               {customShelves.length > 0 && (
                 <TabsTrigger
                   value="custom"
-                  className="rounded-lg font-bold data-[state=active]:text-white"
+                  className="rounded-xl font-bold data-[state=active]:text-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                   style={activeTab === "custom" ? {
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#FFFFFF'
-                  } : { color: '#000000' }}
+                  } : { color: '#2D3748' }}
                 >
-                  Étagères perso ({bookCounts.custom})
+                  <span className="hidden md:inline">Étagères ({bookCounts.custom})</span>
+                  <span className="md:hidden">📚 {bookCounts.custom}</span>
                 </TabsTrigger>
               )}
               <TabsTrigger
                 value="tous"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "tous" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
                 Tous ({bookCounts.tous})
               </TabsTrigger>
               <TabsTrigger
                 value="En cours"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "En cours" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
                 En cours ({bookCounts["En cours"]})
               </TabsTrigger>
               <TabsTrigger
                 value="Lu"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "Lu" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
                 Lus ({bookCounts.Lu})
               </TabsTrigger>
               <TabsTrigger
                 value="À lire"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "À lire" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
                 À lire ({bookCounts["À lire"]})
               </TabsTrigger>
               <TabsTrigger
                 value="Wishlist"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "Wishlist" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
-                Wishlist ({bookCounts.Wishlist})
+                <span className="hidden md:inline">Wishlist ({bookCounts.Wishlist})</span>
+                <span className="md:hidden">💝 {bookCounts.Wishlist}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="Abandonné"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "Abandonné" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
-                Abandonnés ({bookCounts.Abandonné})
+                <span className="hidden md:inline">DNF ({bookCounts.Abandonné})</span>
+                <span className="md:hidden">💀 {bookCounts.Abandonné}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="pal"
-                className="rounded-lg font-bold data-[state=active]:text-white"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "pal" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
                 PAL ({bookCounts.pal})
               </TabsTrigger>
               <TabsTrigger
                 value="historique"
-                className="rounded-lg font-bold data-[state=active]:text-white flex items-center gap-1"
+                className="rounded-xl font-bold data-[state=active]:text-white flex items-center gap-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "historique" ? {
-                  background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#000000' }}
+                } : { color: '#2D3748' }}
               >
-                <Calendar className="w-4 h-4" />
-                Historique ({bookCounts.historique})
+                <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden md:inline">Historique ({bookCounts.historique})</span>
+                <span className="md:hidden">{bookCounts.historique}</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>

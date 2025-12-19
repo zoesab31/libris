@@ -102,30 +102,28 @@ export default function FanArt() {
   const { fanArts: displayedFanArts, title } = getCurrentViewData();
 
   return (
-    <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <ImageIcon className="w-7 h-7 text-white" />
-            </div>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header rose gradient */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Mes Fan Arts
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                🎨 Mes Fan Arts
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
                 {fanArts.length} fan art{fanArts.length > 1 ? 's' : ''} • {books.length} livre{books.length > 1 ? 's' : ''}
               </p>
             </div>
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              className="shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
+              style={{ backgroundColor: 'white', color: '#FF1493' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              Ajouter
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowAddDialog(true)}
-            className="shadow-lg text-white font-medium px-6 rounded-xl"
-            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-            <Plus className="w-5 h-5 mr-2" />
-            Ajouter un fan art
-          </Button>
         </div>
 
         {!selectedBook ? (
@@ -142,8 +140,8 @@ export default function FanArt() {
                 <div key={bookId} className="relative group">
                   <button
                     onClick={() => setSelectedBook(bookId)}
-                    className="w-full p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                    style={{ backgroundColor: 'white', border: '2px solid var(--beige)' }}
+                    className="w-full p-4 md:p-6 rounded-2xl shadow-xl transition-all hover:shadow-2xl hover:-translate-y-2 hover:scale-105"
+                    style={{ backgroundColor: 'white', border: 'none' }}
                   >
                     <div className="mb-4">
                       {book?.cover_url ? (
