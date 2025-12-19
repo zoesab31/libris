@@ -63,6 +63,32 @@ export default function AdminUsers() {
     },
   });
 
+  const downloadUserDataMutation = useMutation({
+    mutationFn: async (targetUser) => {
+      const response = await base44.functions.invoke('downloadUserData', { user_email: targetUser.email });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const dataStr = JSON.stringify(data.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${data.user_email}_${new Date().getTime()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`✅ ${data.total_items} éléments téléchargés`);
+    },
+    onError: (error) => {
+      console.error("Error downloading data:", error);
+      toast.error("Erreur lors du téléchargement");
+    }
+  });
+
   const handleDownloadBackup = (backup) => {
     const dataStr = JSON.stringify(backup.data_snapshot, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -199,24 +225,46 @@ export default function AdminUsers() {
                       </div>
                     </div>
 
-                    <Button
-                      onClick={() => createBackupMutation.mutate(selectedUser)}
-                      disabled={creatingBackupFor === selectedUser.email}
-                      className="w-full text-white"
-                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                    >
-                      {creatingBackupFor === selectedUser.email ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Création...
-                        </>
-                      ) : (
-                        <>
-                          <Archive className="w-4 h-4 mr-2" />
-                          Créer une sauvegarde
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => createBackupMutation.mutate(selectedUser)}
+                        disabled={creatingBackupFor === selectedUser.email}
+                        className="flex-1 text-white"
+                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                      >
+                        {creatingBackupFor === selectedUser.email ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Création...
+                          </>
+                        ) : (
+                          <>
+                            <Archive className="w-4 h-4 mr-2" />
+                            Créer
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={() => downloadUserDataMutation.mutate(selectedUser)}
+                        disabled={downloadUserDataMutation.isPending}
+                        variant="outline"
+                        className="flex-1"
+                        style={{ borderColor: 'var(--deep-pink)', color: 'var(--deep-pink)' }}
+                      >
+                        {downloadUserDataMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Export...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Télécharger
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
