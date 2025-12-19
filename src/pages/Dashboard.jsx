@@ -120,302 +120,123 @@ export default function Dashboard() {
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="min-h-screen dreamscape-bg" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <style>{`
-        /* 🌫️ Palette onirique */
-        :root {
-          --dream-rose: rgba(255, 192, 203, 0.3);
-          --dream-lavender: rgba(230, 179, 232, 0.4);
-          --dream-blue: rgba(167, 199, 231, 0.25);
-          --dream-fog: rgba(255, 255, 255, 0.6);
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
         }
-
-        /* 🌊 Fond onirique avec nappes flottantes */
-        .dreamscape-bg {
-          background: linear-gradient(135deg, 
-            #FFF5F7 0%, 
-            #FFE8F0 25%, 
-            #F3E5F5 50%, 
-            #E1F5FE 75%, 
-            #FFF0F6 100%
-          );
-          background-size: 400% 400%;
-          animation: dreamShift 20s ease-in-out infinite;
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(255, 20, 147, 0.6); }
         }
-
-        @keyframes dreamShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+        .hover-lift {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        /* ✨ Halos flottants dans le fond */
-        .dreamscape-bg::before,
-        .dreamscape-bg::after {
-          content: '';
-          position: fixed;
-          border-radius: 50%;
-          filter: blur(120px);
-          opacity: 0.15;
-          pointer-events: none;
-          animation: floatHalo 25s ease-in-out infinite;
+        .hover-lift:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 20px 40px rgba(255, 20, 147, 0.2);
         }
-
-        .dreamscape-bg::before {
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, #E6B3E8, transparent);
-          top: -200px;
-          left: -200px;
-          animation-delay: 0s;
+        .stat-card {
+          transition: all 0.3s ease;
         }
-
-        .dreamscape-bg::after {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, #FFC0CB, transparent);
-          bottom: -150px;
-          right: -150px;
-          animation-delay: 12s;
-        }
-
-        @keyframes floatHalo {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(100px, -50px) scale(1.1); }
-          66% { transform: translate(-50px, 80px) scale(0.95); }
-        }
-
-        /* 💫 Animations douces d'apparition */
-        @keyframes fadeSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* 🫧 Animation de respiration subtile */
-        @keyframes breathe {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.01);
-            opacity: 0.95;
-          }
-        }
-
-        /* 🌸 Dérive douce d'éléments */
-        @keyframes gentleFloat {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(1deg); }
-        }
-
-        /* ✨ Pulse lumineux très doux */
-        @keyframes softPulse {
-          0%, 100% {
-            box-shadow: 0 8px 32px rgba(230, 179, 232, 0.2);
-          }
-          50% {
-            box-shadow: 0 12px 48px rgba(230, 179, 232, 0.35);
-          }
-        }
-
-        /* 🎴 Cartes oniriques avec verre dépoli */
-        .dream-card {
-          background: rgba(255, 255, 255, 0.7);
-          backdrop-filter: blur(20px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-          transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
-          animation: fadeSlideIn 0.8s ease-out backwards;
-        }
-
-        .dream-card:hover {
-          transform: translateY(-8px) scale(1.01);
-          box-shadow: 0 20px 60px rgba(230, 179, 232, 0.25);
-          backdrop-filter: blur(24px) saturate(200%);
-          border-color: rgba(230, 179, 232, 0.5);
-        }
-
-        /* 📊 Stat cards avec halo */
-        .stat-dream {
-          background: linear-gradient(135deg, 
-            rgba(255, 192, 203, 0.9), 
-            rgba(255, 182, 193, 0.85)
-          );
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          transition: all 350ms ease;
-          animation: fadeSlideIn 0.6s ease-out backwards, breathe 6s ease-in-out infinite;
-        }
-
-        .stat-dream:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 16px 48px rgba(255, 105, 180, 0.3);
-        }
-
-        /* 🌟 Effet flottant sur les icônes */
-        .float-icon {
-          animation: gentleFloat 4s ease-in-out infinite;
-        }
-
-        /* 💭 Texte flou rêveur (titres) */
-        .dream-text {
-          background: linear-gradient(135deg, #E6B3E8, #FFC0CB, #A7C7E7);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          filter: drop-shadow(0 2px 8px rgba(230, 179, 232, 0.3));
-          animation: fadeSlideIn 1s ease-out;
-        }
-
-        /* 📖 Lectures en cours - effet brumeux */
-        .reading-card {
-          background: linear-gradient(135deg, 
-            rgba(255, 247, 250, 0.9), 
-            rgba(255, 240, 246, 0.85)
-          );
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 192, 203, 0.2);
-          transition: all 400ms ease;
-        }
-
-        .reading-card:hover {
-          backdrop-filter: blur(20px);
-          border-color: rgba(230, 179, 232, 0.4);
-          box-shadow: 0 16px 48px rgba(255, 105, 180, 0.2);
-        }
-
-        /* 🎵 Citation flottante */
-        .quote-dream {
-          background: linear-gradient(135deg, 
-            rgba(255, 249, 230, 0.95), 
-            rgba(255, 236, 179, 0.9)
-          );
-          backdrop-filter: blur(12px);
-          animation: breathe 8s ease-in-out infinite;
-        }
-
-        /* ⚡ Déclenchement des animations en séquence */
-        .dream-card:nth-child(1) { animation-delay: 0.1s; }
-        .dream-card:nth-child(2) { animation-delay: 0.2s; }
-        .dream-card:nth-child(3) { animation-delay: 0.3s; }
-        .dream-card:nth-child(4) { animation-delay: 0.4s; }
-
-        .stat-dream:nth-child(1) { animation-delay: 0.15s; }
-        .stat-dream:nth-child(2) { animation-delay: 0.25s; }
-        .stat-dream:nth-child(3) { animation-delay: 0.35s; }
-        .stat-dream:nth-child(4) { animation-delay: 0.45s; }
-
-        /* 🌫️ Parallax subtil */
-        .parallax-layer {
-          transition: transform 0.3s ease-out;
-        }
-
-        /* 📱 Responsive */
-        @media (max-width: 768px) {
-          .dreamscape-bg::before,
-          .dreamscape-bg::after {
-            display: none;
-          }
+        .stat-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
       `}</style>
 
-      {/* Hero Header onirique */}
-      <div className="relative overflow-hidden parallax-layer">
+      {/* Hero Header avec gradient rose */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 rounded-full blur-3xl" 
+               style={{ background: 'radial-gradient(circle, #FF1493, transparent)' }} />
+          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl" 
+               style={{ background: 'radial-gradient(circle, #FF69B4, transparent)' }} />
+        </div>
+
         <div className="relative p-6 md:p-12">
           <div className="max-w-7xl mx-auto">
-            {/* Titre principal flottant */}
-            <div className="mb-8 md:mb-12">
-              <h1 className="text-4xl md:text-6xl font-bold mb-3 dream-text">
+            {/* Titre principal */}
+            <div className="mb-6 md:mb-8">
+              <h1 className="text-4xl md:text-6xl font-bold mb-3" 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
                 Bonjour {displayName} ✨
               </h1>
-              <p className="text-lg md:text-2xl font-medium" 
-                 style={{ 
-                   color: '#9B7CA0',
-                   opacity: 0.8,
-                   animation: 'fadeSlideIn 1.2s ease-out'
-                 }}>
-                Perds-toi dans ton univers littéraire
+              <p className="text-lg md:text-2xl font-medium" style={{ color: '#666' }}>
+                Ton univers littéraire t'attend
               </p>
             </div>
 
-            {/* Stats Cards oniriques */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
-              <div className="stat-dream p-6 md:p-8 rounded-3xl cursor-pointer"
-                   onClick={() => navigate(createPageUrl("MyLibrary"))}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
-                    <BookOpen className="w-7 h-7 text-white" />
+            {/* Stats Cards en grille moderne */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
+                   onClick={() => navigate(createPageUrl("MyLibrary"))}
+                   style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                    <BookOpen className="w-6 h-6 text-white" />
                   </div>
-                  <Sparkles className="w-5 h-5 text-white opacity-60 float-icon" style={{ animationDelay: '0.5s' }} />
+                  <Flame className="w-5 h-5 text-white opacity-50" />
                 </div>
-                <p className="text-3xl md:text-5xl font-bold text-white mb-2">
+                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
                   {booksReadThisYear}
                 </p>
-                <p className="text-sm text-white opacity-90 font-medium">Livres lus en {selectedYear}</p>
+                <p className="text-sm text-white opacity-80">Livres lus en {selectedYear}</p>
               </div>
 
-              <div className="stat-dream p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("Statistics"))}
-                   style={{ 
-                     background: 'linear-gradient(135deg, rgba(230, 179, 232, 0.9), rgba(186, 104, 200, 0.85))',
-                     animationDelay: '0.1s'
-                   }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
-                    <TrendingUp className="w-7 h-7 text-white" />
+                   style={{ background: 'linear-gradient(135deg, #E91E63, #F48FB1)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                    <TrendingUp className="w-6 h-6 text-white" />
                   </div>
-                  <Zap className="w-5 h-5 text-white opacity-60 float-icon" style={{ animationDelay: '0.7s' }} />
+                  <Zap className="w-5 h-5 text-white opacity-50" />
                 </div>
-                <p className="text-3xl md:text-5xl font-bold text-white mb-2">
+                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
                   {totalPagesThisYear.toLocaleString()}
                 </p>
-                <p className="text-sm text-white opacity-90 font-medium">Pages dévorées</p>
+                <p className="text-sm text-white opacity-80">Pages dévorées</p>
               </div>
 
-              <div className="stat-dream p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
-                   style={{ 
-                     background: 'linear-gradient(135deg, rgba(167, 199, 231, 0.9), rgba(144, 202, 249, 0.85))',
-                     animationDelay: '0.2s'
-                   }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
-                    <Users className="w-7 h-7 text-white" />
+                   style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                    <Users className="w-6 h-6 text-white" />
                   </div>
-                  <Heart className="w-5 h-5 text-white opacity-60 float-icon" style={{ animationDelay: '0.9s' }} />
+                  <Heart className="w-5 h-5 text-white opacity-50" />
                 </div>
-                <p className="text-3xl md:text-5xl font-bold text-white mb-2">
+                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
                   {myFriends.length}
                 </p>
-                <p className="text-sm text-white opacity-90 font-medium">Âmes littéraires</p>
+                <p className="text-sm text-white opacity-80">Amies littéraires</p>
               </div>
 
-              <div className="stat-dream p-6 md:p-8 rounded-3xl cursor-pointer"
+              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
-                   style={{ 
-                     background: 'linear-gradient(135deg, rgba(255, 182, 200, 0.9), rgba(255, 192, 203, 0.85))',
-                     animationDelay: '0.3s'
-                   }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}>
-                    <Target className="w-7 h-7 text-white" />
+                   style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                    <Target className="w-6 h-6 text-white" />
                   </div>
-                  <Clock className="w-5 h-5 text-white opacity-60 float-icon" style={{ animationDelay: '1.1s' }} />
+                  <Clock className="w-5 h-5 text-white opacity-50" />
                 </div>
-                <p className="text-3xl md:text-5xl font-bold text-white mb-2">
+                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
                   {toReadCount}
                 </p>
-                <p className="text-sm text-white opacity-90 font-medium">Rêves en attente</p>
+                <p className="text-sm text-white opacity-80">Dans la pile</p>
               </div>
             </div>
 
@@ -458,27 +279,21 @@ export default function Dashboard() {
             {/* Objectif de lecture */}
             <ReadingGoalManager year={selectedYear} compact={false} />
 
-            {/* Lectures en cours oniriques */}
-            <div className="dream-card rounded-3xl overflow-hidden">
-              <div className="h-1" style={{ background: 'linear-gradient(90deg, #E6B3E8, #FFC0CB, #A7C7E7)' }} />
-              <div className="p-6 md:p-8">
+            {/* Lectures en cours */}
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+              <div className="h-1" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)' }} />
+              <CardContent className="p-6 md:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3" style={{ color: '#9B7CA0' }}>
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(230, 179, 232, 0.3), rgba(255, 192, 203, 0.3))',
-                           backdropFilter: 'blur(10px)'
-                         }}>
-                      <BookOpen className="w-7 h-7" style={{ color: '#E6B3E8' }} />
+                  <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                         style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                      <BookOpen className="w-6 h-6 text-white" />
                     </div>
                     En cours de lecture
                   </h2>
                   {currentlyReading.length > 0 && (
-                    <span className="px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg float-icon"
-                          style={{ 
-                            background: 'linear-gradient(135deg, #E6B3E8, #FFC0CB)',
-                            backdropFilter: 'blur(10px)'
-                          }}>
+                    <span className="px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg"
+                          style={{ backgroundColor: '#FF1493' }}>
                       {currentlyReading.length}
                     </span>
                   )}
@@ -496,7 +311,8 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="reading-card cursor-pointer p-4 md:p-6 rounded-2xl"
+                             className="hover-lift cursor-pointer p-4 md:p-6 rounded-2xl"
+                             style={{ backgroundColor: '#FFF7FA' }}
                              onClick={() => setSelectedBookForDetails(userBook)}>
                           <div className="flex gap-4">
                             <div className="relative flex-shrink-0">
@@ -527,15 +343,11 @@ export default function Dashboard() {
                                     </span>
                                   </div>
                                   <div className="relative h-3 rounded-full overflow-hidden"
-                                       style={{ 
-                                         backgroundColor: 'rgba(230, 179, 232, 0.2)',
-                                         backdropFilter: 'blur(10px)'
-                                       }}>
-                                    <div className="h-full rounded-full transition-all duration-700"
+                                       style={{ backgroundColor: '#FFE4EC' }}>
+                                    <div className="h-full rounded-full transition-all duration-500"
                                          style={{
                                            width: `${progress}%`,
-                                           background: 'linear-gradient(90deg, #E6B3E8, #FFC0CB, #A7C7E7)',
-                                           boxShadow: '0 2px 12px rgba(230, 179, 232, 0.4)'
+                                           background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)'
                                          }} />
                                   </div>
                                 </>
@@ -567,23 +379,20 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Amies qui lisent en ce moment */}
             {friendsBooks.filter(b => b.status === "En cours").length > 0 && (
-              <div className="dream-card rounded-3xl overflow-hidden">
-                <div className="h-1" style={{ background: 'linear-gradient(90deg, #A7C7E7, #E6B3E8, #FFC0CB)' }} />
-                <div className="p-6 md:p-8">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3" style={{ color: '#9B7CA0' }}>
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center float-icon"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(167, 199, 231, 0.3), rgba(230, 179, 232, 0.3))',
-                           backdropFilter: 'blur(10px)'
-                         }}>
-                      <Users className="w-7 h-7" style={{ color: '#A7C7E7' }} />
+              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+                <div className="h-1" style={{ background: 'linear-gradient(90deg, #9B59B6, #BA68C8, #E1BEE7)' }} />
+                <CardContent className="p-6 md:p-8">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                         style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
+                      <Users className="w-6 h-6 text-white" />
                     </div>
-                    Tes âmes sœurs lisent
+                    Tes amies lisent
                   </h2>
 
                   <div className="grid md:grid-cols-2 gap-4">
@@ -598,11 +407,8 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="reading-card p-4 rounded-2xl"
-                             style={{ 
-                               background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.8), rgba(225, 190, 231, 0.7))',
-                               backdropFilter: 'blur(12px)'
-                             }}>
+                             className="hover-lift p-4 rounded-2xl"
+                             style={{ backgroundColor: '#F3E5F5' }}>
                           <div className="flex gap-3 mb-3">
                             <div className="w-16 h-24 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
                                  style={{ backgroundColor: '#E1BEE7' }}>
@@ -636,62 +442,51 @@ export default function Dashboard() {
                       );
                     })}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
           </div>
 
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
-            {/* Citation flottante */}
-            <div className="quote-dream rounded-3xl overflow-hidden border border-white/30">
-              <div className="h-1" style={{ background: 'linear-gradient(90deg, #FFD700, #FFB347, #FFA500)' }} />
-              <div className="p-6 md:p-8 text-center">
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center float-icon"
-                     style={{ 
-                       backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                       backdropFilter: 'blur(10px)'
-                     }}>
-                  <QuoteIcon className="w-8 h-8" style={{ color: '#FFB347' }} />
+            {/* Citation du jour */}
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+              <div className="h-1" style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }} />
+              <CardContent className="p-6 md:p-8 text-center"
+                           style={{ background: 'linear-gradient(135deg, #FFF9E6, #FFECB3)' }}>
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                     style={{ backgroundColor: 'rgba(255, 215, 0, 0.3)' }}>
+                  <QuoteIcon className="w-8 h-8" style={{ color: '#FFD700' }} />
                 </div>
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#9B7CA0' }}>
-                  Murmure du jour
+                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                  Citation du jour
                 </h2>
                 {randomQuote && quoteBook ? (
                   <>
-                    <p className="text-base md:text-lg italic mb-4 leading-relaxed" 
-                       style={{ 
-                         color: '#6B5B73',
-                         lineHeight: '1.8',
-                         filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05))'
-                       }}>
+                    <p className="text-base md:text-lg italic mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
                       "{randomQuote.quote_text}"
                     </p>
-                    <p className="text-sm font-bold" style={{ color: '#FFB347' }}>
+                    <p className="text-sm font-bold" style={{ color: '#FFD700' }}>
                       — {quoteBook.title}
                     </p>
                   </>
                 ) : (
-                  <p className="text-lg italic" style={{ color: '#9B7CA0' }}>
-                    "Lire, c'est se perdre dans l'infini des rêves."
+                  <p className="text-lg italic" style={{ color: '#666' }}>
+                    "Lire, c'est vivre mille vies avant de mourir."
                   </p>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Playlist musicale */}
             {allMusicWithBooks.length > 0 && (
-              <div className="dream-card rounded-3xl overflow-hidden cursor-pointer"
-                   onClick={() => navigate(createPageUrl("MusicPlaylist"))}
-                   style={{ animationDelay: '0.3s' }}>
-                <div className="p-6 md:p-8"
-                     style={{ 
-                       background: 'linear-gradient(135deg, rgba(230, 179, 232, 0.8), rgba(255, 182, 200, 0.7))',
-                       backdropFilter: 'blur(16px)'
-                     }}>
-                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2 float-icon">
+              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden cursor-pointer hover-lift"
+                    onClick={() => navigate(createPageUrl("MusicPlaylist"))}>
+                <CardContent className="p-6 md:p-8"
+                             style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
                     <Music className="w-6 h-6" />
-                    Bande-son onirique
+                    Ta Playlist
                   </h2>
                   <div className="space-y-3">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
@@ -713,73 +508,56 @@ export default function Dashboard() {
                       </div>
                     ))}
                   </div>
-                  <Button className="w-full mt-4 bg-white/90 backdrop-blur-md font-bold rounded-xl py-3 hover:bg-white transition-all"
+                  <Button className="w-full mt-4 bg-white font-bold rounded-xl py-3"
                           style={{ color: '#9B59B6' }}>
-                    Découvrir plus
+                    Voir toute la playlist
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Accès rapide */}
-            <div className="dream-card rounded-3xl overflow-hidden" style={{ animationDelay: '0.4s' }}>
-              <div className="p-6 md:p-8">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#9B7CA0' }}>
-                  <Sparkles className="w-5 h-5 float-icon" />
-                  Portails magiques
+            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+              <CardContent className="p-6 md:p-8">
+                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                  ⚡ Raccourcis
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   <Link to={createPageUrl("SharedReadings")}>
-                    <div className="p-4 rounded-2xl text-center dream-card cursor-pointer"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.9), rgba(255, 230, 240, 0.8))',
-                           backdropFilter: 'blur(10px)',
-                           animationDelay: '0.5s'
-                         }}>
-                      <Users className="w-8 h-8 mx-auto mb-2 float-icon" style={{ color: '#E6B3E8' }} />
-                      <p className="text-sm font-bold" style={{ color: '#9B7CA0' }}>Lectures partagées</p>
+                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                         style={{ backgroundColor: '#FFF0F6' }}>
+                      <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#FF1493' }} />
+                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Lectures communes</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Quotes")}>
-                    <div className="p-4 rounded-2xl text-center dream-card cursor-pointer"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(255, 249, 230, 0.9), rgba(255, 236, 179, 0.8))',
-                           backdropFilter: 'blur(10px)',
-                           animationDelay: '0.6s'
-                         }}>
-                      <QuoteIcon className="w-8 h-8 mx-auto mb-2 float-icon" style={{ color: '#FFB347' }} />
-                      <p className="text-sm font-bold" style={{ color: '#9B7CA0' }}>Murmures</p>
+                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                         style={{ backgroundColor: '#FFF9E6' }}>
+                      <QuoteIcon className="w-8 h-8 mx-auto mb-2" style={{ color: '#FFD700' }} />
+                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Citations</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("BookTournament")}>
-                    <div className="p-4 rounded-2xl text-center dream-card cursor-pointer"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(255, 245, 230, 0.9), rgba(255, 224, 178, 0.8))',
-                           backdropFilter: 'blur(10px)',
-                           animationDelay: '0.7s'
-                         }}>
-                      <Trophy className="w-8 h-8 mx-auto mb-2 float-icon" style={{ color: '#FF9F7F' }} />
-                      <p className="text-sm font-bold" style={{ color: '#9B7CA0' }}>Tournoi</p>
+                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                         style={{ backgroundColor: '#FFF5E6' }}>
+                      <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#FF9F7F' }} />
+                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Profile")}>
-                    <div className="p-4 rounded-2xl text-center dream-card cursor-pointer"
-                         style={{ 
-                           background: 'linear-gradient(135deg, rgba(255, 230, 240, 0.9), rgba(255, 192, 203, 0.8))',
-                           backdropFilter: 'blur(10px)',
-                           animationDelay: '0.8s'
-                         }}>
-                      <Heart className="w-8 h-8 mx-auto mb-2 float-icon" style={{ color: '#FFC0CB' }} />
-                      <p className="text-sm font-bold" style={{ color: '#9B7CA0' }}>Âmes fictives</p>
+                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                         style={{ backgroundColor: '#FFE6F0' }}>
+                      <Heart className="w-8 h-8 mx-auto mb-2" style={{ color: '#E91E63' }} />
+                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
                     </div>
                   </Link>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
