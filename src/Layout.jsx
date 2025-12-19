@@ -92,7 +92,15 @@ const navigationItems = [
     url: createPageUrl("Discover"),
     icon: Sparkles,
   },
-];
+  ];
+
+  const adminItems = [
+  {
+    title: "👑 Admin Utilisateurs",
+    url: createPageUrl("AdminUsers"),
+    icon: Users,
+  },
+  ];
 
 function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
@@ -193,6 +201,29 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
+                {user?.role === 'admin' && adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
+                        location.pathname === item.url 
+                          ? 'text-white shadow-md' 
+                          : 'hover:bg-opacity-50'
+                      }`}
+                      style={location.pathname === item.url ? {
+                        background: 'linear-gradient(135deg, #DC2626, #EF4444)'
+                      } : {
+                        color: isDark ? '#cbd5e0' : 'inherit',
+                        backgroundColor: 'transparent'
+                      }}
+                    >
+                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
+                        <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                        <span className="font-medium text-xs md:text-base">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
                 {navigationItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
