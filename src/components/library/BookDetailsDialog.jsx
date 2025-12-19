@@ -1542,22 +1542,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     />
                   </div>
 
-                  {/* Card: Mon avis */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      💭 Mon avis
-                    </h3>
-                    <Textarea
-                      value={editedData.review || ""}
-                      onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                      placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
-                      rows={6}
-                      className="focus-glow resize-none rounded-2xl text-base"
-                    />
-                  </div>
-
                   {/* Music Section - Updated for series sync */}
                   <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
                     <div className="h-1 rounded-full mb-4" 
