@@ -138,6 +138,7 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedBookForDetails, setSelectedBookForDetails] = useState(null);
+  const [bookDetailsDialogOpen, setBookDetailsDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -801,9 +802,12 @@ export default function Dashboard() {
                               
                               return (
                                 <div key={userBook.id}
-                                     className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
-                                     style={{ backgroundColor: '#FFF7FA' }}
-                                     onClick={() => setSelectedBookForDetails(userBook)}>
+                                    className="flex gap-3 p-3 md:p-4 rounded-xl md:rounded-2xl hover-lift cursor-pointer"
+                                    style={{ backgroundColor: '#FFF7FA' }}
+                                    onClick={() => {
+                                      setSelectedBookForDetails(userBook);
+                                      setBookDetailsDialogOpen(true);
+                                    }}>
                                   <div className="relative flex-shrink-0">
                                     <div className="w-16 h-24 md:w-24 md:h-36 rounded-lg md:rounded-xl overflow-hidden shadow-lg"
                                          style={{ backgroundColor: '#FFE4EC' }}>
@@ -1403,8 +1407,11 @@ export default function Dashboard() {
         <BookDetailsDialog
           userBook={selectedBookForDetails}
           book={allBooks.find(b => b.id === selectedBookForDetails.book_id)}
-          open={!!selectedBookForDetails}
-          onOpenChange={(open) => !open && setSelectedBookForDetails(null)}
+          open={bookDetailsDialogOpen}
+          onOpenChange={(open) => {
+            setBookDetailsDialogOpen(open);
+            if (!open) setSelectedBookForDetails(null);
+          }}
         />
       )}
     </div>
