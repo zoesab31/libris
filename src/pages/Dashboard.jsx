@@ -508,13 +508,29 @@ export default function Dashboard() {
                       background: 'linear-gradient(135deg, #F9F5FF 0%, #FFE9F0 100%)',
                       boxShadow: '0 4px 16px rgba(233, 30, 99, 0.08)'
                     }}>
+                <style>{`
+                  @keyframes equalizer {
+                    0%, 100% { height: 30%; }
+                    50% { height: 100%; }
+                  }
+                  .eq-bar:nth-child(1) { animation: equalizer 0.8s ease-in-out infinite; }
+                  .eq-bar:nth-child(2) { animation: equalizer 0.8s ease-in-out infinite 0.1s; }
+                  .eq-bar:nth-child(3) { animation: equalizer 0.8s ease-in-out infinite 0.2s; }
+                  .eq-bar:nth-child(4) { animation: equalizer 0.8s ease-in-out infinite 0.3s; }
+                `}</style>
                 <CardContent className="p-6 md:p-8">
-                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-3" style={{ color: '#2D3748' }}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                          style={{ backgroundColor: '#FFE9F0' }}>
                       <Music className="w-5 h-5" style={{ color: '#E91E63' }} />
                     </div>
-                    Ta Playlist
+                    <span className="flex-1">Ta Playlist</span>
+                    <div className="flex items-end gap-1 h-6">
+                      <div className="eq-bar w-1 rounded-full" style={{ backgroundColor: '#E91E63' }} />
+                      <div className="eq-bar w-1 rounded-full" style={{ backgroundColor: '#FF69B4' }} />
+                      <div className="eq-bar w-1 rounded-full" style={{ backgroundColor: '#E91E63' }} />
+                      <div className="eq-bar w-1 rounded-full" style={{ backgroundColor: '#FF69B4' }} />
+                    </div>
                   </h2>
                   <div className="space-y-2">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
