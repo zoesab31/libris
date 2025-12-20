@@ -1,4 +1,3 @@
-// Layout component with chat functionality
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,9 +16,9 @@ import {
   Image, 
   Palette, 
   Map, 
-  MessageCircle, 
   TrendingUp 
 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
