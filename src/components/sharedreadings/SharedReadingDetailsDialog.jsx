@@ -21,6 +21,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [photoUrl, setPhotoUrl] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [uploadingPlanningImage, setUploadingPlanningImage] = useState(false);
+  const [customEmoji, setCustomEmoji] = useState("");
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -455,51 +456,87 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         </p>
                       </div>
 
-                      {/* Reactions */}
-                      <div className="flex items-center gap-1.5 mt-2 px-1">
-                        {Object.entries(reactionCounts).map(([emoji, count]) => (
-                          <button
-                            key={emoji}
-                            onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                            className="px-2.5 py-1 rounded-full text-sm flex items-center gap-1 transition-all"
-                            style={{ 
-                              backgroundColor: (allReactions[user?.email] || []).includes(emoji) 
-                                ? 'rgba(156, 39, 176, 0.15)' 
-                                : 'rgba(243, 229, 245, 0.5)',
-                            }}
-                          >
-                            <span>{emoji}</span>
-                            <span className="font-bold text-xs" style={{ color: '#9C27B0' }}>{count}</span>
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center"
-                          style={{
-                            backgroundColor: showEmojiPicker === msg.id ? 'rgba(156, 39, 176, 0.15)' : 'transparent'
-                          }}
-                        >
-                          <Smile className="w-4 h-4" style={{ color: '#FF69B4' }} />
-                        </button>
-                      </div>
-
-                      {/* Emoji picker */}
-                      {showEmojiPicker === msg.id && (
-                        <div className="flex gap-2 mt-2 p-3 rounded-2xl shadow-xl border"
-                             style={{ 
-                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                               borderColor: 'rgba(156, 39, 176, 0.2)',
-                             }}>
-                          {EMOJI_REACTIONS.map(emoji => (
+                      {/* Reactions - only show for friends' messages */}
+                      {!isMyMessage && (
+                        <>
+                          <div className="flex items-center gap-1.5 mt-2 px-1 flex-wrap">
+                            {Object.entries(reactionCounts).map(([emoji, count]) => (
+                              <button
+                                key={emoji}
+                                onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
+                                className="px-2 py-1 rounded-full text-base flex items-center gap-1 transition-all"
+                                style={{ 
+                                  backgroundColor: (allReactions[user?.email] || []).includes(emoji) 
+                                    ? 'rgba(156, 39, 176, 0.2)' 
+                                    : 'rgba(243, 229, 245, 0.6)',
+                                }}
+                              >
+                                <span>{emoji}</span>
+                                <span className="font-bold text-xs" style={{ color: '#9C27B0' }}>{count}</span>
+                              </button>
+                            ))}
                             <button
-                              key={emoji}
-                              onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                              className="text-xl hover:scale-125 transition-transform"
+                              onClick={() => {
+                                setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id);
+                                setCustomEmoji("");
+                              }}
+                              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                              style={{
+                                backgroundColor: showEmojiPicker === msg.id ? 'rgba(156, 39, 176, 0.2)' : 'rgba(243, 229, 245, 0.4)'
+                              }}
                             >
-                              {emoji}
+                              <Smile className="w-4 h-4" style={{ color: '#FF69B4' }} />
                             </button>
-                          ))}
-                        </div>
+                          </div>
+
+                          {/* Emoji picker */}
+                          {showEmojiPicker === msg.id && (
+                            <div className="mt-2 p-3 rounded-2xl shadow-xl border space-y-3"
+                                 style={{ 
+                                   backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                                   borderColor: 'rgba(156, 39, 176, 0.2)',
+                                 }}>
+                              <div className="flex gap-2 flex-wrap">
+                                {EMOJI_REACTIONS.map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => {
+                                      reactToMessageMutation.mutate({ messageId: msg.id, emoji });
+                                      setShowEmojiPicker(null);
+                                    }}
+                                    className="text-2xl hover:scale-125 transition-transform p-1"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={customEmoji}
+                                  onChange={(e) => setCustomEmoji(e.target.value)}
+                                  placeholder="Ou tape un emoji..."
+                                  className="flex-1 text-center text-xl h-10"
+                                  maxLength={2}
+                                />
+                                <Button
+                                  onClick={() => {
+                                    if (customEmoji.trim()) {
+                                      reactToMessageMutation.mutate({ messageId: msg.id, emoji: customEmoji });
+                                      setShowEmojiPicker(null);
+                                      setCustomEmoji("");
+                                    }
+                                  }}
+                                  disabled={!customEmoji.trim()}
+                                  size="sm"
+                                  className="text-white"
+                                  style={{ backgroundColor: '#FF69B4' }}
+                                >
+                                  Ajouter
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
 
                       {/* Delete button */}
