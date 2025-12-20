@@ -178,7 +178,7 @@ export default function Dashboard() {
         <div className="relative p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
-            <div className="mb-8">
+            <div className="mb-8 float-element">
               <h1 className="text-3xl md:text-5xl font-bold mb-2" 
                   style={{ color: '#FF1493' }}>
                 Bonjour {displayName} ✨
