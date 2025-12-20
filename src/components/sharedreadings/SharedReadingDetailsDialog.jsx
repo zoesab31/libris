@@ -22,6 +22,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [uploadingPlanningImage, setUploadingPlanningImage] = useState(false);
   const [customEmoji, setCustomEmoji] = useState("");
+  const messagesEndRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -73,6 +74,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       }
     }
   }, [newChapter, reading.chapters_per_day, numberOfDays]);
+
+  // Scroll to bottom when messages change or dialog opens
+  useEffect(() => {
+    if (open && messagesEndRef.current && selectedDay !== 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages, open, selectedDay]);
 
   const sendMessageMutation = useMutation({
     mutationFn: (data) => base44.entities.SharedReadingMessage.create({
@@ -194,12 +204,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
-        <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
-          <h2 className="text-lg font-bold truncate" style={{ color: '#2D3748' }}>
+        <div className="px-4 py-3 border-b" style={{ 
+          borderColor: '#E91E63',
+          backgroundColor: '#FFF0F6'
+        }}>
+          <h2 className="text-lg font-bold truncate" style={{ color: '#C2185B' }}>
             {book?.title}
           </h2>
           {reading.start_date && reading.end_date && (
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>
+            <p className="text-sm font-medium" style={{ color: '#E91E63' }}>
               {format(new Date(reading.start_date), 'dd MMM', { locale: fr })} - {format(new Date(reading.end_date), 'dd MMM', { locale: fr })}
             </p>
           )}
@@ -208,14 +221,17 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
         {/* Day selector */}
         {numberOfDays > 0 && (
           <div className="px-2 py-3 flex items-center gap-2 border-b overflow-x-auto"
-               style={{ borderColor: 'rgba(156, 39, 176, 0.08)' }}>
+               style={{ 
+                 borderColor: '#FFD6E8',
+                 backgroundColor: '#FFFAFC'
+               }}>
             <Button
               size="sm"
               onClick={() => setSelectedDay(0)}
               className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
               style={{
-                backgroundColor: selectedDay === 0 ? '#FF69B4' : 'rgba(243, 229, 245, 0.3)',
-                color: selectedDay === 0 ? 'white' : '#CBD5E0',
+                backgroundColor: selectedDay === 0 ? '#FF1493' : '#FFE4EC',
+                color: selectedDay === 0 ? 'white' : '#9CA3AF',
                 border: 'none',
               }}
             >
@@ -228,8 +244,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                 onClick={() => setSelectedDay(day)}
                 className="h-10 md:h-9 min-w-[44px] md:min-w-[36px] px-3 md:px-2 text-base md:text-sm rounded-lg shrink-0"
                 style={{
-                  backgroundColor: selectedDay === day ? '#FF69B4' : 'rgba(243, 229, 245, 0.3)',
-                  color: selectedDay === day ? 'white' : '#CBD5E0',
+                  backgroundColor: selectedDay === day ? '#FF1493' : '#FFE4EC',
+                  color: selectedDay === day ? 'white' : '#9CA3AF',
                   border: 'none',
                   fontWeight: selectedDay === day ? '700' : '500'
                 }}
@@ -370,12 +386,12 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             <div key={day}>
               {/* Day separator */}
               <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(156, 39, 176, 0.15)' }} />
+                <div className="flex-1 h-px" style={{ backgroundColor: '#FFB6C8' }} />
                 <span className="text-sm font-bold px-3 py-1 rounded-full"
-                      style={{ backgroundColor: 'rgba(156, 39, 176, 0.1)', color: '#9C27B0' }}>
+                      style={{ backgroundColor: '#FFE4EC', color: '#C2185B' }}>
                   Jour {day}
                 </span>
-                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(156, 39, 176, 0.15)' }} />
+                <div className="flex-1 h-px" style={{ backgroundColor: '#FFB6C8' }} />
               </div>
 
               {/* Messages for this day */}
@@ -410,7 +426,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     {/* Message bubble */}
                     <div className={`max-w-[70%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
                       {!isMyMessage && (
-                        <span className="text-xs font-bold mb-1 px-2" style={{ color: '#9C27B0' }}>
+                        <span className="text-xs font-bold mb-1 px-2" style={{ color: '#C2185B' }}>
                           {userInfo.name}
                         </span>
                       )}
@@ -418,13 +434,13 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                       <div
                         className="rounded-3xl px-5 py-4"
                         style={{
-                          backgroundColor: isMyMessage ? '#FF69B4' : 'rgba(255, 255, 255, 0.95)',
-                          color: isMyMessage ? 'white' : '#2D3748',
+                          backgroundColor: isMyMessage ? '#FF1493' : 'white',
+                          color: isMyMessage ? 'white' : '#1a1a1a',
                           borderRadius: isMyMessage ? '24px 24px 6px 24px' : '24px 24px 24px 6px',
                           boxShadow: isMyMessage 
-                            ? '0 8px 24px rgba(255, 20, 147, 0.25)' 
-                            : '0 8px 24px rgba(156, 39, 176, 0.15)',
-                          border: isMyMessage ? 'none' : '1px solid rgba(156, 39, 176, 0.1)'
+                            ? '0 8px 24px rgba(255, 20, 147, 0.35)' 
+                            : '0 8px 24px rgba(0, 0, 0, 0.1)',
+                          border: isMyMessage ? 'none' : '2px solid #FFE4EC'
                         }}
                       >
                         {msg.photo_url && (
@@ -441,8 +457,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         {msg.chapter && (
                           <div className="px-3 py-1 rounded-full inline-block mb-2 text-xs font-bold"
                                style={{
-                                 backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.2)' : 'rgba(156, 39, 176, 0.1)',
-                                 color: isMyMessage ? 'white' : '#9C27B0'
+                                 backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFE4EC',
+                                 color: isMyMessage ? 'white' : '#C2185B'
                                }}>
                             📖 {msg.chapter}
                           </div>
@@ -468,8 +484,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                                 className="px-2 py-1 rounded-full text-base flex items-center gap-1 transition-all"
                                 style={{ 
                                   backgroundColor: (allReactions[user?.email] || []).includes(emoji) 
-                                    ? 'rgba(156, 39, 176, 0.2)' 
-                                    : 'rgba(243, 229, 245, 0.6)',
+                                    ? '#FFB6C8' 
+                                    : '#FFE4EC',
                                 }}
                               >
                                 <span>{emoji}</span>
@@ -483,7 +499,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                               }}
                               className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
                               style={{
-                                backgroundColor: showEmojiPicker === msg.id ? 'rgba(156, 39, 176, 0.2)' : 'rgba(243, 229, 245, 0.4)'
+                                backgroundColor: showEmojiPicker === msg.id ? '#FFB6C8' : '#FFE4EC'
                               }}
                             >
                               <Smile className="w-4 h-4" style={{ color: '#FF69B4' }} />
@@ -494,8 +510,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                           {showEmojiPicker === msg.id && (
                             <div className="mt-2 p-3 rounded-2xl shadow-xl border space-y-3"
                                  style={{ 
-                                   backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                                   borderColor: 'rgba(156, 39, 176, 0.2)',
+                                   backgroundColor: 'white',
+                                   borderColor: '#FFB6C8',
                                  }}>
                               <div className="flex gap-2 flex-wrap">
                                 {EMOJI_REACTIONS.map(emoji => (
@@ -564,6 +580,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                   </p>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </>
           )}
         </div>
@@ -571,8 +588,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
         {/* Input bar - only show if not on recap page */}
         {selectedDay !== 0 && (
           <div className="border-t px-3 py-3" style={{ 
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            borderColor: 'rgba(156, 39, 176, 0.08)'
+            backgroundColor: 'white',
+            borderColor: '#FFD6E8'
           }}>
           {photoUrl && (
             <div className="relative inline-block mb-2">
