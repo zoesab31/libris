@@ -157,7 +157,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     setUploadingPhoto(true);
     try {
       const result = await base44.integrations.Core.UploadFile({ file });
-      setNewMessage({ ...newMessage, photo_url: result.file_url });
+      setNewMessage(prev => ({ ...prev, photo_url: result.file_url }));
       toast.success("Photo uploadée !");
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -597,16 +597,16 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                   <div className="flex-1">
                     <Textarea
                       value={newMessage.message}
-                      onChange={(e) => setNewMessage({...newMessage, message: e.target.value})}
+                      onChange={(e) => setNewMessage(prev => ({...prev, message: e.target.value}))}
                       placeholder={`Partage tes impressions du Jour ${selectedDay || 1}...`}
-                      rows={3}
+                      rows={2}
                       className="resize-none rounded-2xl"
                       style={{ 
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         border: '1px solid rgba(156, 39, 176, 0.2)',
                         lineHeight: '1.7',
                         fontSize: '16px',
-                        padding: '14px 16px'
+                        padding: '12px 14px'
                       }}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && newMessage.message.trim()) {
