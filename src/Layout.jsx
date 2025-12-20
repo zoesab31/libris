@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageCircle, TrendingUp } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageSquare, TrendingUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -284,7 +284,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <div className="flex items-center gap-1 md:gap-3">
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
-                  <MessageCircle className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                  <MessageSquare className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
                           style={{ backgroundColor: '#FF0000' }}>
