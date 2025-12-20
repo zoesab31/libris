@@ -199,20 +199,13 @@ export default function ReadingGoalManager({ year, compact = false }) {
 
   // Full version (non-compact)
   return (
-    <Card className="border-0 rounded-3xl overflow-hidden dash-card"
-          style={{ 
-            backgroundColor: 'white',
-            boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
-          }}>
-      <CardContent className="p-6 md:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                 style={{ backgroundColor: '#FFE9F0' }}>
-              <Target className="w-5 h-5" style={{ color: '#FF1493' }} />
-            </div>
-            <h3 className="font-bold text-xl md:text-2xl" style={{ color: '#2D3748' }}>
-              Objectif {year}
+    <Card className="shadow-lg border-0 overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+            <h3 className="font-bold text-xl" style={{ color: 'var(--dark-text)' }}>
+              🎯 Objectif de lecture {year}
             </h3>
           </div>
           {!isEditing && readingGoal && (
@@ -220,9 +213,8 @@ export default function ReadingGoalManager({ year, compact = false }) {
               variant="ghost"
               size="icon"
               onClick={startEditing}
-              className="dash-card"
             >
-              <Edit className="w-4 h-4" style={{ color: '#FF1493' }} />
+              <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
             </Button>
           )}
         </div>
@@ -261,59 +253,27 @@ export default function ReadingGoalManager({ year, compact = false }) {
           </div>
         ) : readingGoal ? (
           <>
-            <style>{`
-              @keyframes progress-fill {
-                from { width: 0%; }
-                to { width: ${Math.min(progress, 100)}%; }
-              }
-              @keyframes shimmer {
-                0% { background-position: -200% center; }
-                100% { background-position: 200% center; }
-              }
-              .animated-progress {
-                animation: progress-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-                background: linear-gradient(
-                  90deg,
-                  #FFB6D9 0%,
-                  #FF69B4 25%,
-                  #E91E63 50%,
-                  #FF69B4 75%,
-                  #FFB6D9 100%
-                );
-                background-size: 200% 100%;
-                animation: progress-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1), shimmer 3s linear infinite;
-              }
-            `}</style>
             <div className="text-center mb-6">
-              <p className="text-4xl md:text-5xl font-bold mb-2" style={{ color: '#2D3748' }}>
-                {booksReadThisYear} <span style={{ color: '#FFB6C8' }}>/</span> {readingGoal.goal_count}
+              <p className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                {booksReadThisYear} / {readingGoal.goal_count}
               </p>
-              <p className="text-base" style={{ color: '#9CA3AF' }}>
-                {progress}% accompli
+              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+                {progress}% complété
               </p>
             </div>
-            <div className="mb-6 relative">
-              <div className="w-full h-5 rounded-full overflow-hidden"
-                   style={{ 
-                     backgroundColor: '#FFE9F0',
-                     boxShadow: 'inset 0 2px 4px rgba(255, 105, 180, 0.1)'
-                   }}>
-                <div className="animated-progress h-full rounded-full relative"
+            <div className="mb-4">
+              <div className="w-full h-4 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                <div className="h-full rounded-full transition-all duration-500"
                      style={{ 
                        width: `${Math.min(progress, 100)}%`,
-                       boxShadow: '0 0 12px rgba(255, 105, 180, 0.4)'
-                     }}>
-                  <div className="absolute inset-0 rounded-full"
-                       style={{
-                         background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent)',
-                       }} />
-                </div>
+                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                     }} />
               </div>
             </div>
-            <p className="text-center font-semibold text-base" style={{ color: '#2D3748' }}>
+            <p className="text-center font-medium" style={{ color: 'var(--dark-text)' }}>
               {readingGoal.goal_count - booksReadThisYear > 0 
-                ? `Encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} ✨`
-                : `Objectif accompli ! 🎉`
+                ? `Plus que ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} à lire ! 📚`
+                : `Objectif atteint ! 🎉`
               }
             </p>
           </>

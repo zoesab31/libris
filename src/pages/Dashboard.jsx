@@ -122,25 +122,8 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
       <style>{`
-        @keyframes gentle-float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-4px); }
-        }
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-shadow {
-          0%, 100% { box-shadow: 0 4px 16px rgba(255, 105, 180, 0.08); }
-          50% { box-shadow: 0 8px 24px rgba(255, 105, 180, 0.15); }
-        }
-        @keyframes sound-wave {
-          0%, 100% { height: 30%; }
-          50% { height: 80%; }
-        }
         .dash-card {
           transition: all 250ms ease;
-          animation: fade-in-up 400ms ease-out;
         }
         .dash-card:hover {
           transform: translateY(-2px);
@@ -148,29 +131,11 @@ export default function Dashboard() {
         }
         .stat-bubble {
           transition: all 250ms ease;
-          animation: fade-in-up 400ms ease-out;
         }
         .stat-bubble:hover {
           transform: translateY(-3px);
           box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
         }
-        .stat-bubble:nth-child(1) { animation-delay: 0ms; }
-        .stat-bubble:nth-child(2) { animation-delay: 100ms; }
-        .stat-bubble:nth-child(3) { animation-delay: 200ms; }
-        .stat-bubble:nth-child(4) { animation-delay: 300ms; }
-        .float-element {
-          animation: gentle-float 4s ease-in-out infinite;
-        }
-        .sound-bar {
-          animation: sound-wave 1.2s ease-in-out infinite;
-          background: linear-gradient(to top, #E91E63, #FF69B4);
-          border-radius: 2px;
-        }
-        .sound-bar:nth-child(1) { animation-delay: 0s; }
-        .sound-bar:nth-child(2) { animation-delay: 0.2s; }
-        .sound-bar:nth-child(3) { animation-delay: 0.4s; }
-        .sound-bar:nth-child(4) { animation-delay: 0.1s; }
-        .sound-bar:nth-child(5) { animation-delay: 0.3s; }
       `}</style>
 
       {/* Hero Header */}
@@ -178,7 +143,7 @@ export default function Dashboard() {
         <div className="relative p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
-            <div className="mb-8 float-element">
+            <div className="mb-8">
               <h1 className="text-3xl md:text-5xl font-bold mb-2" 
                   style={{ color: '#FF1493' }}>
                 Bonjour {displayName} ✨
@@ -544,23 +509,13 @@ export default function Dashboard() {
                       boxShadow: '0 4px 16px rgba(233, 30, 99, 0.08)'
                     }}>
                 <CardContent className="p-6 md:p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: '#2D3748' }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                           style={{ backgroundColor: '#FFE9F0' }}>
-                        <Music className="w-5 h-5" style={{ color: '#E91E63' }} />
-                      </div>
-                      Ta Playlist
-                    </h2>
-                    {/* Sound bars */}
-                    <div className="flex items-end gap-1 h-8">
-                      <div className="sound-bar w-1"></div>
-                      <div className="sound-bar w-1"></div>
-                      <div className="sound-bar w-1"></div>
-                      <div className="sound-bar w-1"></div>
-                      <div className="sound-bar w-1"></div>
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE9F0' }}>
+                      <Music className="w-5 h-5" style={{ color: '#E91E63' }} />
                     </div>
-                  </div>
+                    Ta Playlist
+                  </h2>
                   <div className="space-y-2">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
                       <div key={idx} className="p-3 rounded-xl flex items-center gap-3"
