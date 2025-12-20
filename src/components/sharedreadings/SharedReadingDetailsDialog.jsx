@@ -20,6 +20,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+  const [uploadingPlanningImage, setUploadingPlanningImage] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -54,7 +55,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
   useEffect(() => {
     if (numberOfDays > 0 && !selectedDay) {
-      setSelectedDay(getCurrentDay());
+      setSelectedDay(0); // Start with recap page
     }
   }, [numberOfDays]);
 
@@ -132,6 +133,32 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     });
   };
 
+  const updatePlanningImageMutation = useMutation({
+    mutationFn: (imageUrl) => base44.entities.SharedReading.update(reading.id, {
+      planning_image: imageUrl
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
+      toast.success("Image du planning ajoutée !");
+    },
+  });
+
+  const handlePlanningImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPlanningImage(true);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      await updatePlanningImageMutation.mutateAsync(result.file_url);
+    } catch (error) {
+      console.error("Error uploading planning image:", error);
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploadingPlanningImage(false);
+    }
+  };
+
   const getUserInfo = (email) => {
     const userProfile = allUsers.find(u => u.email === email);
     return {
@@ -165,17 +192,26 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
         {/* Day selector */}
         {numberOfDays > 0 && (
-          <div className="px-3 py-2 flex items-center gap-2 border-b overflow-x-auto"
+          <div className="px-2 py-3 flex items-center gap-2 border-b overflow-x-auto"
                style={{ borderColor: 'rgba(156, 39, 176, 0.08)' }}>
-            <span className="text-xs font-bold shrink-0" style={{ color: '#FF69B4' }}>
-              Jour
-            </span>
+            <Button
+              size="sm"
+              onClick={() => setSelectedDay(0)}
+              className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
+              style={{
+                backgroundColor: selectedDay === 0 ? '#FF69B4' : 'rgba(243, 229, 245, 0.3)',
+                color: selectedDay === 0 ? 'white' : '#CBD5E0',
+                border: 'none',
+              }}
+            >
+              📋
+            </Button>
             {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => (
               <Button
                 key={day}
                 size="sm"
                 onClick={() => setSelectedDay(day)}
-                className="h-8 min-w-[32px] px-2 text-sm rounded shrink-0"
+                className="h-10 md:h-9 min-w-[44px] md:min-w-[36px] px-3 md:px-2 text-base md:text-sm rounded-lg shrink-0"
                 style={{
                   backgroundColor: selectedDay === day ? '#FF69B4' : 'rgba(243, 229, 245, 0.3)',
                   color: selectedDay === day ? 'white' : '#CBD5E0',
@@ -191,7 +227,131 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
+          {selectedDay === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-6">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold mb-2" style={{ color: '#9C27B0' }}>
+                  📋 Planning de lecture
+                </h3>
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>
+                  Ajoutez une image du planning pour cette lecture commune
+                </p>
+              </div>
+
+              {reading.planning_image ? (
+                <div className="relative w-full max-w-2xl">
+                  <img 
+                    src={reading.planning_image} 
+                    alt="Planning" 
+                    className="w-full rounded-2xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => window.open(reading.planning_image, '_blank')}
+                  />
+                  {user?.email === reading.created_by && (
+                    <label className="absolute bottom-4 right-4 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePlanningImageUpload}
+                        className="hidden"
+                        disabled={uploadingPlanningImage}
+                      />
+                      <Button 
+                        type="button"
+                        disabled={uploadingPlanningImage}
+                        className="text-white shadow-lg"
+                        style={{ backgroundColor: '#FF69B4' }}
+                        asChild
+                      >
+                        <span>
+                          {uploadingPlanningImage ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Upload...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Changer
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePlanningImageUpload}
+                    className="hidden"
+                    disabled={uploadingPlanningImage}
+                  />
+                  <Button 
+                    type="button"
+                    disabled={uploadingPlanningImage}
+                    size="lg"
+                    className="text-white shadow-lg"
+                    style={{ backgroundColor: '#FF69B4' }}
+                    asChild
+                  >
+                    <span>
+                      {uploadingPlanningImage ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Upload en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 mr-2" />
+                          Ajouter une image du planning
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </label>
+              )}
+
+              {reading.start_date && reading.end_date && (
+                <div className="w-full max-w-md p-6 rounded-2xl" style={{ backgroundColor: 'rgba(156, 39, 176, 0.05)' }}>
+                  <h4 className="font-bold mb-3 text-center" style={{ color: '#9C27B0' }}>
+                    Informations
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span style={{ color: '#9CA3AF' }}>Début</span>
+                      <span className="font-bold" style={{ color: '#2D3748' }}>
+                        {format(new Date(reading.start_date), 'dd MMMM yyyy', { locale: fr })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: '#9CA3AF' }}>Fin</span>
+                      <span className="font-bold" style={{ color: '#2D3748' }}>
+                        {format(new Date(reading.end_date), 'dd MMMM yyyy', { locale: fr })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: '#9CA3AF' }}>Durée</span>
+                      <span className="font-bold" style={{ color: '#2D3748' }}>
+                        {numberOfDays} jours
+                      </span>
+                    </div>
+                    {reading.chapters_per_day && (
+                      <div className="flex justify-between">
+                        <span style={{ color: '#9CA3AF' }}>Rythme</span>
+                        <span className="font-bold" style={{ color: '#2D3748' }}>
+                          {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''}/jour
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
             <div key={day}>
               {/* Day separator */}
               <div className="flex items-center gap-3 my-4">
@@ -346,20 +506,23 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             </div>
           ))}
 
-          {messages.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-base italic" style={{ color: '#9CA3AF' }}>
-                Aucun message. Commencez la discussion !
-              </p>
-            </div>
+              {messages.length === 0 && (
+                <div className="text-center py-20">
+                  <p className="text-base italic" style={{ color: '#9CA3AF' }}>
+                    Aucun message. Commencez la discussion !
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Input bar */}
-        <div className="border-t px-3 py-3" style={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.98)',
-          borderColor: 'rgba(156, 39, 176, 0.08)'
-        }}>
+        {/* Input bar - only show if not on recap page */}
+        {selectedDay !== 0 && (
+          <div className="border-t px-3 py-3" style={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            borderColor: 'rgba(156, 39, 176, 0.08)'
+          }}>
           {photoUrl && (
             <div className="relative inline-block mb-2">
               <img src={photoUrl} alt="Preview" className="w-16 h-16 rounded object-cover" />
@@ -431,6 +594,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             </Button>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
