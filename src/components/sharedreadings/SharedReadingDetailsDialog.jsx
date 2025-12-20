@@ -467,21 +467,26 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         )}
 
                         {/* Message bubble */}
-                        <div className={`max-w-[70%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
-                          {!isMyMessage && (
-                            <span className="text-xs font-medium mb-1 px-3" style={{ color: 'var(--warm-pink)' }}>
-                              {userInfo.name}
-                            </span>
-                          )}
+                        <div className={`max-w-[75%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+                         {!isMyMessage && (
+                           <span className="text-xs font-bold mb-1.5 px-3" style={{ color: '#9C27B0' }}>
+                             {userInfo.name}
+                           </span>
+                         )}
 
-                          <div
-                            className="rounded-2xl px-4 py-3 shadow-md"
-                            style={{
-                              backgroundColor: isMyMessage ? '#FF1493' : 'white',
-                              color: isMyMessage ? 'white' : '#333',
-                              borderRadius: isMyMessage ? '20px 20px 4px 20px' : '20px 20px 20px 4px'
-                            }}
-                          >
+                         <div
+                           className="rounded-3xl px-5 py-4"
+                           style={{
+                             backgroundColor: isMyMessage ? 'rgba(255, 105, 180, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                             color: isMyMessage ? 'white' : '#2D3748',
+                             borderRadius: isMyMessage ? '24px 24px 6px 24px' : '24px 24px 24px 6px',
+                             boxShadow: isMyMessage 
+                               ? '0 8px 24px rgba(255, 20, 147, 0.25)' 
+                               : '0 8px 24px rgba(156, 39, 176, 0.15)',
+                             backdropFilter: 'blur(8px)',
+                             border: isMyMessage ? 'none' : '1px solid rgba(156, 39, 176, 0.1)'
+                           }}
+                         >
                             {msg.photo_url && (
                               <div className="mb-2 rounded-lg overflow-hidden cursor-pointer"
                                    onClick={() => window.open(msg.photo_url, '_blank')}>
@@ -494,67 +499,90 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             )}
 
                             {msg.chapter && (
-                              <p className="text-xs font-bold mb-1 opacity-80">
-                                📖 {msg.chapter}
-                              </p>
+                              <div className="px-3 py-1.5 rounded-full inline-block mb-2"
+                                   style={{
+                                     backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.2)' : 'rgba(156, 39, 176, 0.1)',
+                                     color: isMyMessage ? 'white' : '#9C27B0'
+                                   }}>
+                                <p className="text-xs font-bold">
+                                  📖 {msg.chapter}
+                                </p>
+                              </div>
                             )}
 
                             {msg.is_spoiler && !isSpoilerRevealed && msg.day_number >= getCurrentDay() ? (
-                              <div className="text-center py-2">
+                              <div className="text-center py-3">
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => toggleSpoiler(msg.id)}
-                                  className="text-xs"
-                                  style={{ color: isMyMessage ? 'white' : 'var(--deep-pink)' }}
+                                  className="text-xs font-semibold rounded-xl"
+                                  style={{ 
+                                    backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.2)' : 'rgba(156, 39, 176, 0.1)',
+                                    color: isMyMessage ? 'white' : '#9C27B0'
+                                  }}
                                 >
-                                  <Eye className="w-3 h-3 mr-1" />
+                                  <Eye className="w-4 h-4 mr-1.5" />
                                   Révéler le spoiler
                                 </Button>
                               </div>
                             ) : (
-                              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap"
+                                 style={{ 
+                                   lineHeight: '1.7',
+                                   letterSpacing: '0.01em'
+                                 }}>
                                 {msg.message}
                               </p>
                             )}
 
-                            <p className="text-xs mt-2 opacity-70">
+                            <p className="text-xs mt-3 opacity-60 font-medium">
                               {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
                             </p>
                           </div>
 
                           {/* Reactions */}
-                          <div className="flex items-center gap-1 mt-1 px-2">
+                          <div className="flex items-center gap-1.5 mt-2 px-1">
                             {Object.entries(reactionCounts).map(([emoji, count]) => (
                               <button
                                 key={emoji}
                                 onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                                className="px-2 py-0.5 rounded-full text-xs flex items-center gap-1 hover:scale-110 transition-transform"
+                                className="px-2.5 py-1 rounded-full text-sm flex items-center gap-1 transition-all duration-200"
                                 style={{ 
-                                  backgroundColor: (allReactions[user?.email] || []).includes(emoji) ? '#FFE1F0' : '#F5F5F5'
+                                  backgroundColor: (allReactions[user?.email] || []).includes(emoji) 
+                                    ? 'rgba(156, 39, 176, 0.15)' 
+                                    : 'rgba(243, 229, 245, 0.5)',
+                                  transform: (allReactions[user?.email] || []).includes(emoji) ? 'scale(1.05)' : 'scale(1)'
                                 }}
                               >
                                 <span>{emoji}</span>
-                                <span className="font-bold">{count}</span>
+                                <span className="font-bold text-xs" style={{ color: '#9C27B0' }}>{count}</span>
                               </button>
                             ))}
                             <button
                               onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)}
-                              className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-gray-100"
+                              className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                              style={{
+                                backgroundColor: showEmojiPicker === msg.id ? 'rgba(156, 39, 176, 0.15)' : 'transparent'
+                              }}
                             >
-                              <Smile className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                              <Smile className="w-4 h-4" style={{ color: '#FF69B4' }} />
                             </button>
                           </div>
 
                           {/* Emoji picker */}
                           {showEmojiPicker === msg.id && (
-                            <div className="flex gap-1 mt-1 p-2 rounded-lg bg-white shadow-lg border"
-                                 style={{ borderColor: '#FFE1F0' }}>
+                            <div className="flex gap-2 mt-2 p-3 rounded-2xl shadow-xl border"
+                                 style={{ 
+                                   backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                   borderColor: 'rgba(156, 39, 176, 0.2)',
+                                   backdropFilter: 'blur(8px)'
+                                 }}>
                               {EMOJI_REACTIONS.map(emoji => (
                                 <button
                                   key={emoji}
                                   onClick={() => reactToMessageMutation.mutate({ messageId: msg.id, emoji })}
-                                  className="text-lg hover:scale-125 transition-transform"
+                                  className="text-xl hover:scale-125 transition-transform p-1"
                                 >
                                   {emoji}
                                 </button>
@@ -586,40 +614,45 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               )}
             </div>
 
-            {/* Fixed message input at bottom */}
+            {/* Fixed message input */}
             <div className="border-t p-4" style={{ 
-              backgroundColor: 'white',
-              borderColor: '#FFE1F0',
-              boxShadow: '0 -4px 12px rgba(255, 20, 147, 0.1)'
+              background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(243, 229, 245, 0.3) 100%)',
+              borderColor: 'rgba(156, 39, 176, 0.15)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 -8px 24px rgba(156, 39, 176, 0.08)'
             }}>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {newMessage.photo_url && (
                   <div className="relative inline-block">
                     <img 
                       src={newMessage.photo_url} 
                       alt="Preview" 
-                      className="w-20 h-20 rounded-lg object-cover" 
+                      className="w-24 h-24 rounded-2xl object-cover shadow-lg" 
                     />
                     <Button
                       size="icon"
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 w-6 h-6"
+                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full"
+                      style={{ backgroundColor: '#EF4444', color: 'white' }}
                       onClick={() => setNewMessage({...newMessage, photo_url: ""})}
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </Button>
                   </div>
                 )}
 
-                <div className="flex items-end gap-2">
+                <div className="flex items-end gap-3">
                   <div className="flex-1">
                     <Textarea
                       value={newMessage.message}
                       onChange={(e) => setNewMessage({...newMessage, message: e.target.value})}
-                      placeholder={`Message pour le Jour ${selectedDay || 1}...`}
+                      placeholder={`Partage tes impressions du Jour ${selectedDay || 1}...`}
                       rows={2}
-                      className="resize-none rounded-xl border-2"
-                      style={{ borderColor: '#FFE1F0' }}
+                      className="resize-none rounded-2xl text-base"
+                      style={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(156, 39, 176, 0.2)',
+                        lineHeight: '1.6'
+                      }}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && newMessage.message.trim()) {
                           e.preventDefault();
@@ -643,14 +676,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         variant="outline" 
                         size="icon"
                         disabled={uploadingPhoto}
-                        className="rounded-full"
+                        className="rounded-full w-11 h-11"
+                        style={{ borderColor: 'rgba(156, 39, 176, 0.2)' }}
                         asChild
                       >
                         <span>
                           {uploadingPhoto ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#9C27B0' }} />
                           ) : (
-                            <Upload className="w-4 h-4" />
+                            <Upload className="w-5 h-5" style={{ color: '#9C27B0' }} />
                           )}
                         </span>
                       </Button>
@@ -660,10 +694,13 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                       onClick={() => sendMessageMutation.mutate(newMessage)}
                       disabled={!newMessage.message.trim() || sendMessageMutation.isPending}
                       size="icon"
-                      className="rounded-full text-white shadow-lg"
-                      style={{ backgroundColor: '#FF1493' }}
+                      className="rounded-full text-white w-11 h-11"
+                      style={{ 
+                        background: 'linear-gradient(135deg, #FF69B4, #9C27B0)',
+                        boxShadow: '0 4px 16px rgba(255, 105, 180, 0.3)'
+                      }}
                     >
-                      <Send className="w-4 h-4" />
+                      <Send className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>
@@ -673,8 +710,12 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     <Input
                       value={newMessage.chapter}
                       onChange={(e) => setNewMessage({...newMessage, chapter: e.target.value})}
-                      placeholder="Chapitre..."
-                      className="w-32 h-8 text-xs"
+                      placeholder="Ex: Chapitre 3"
+                      className="w-36 h-9 text-sm rounded-xl"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        border: '1px solid rgba(156, 39, 176, 0.2)'
+                      }}
                     />
                     <div className="flex items-center gap-2">
                       <Switch
@@ -682,13 +723,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         checked={newMessage.is_spoiler}
                         onCheckedChange={(checked) => setNewMessage({...newMessage, is_spoiler: checked})}
                       />
-                      <Label htmlFor="spoiler" className="text-xs cursor-pointer">
+                      <Label htmlFor="spoiler" className="text-xs cursor-pointer font-medium"
+                             style={{ color: '#6B7280' }}>
                         ⚠️ Spoiler
                       </Label>
                     </div>
                   </div>
-                  <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    Entrée pour envoyer
+                  <span className="text-xs italic" style={{ color: '#9CA3AF' }}>
+                    ↵ Entrée pour envoyer
                   </span>
                 </div>
               </div>

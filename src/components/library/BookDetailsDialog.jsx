@@ -593,6 +593,37 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     enabled: !!user && open,
   });
 
+  // Fetch my quotes for this book
+  const { data: myQuotes = [] } = useQuery({
+    queryKey: ['myQuotes', book?.id],
+    queryFn: () => base44.entities.Quote.filter({ 
+      book_id: book?.id,
+      created_by: user?.email
+    }, '-created_date'),
+    enabled: !!book && !!user && open,
+  });
+
+  // Fetch friends' quotes for this book
+  const { data: friendsQuotes = [] } = useQuery({
+    queryKey: ['friendsQuotes', book?.id],
+    queryFn: async () => {
+      if (!book || myFriends.length === 0) return [];
+      
+      const friendEmails = myFriends.map(f => f.friend_email);
+      const allFriendsQuotes = await Promise.all(
+        friendEmails.map(email => 
+          base44.entities.Quote.filter({ 
+            book_id: book.id,
+            created_by: email
+          })
+        )
+      );
+      
+      return allFriendsQuotes.flat();
+    },
+    enabled: !!book && myFriends.length > 0 && open,
+  });
+
   // Fetch book comments
   const { data: bookComments = [] } = useQuery({
     queryKey: ['bookComments', book?.id],
@@ -1358,6 +1389,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 >
                   💬 Avis ({friendsUserBooks.length + 1})
                 </TabsTrigger>
+                <TabsTrigger
+                  value="quotes"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
+                  style={activeTab === "quotes" ? {
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                    color: '#FFFFFF'
+                  } : { color: '#2D3748' }}
+                >
+                  ✨ Citations
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -2024,6 +2065,150 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     )}
                   </div>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="quotes">
+              <div className="p-4 md:p-8 space-y-6">
+                {/* Mes citations */}
+                <div className="cascade-item">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                    <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)' }}>
+                      <QuoteIcon className="w-5 h-5" style={{ color: '#FFD700' }} />
+                    </div>
+                    Mes citations ({myQuotes.length})
+                  </h3>
+                  {myQuotes.length > 0 ? (
+                    <div className="space-y-3">
+                      {myQuotes.map((quote) => (
+                        <div key={quote.id} className="card-hover p-5 rounded-2xl"
+                             style={{
+                               background: 'linear-gradient(135deg, rgba(255, 249, 230, 0.6) 0%, rgba(255, 240, 246, 0.4) 100%)',
+                               backdropFilter: 'blur(8px)',
+                               boxShadow: '0 4px 16px rgba(255, 215, 0, 0.15)',
+                               border: '1px solid rgba(255, 215, 0, 0.2)'
+                             }}>
+                          <div className="flex items-start gap-3">
+                            <QuoteIcon className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#FFD700' }} />
+                            <div className="flex-1">
+                              <p className="italic leading-relaxed mb-2" 
+                                 style={{ color: '#2D3748', fontSize: '15px', lineHeight: '1.7' }}>
+                                "{quote.quote_text}"
+                              </p>
+                              {quote.page_number && (
+                                <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
+                                  Page {quote.page_number}
+                                </p>
+                              )}
+                              {quote.note && (
+                                <p className="text-sm mt-2 p-3 rounded-xl" 
+                                   style={{ 
+                                     backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                     color: '#4B5563'
+                                   }}>
+                                  {quote.note}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 rounded-2xl"
+                         style={{ backgroundColor: 'rgba(255, 249, 230, 0.3)' }}>
+                      <QuoteIcon className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: '#FFD700' }} />
+                      <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
+                        Aucune citation enregistrée pour ce livre
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Citations des amies */}
+                {friendsQuotes.length > 0 && (
+                  <div className="cascade-item">
+                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                      <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                           style={{ backgroundColor: 'rgba(156, 39, 176, 0.12)' }}>
+                        <Users className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                      </div>
+                      Citations de mes amies ({friendsQuotes.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {friendsQuotes.map((quote) => {
+                        const friend = myFriends.find(f => f.friend_email === quote.created_by);
+                        const friendUser = allUsers.find(u => u.email === quote.created_by);
+                        
+                        return (
+                          <div key={quote.id} className="card-hover p-5 rounded-2xl"
+                               style={{
+                                 background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.4) 100%)',
+                                 backdropFilter: 'blur(8px)',
+                                 boxShadow: '0 4px 16px rgba(156, 39, 176, 0.12)',
+                                 border: '1px solid rgba(156, 39, 176, 0.15)'
+                               }}>
+                            {/* Friend info */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-full overflow-hidden"
+                                   style={{ backgroundColor: '#9C27B0' }}>
+                                {friendUser?.profile_picture ? (
+                                  <img src={friendUser.profile_picture} 
+                                       alt={friend?.friend_name} 
+                                       className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                                    {(friend?.friend_name || quote.created_by)?.[0]?.toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-sm font-bold" style={{ color: '#9C27B0' }}>
+                                {friend?.friend_name || quote.created_by?.split('@')[0]}
+                              </span>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                              <QuoteIcon className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#9C27B0' }} />
+                              <div className="flex-1">
+                                <p className="italic leading-relaxed mb-2" 
+                                   style={{ color: '#2D3748', fontSize: '15px', lineHeight: '1.7' }}>
+                                  "{quote.quote_text}"
+                                </p>
+                                {quote.page_number && (
+                                  <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
+                                    Page {quote.page_number}
+                                  </p>
+                                )}
+                                {quote.note && (
+                                  <p className="text-sm mt-2 p-3 rounded-xl" 
+                                     style={{ 
+                                       backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                       color: '#4B5563'
+                                     }}>
+                                    {quote.note}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {friendsQuotes.length === 0 && myQuotes.length === 0 && (
+                  <div className="text-center py-12">
+                    <QuoteIcon className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#9C27B0' }} />
+                    <p className="text-lg font-semibold mb-2" style={{ color: '#2D3748' }}>
+                      Aucune citation
+                    </p>
+                    <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
+                      Ajoutez vos citations depuis la page Citations
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
