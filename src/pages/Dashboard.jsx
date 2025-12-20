@@ -120,136 +120,136 @@ export default function Dashboard() {
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+        .dash-card {
+          transition: all 250ms ease;
         }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(255, 20, 147, 0.3); }
-          50% { box-shadow: 0 0 40px rgba(255, 20, 147, 0.6); }
+        .dash-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(255, 105, 180, 0.15);
         }
-        .hover-lift {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .stat-bubble {
+          transition: all 250ms ease;
         }
-        .hover-lift:hover {
-          transform: translateY(-8px) scale(1.02);
-          box-shadow: 0 20px 40px rgba(255, 20, 147, 0.2);
-        }
-        .stat-card {
-          transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        .stat-bubble:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
         }
       `}</style>
 
-      {/* Hero Header avec gradient rose */}
+      {/* Hero Header */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 rounded-full blur-3xl" 
-               style={{ background: 'radial-gradient(circle, #FF1493, transparent)' }} />
-          <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl" 
-               style={{ background: 'radial-gradient(circle, #FF69B4, transparent)' }} />
-        </div>
-
-        <div className="relative p-6 md:p-12">
+        <div className="relative p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
-            <div className="mb-6 md:mb-8">
-              <h1 className="text-4xl md:text-6xl font-bold mb-3" 
-                  style={{ 
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}>
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-5xl font-bold mb-2" 
+                  style={{ color: '#FF1493' }}>
                 Bonjour {displayName} ✨
               </h1>
-              <p className="text-lg md:text-2xl font-medium" style={{ color: '#666' }}>
+              <p className="text-base md:text-xl" style={{ color: '#9CA3AF' }}>
                 Ton univers littéraire t'attend
               </p>
             </div>
 
-            {/* Stats Cards en grille moderne */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
-              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
+              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
-                   style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
-                    <BookOpen className="w-6 h-6 text-white" />
+                   style={{ 
+                     background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
+                     border: '1px solid rgba(255, 105, 180, 0.15)'
+                   }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                       style={{ backgroundColor: '#FF69B4' }}>
+                    <BookOpen className="w-5 h-5 text-white" />
                   </div>
-                  <Flame className="w-5 h-5 text-white opacity-50" />
+                  <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#FF1493' }}>
                   {booksReadThisYear}
                 </p>
-                <p className="text-sm text-white opacity-80">Livres lus en {selectedYear}</p>
+                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                  Livres lus en {selectedYear}
+                </p>
               </div>
 
-              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
+              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("Statistics"))}
-                   style={{ background: 'linear-gradient(135deg, #E91E63, #F48FB1)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
-                    <TrendingUp className="w-6 h-6 text-white" />
+                   style={{ 
+                     background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
+                     border: '1px solid rgba(255, 105, 180, 0.15)'
+                   }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                       style={{ backgroundColor: '#E91E63' }}>
+                    <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <Zap className="w-5 h-5 text-white opacity-50" />
+                  <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#E91E63' }}>
                   {totalPagesThisYear.toLocaleString()}
                 </p>
-                <p className="text-sm text-white opacity-80">Pages dévorées</p>
+                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                  Pages dévorées
+                </p>
               </div>
 
-              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
+              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
-                   style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
-                    <Users className="w-6 h-6 text-white" />
+                   style={{ 
+                     background: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)',
+                     border: '1px solid rgba(156, 39, 176, 0.15)'
+                   }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                       style={{ backgroundColor: '#9C27B0' }}>
+                    <Users className="w-5 h-5 text-white" />
                   </div>
-                  <Heart className="w-5 h-5 text-white opacity-50" />
+                  <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#9C27B0' }}>
                   {myFriends.length}
                 </p>
-                <p className="text-sm text-white opacity-80">Amies littéraires</p>
+                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                  Amies littéraires
+                </p>
               </div>
 
-              <div className="stat-card p-4 md:p-6 rounded-2xl cursor-pointer"
+              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
-                   style={{ background: 'linear-gradient(135deg, #FFB6C8, #FFC0CB)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
-                    <Target className="w-6 h-6 text-white" />
+                   style={{ 
+                     background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
+                     border: '1px solid rgba(255, 105, 180, 0.15)'
+                   }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                       style={{ backgroundColor: '#FFB6C8' }}>
+                    <Target className="w-5 h-5 text-white" />
                   </div>
-                  <Clock className="w-5 h-5 text-white opacity-50" />
+                  <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold text-white mb-1">
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#FF69B4' }}>
                   {toReadCount}
                 </p>
-                <p className="text-sm text-white opacity-80">Dans la pile</p>
+                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                  Dans la pile
+                </p>
               </div>
             </div>
 
-            {/* Sélecteur d'année élégant */}
-            <div className="flex items-center gap-4">
+            {/* Actions */}
+            <div className="flex items-center gap-3">
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-6 py-3 rounded-2xl font-bold shadow-xl text-lg"
+                className="px-5 py-3 rounded-2xl font-semibold text-base dash-card"
                 style={{ 
                   backgroundColor: 'white',
                   color: '#FF1493',
-                  border: '2px solid #FFE1F0'
+                  border: '1px solid rgba(255, 105, 180, 0.2)'
                 }}
               >
                 {years.map(year => (
@@ -259,8 +259,11 @@ export default function Dashboard() {
 
               <Link to={createPageUrl("MyLibrary")} className="flex-1 md:flex-none">
                 <Button
-                  className="w-full md:w-auto shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform text-lg"
-                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: 'white' }}
+                  className="w-full md:w-auto font-bold px-6 py-3 rounded-2xl text-base dash-card"
+                  style={{ 
+                    background: '#FF1493',
+                    color: 'white'
+                  }}
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   Ajouter un livre
@@ -280,20 +283,26 @@ export default function Dashboard() {
             <ReadingGoalManager year={selectedYear} compact={false} />
 
             {/* Lectures en cours */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
-              <div className="h-1" style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)' }} />
+            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                  style={{ 
+                    backgroundColor: 'white',
+                    boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
+                  }}>
               <CardContent className="p-6 md:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3" style={{ color: '#2D3748' }}>
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                         style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
-                      <BookOpen className="w-6 h-6 text-white" />
+                  <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE9F0' }}>
+                      <BookOpen className="w-5 h-5" style={{ color: '#FF1493' }} />
                     </div>
                     En cours de lecture
                   </h2>
                   {currentlyReading.length > 0 && (
-                    <span className="px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg"
-                          style={{ backgroundColor: '#FF1493' }}>
+                    <span className="px-3 py-1 rounded-full text-sm font-bold"
+                          style={{ 
+                            backgroundColor: '#FFE9F0',
+                            color: '#FF1493'
+                          }}>
                       {currentlyReading.length}
                     </span>
                   )}
@@ -311,13 +320,16 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="hover-lift cursor-pointer p-4 md:p-6 rounded-2xl"
-                             style={{ backgroundColor: '#FFF7FA' }}
+                             className="dash-card cursor-pointer p-4 md:p-5 rounded-2xl"
+                             style={{ backgroundColor: '#FFF5F8' }}
                              onClick={() => setSelectedBookForDetails(userBook)}>
                           <div className="flex gap-4">
                             <div className="relative flex-shrink-0">
-                              <div className="w-20 h-28 md:w-28 md:h-40 rounded-xl overflow-hidden shadow-xl"
-                                   style={{ backgroundColor: '#FFE4EC' }}>
+                              <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden"
+                                   style={{ 
+                                     backgroundColor: '#FFE9F0',
+                                     boxShadow: '0 2px 8px rgba(255, 105, 180, 0.15)'
+                                   }}>
                                 {book.cover_url && (
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                 )}
@@ -325,29 +337,30 @@ export default function Dashboard() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-lg md:text-xl mb-2 line-clamp-2" style={{ color: '#2D3748' }}>
+                              <h3 className="font-bold text-base md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h3>
-                              <p className="text-sm md:text-base mb-3" style={{ color: '#666' }}>
+                              <p className="text-sm mb-3" style={{ color: '#9CA3AF' }}>
                                 {book.author}
                               </p>
 
                               {userBook.current_page && book.page_count && (
                                 <>
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
+                                    <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                                       Page {userBook.current_page} / {book.page_count}
                                     </span>
-                                    <span className="text-2xl font-bold" style={{ color: '#FF1493' }}>
+                                    <span className="text-xl font-bold" style={{ color: '#FF1493' }}>
                                       {progress}%
                                     </span>
                                   </div>
-                                  <div className="relative h-3 rounded-full overflow-hidden"
-                                       style={{ backgroundColor: '#FFE4EC' }}>
-                                    <div className="h-full rounded-full transition-all duration-500"
+                                  <div className="relative h-2 rounded-full overflow-hidden"
+                                       style={{ backgroundColor: '#FFE9F0' }}>
+                                    <div className="h-full rounded-full"
                                          style={{
                                            width: `${progress}%`,
-                                           background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FFB6C8)'
+                                           backgroundColor: '#FF69B4',
+                                           transition: 'width 300ms ease'
                                          }} />
                                   </div>
                                 </>
@@ -358,20 +371,20 @@ export default function Dashboard() {
                       );
                     })
                   ) : (
-                    <div className="text-center py-16">
-                      <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
-                           style={{ backgroundColor: '#FFE4EC' }}>
-                        <BookOpen className="w-12 h-12" style={{ color: '#FF1493' }} />
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+                           style={{ backgroundColor: '#FFE9F0' }}>
+                        <BookOpen className="w-10 h-10" style={{ color: '#FF69B4' }} />
                       </div>
-                      <p className="text-xl font-bold mb-2" style={{ color: '#2D3748' }}>
+                      <p className="text-lg font-bold mb-2" style={{ color: '#2D3748' }}>
                         Aucune lecture en cours
                       </p>
-                      <p className="text-base mb-6" style={{ color: '#666' }}>
-                        Commencez votre prochaine aventure !
+                      <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>
+                        Commencez votre prochaine aventure
                       </p>
                       <Link to={createPageUrl("MyLibrary")}>
-                        <Button className="shadow-xl font-bold px-8 py-4 rounded-2xl"
-                                style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: 'white' }}>
+                        <Button className="font-bold px-6 py-3 rounded-2xl dash-card"
+                                style={{ backgroundColor: '#FF1493', color: 'white' }}>
                           <Plus className="w-5 h-5 mr-2" />
                           Choisir un livre
                         </Button>
@@ -382,15 +395,18 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Amies qui lisent en ce moment */}
+            {/* Amies qui lisent */}
             {friendsBooks.filter(b => b.status === "En cours").length > 0 && (
-              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
-                <div className="h-1" style={{ background: 'linear-gradient(90deg, #9B59B6, #BA68C8, #E1BEE7)' }} />
+              <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                    style={{ 
+                      backgroundColor: 'white',
+                      boxShadow: '0 4px 16px rgba(156, 39, 176, 0.08)'
+                    }}>
                 <CardContent className="p-6 md:p-8">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3" style={{ color: '#2D3748' }}>
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                         style={{ background: 'linear-gradient(135deg, #9B59B6, #BA68C8)' }}>
-                      <Users className="w-6 h-6 text-white" />
+                  <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: '#F3E5F5' }}>
+                      <Users className="w-5 h-5" style={{ color: '#9C27B0' }} />
                     </div>
                     Tes amies lisent
                   </h2>
@@ -407,34 +423,38 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="hover-lift p-4 rounded-2xl"
-                             style={{ backgroundColor: '#F3E5F5' }}>
+                             className="dash-card p-4 rounded-2xl"
+                             style={{ backgroundColor: '#F9F5FF' }}>
                           <div className="flex gap-3 mb-3">
-                            <div className="w-16 h-24 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
-                                 style={{ backgroundColor: '#E1BEE7' }}>
+                            <div className="w-14 h-20 rounded-xl overflow-hidden flex-shrink-0"
+                                 style={{ 
+                                   backgroundColor: '#F3E5F5',
+                                   boxShadow: '0 2px 6px rgba(156, 39, 176, 0.1)'
+                                 }}>
                               {book.cover_url && (
                                 <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold mb-1" style={{ color: '#9B59B6' }}>
+                              <p className="text-xs font-bold mb-1" style={{ color: '#9C27B0' }}>
                                 {friend.friend_name?.split(' ')[0]}
                               </p>
                               <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h4>
-                              <p className="text-xs" style={{ color: '#666' }}>
+                              <p className="text-xs" style={{ color: '#9CA3AF' }}>
                                 {book.author}
                               </p>
                             </div>
                           </div>
 
                           {progress > 0 && (
-                            <div className="relative h-2 rounded-full" style={{ backgroundColor: '#E1BEE7' }}>
+                            <div className="relative h-1.5 rounded-full" style={{ backgroundColor: '#F3E5F5' }}>
                               <div className="h-full rounded-full"
                                    style={{
                                      width: `${progress}%`,
-                                     background: 'linear-gradient(90deg, #9B59B6, #BA68C8)'
+                                     backgroundColor: '#9C27B0',
+                                     transition: 'width 300ms ease'
                                    }} />
                             </div>
                           )}
@@ -450,28 +470,30 @@ export default function Dashboard() {
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
             {/* Citation du jour */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
-              <div className="h-1" style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }} />
-              <CardContent className="p-6 md:p-8 text-center"
-                           style={{ background: 'linear-gradient(135deg, #FFF9E6, #FFECB3)' }}>
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                     style={{ backgroundColor: 'rgba(255, 215, 0, 0.3)' }}>
-                  <QuoteIcon className="w-8 h-8" style={{ color: '#FFD700' }} />
+            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                  style={{ 
+                    backgroundColor: 'white',
+                    boxShadow: '0 4px 16px rgba(255, 215, 0, 0.08)'
+                  }}>
+              <CardContent className="p-6 md:p-8 text-center">
+                <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
+                     style={{ backgroundColor: '#FFF9E6' }}>
+                  <QuoteIcon className="w-6 h-6" style={{ color: '#FFD700' }} />
                 </div>
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
+                <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3748' }}>
                   Citation du jour
                 </h2>
                 {randomQuote && quoteBook ? (
                   <>
-                    <p className="text-base md:text-lg italic mb-4 leading-relaxed" style={{ color: '#2D3748' }}>
+                    <p className="text-sm md:text-base italic mb-3 leading-relaxed" style={{ color: '#4B5563' }}>
                       "{randomQuote.quote_text}"
                     </p>
-                    <p className="text-sm font-bold" style={{ color: '#FFD700' }}>
+                    <p className="text-xs font-bold" style={{ color: '#FFD700' }}>
                       — {quoteBook.title}
                     </p>
                   </>
                 ) : (
-                  <p className="text-lg italic" style={{ color: '#666' }}>
+                  <p className="text-base italic" style={{ color: '#9CA3AF' }}>
                     "Lire, c'est vivre mille vies avant de mourir."
                   </p>
                 )}
@@ -480,36 +502,46 @@ export default function Dashboard() {
 
             {/* Playlist musicale */}
             {allMusicWithBooks.length > 0 && (
-              <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden cursor-pointer hover-lift"
-                    onClick={() => navigate(createPageUrl("MusicPlaylist"))}>
-                <CardContent className="p-6 md:p-8"
-                             style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
-                  <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
-                    <Music className="w-6 h-6" />
+              <Card className="border-0 rounded-3xl overflow-hidden cursor-pointer dash-card"
+                    onClick={() => navigate(createPageUrl("MusicPlaylist"))}
+                    style={{ 
+                      background: 'linear-gradient(135deg, #F9F5FF 0%, #FFE9F0 100%)',
+                      boxShadow: '0 4px 16px rgba(233, 30, 99, 0.08)'
+                    }}>
+                <CardContent className="p-6 md:p-8">
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE9F0' }}>
+                      <Music className="w-5 h-5" style={{ color: '#E91E63' }} />
+                    </div>
                     Ta Playlist
                   </h2>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
-                      <div key={idx} className="p-3 rounded-2xl flex items-center gap-3"
-                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
-                        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
+                      <div key={idx} className="p-3 rounded-xl flex items-center gap-3"
+                           style={{ backgroundColor: 'white' }}>
+                        <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0"
+                             style={{ backgroundColor: '#FFE9F0' }}>
                           {musicItem.book.cover_url && (
                             <img src={musicItem.book.cover_url} alt="" className="w-full h-full object-cover" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-white line-clamp-1">
+                          <p className="font-bold text-sm line-clamp-1" style={{ color: '#2D3748' }}>
                             {musicItem.title}
                           </p>
-                          <p className="text-xs text-white opacity-80 line-clamp-1">
+                          <p className="text-xs line-clamp-1" style={{ color: '#9CA3AF' }}>
                             {musicItem.artist}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <Button className="w-full mt-4 bg-white font-bold rounded-xl py-3"
-                          style={{ color: '#9B59B6' }}>
+                  <Button className="w-full mt-4 font-semibold rounded-xl py-3"
+                          style={{ 
+                            backgroundColor: '#E91E63',
+                            color: 'white'
+                          }}>
                     Voir toute la playlist
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -517,42 +549,58 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Accès rapide */}
-            <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+            {/* Raccourcis */}
+            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                  style={{ 
+                    backgroundColor: 'white',
+                    boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
+                  }}>
               <CardContent className="p-6 md:p-8">
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                  ⚡ Raccourcis
+                <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3748' }}>
+                  Raccourcis
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   <Link to={createPageUrl("SharedReadings")}>
-                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
-                         style={{ backgroundColor: '#FFF0F6' }}>
-                      <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#FF1493' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Lectures communes</p>
+                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
+                         style={{ backgroundColor: '#FFF5F8' }}>
+                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
+                           style={{ backgroundColor: '#FFE9F0' }}>
+                        <Users className="w-5 h-5" style={{ color: '#FF1493' }} />
+                      </div>
+                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Lectures<br/>communes</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Quotes")}>
-                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
                          style={{ backgroundColor: '#FFF9E6' }}>
-                      <QuoteIcon className="w-8 h-8 mx-auto mb-2" style={{ color: '#FFD700' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Citations</p>
+                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
+                           style={{ backgroundColor: '#FFF4CC' }}>
+                        <QuoteIcon className="w-5 h-5" style={{ color: '#FFD700' }} />
+                      </div>
+                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Citations</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("BookTournament")}>
-                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
                          style={{ backgroundColor: '#FFF5E6' }}>
-                      <Trophy className="w-8 h-8 mx-auto mb-2" style={{ color: '#FF9F7F' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
+                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
+                           style={{ backgroundColor: '#FFEACC' }}>
+                        <Trophy className="w-5 h-5" style={{ color: '#FF9F7F' }} />
+                      </div>
+                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
                     </div>
                   </Link>
 
                   <Link to={createPageUrl("Profile")}>
-                    <div className="p-4 rounded-2xl text-center hover-lift cursor-pointer"
+                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
                          style={{ backgroundColor: '#FFE6F0' }}>
-                      <Heart className="w-8 h-8 mx-auto mb-2" style={{ color: '#E91E63' }} />
-                      <p className="text-sm font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
+                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
+                           style={{ backgroundColor: '#FFD6E4' }}>
+                        <Heart className="w-5 h-5" style={{ color: '#E91E63' }} />
+                      </div>
+                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
                     </div>
                   </Link>
                 </div>
