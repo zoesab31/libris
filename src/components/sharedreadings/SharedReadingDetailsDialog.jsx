@@ -305,92 +305,60 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        {/* Header compact */}
-        <div className="px-4 md:px-6 py-3 md:py-4 border-b"
-             style={{ 
-               borderColor: 'rgba(156, 39, 176, 0.15)',
-               backgroundColor: 'rgba(255, 240, 246, 0.5)'
-             }}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-base md:text-xl font-bold truncate" style={{ color: '#2D3748' }}>
-                {book?.title}
-              </h2>
-              <p className="text-xs md:text-sm truncate" style={{ color: '#9CA3AF' }}>
-                {book?.author}
-              </p>
-            </div>
-            {user?.email === reading.created_by && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (window.confirm("Supprimer cette lecture commune ?")) {
-                    deleteReadingMutation.mutate();
-                  }
-                }}
-                disabled={deleteReadingMutation.isPending}
-                className="flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col p-0">
+        {/* Header ultra-minimal */}
+        <div className="px-2 md:px-4 py-1.5 border-b"
+             style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
+          <h2 className="text-sm md:text-base font-bold truncate" style={{ color: '#2D3748' }}>
+            {book?.title} - {book?.author}
+          </h2>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 bg-transparent border-b px-2 md:px-4 py-1"
-                    style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
+          <TabsList className="grid w-full grid-cols-4 bg-transparent border-b px-1 py-0.5 h-8"
+                    style={{ borderColor: 'rgba(156, 39, 176, 0.08)' }}>
             <TabsTrigger value="discussion" 
-                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
-                         style={{ color: activeTab === 'discussion' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'discussion' ? '2px solid #FF69B4' : 'none' }}>
+                         className="text-xs py-1 px-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'discussion' ? '#FF69B4' : '#CBD5E0', borderBottom: activeTab === 'discussion' ? '2px solid #FF69B4' : 'none', fontSize: '11px' }}>
               💬
-              <span className="hidden md:inline ml-1">Discussion</span>
             </TabsTrigger>
             <TabsTrigger value="program"
-                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
-                         style={{ color: activeTab === 'program' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'program' ? '2px solid #FF69B4' : 'none' }}>
+                         className="text-xs py-1 px-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'program' ? '#FF69B4' : '#CBD5E0', borderBottom: activeTab === 'program' ? '2px solid #FF69B4' : 'none', fontSize: '11px' }}>
               📅
-              <span className="hidden md:inline ml-1">Programme</span>
             </TabsTrigger>
             <TabsTrigger value="participants"
-                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
-                         style={{ color: activeTab === 'participants' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'participants' ? '2px solid #FF69B4' : 'none' }}>
+                         className="text-xs py-1 px-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'participants' ? '#FF69B4' : '#CBD5E0', borderBottom: activeTab === 'participants' ? '2px solid #FF69B4' : 'none', fontSize: '11px' }}>
               👥
-              <span className="hidden md:inline ml-1">Participants</span>
             </TabsTrigger>
             <TabsTrigger value="music"
-                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
-                         style={{ color: activeTab === 'music' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'music' ? '2px solid #FF69B4' : 'none' }}>
+                         className="text-xs py-1 px-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'music' ? '#FF69B4' : '#CBD5E0', borderBottom: activeTab === 'music' ? '2px solid #FF69B4' : 'none', fontSize: '11px' }}>
               🎵
-              <span className="hidden md:inline ml-1">Ambiance</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="discussion" className="flex-1 flex flex-col overflow-hidden">
-            {/* Ultra compact Day selector */}
+            {/* Mini Day selector */}
             {numberOfDays > 0 && (
-              <div className="px-3 md:px-4 py-2 flex items-center gap-2 border-b"
-                   style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
-                <span className="text-xs font-bold" style={{ color: '#FF69B4' }}>
+              <div className="px-2 py-1 flex items-center gap-1.5 border-b"
+                   style={{ borderColor: 'rgba(156, 39, 176, 0.08)' }}>
+                <span className="text-[10px] font-bold" style={{ color: '#FF69B4' }}>
                   J{getCurrentDay()}/{numberOfDays}
                 </span>
-                <div className="flex gap-1 overflow-x-auto flex-1">
+                <div className="flex gap-0.5 overflow-x-auto flex-1">
                   {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => {
-                    const status = getDayStatus(day);
                     return (
                       <Button
                         key={day}
                         size="sm"
                         onClick={() => setSelectedDay(day)}
-                        className="h-6 min-w-[32px] px-1.5 text-xs rounded-lg flex-shrink-0"
+                        className="h-5 min-w-[24px] px-1 text-[10px] rounded flex-shrink-0"
                         style={{
-                          backgroundColor: selectedDay === day ? '#FF69B4' : 
-                                          status === 'completed' ? 'rgba(152, 216, 200, 0.2)' : 
-                                          'rgba(243, 229, 245, 0.3)',
-                          color: selectedDay === day ? 'white' : '#9CA3AF',
-                          border: selectedDay === day ? '1.5px solid #FF1493' : '1px solid rgba(156, 39, 176, 0.15)',
+                          backgroundColor: selectedDay === day ? '#FF69B4' : 'rgba(243, 229, 245, 0.2)',
+                          color: selectedDay === day ? 'white' : '#CBD5E0',
+                          border: 'none',
                           fontWeight: selectedDay === day ? '700' : '500'
                         }}
                       >
@@ -402,8 +370,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               </div>
             )}
 
-            {/* Messages area - MAXIMIZED */}
-            <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 space-y-4">
+            {/* Messages area - SUPER MAXIMIZED */}
+            <div className="flex-1 overflow-y-auto px-2 md:px-4 py-2 space-y-3">
               {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
                 <div key={day}>
                   {/* Day separator - compact */}
@@ -598,55 +566,52 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               )}
             </div>
 
-            {/* Compact message input */}
-            <div className="border-t px-2 md:px-4 py-2" style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderColor: 'rgba(156, 39, 176, 0.1)'
+            {/* Mini input bar */}
+            <div className="border-t px-1.5 py-1" style={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              borderColor: 'rgba(156, 39, 176, 0.08)'
             }}>
               {newMessage.photo_url && (
-                <div className="relative inline-block mb-2">
-                  <img 
-                    src={newMessage.photo_url} 
-                    alt="Preview" 
-                    className="w-16 h-16 rounded-lg object-cover" 
-                  />
+                <div className="relative inline-block mb-1">
+                  <img src={newMessage.photo_url} alt="Preview" className="w-12 h-12 rounded object-cover" />
                   <Button
                     size="icon"
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full"
-                    style={{ backgroundColor: '#EF4444', color: 'white', padding: 0 }}
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full p-0"
+                    style={{ backgroundColor: '#EF4444' }}
                     onClick={() => setNewMessage(prev => ({...prev, photo_url: ""}))}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-2.5 h-2.5 text-white" />
                   </Button>
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Input
                   value={newMessage.chapter}
                   onChange={(e) => setNewMessage(prev => ({...prev, chapter: e.target.value}))}
-                  placeholder="Ch..."
-                  className="w-16 h-8 text-xs rounded-lg px-2"
+                  placeholder="Ch"
+                  className="w-10 h-7 text-[10px] rounded px-1.5"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(156, 39, 176, 0.15)'
+                    border: '1px solid rgba(156, 39, 176, 0.1)'
                   }}
                 />
                 <Switch
                   id="spoiler"
                   checked={newMessage.is_spoiler}
                   onCheckedChange={(checked) => setNewMessage(prev => ({...prev, is_spoiler: checked}))}
-                  className="scale-75"
+                  className="scale-[0.6]"
                 />
                 <Input
                   value={newMessage.message}
                   onChange={(e) => setNewMessage(prev => ({...prev, message: e.target.value}))}
-                  placeholder={`Message J${selectedDay || 1}...`}
-                  className="flex-1 h-9 text-sm rounded-xl"
+                  placeholder={`J${selectedDay || 1}...`}
+                  className="flex-1 h-7 text-xs rounded-lg"
                   style={{ 
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid rgba(156, 39, 176, 0.2)',
-                    fontSize: '14px'
+                    border: '1px solid rgba(156, 39, 176, 0.15)',
+                    fontSize: '12px',
+                    padding: '0 8px'
                   }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && newMessage.message.trim()) {
@@ -669,14 +634,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     variant="ghost" 
                     size="icon"
                     disabled={uploadingPhoto}
-                    className="h-9 w-9 rounded-lg"
+                    className="h-7 w-7 rounded p-0"
                     asChild
                   >
                     <span>
                       {uploadingPhoto ? (
-                        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#9C27B0' }} />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#9C27B0' }} />
                       ) : (
-                        <Upload className="w-4 h-4" style={{ color: '#9C27B0' }} />
+                        <Upload className="w-3.5 h-3.5" style={{ color: '#9C27B0' }} />
                       )}
                     </span>
                   </Button>
@@ -686,12 +651,10 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                   onClick={() => sendMessageMutation.mutate(newMessage)}
                   disabled={!newMessage.message.trim() || sendMessageMutation.isPending}
                   size="icon"
-                  className="rounded-lg text-white h-9 w-9 flex-shrink-0"
-                  style={{ 
-                    backgroundColor: '#FF69B4'
-                  }}
+                  className="rounded text-white h-7 w-7 flex-shrink-0 p-0"
+                  style={{ backgroundColor: '#FF69B4' }}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
