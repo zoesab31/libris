@@ -32,6 +32,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStartDate, setEditedStartDate] = useState("");
+  const [activeTab, setActiveTab] = useState("discussion");
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -304,49 +305,78 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="border-b pb-4" style={{ borderColor: '#E6B3E8' }}>
-          <DialogTitle className="text-2xl" style={{ color: 'var(--deep-brown)' }}>
-            {reading.title}
-          </DialogTitle>
-          <p style={{ color: 'var(--warm-brown)' }}>
-            {book?.title} - {book?.author}
-          </p>
-          {user?.email === reading.created_by && (
-            <div className="mt-3">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Header compact */}
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b"
+             style={{ 
+               borderColor: 'rgba(156, 39, 176, 0.15)',
+               backgroundColor: 'rgba(255, 240, 246, 0.5)'
+             }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base md:text-xl font-bold truncate" style={{ color: '#2D3748' }}>
+                {book?.title}
+              </h2>
+              <p className="text-xs md:text-sm truncate" style={{ color: '#9CA3AF' }}>
+                {book?.author}
+              </p>
+            </div>
+            {user?.email === reading.created_by && (
               <Button
-                variant="destructive"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
-                  if (window.confirm("Êtes-vous sûre de vouloir supprimer cette lecture commune ? Tous les messages seront également supprimés.")) {
+                  if (window.confirm("Supprimer cette lecture commune ?")) {
                     deleteReadingMutation.mutate();
                   }
                 }}
                 disabled={deleteReadingMutation.isPending}
+                className="flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Supprimer la lecture
+                <Trash2 className="w-4 h-4" />
               </Button>
-            </div>
-          )}
-        </DialogHeader>
+            )}
+          </div>
+        </div>
 
-        <Tabs defaultValue="discussion" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="discussion" style={{ color: '#000000' }}>💬 Discussion</TabsTrigger>
-            <TabsTrigger value="program" style={{ color: '#000000' }}>📅 Programme</TabsTrigger>
-            <TabsTrigger value="participants" style={{ color: '#000000' }}>👥 Participants</TabsTrigger>
-            <TabsTrigger value="music" style={{ color: '#000000' }}>🎵 Ambiance</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent border-b px-2 md:px-4 py-1"
+                    style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
+            <TabsTrigger value="discussion" 
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'discussion' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'discussion' ? '2px solid #FF69B4' : 'none' }}>
+              💬
+              <span className="hidden md:inline ml-1">Discussion</span>
+            </TabsTrigger>
+            <TabsTrigger value="program"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'program' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'program' ? '2px solid #FF69B4' : 'none' }}>
+              📅
+              <span className="hidden md:inline ml-1">Programme</span>
+            </TabsTrigger>
+            <TabsTrigger value="participants"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'participants' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'participants' ? '2px solid #FF69B4' : 'none' }}>
+              👥
+              <span className="hidden md:inline ml-1">Participants</span>
+            </TabsTrigger>
+            <TabsTrigger value="music"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
+                         style={{ color: activeTab === 'music' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'music' ? '2px solid #FF69B4' : 'none' }}>
+              🎵
+              <span className="hidden md:inline ml-1">Ambiance</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="discussion" className="flex-1 flex flex-col overflow-hidden">
-            {/* Compact Day selector */}
+            {/* Ultra compact Day selector */}
             {numberOfDays > 0 && (
-              <div className="px-4 py-2 mb-2 flex items-center gap-3">
-                <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#9C27B0' }}>
-                  Jour {getCurrentDay()}/{numberOfDays}
+              <div className="px-3 md:px-4 py-2 flex items-center gap-2 border-b"
+                   style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
+                <span className="text-xs font-bold" style={{ color: '#FF69B4' }}>
+                  J{getCurrentDay()}/{numberOfDays}
                 </span>
-                <div className="flex gap-1 overflow-x-auto">
+                <div className="flex gap-1 overflow-x-auto flex-1">
                   {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => {
                     const status = getDayStatus(day);
                     return (
@@ -354,13 +384,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         key={day}
                         size="sm"
                         onClick={() => setSelectedDay(day)}
-                        className="h-7 min-w-[36px] px-2 text-xs font-semibold rounded-lg"
+                        className="h-6 min-w-[32px] px-1.5 text-xs rounded-lg flex-shrink-0"
                         style={{
                           backgroundColor: selectedDay === day ? '#FF69B4' : 
-                                          status === 'completed' ? 'rgba(152, 216, 200, 0.3)' : 
-                                          'rgba(243, 229, 245, 0.5)',
-                          color: selectedDay === day ? 'white' : '#6B7280',
-                          border: selectedDay === day ? '2px solid #FF1493' : '1px solid rgba(156, 39, 176, 0.2)'
+                                          status === 'completed' ? 'rgba(152, 216, 200, 0.2)' : 
+                                          'rgba(243, 229, 245, 0.3)',
+                          color: selectedDay === day ? 'white' : '#9CA3AF',
+                          border: selectedDay === day ? '1.5px solid #FF1493' : '1px solid rgba(156, 39, 176, 0.15)',
+                          fontWeight: selectedDay === day ? '700' : '500'
                         }}
                       >
                         {day}
@@ -372,7 +403,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             )}
 
             {/* Messages area - MAXIMIZED */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-2 space-y-5">
+            <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 space-y-4">
               {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
                 <div key={day}>
                   {/* Day separator - compact */}
@@ -567,122 +598,101 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               )}
             </div>
 
-            {/* Fixed message input */}
-            <div className="border-t p-4" style={{ 
-              background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(243, 229, 245, 0.3) 100%)',
-              borderColor: 'rgba(156, 39, 176, 0.15)',
-              backdropFilter: 'blur(12px)',
-              boxShadow: '0 -8px 24px rgba(156, 39, 176, 0.08)'
+            {/* Compact message input */}
+            <div className="border-t px-2 md:px-4 py-2" style={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderColor: 'rgba(156, 39, 176, 0.1)'
             }}>
-              <div className="space-y-3">
-                {newMessage.photo_url && (
-                  <div className="relative inline-block">
-                    <img 
-                      src={newMessage.photo_url} 
-                      alt="Preview" 
-                      className="w-24 h-24 rounded-2xl object-cover shadow-lg" 
-                    />
-                    <Button
-                      size="icon"
-                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full"
-                      style={{ backgroundColor: '#EF4444', color: 'white' }}
-                      onClick={() => setNewMessage({...newMessage, photo_url: ""})}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-
-                <div className="flex items-end gap-3">
-                  <div className="flex-1">
-                    <Textarea
-                      value={newMessage.message}
-                      onChange={(e) => setNewMessage(prev => ({...prev, message: e.target.value}))}
-                      placeholder={`Partage tes impressions du Jour ${selectedDay || 1}...`}
-                      rows={2}
-                      className="resize-none rounded-2xl"
-                      style={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid rgba(156, 39, 176, 0.2)',
-                        lineHeight: '1.7',
-                        fontSize: '16px',
-                        padding: '12px 14px'
-                      }}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && newMessage.message.trim()) {
-                          e.preventDefault();
-                          sendMessageMutation.mutate(newMessage);
-                        }
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        disabled={uploadingPhoto}
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="icon"
-                        disabled={uploadingPhoto}
-                        className="rounded-full w-11 h-11"
-                        style={{ borderColor: 'rgba(156, 39, 176, 0.2)' }}
-                        asChild
-                      >
-                        <span>
-                          {uploadingPhoto ? (
-                            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#9C27B0' }} />
-                          ) : (
-                            <Upload className="w-5 h-5" style={{ color: '#9C27B0' }} />
-                          )}
-                        </span>
-                      </Button>
-                    </label>
-
-                    <Button
-                      onClick={() => sendMessageMutation.mutate(newMessage)}
-                      disabled={!newMessage.message.trim() || sendMessageMutation.isPending}
-                      size="icon"
-                      className="rounded-full text-white w-11 h-11"
-                      style={{ 
-                        background: 'linear-gradient(135deg, #FF69B4, #9C27B0)',
-                        boxShadow: '0 4px 16px rgba(255, 105, 180, 0.3)'
-                      }}
-                    >
-                      <Send className="w-5 h-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs">
-                  <Input
-                    value={newMessage.chapter}
-                    onChange={(e) => setNewMessage({...newMessage, chapter: e.target.value})}
-                    placeholder="Chapitre..."
-                    className="w-28 h-8 text-xs rounded-xl"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                      border: '1px solid rgba(156, 39, 176, 0.2)'
-                    }}
+              {newMessage.photo_url && (
+                <div className="relative inline-block mb-2">
+                  <img 
+                    src={newMessage.photo_url} 
+                    alt="Preview" 
+                    className="w-16 h-16 rounded-lg object-cover" 
                   />
-                  <div className="flex items-center gap-1.5">
-                    <Switch
-                      id="spoiler"
-                      checked={newMessage.is_spoiler}
-                      onCheckedChange={(checked) => setNewMessage({...newMessage, is_spoiler: checked})}
-                    />
-                    <Label htmlFor="spoiler" className="text-xs cursor-pointer"
-                           style={{ color: '#9CA3AF' }}>
-                      Spoiler
-                    </Label>
-                  </div>
+                  <Button
+                    size="icon"
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full"
+                    style={{ backgroundColor: '#EF4444', color: 'white', padding: 0 }}
+                    onClick={() => setNewMessage(prev => ({...prev, photo_url: ""}))}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Input
+                  value={newMessage.chapter}
+                  onChange={(e) => setNewMessage(prev => ({...prev, chapter: e.target.value}))}
+                  placeholder="Ch..."
+                  className="w-16 h-8 text-xs rounded-lg px-2"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid rgba(156, 39, 176, 0.15)'
+                  }}
+                />
+                <Switch
+                  id="spoiler"
+                  checked={newMessage.is_spoiler}
+                  onCheckedChange={(checked) => setNewMessage(prev => ({...prev, is_spoiler: checked}))}
+                  className="scale-75"
+                />
+                <Input
+                  value={newMessage.message}
+                  onChange={(e) => setNewMessage(prev => ({...prev, message: e.target.value}))}
+                  placeholder={`Message J${selectedDay || 1}...`}
+                  className="flex-1 h-9 text-sm rounded-xl"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid rgba(156, 39, 176, 0.2)',
+                    fontSize: '14px'
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newMessage.message.trim()) {
+                      e.preventDefault();
+                      sendMessageMutation.mutate(newMessage);
+                    }
+                  }}
+                />
+                
+                <label className="cursor-pointer flex-shrink-0">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon"
+                    disabled={uploadingPhoto}
+                    className="h-9 w-9 rounded-lg"
+                    asChild
+                  >
+                    <span>
+                      {uploadingPhoto ? (
+                        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#9C27B0' }} />
+                      ) : (
+                        <Upload className="w-4 h-4" style={{ color: '#9C27B0' }} />
+                      )}
+                    </span>
+                  </Button>
+                </label>
+
+                <Button
+                  onClick={() => sendMessageMutation.mutate(newMessage)}
+                  disabled={!newMessage.message.trim() || sendMessageMutation.isPending}
+                  size="icon"
+                  className="rounded-lg text-white h-9 w-9 flex-shrink-0"
+                  style={{ 
+                    backgroundColor: '#FF69B4'
+                  }}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </TabsContent>
