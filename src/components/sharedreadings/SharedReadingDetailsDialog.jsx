@@ -340,100 +340,49 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           </TabsList>
 
           <TabsContent value="discussion" className="flex-1 flex flex-col overflow-hidden">
-            {/* Day selector with status colors */}
+            {/* Compact Day selector */}
             {numberOfDays > 0 && (
-              <div className="p-4 mb-4 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-sm font-bold" style={{ color: 'var(--dark-text)' }}>
-                    📅 Programme de lecture
-                  </Label>
-                  <span className="text-xs px-3 py-1 rounded-full font-bold text-white"
-                        style={{ backgroundColor: '#FF1493' }}>
-                    Jour {getCurrentDay()}/{numberOfDays}
-                  </span>
-                </div>
-                <div className="grid grid-cols-7 gap-2">
+              <div className="px-4 py-2 mb-2 flex items-center gap-3">
+                <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#9C27B0' }}>
+                  Jour {getCurrentDay()}/{numberOfDays}
+                </span>
+                <div className="flex gap-1 overflow-x-auto">
                   {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => {
                     const status = getDayStatus(day);
-                    const statusColors = {
-                      completed: { bg: '#98D8C8', text: 'white', border: '#4DB3A0' },
-                      current: { bg: '#FF1493', text: 'white', border: '#FF0080' },
-                      upcoming: { bg: 'white', text: '#999', border: '#E0E0E0' }
-                    };
-                    const colors = statusColors[status];
-                    
                     return (
                       <Button
                         key={day}
                         size="sm"
                         onClick={() => setSelectedDay(day)}
-                        className={`relative ${selectedDay === day ? 'ring-2' : ''}`}
+                        className="h-7 min-w-[36px] px-2 text-xs font-semibold rounded-lg"
                         style={{
-                          backgroundColor: colors.bg,
-                          color: colors.text,
-                          borderColor: colors.border,
-                          border: '2px solid',
-                          fontWeight: selectedDay === day ? 'bold' : 'normal',
-                          ringColor: '#FF69B4'
+                          backgroundColor: selectedDay === day ? '#FF69B4' : 
+                                          status === 'completed' ? 'rgba(152, 216, 200, 0.3)' : 
+                                          'rgba(243, 229, 245, 0.5)',
+                          color: selectedDay === day ? 'white' : '#6B7280',
+                          border: selectedDay === day ? '2px solid #FF1493' : '1px solid rgba(156, 39, 176, 0.2)'
                         }}
                       >
-                        {status === 'completed' && <span className="absolute -top-1 -right-1">✓</span>}
-                        J{day}
+                        {day}
                       </Button>
                     );
                   })}
                 </div>
-                {reading.chapters_per_day && (
-                  <p className="text-xs mt-2 text-center" style={{ color: 'var(--warm-pink)' }}>
-                    📖 {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} par jour
-                  </p>
-                )}
               </div>
             )}
 
-            {/* Participants avatars */}
-            <div className="flex items-center gap-2 px-4 mb-4">
-              <span className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
-                Tu lis avec :
-              </span>
-              <div className="flex -space-x-2">
-                {(reading.participants || []).filter(email => email !== user?.email).slice(0, 5).map((email, idx) => {
-                  const userInfo = getUserInfo(email);
-                  return (
-                    <div key={idx} 
-                         className="w-8 h-8 rounded-full border-2 border-white overflow-hidden"
-                         style={{ backgroundColor: '#FF69B4' }}
-                         title={userInfo.name}>
-                      {userInfo.picture ? (
-                        <img src={userInfo.picture} alt={userInfo.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
-                          {userInfo.name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {(reading.participants || []).length > 6 && (
-                <span className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                  +{(reading.participants || []).length - 6}
-                </span>
-              )}
-            </div>
-
-            {/* Messages area */}
-            <div className="flex-1 overflow-y-auto px-4 space-y-4 mb-4">
+            {/* Messages area - MAXIMIZED */}
+            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-2 space-y-5">
               {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
                 <div key={day}>
-                  {/* Day separator */}
-                  <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 h-px" style={{ backgroundColor: '#FFE1F0' }} />
-                    <span className="text-xs font-bold px-3 py-1 rounded-full"
-                          style={{ backgroundColor: '#FFE1F0', color: '#FF1493' }}>
-                      Jour {day}
+                  {/* Day separator - compact */}
+                  <div className="flex items-center gap-2 my-3">
+                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(156, 39, 176, 0.15)' }} />
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: 'rgba(156, 39, 176, 0.1)', color: '#9C27B0' }}>
+                      J{day}
                     </span>
-                    <div className="flex-1 h-px" style={{ backgroundColor: '#FFE1F0' }} />
+                    <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(156, 39, 176, 0.15)' }} />
                   </div>
 
                   {/* Messages for this day */}
@@ -450,43 +399,43 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                     return (
                       <div
                         key={msg.id}
-                        className={`flex gap-3 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                        className={`flex gap-3 md:gap-4 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}
                       >
-                        {/* Avatar */}
+                        {/* Avatar - compact on mobile */}
                         {!isMyMessage && (
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden"
-                               style={{ backgroundColor: '#FF69B4' }}>
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0 overflow-hidden"
+                               style={{ backgroundColor: '#9C27B0' }}>
                             {userInfo.picture ? (
                               <img src={userInfo.picture} alt={userInfo.name} className="w-full h-full object-cover" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                              <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
                                 {userInfo.name[0]?.toUpperCase()}
                               </div>
                             )}
                           </div>
                         )}
 
-                        {/* Message bubble */}
-                        <div className={`max-w-[75%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
-                         {!isMyMessage && (
-                           <span className="text-xs font-bold mb-1.5 px-3" style={{ color: '#9C27B0' }}>
-                             {userInfo.name}
-                           </span>
-                         )}
+                        {/* Message bubble - MAXIMIZED */}
+                        <div className={`max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+                          {!isMyMessage && (
+                            <span className="text-xs font-bold mb-1 px-2" style={{ color: '#9C27B0' }}>
+                              {userInfo.name}
+                            </span>
+                          )}
 
-                         <div
-                           className="rounded-3xl px-5 py-4"
-                           style={{
-                             backgroundColor: isMyMessage ? 'rgba(255, 105, 180, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                             color: isMyMessage ? 'white' : '#2D3748',
-                             borderRadius: isMyMessage ? '24px 24px 6px 24px' : '24px 24px 24px 6px',
-                             boxShadow: isMyMessage 
-                               ? '0 8px 24px rgba(255, 20, 147, 0.25)' 
-                               : '0 8px 24px rgba(156, 39, 176, 0.15)',
-                             backdropFilter: 'blur(8px)',
-                             border: isMyMessage ? 'none' : '1px solid rgba(156, 39, 176, 0.1)'
-                           }}
-                         >
+                          <div
+                            className="rounded-3xl px-5 md:px-6 py-4 md:py-5"
+                            style={{
+                              backgroundColor: isMyMessage ? 'rgba(255, 105, 180, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                              color: isMyMessage ? 'white' : '#2D3748',
+                              borderRadius: isMyMessage ? '24px 24px 6px 24px' : '24px 24px 24px 6px',
+                              boxShadow: isMyMessage 
+                                ? '0 8px 24px rgba(255, 20, 147, 0.25)' 
+                                : '0 8px 24px rgba(156, 39, 176, 0.15)',
+                              backdropFilter: 'blur(8px)',
+                              border: isMyMessage ? 'none' : '1px solid rgba(156, 39, 176, 0.1)'
+                            }}
+                          >
                             {msg.photo_url && (
                               <div className="mb-2 rounded-lg overflow-hidden cursor-pointer"
                                    onClick={() => window.open(msg.photo_url, '_blank')}>
@@ -527,16 +476,17 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                                 </Button>
                               </div>
                             ) : (
-                              <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap"
+                              <p className="text-base md:text-lg leading-relaxed whitespace-pre-wrap"
                                  style={{ 
-                                   lineHeight: '1.7',
-                                   letterSpacing: '0.01em'
+                                   lineHeight: '1.8',
+                                   letterSpacing: '0.015em',
+                                   fontSize: 'clamp(15px, 2.5vw, 17px)'
                                  }}>
                                 {msg.message}
                               </p>
                             )}
 
-                            <p className="text-xs mt-3 opacity-60 font-medium">
+                            <p className="text-xs mt-2 opacity-50 font-medium">
                               {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
                             </p>
                           </div>
@@ -608,8 +558,11 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               ))}
 
               {messages.length === 0 && (
-                <div className="text-center py-12" style={{ color: 'var(--warm-brown)' }}>
-                  💬 Aucun message encore. Lancez la discussion !
+                <div className="text-center py-20">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#9C27B0' }} />
+                  <p className="text-base italic" style={{ color: '#9CA3AF' }}>
+                    Aucun message encore. Lancez la discussion !
+                  </p>
                 </div>
               )}
             </div>
@@ -646,12 +599,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                       value={newMessage.message}
                       onChange={(e) => setNewMessage({...newMessage, message: e.target.value})}
                       placeholder={`Partage tes impressions du Jour ${selectedDay || 1}...`}
-                      rows={2}
-                      className="resize-none rounded-2xl text-base"
+                      rows={3}
+                      className="resize-none rounded-2xl"
                       style={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         border: '1px solid rgba(156, 39, 176, 0.2)',
-                        lineHeight: '1.6'
+                        lineHeight: '1.7',
+                        fontSize: '16px',
+                        padding: '14px 16px'
                       }}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && newMessage.message.trim()) {
@@ -705,33 +660,28 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Input
-                      value={newMessage.chapter}
-                      onChange={(e) => setNewMessage({...newMessage, chapter: e.target.value})}
-                      placeholder="Ex: Chapitre 3"
-                      className="w-36 h-9 text-sm rounded-xl"
-                      style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        border: '1px solid rgba(156, 39, 176, 0.2)'
-                      }}
+                <div className="flex items-center gap-3 text-xs">
+                  <Input
+                    value={newMessage.chapter}
+                    onChange={(e) => setNewMessage({...newMessage, chapter: e.target.value})}
+                    placeholder="Chapitre..."
+                    className="w-28 h-8 text-xs rounded-xl"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(156, 39, 176, 0.2)'
+                    }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Switch
+                      id="spoiler"
+                      checked={newMessage.is_spoiler}
+                      onCheckedChange={(checked) => setNewMessage({...newMessage, is_spoiler: checked})}
                     />
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="spoiler"
-                        checked={newMessage.is_spoiler}
-                        onCheckedChange={(checked) => setNewMessage({...newMessage, is_spoiler: checked})}
-                      />
-                      <Label htmlFor="spoiler" className="text-xs cursor-pointer font-medium"
-                             style={{ color: '#6B7280' }}>
-                        ⚠️ Spoiler
-                      </Label>
-                    </div>
+                    <Label htmlFor="spoiler" className="text-xs cursor-pointer"
+                           style={{ color: '#9CA3AF' }}>
+                      Spoiler
+                    </Label>
                   </div>
-                  <span className="text-xs italic" style={{ color: '#9CA3AF' }}>
-                    ↵ Entrée pour envoyer
-                  </span>
                 </div>
               </div>
             </div>
