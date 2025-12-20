@@ -148,7 +148,7 @@ export default function Dashboard() {
                   style={{ color: '#FF1493' }}>
                 Bonjour {displayName} ✨
               </h1>
-              <p className="text-base md:text-xl" style={{ color: '#9CA3AF' }}>
+              <p className="text-base md:text-xl" style={{ color: '#2c2c2cff' }}>
                 Ton univers littéraire t'attend
               </p>
             </div>
@@ -171,7 +171,7 @@ export default function Dashboard() {
                 <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#FF1493' }}>
                   {booksReadThisYear}
                 </p>
-                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Livres lus en {selectedYear}
                 </p>
               </div>
@@ -192,7 +192,7 @@ export default function Dashboard() {
                 <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#E91E63' }}>
                   {totalPagesThisYear.toLocaleString()}
                 </p>
-                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
+                <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Pages dévorées
                 </p>
               </div>
@@ -213,8 +213,8 @@ export default function Dashboard() {
                 <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#9C27B0' }}>
                   {myFriends.length}
                 </p>
-                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
-                  Amies littéraires
+                <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
+                  Lectures communes
                 </p>
               </div>
 
@@ -234,8 +234,8 @@ export default function Dashboard() {
                 <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#FF69B4' }}>
                   {toReadCount}
                 </p>
-                <p className="text-sm font-medium" style={{ color: '#9CA3AF' }}>
-                  Dans la pile
+                <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
+                  Livres dans ta PAL
                 </p>
               </div>
             </div>
