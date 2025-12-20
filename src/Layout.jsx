@@ -1,6 +1,9 @@
+// Layout component with chat functionality
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { 
   BookOpen, 
   Library, 
@@ -17,8 +20,6 @@ import {
   MessageCircle, 
   TrendingUp 
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
