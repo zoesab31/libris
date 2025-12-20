@@ -306,52 +306,75 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        {/* Header ultra compact */}
-        <div className="px-3 md:px-4 py-2 border-b"
+        {/* Header compact */}
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b"
              style={{ 
-               borderColor: 'rgba(156, 39, 176, 0.1)'
+               borderColor: 'rgba(156, 39, 176, 0.15)',
+               backgroundColor: 'rgba(255, 240, 246, 0.5)'
              }}>
-          <h2 className="text-sm md:text-base font-bold truncate" style={{ color: '#2D3748' }}>
-            {book?.title} - {book?.author}
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base md:text-xl font-bold truncate" style={{ color: '#2D3748' }}>
+                {book?.title}
+              </h2>
+              <p className="text-xs md:text-sm truncate" style={{ color: '#9CA3AF' }}>
+                {book?.author}
+              </p>
+            </div>
+            {user?.email === reading.created_by && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm("Supprimer cette lecture commune ?")) {
+                    deleteReadingMutation.mutate();
+                  }
+                }}
+                disabled={deleteReadingMutation.isPending}
+                className="flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 bg-transparent border-b px-1 md:px-2 py-0.5"
+          <TabsList className="grid w-full grid-cols-4 bg-transparent border-b px-2 md:px-4 py-1"
                     style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
             <TabsTrigger value="discussion" 
-                         className="text-xs md:text-sm py-1.5 data-[state=active]:bg-transparent rounded-none"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
                          style={{ color: activeTab === 'discussion' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'discussion' ? '2px solid #FF69B4' : 'none' }}>
               💬
-              <span className="hidden md:inline ml-1 text-xs">Discussion</span>
+              <span className="hidden md:inline ml-1">Discussion</span>
             </TabsTrigger>
             <TabsTrigger value="program"
-                         className="text-xs md:text-sm py-1.5 data-[state=active]:bg-transparent rounded-none"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
                          style={{ color: activeTab === 'program' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'program' ? '2px solid #FF69B4' : 'none' }}>
               📅
-              <span className="hidden md:inline ml-1 text-xs">Programme</span>
+              <span className="hidden md:inline ml-1">Programme</span>
             </TabsTrigger>
             <TabsTrigger value="participants"
-                         className="text-xs md:text-sm py-1.5 data-[state=active]:bg-transparent rounded-none"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
                          style={{ color: activeTab === 'participants' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'participants' ? '2px solid #FF69B4' : 'none' }}>
               👥
-              <span className="hidden md:inline ml-1 text-xs">Participants</span>
+              <span className="hidden md:inline ml-1">Participants</span>
             </TabsTrigger>
             <TabsTrigger value="music"
-                         className="text-xs md:text-sm py-1.5 data-[state=active]:bg-transparent rounded-none"
+                         className="text-xs md:text-sm py-2 data-[state=active]:bg-transparent rounded-none"
                          style={{ color: activeTab === 'music' ? '#FF69B4' : '#9CA3AF', borderBottom: activeTab === 'music' ? '2px solid #FF69B4' : 'none' }}>
               🎵
-              <span className="hidden md:inline ml-1 text-xs">Ambiance</span>
+              <span className="hidden md:inline ml-1">Ambiance</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="discussion" className="flex-1 flex flex-col overflow-hidden">
-            {/* Mini Day selector */}
+            {/* Ultra compact Day selector */}
             {numberOfDays > 0 && (
-              <div className="px-2 md:px-3 py-1 flex items-center gap-1.5"
-                   style={{ backgroundColor: 'rgba(255, 240, 246, 0.3)' }}>
-                <span className="text-xs font-bold flex-shrink-0" style={{ color: '#FF69B4' }}>
-                  J{getCurrentDay()}
+              <div className="px-3 md:px-4 py-2 flex items-center gap-2 border-b"
+                   style={{ borderColor: 'rgba(156, 39, 176, 0.1)' }}>
+                <span className="text-xs font-bold" style={{ color: '#FF69B4' }}>
+                  J{getCurrentDay()}/{numberOfDays}
                 </span>
                 <div className="flex gap-1 overflow-x-auto flex-1">
                   {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => {
@@ -361,15 +384,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         key={day}
                         size="sm"
                         onClick={() => setSelectedDay(day)}
-                        className="h-5 min-w-[28px] px-1 text-xs rounded flex-shrink-0"
+                        className="h-6 min-w-[32px] px-1.5 text-xs rounded-lg flex-shrink-0"
                         style={{
                           backgroundColor: selectedDay === day ? '#FF69B4' : 
                                           status === 'completed' ? 'rgba(152, 216, 200, 0.2)' : 
                                           'rgba(243, 229, 245, 0.3)',
                           color: selectedDay === day ? 'white' : '#9CA3AF',
-                          border: 'none',
-                          fontWeight: selectedDay === day ? '700' : '500',
-                          fontSize: '11px'
+                          border: selectedDay === day ? '1.5px solid #FF1493' : '1px solid rgba(156, 39, 176, 0.15)',
+                          fontWeight: selectedDay === day ? '700' : '500'
                         }}
                       >
                         {day}
