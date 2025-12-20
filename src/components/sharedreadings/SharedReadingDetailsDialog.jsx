@@ -55,8 +55,9 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   };
 
   useEffect(() => {
-    if (numberOfDays > 0 && !selectedDay) {
-      setSelectedDay(0); // Start with recap page
+    if (numberOfDays > 0 && selectedDay === null) {
+      const currentDay = getCurrentDay();
+      setSelectedDay(currentDay);
     }
   }, [numberOfDays]);
 
