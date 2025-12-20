@@ -59,6 +59,19 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     }
   }, [numberOfDays]);
 
+  // Auto-select day based on chapter number
+  useEffect(() => {
+    if (newChapter && reading.chapters_per_day) {
+      const chapterNum = parseInt(newChapter);
+      if (!isNaN(chapterNum) && chapterNum > 0) {
+        const calculatedDay = Math.ceil(chapterNum / reading.chapters_per_day);
+        if (calculatedDay > 0 && calculatedDay <= numberOfDays) {
+          setSelectedDay(calculatedDay);
+        }
+      }
+    }
+  }, [newChapter, reading.chapters_per_day, numberOfDays]);
+
   const sendMessageMutation = useMutation({
     mutationFn: (data) => base44.entities.SharedReadingMessage.create({
       ...data,
