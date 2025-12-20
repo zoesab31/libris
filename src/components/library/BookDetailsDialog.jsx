@@ -1026,27 +1026,63 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 rounded-3xl">
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 rounded-3xl"
+                       style={{ backgroundColor: '#FEFAFC' }}>
           <style>{`
-            .focus-glow:focus {
-              box-shadow: 0 0 0 4px rgba(255, 20, 147, 0.3);
-              border-color: #FF1493;
+            @keyframes float-slow {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-6px); }
             }
-            @keyframes slide-in {
-              from { opacity: 0; transform: translateY(10px); }
+            @keyframes breathe {
+              0%, 100% { opacity: 0.6; transform: scale(1); }
+              50% { opacity: 0.8; transform: scale(1.02); }
+            }
+            @keyframes fade-cascade {
+              from { opacity: 0; transform: translateY(15px); }
               to { opacity: 1; transform: translateY(0); }
             }
-            .animate-slide-in {
-              animation: slide-in 0.3s ease-out;
+            .float-cover {
+              animation: float-slow 6s ease-in-out infinite;
+            }
+            .breathe-badge {
+              animation: breathe 3s ease-in-out infinite;
+            }
+            .cascade-item {
+              animation: fade-cascade 450ms ease-out forwards;
+              opacity: 0;
+            }
+            .cascade-item:nth-child(1) { animation-delay: 0ms; }
+            .cascade-item:nth-child(2) { animation-delay: 120ms; }
+            .cascade-item:nth-child(3) { animation-delay: 240ms; }
+            .cascade-item:nth-child(4) { animation-delay: 360ms; }
+            .card-hover {
+              transition: all 280ms cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .card-hover:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 12px 32px rgba(255, 182, 193, 0.25);
+            }
+            .glow-input:focus {
+              box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.3);
+              border-color: #FFB6C1;
+              background-color: rgba(255, 255, 255, 0.95);
+            }
+            .prose-dreamy {
+              line-height: 1.8;
+              letter-spacing: 0.015em;
             }
           `}</style>
 
-          {/* HERO HEADER avec gradient */}
+          {/* HERO HEADER onirique */}
           <div className="relative overflow-hidden" 
-               style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl" 
-                   style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+               style={{ 
+                 background: 'linear-gradient(160deg, #FFE4F0 0%, #F3E5F5 40%, #E6D5F5 80%, #D5C5F0 100%)'
+               }}>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-10 left-20 w-72 h-72 rounded-full blur-3xl breathe-badge" 
+                   style={{ background: 'radial-gradient(circle, #FFB6D9, transparent)' }} />
+              <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full blur-3xl breathe-badge" 
+                   style={{ background: 'radial-gradient(circle, #E1BEE7, transparent)', animationDelay: '1.5s' }} />
             </div>
             
             <div className="relative p-6 md:p-8">
@@ -1129,28 +1165,39 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
                 ) : (
                   <>
-                    <div className="absolute -top-2 -left-2 z-10 w-12 h-12 rounded-2xl shadow-2xl text-3xl bg-white flex items-center justify-center ring-4 ring-white">
+                    <div className="absolute -top-2 -left-2 z-10 w-12 h-12 rounded-2xl text-3xl flex items-center justify-center breathe-badge"
+                         style={{ 
+                           backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                           backdropFilter: 'blur(8px)',
+                           boxShadow: '0 8px 24px rgba(255, 182, 193, 0.4)'
+                         }}>
                       {LANGUAGE_FLAGS[editedData.reading_language || "Français"]}
                     </div>
                     <div className="relative group w-40 md:w-48">
-                      <div className="w-40 h-60 md:w-48 md:h-72 rounded-3xl overflow-hidden shadow-2xl transform transition-all duration-300 group-hover:scale-105 ring-4 ring-white"
-                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
+                      <div className="absolute -inset-1 rounded-3xl opacity-60 blur-xl"
+                           style={{ background: 'radial-gradient(circle, rgba(255, 182, 193, 0.6), transparent)' }} />
+                      <div className="relative w-40 h-60 md:w-48 md:h-72 rounded-3xl overflow-hidden float-cover"
+                           style={{ 
+                             backgroundColor: 'rgba(255, 240, 246, 0.3)',
+                             boxShadow: '0 16px 48px rgba(255, 182, 193, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.5)',
+                             backdropFilter: 'blur(2px)'
+                           }}>
                         {book?.cover_url ? (
                           <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-12 h-12 text-white" />
+                            <BookOpen className="w-12 h-12" style={{ color: '#FFB6C1' }} />
                           </div>
                         )}
                       </div>
                       <button
                         onClick={() => setEditingCover(true)}
-                        className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100
-                                  transition-all flex items-center justify-center rounded-3xl"
+                        className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-0 group-hover:opacity-100
+                                  transition-all duration-300 flex items-center justify-center rounded-3xl"
                       >
-                        <div className="text-center">
-                          <Edit className="w-10 h-10 text-white mb-2 mx-auto" />
-                          <p className="text-white font-bold text-sm">Modifier</p>
+                        <div className="text-center transform translate-y-8 group-hover:translate-y-0 transition-transform duration-300">
+                          <Edit className="w-8 h-8 text-white mb-2 mx-auto opacity-90" />
+                          <p className="text-white font-semibold text-xs">Modifier</p>
                         </div>
                       </button>
                     </div>
@@ -1161,7 +1208,11 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               {/* Infos principales */}
               <div className="flex-1 space-y-4 text-center md:text-left">
                 <div>
-                  <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg leading-tight">
+                  <h1 className="text-3xl md:text-5xl font-bold mb-3 leading-tight"
+                      style={{ 
+                        color: '#2D3748',
+                        textShadow: '0 2px 12px rgba(255, 182, 193, 0.3)'
+                      }}>
                     {book.title}
                   </h1>
 
@@ -1192,16 +1243,26 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   ) : (
                     <button
                       onClick={startEditingAuthor}
-                      className="text-lg md:text-2xl flex items-center gap-2 hover:underline transition-all text-white text-opacity-90 mx-auto md:mx-0"
+                      className="text-lg md:text-2xl flex items-center gap-2 hover:opacity-70 transition-all mx-auto md:mx-0"
+                      style={{ color: '#9CA3AF' }}
                     >
                       par {book.author}
-                      <Edit className="w-4 h-4 opacity-70 hover:opacity-100" />
+                      <Edit className="w-4 h-4 opacity-50 hover:opacity-100" />
                     </button>
                   )}
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
-                  <div className={`px-5 py-2.5 rounded-2xl font-bold text-base shadow-xl ${statusColors[editedData.status]}`}>
+                  <div className="px-5 py-2.5 rounded-2xl font-bold text-base breathe-badge"
+                       style={{
+                         backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                         backdropFilter: 'blur(8px)',
+                         color: editedData.status === "Lu" ? '#10B981' :
+                                editedData.status === "En cours" ? '#FF69B4' :
+                                editedData.status === "À lire" ? '#9C27B0' :
+                                editedData.status === "Abandonné" ? '#EF4444' : '#EC4899',
+                         boxShadow: '0 4px 16px rgba(255, 182, 193, 0.3)'
+                       }}>
                     {editedData.status}
                   </div>
 
@@ -1209,7 +1270,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     value={editedData.reading_language || "Français"}
                     onValueChange={(value) => setEditedData({...editedData, reading_language: value})}
                   >
-                    <SelectTrigger className="w-52 bg-white rounded-2xl shadow-xl font-bold">
+                    <SelectTrigger className="w-52 rounded-2xl font-semibold"
+                                   style={{
+                                     backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                     backdropFilter: 'blur(8px)',
+                                     boxShadow: '0 4px 16px rgba(255, 182, 193, 0.3)'
+                                   }}>
                       <SelectValue>
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4" />
@@ -1231,14 +1297,19 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold mb-2 block text-white text-opacity-90">
+                  <Label className="text-sm font-semibold mb-2 block" style={{ color: '#4B5563' }}>
                     Changer le statut
                   </Label>
                   <Select
                     value={editedData.status}
                     onValueChange={(value) => setEditedData({...editedData, status: value})}
                   >
-                    <SelectTrigger className="bg-white rounded-2xl shadow-xl font-bold">
+                    <SelectTrigger className="rounded-2xl font-semibold"
+                                   style={{
+                                     backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                     backdropFilter: 'blur(4px)',
+                                     boxShadow: '0 2px 12px rgba(255, 182, 193, 0.2)'
+                                   }}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1292,22 +1363,29 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
             <TabsContent value="myinfo">
               {/* CORPS PRINCIPAL */}
-              <div className="p-4 md:p-8 space-y-4 md:space-y-6 animate-slide-in">
+              <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-                  {/* Card: Note et dates */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Star className="w-5 h-5" style={{ color: '#FFD700' }} />
-                      Note et dates
-                    </h3>
+                  {/* Card: Ton ressenti */}
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                         backdropFilter: 'blur(12px)',
+                         boxShadow: '0 8px 32px rgba(255, 182, 193, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                       }}>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                           style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)' }}>
+                        <Star className="w-5 h-5" style={{ color: '#FFD700' }} />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                        Ce que je ressens
+                      </h3>
+                    </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       <div>
-                        <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                          <Star className="w-4 h-4" />
-                          Note /5
+                        <Label className="text-sm font-medium mb-3 block" style={{ color: '#6B7280' }}>
+                          Ma note personnelle
                         </Label>
                         <Input
                           type="number"
@@ -1316,69 +1394,57 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                           step="0.5"
                           value={editedData.rating || ""}
                           onChange={(e) => setEditedData({...editedData, rating: e.target.value})}
-                          placeholder="4.5"
-                          className="focus-glow"
+                          placeholder="⭐ Entre 0 et 5"
+                          className="glow-input rounded-2xl text-base"
+                          style={{
+                            backgroundColor: 'rgba(255, 249, 230, 0.4)',
+                            border: '1px solid rgba(255, 215, 0, 0.2)'
+                          }}
                         />
                       </div>
 
-                      {/* Current Page - Only show when status is "En cours" */}
+                      {/* Progression - Only for "En cours" */}
                       {editedData.status === "En cours" && book?.page_count && (
-                        <>
-                          {/* Total Pages - Editable */}
-                          <div>
-                            <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                              <BookOpen className="w-4 h-4" />
-                              Nombre de pages total
-                            </Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={book.page_count || ""}
-                              onChange={(e) => {
-                                const newPageCount = parseInt(e.target.value);
-                                if (!isNaN(newPageCount) && newPageCount > 0) {
-                                  updateBookMutation.mutate({ page_count: newPageCount });
-                                }
-                              }}
-                              placeholder="Ex: 329"
-                              className="focus-glow"
-                            />
-                            <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
-                              💡 Modifiez si le nombre réel diffère
-                            </p>
-                          </div>
-
-                          {/* Current Page */}
-                          <div>
-                            <Label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                              <BookOpen className="w-4 h-4" />
-                              Page actuelle (sur {book.page_count})
-                            </Label>
+                        <div className="p-5 rounded-2xl"
+                             style={{
+                               backgroundColor: 'rgba(255, 240, 246, 0.4)',
+                               border: '1px solid rgba(255, 182, 193, 0.2)'
+                             }}>
+                          <Label className="text-sm font-medium mb-3 block" style={{ color: '#6B7280' }}>
+                            Où en es-tu dans cette aventure ?
+                          </Label>
+                          <div className="space-y-3">
                             <Input
                               type="number"
                               min="0"
                               max={book.page_count}
                               value={editedData.current_page || ""}
                               onChange={(e) => setEditedData({...editedData, current_page: e.target.value})}
-                              placeholder={`0 - ${book.page_count}`}
-                              className="focus-glow"
+                              placeholder={`Page actuelle (sur ${book.page_count})`}
+                              className="glow-input rounded-2xl text-base"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                border: '1px solid rgba(255, 182, 193, 0.3)'
+                              }}
                             />
                             {editedData.current_page && (
-                              <div className="mt-2">
-                                <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                                  <div className="h-full rounded-full transition-all"
+                              <div>
+                                <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>
+                                  Tu es à {Math.round((editedData.current_page / book.page_count) * 100)}% de cette aventure
+                                </p>
+                                <div className="relative h-2.5 rounded-full overflow-hidden"
+                                     style={{ backgroundColor: 'rgba(255, 240, 246, 0.6)' }}>
+                                  <div className="h-full rounded-full"
                                        style={{
                                          width: `${Math.min((editedData.current_page / book.page_count) * 100, 100)}%`,
-                                         background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                         background: 'linear-gradient(90deg, #FFB6D9 0%, #E1BEE7 50%, #D5C5F0 100%)',
+                                         transition: 'width 400ms cubic-bezier(0.4, 0, 0.2, 1)'
                                        }} />
                                 </div>
-                                <p className="text-xs mt-1 font-bold text-center" style={{ color: 'var(--deep-pink)' }}>
-                                  {Math.round((editedData.current_page / book.page_count) * 100)}% complété
-                                </p>
                               </div>
                             )}
                           </div>
-                        </>
+                        </div>
                       )}
 
                       {customShelves.length > 0 && (
@@ -1416,86 +1482,115 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">
-                            <Calendar className="w-4 h-4 inline mr-1" />
-                            Début
+                          <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                            Début de lecture
                           </Label>
                           <Input
                             type="date"
                             value={editedData.start_date || ""}
                             onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                            className="focus-glow"
+                            className="glow-input rounded-2xl text-sm"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                              border: '1px solid rgba(255, 182, 193, 0.25)'
+                            }}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 block">
-                            <Calendar className="w-4 h-4 inline mr-1" />
-                            Fin
+                          <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                            Fin de lecture
                           </Label>
                           <Input
                             type="date"
                             value={editedData.end_date || ""}
                             onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                            className="focus-glow"
+                            className="glow-input rounded-2xl text-sm"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                              border: '1px solid rgba(255, 182, 193, 0.25)'
+                            }}
                           />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card: Personnage & Saga */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Heart className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Personnage & Saga
-                    </h3>
+                  {/* Card: Univers du livre */}
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                         backdropFilter: 'blur(12px)',
+                         boxShadow: '0 8px 32px rgba(255, 182, 193, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                       }}>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                           style={{ backgroundColor: 'rgba(255, 105, 180, 0.12)' }}>
+                        <Heart className="w-5 h-5" style={{ color: '#FF69B4' }} />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                        Ton attachement
+                      </h3>
+                    </div>
 
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-bold mb-2 block" style={{ color: '#666' }}>
-                          Personnage préféré
+                        <Label className="text-sm font-medium mb-2 block" style={{ color: '#6B7280' }}>
+                          Ton personnage favori
                         </Label>
                         <Input
                           value={editedData.favorite_character || ""}
                           onChange={(e) => setEditedData({...editedData, favorite_character: e.target.value})}
-                          placeholder="Votre book boyfriend/girlfriend..."
-                          className="focus-glow rounded-2xl text-base"
+                          placeholder="Celui ou celle qui t'a marquée..."
+                          className="glow-input rounded-2xl text-base"
+                          style={{
+                            backgroundColor: 'rgba(255, 240, 246, 0.6)',
+                            border: '1px solid rgba(255, 182, 193, 0.25)'
+                          }}
                         />
                       </div>
 
                       <div>
-                        <Label className="text-sm font-bold mb-2 block" style={{ color: '#666' }}>
-                          Saga associée
+                        <Label className="text-sm font-medium mb-2 block" style={{ color: '#6B7280' }}>
+                          Saga littéraire
                         </Label>
                         {currentSeries ? (
-                          <div className="space-y-3">
-                            <div className="p-4 rounded-xl" style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Layers className="w-5 h-5" />
-                                <span className="font-bold">{currentSeries.series_name}</span>
+                          <div className="space-y-2">
+                            <div className="p-4 rounded-2xl"
+                                 style={{ 
+                                   backgroundColor: 'rgba(230, 179, 232, 0.2)',
+                                   border: '1px solid rgba(156, 39, 176, 0.2)'
+                                 }}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Layers className="w-4 h-4" style={{ color: '#9C27B0' }} />
+                                <span className="font-bold" style={{ color: '#2D3748' }}>
+                                  {currentSeries.series_name}
+                                </span>
                               </div>
-                              <p className="text-sm opacity-90">
-                                {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} livre{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
+                              <p className="text-xs" style={{ color: '#9CA3AF' }}>
+                                {((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0))} tome{((currentSeries.books_read?.length || 0) + (currentSeries.books_in_pal?.length || 0) + (currentSeries.books_wishlist?.length || 0)) > 1 ? 's' : ''}
                               </p>
                             </div>
                             <Button
                               onClick={() => setShowSeriesDialog(true)}
                               variant="outline"
-                              className="w-full rounded-2xl"
+                              className="w-full rounded-2xl text-sm"
+                              style={{ borderColor: 'rgba(156, 39, 176, 0.3)' }}
                             >
-                              Changer de saga
+                              Changer
                             </Button>
                           </div>
                         ) : (
                           <Button
                             onClick={() => setShowSeriesDialog(true)}
-                            className="w-full text-white rounded-2xl"
-                            style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}
+                            className="w-full rounded-2xl"
+                            style={{ 
+                              backgroundColor: 'rgba(230, 179, 232, 0.3)',
+                              color: '#9C27B0',
+                              border: '1px solid rgba(156, 39, 176, 0.2)'
+                            }}
                           >
                             <Layers className="w-4 h-4 mr-2" />
-                            Ajouter à une saga
+                            Associer à une saga
                           </Button>
                         )}
                       </div>
@@ -1526,41 +1621,68 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     </div>
                   </div>
 
-                  {/* Card: Mon avis */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      💭 Mon avis
-                    </h3>
+                  {/* Card: Ma pensée intime */}
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                         backdropFilter: 'blur(12px)',
+                         boxShadow: '0 8px 32px rgba(225, 190, 231, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+                       }}>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                           style={{ backgroundColor: 'rgba(225, 190, 231, 0.2)' }}>
+                        <MessageSquare className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                        Ce que ce livre me fait ressentir
+                      </h3>
+                    </div>
                     <Textarea
                       value={editedData.review || ""}
                       onChange={(e) => setEditedData({...editedData, review: e.target.value})}
-                      placeholder="Qu'avez-vous pensé de ce livre ? Vos impressions, vos coups de cœur, vos déceptions..."
-                      rows={6}
-                      className="focus-glow resize-none rounded-2xl text-base"
+                      placeholder="Tes émotions, tes pensées, ce que cette histoire t'a laissé... Laisse couler tes mots."
+                      rows={7}
+                      className="glow-input resize-none rounded-2xl prose-dreamy"
+                      style={{
+                        backgroundColor: 'rgba(243, 229, 245, 0.3)',
+                        border: '1px solid rgba(225, 190, 231, 0.3)',
+                        fontSize: '15px',
+                        padding: '16px'
+                      }}
                     />
                   </div>
 
-                  {/* Music Section - Updated for series sync */}
-                  <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                    <div className="h-1 rounded-full mb-4" 
-                         style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                    <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                      <Music className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      Playlist ({editedData.music_playlist.length})
-                      {currentSeries && (
-                        <span className="text-xs px-2 py-1 rounded-full ml-auto"
-                              style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
-                          🔗 Saga : {currentSeries.series_name}
+                  {/* Music Section - Ambiance sonore */}
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.5) 100%)',
+                         backdropFilter: 'blur(12px)',
+                         boxShadow: '0 8px 32px rgba(230, 179, 232, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                       }}>
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                           style={{ backgroundColor: 'rgba(230, 179, 232, 0.25)' }}>
+                        <Music className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold flex-1" style={{ color: '#2D3748' }}>
+                        Ton ambiance sonore
+                      </h3>
+                      {editedData.music_playlist.length > 0 && (
+                        <span className="text-xs px-3 py-1 rounded-full font-semibold"
+                              style={{ 
+                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                color: '#9C27B0'
+                              }}>
+                          {editedData.music_playlist.length}
                         </span>
                       )}
-                    </h3>
+                    </div>
 
                     {currentSeries && (
-                      <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: '#FFF0F6' }}>
-                        <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
-                          💡 Cette playlist est partagée avec tous les tomes de la saga "{currentSeries.series_name}"
+                      <div className="mb-4 p-3 rounded-2xl" 
+                           style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
+                        <p className="text-xs italic" style={{ color: '#9C27B0' }}>
+                          ✨ Partagée avec toute la saga "{currentSeries.series_name}"
                         </p>
                       </div>
                     )}
@@ -1568,32 +1690,48 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     <div className="space-y-3">
                       {/* Add Music Form */}
                       {isAddingMusic && (
-                        <div className="p-4 rounded-xl mb-3 space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+                        <div className="p-4 rounded-2xl mb-3 space-y-3"
+                             style={{ 
+                               backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                               border: '1px solid rgba(230, 179, 232, 0.3)'
+                             }}>
                           <Input
                             value={newMusic.title}
                             onChange={(e) => setNewMusic({ ...newMusic, title: e.target.value })}
                             placeholder="Titre de la chanson *"
-                            className="focus-glow"
+                            className="glow-input rounded-2xl"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              border: '1px solid rgba(230, 179, 232, 0.25)'
+                            }}
                           />
                           <Input
                             value={newMusic.artist}
                             onChange={(e) => setNewMusic({ ...newMusic, artist: e.target.value })}
                             placeholder="Artiste"
-                            className="focus-glow"
+                            className="glow-input rounded-2xl"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              border: '1px solid rgba(230, 179, 232, 0.25)'
+                            }}
                           />
                           <Input
                             value={newMusic.link}
                             onChange={(e) => setNewMusic({ ...newMusic, link: e.target.value })}
                             placeholder="Lien (YouTube, Spotify, Deezer...)"
-                            className="focus-glow"
+                            className="glow-input rounded-2xl"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              border: '1px solid rgba(230, 179, 232, 0.25)'
+                            }}
                           />
                           <div className="flex gap-2">
                             <Button
                               type="button"
                               size="sm"
                               onClick={handleAddMusic}
-                              className="text-white"
-                              style={{ backgroundColor: 'var(--deep-pink)' }}
+                              className="rounded-xl"
+                              style={{ backgroundColor: '#9C27B0', color: 'white' }}
                             >
                               Ajouter
                             </Button>
@@ -1605,6 +1743,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                 setIsAddingMusic(false);
                                 setNewMusic({ title: "", artist: "", link: "" });
                               }}
+                              className="rounded-xl"
                             >
                               Annuler
                             </Button>
@@ -1617,8 +1756,11 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                           type="button"
                           size="sm"
                           onClick={() => setIsAddingMusic(true)}
-                          className="w-full text-white"
-                          style={{ backgroundColor: 'var(--soft-pink)' }}
+                          className="w-full rounded-2xl"
+                          style={{ 
+                            backgroundColor: 'rgba(156, 39, 176, 0.12)',
+                            color: '#9C27B0'
+                          }}
                         >
                           <Plus className="w-4 h-4 mr-1" />
                           Ajouter une musique
@@ -1630,24 +1772,25 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         <div className="space-y-2 pt-2">
                           {editedData.music_playlist.map((music, index) => {
                             const platform = getPlatform(music.link);
-                            const platformColor = platform ? getPlatformColor(platform) : 'var(--warm-pink)';
+                            const platformColor = platform ? getPlatformColor(platform) : '#9C27B0';
 
                             return (
-                              <div key={index} className="flex items-center gap-3 p-3 rounded-xl"
-                                   style={{ backgroundColor: 'var(--cream)' }}>
-                                <Music className="w-5 h-5 flex-shrink-0" style={{ color: platformColor }} />
+                              <div key={index} className="card-hover flex items-center gap-3 p-3 rounded-2xl"
+                                   style={{ 
+                                     backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                     border: '1px solid rgba(230, 179, 232, 0.2)'
+                                   }}>
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                     style={{ backgroundColor: `${platformColor}15` }}>
+                                  <Music className="w-4 h-4" style={{ color: platformColor }} />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-sm" style={{ color: 'var(--dark-text)' }}>
+                                  <p className="font-bold text-sm" style={{ color: '#2D3748' }}>
                                     {music.title}
                                   </p>
                                   {music.artist && (
-                                    <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                                    <p className="text-xs" style={{ color: '#9CA3AF' }}>
                                       {music.artist}
-                                    </p>
-                                  )}
-                                  {platform && (
-                                    <p className="text-xs mt-1" style={{ color: platformColor }}>
-                                      📱 {platform}
                                     </p>
                                   )}
                                 </div>
@@ -1656,8 +1799,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                     <Button
                                       type="button"
                                       size="sm"
-                                      variant="outline"
-                                      className="flex-shrink-0"
+                                      variant="ghost"
+                                      className="flex-shrink-0 rounded-xl"
+                                      style={{ color: platformColor }}
                                     >
                                       <Play className="w-4 h-4" />
                                     </Button>
@@ -1668,7 +1812,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleRemoveMusic(index)}
-                                  className="flex-shrink-0 text-red-500 hover:text-red-700"
+                                  className="flex-shrink-0 hover:bg-red-50 rounded-xl"
+                                  style={{ color: '#EF4444' }}
                                 >
                                   <X className="w-4 h-4" />
                                 </Button>
@@ -1677,53 +1822,67 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                           })}
                         </div>
                       ) : (
-                        <p className="text-sm text-center py-4" style={{ color: 'var(--warm-pink)' }}>
-                          Aucune musique associée
+                        <p className="text-sm text-center py-6 italic" style={{ color: '#9CA3AF' }}>
+                          Aucune ambiance sonore pour l'instant
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Boutons d'action */}
-                <div className="bg-white/95 backdrop-blur-sm border-t-2 border-pink-100 p-4 md:p-6 rounded-2xl shadow-2xl">
-                  <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
+                {/* Actions */}
+                <div className="cascade-item p-4 md:p-6 rounded-2xl"
+                     style={{
+                       backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                       backdropFilter: 'blur(8px)',
+                       borderTop: '1px solid rgba(255, 182, 193, 0.2)'
+                     }}>
+                  <div className="flex flex-col md:flex-row justify-center gap-3">
                     <Button
                       variant="outline"
                       onClick={() => onOpenChange(false)}
-                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold hover:scale-105 transition-transform rounded-2xl"
+                      className="flex-1 md:flex-none px-6 py-3 text-base font-semibold rounded-2xl card-hover"
+                      style={{ borderColor: 'rgba(255, 182, 193, 0.3)' }}
                     >
-                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      <ArrowLeft className="w-4 h-4 mr-2" />
                       Retour
                     </Button>
 
                     <Button
-                      variant="destructive"
                       onClick={() => {
-                        if (window.confirm(`Êtes-vous sûre de vouloir supprimer "${book.title}" ?`)) {
+                        if (window.confirm(`Supprimer "${book.title}" de ta bibliothèque ?`)) {
                           deleteUserBookMutation.mutate();
                         }
                       }}
                       disabled={deleteUserBookMutation.isPending}
-                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold hover:scale-105 transition-transform rounded-2xl shadow-xl"
+                      className="flex-1 md:flex-none px-6 py-3 text-base font-semibold rounded-2xl card-hover"
+                      style={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        color: '#EF4444',
+                        border: '1px solid rgba(239, 68, 68, 0.2)'
+                      }}
                     >
-                      <Trash2 className="w-5 h-5 mr-2" />
+                      <Trash2 className="w-4 h-4 mr-2" />
                       Supprimer
                     </Button>
 
                     <Button
                       onClick={handleSave}
                       disabled={updateUserBookMutation.isPending}
-                      className="flex-1 md:flex-none px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 transition-transform shadow-2xl rounded-2xl"
+                      className="flex-1 md:flex-none px-6 py-3 text-base font-bold text-white rounded-2xl card-hover"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFB6D9 0%, #E1BEE7 50%, #D5C5F0 100%)',
+                        boxShadow: '0 4px 20px rgba(255, 182, 217, 0.4)'
+                      }}
                     >
                       {updateUserBookMutation.isPending ? (
                         <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Enregistrement...
                         </>
                       ) : (
                         <>
-                          <Save className="w-5 h-5 mr-2" />
+                          <Sparkles className="w-4 h-4 mr-2" />
                           Enregistrer
                         </>
                       )}
@@ -1734,15 +1893,23 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             </TabsContent>
 
             <TabsContent value="bookinfo">
-              <div className="p-4 md:p-8 space-y-4 md:space-y-6 animate-slide-in">
-                {/* Card: Genres & Tags */}
-                <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                  <div className="h-1 rounded-full mb-4" 
-                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                    <Tag className="w-5 h-5" style={{ color: '#FF1493' }} />
-                    Genres personnalisés
-                  </h3>
+              <div className="p-4 md:p-8 space-y-4 md:space-y-6">
+                {/* Card: Genres */}
+                <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                     style={{
+                       backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                       backdropFilter: 'blur(12px)',
+                       boxShadow: '0 8px 32px rgba(255, 182, 193, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                     }}>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: 'rgba(255, 105, 180, 0.12)' }}>
+                      <Tag className="w-5 h-5" style={{ color: '#FF69B4' }} />
+                    </div>
+                    <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                      Genres personnalisés
+                    </h3>
+                  </div>
                   <GenreTagInput
                     value={book.custom_genres || []}
                     onChange={(genres) => updateBookMutation.mutate({ custom_genres: genres })}
@@ -1750,14 +1917,22 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 </div>
 
                 {/* Card: Format */}
-                <div className="bg-white rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                  <div className="h-1 rounded-full mb-4" 
-                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                    <FileText className="w-5 h-5" style={{ color: '#FF1493' }} />
-                    Format de lecture
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                     style={{
+                       backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                       backdropFilter: 'blur(12px)',
+                       boxShadow: '0 8px 32px rgba(255, 182, 193, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                     }}>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: 'rgba(255, 105, 180, 0.12)' }}>
+                      <FileText className="w-5 h-5" style={{ color: '#FF69B4' }} />
+                    </div>
+                    <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                      Format de lecture
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {["Audio", "Numérique", "Broché", "Relié", "Poche", "Wattpad"].map(tag => (
                       <button
                         key={tag}
@@ -1769,55 +1944,82 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                             : [...currentTags, tag];
                           updateBookMutation.mutate({ tags: newTags });
                         }}
-                        className={`p-3 rounded-2xl text-xs md:text-sm font-bold transition-all hover:scale-110 ${
-                          (book.tags || []).includes(tag)
-                            ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl'
-                            : 'bg-pink-50 text-pink-800 border-2 border-pink-200 hover:border-pink-400'
+                        className={`p-3 rounded-2xl text-xs md:text-sm font-semibold transition-all duration-250 ${
+                          (book.tags || []).includes(tag) ? '' : 'hover:scale-105'
                         }`}
+                        style={(book.tags || []).includes(tag) ? {
+                          background: 'linear-gradient(135deg, #FFB6D9, #E1BEE7)',
+                          color: 'white',
+                          boxShadow: '0 4px 16px rgba(255, 182, 217, 0.3)'
+                        } : {
+                          backgroundColor: 'rgba(255, 240, 246, 0.5)',
+                          color: '#9C27B0',
+                          border: '1px solid rgba(255, 182, 193, 0.3)'
+                        }}
                       >
-                        {tag === "Audio" && "🎧"}
-                        {tag === "Numérique" && "📱"}
-                        {tag === "Broché" && "📕"}
-                        {tag === "Relié" && "📘"}
-                        {tag === "Poche" && "📙"}
-                        {tag === "Wattpad" && "🌟"}
-                        {" "}{tag}
+                        {tag === "Audio" && "🎧 "}
+                        {tag === "Numérique" && "📱 "}
+                        {tag === "Broché" && "📕 "}
+                        {tag === "Relié" && "📘 "}
+                        {tag === "Poche" && "📙 "}
+                        {tag === "Wattpad" && "🌟 "}
+                        {tag}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Infos techniques */}
-                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-3xl p-5 md:p-6 shadow-2xl border-0">
-                  <div className="h-1 rounded-full mb-4" 
-                       style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-                  <h3 className="flex items-center gap-2 text-lg md:text-xl font-bold mb-4" style={{ color: '#2D3748' }}>
-                    <Info className="w-5 h-5" style={{ color: '#FF1493' }} />
-                    Informations techniques
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                {/* Infos du livre */}
+                <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                     style={{
+                       background: 'linear-gradient(135deg, rgba(255, 240, 246, 0.4) 0%, rgba(243, 229, 245, 0.4) 100%)',
+                       backdropFilter: 'blur(12px)',
+                       boxShadow: '0 8px 32px rgba(225, 190, 231, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+                     }}>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: 'rgba(156, 39, 176, 0.12)' }}>
+                      <Info className="w-5 h-5" style={{ color: '#9C27B0' }} />
+                    </div>
+                    <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                      Informations
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {book.page_count && (
-                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
-                        <p className="text-3xl font-bold" style={{ color: '#FF1493' }}>
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-3xl font-bold mb-1" style={{ color: '#FF69B4' }}>
                           {book.page_count}
                         </p>
-                        <p className="text-sm font-medium text-gray-600">pages</p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>pages</p>
                       </div>
                     )}
                     {book.publication_year && (
-                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
-                        <p className="text-3xl font-bold" style={{ color: '#FF1493' }}>
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-3xl font-bold mb-1" style={{ color: '#E91E63' }}>
                           {book.publication_year}
                         </p>
-                        <p className="text-sm font-medium text-gray-600">année</p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>année</p>
                       </div>
                     )}
                     {book.language && (
-                      <div className="text-center p-4 bg-white rounded-2xl shadow-lg">
-                        <p className="text-2xl font-bold" style={{ color: '#FF1493' }}>
-                          {LANGUAGE_FLAGS[book.language]} {book.language}
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-2xl font-bold mb-1" style={{ color: '#9C27B0' }}>
+                          {LANGUAGE_FLAGS[book.language]}
                         </p>
-                        <p className="text-sm font-medium text-gray-600">langue</p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{book.language}</p>
                       </div>
                     )}
                   </div>
