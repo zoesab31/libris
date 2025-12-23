@@ -101,8 +101,13 @@ export default function TopFriendsWidget({ user, compact = false }) {
               <div
                 key={friend.id}
                 onClick={() => navigate(createPageUrl("UserProfile") + `?userEmail=${friend.friend_email}`)}
-                className={`flex items-center gap-2 ${compact ? 'p-2' : 'p-3'} rounded-xl cursor-pointer transition-all hover:shadow-md hover:-translate-y-1`}
-                style={{ backgroundColor: 'var(--cream)' }}
+                className={`group flex items-center gap-2 ${compact ? 'p-2' : 'p-3'} rounded-xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-2 active:scale-95`}
+                style={{ 
+                  backgroundColor: 'var(--cream)',
+                  border: '2px solid transparent'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--deep-pink)'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
               >
                 {/* Profile Picture */}
                 <div className={`${compact ? 'w-10 h-10' : 'w-14 h-14'} rounded-full overflow-hidden flex-shrink-0`}
@@ -129,8 +134,13 @@ export default function TopFriendsWidget({ user, compact = false }) {
                   </div>
                 </div>
 
-                {/* Arrow */}
-                <ArrowRight className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} flex-shrink-0`} style={{ color: 'var(--deep-pink)' }} />
+                {/* Arrow with text on hover */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold hidden group-hover:inline`} style={{ color: 'var(--deep-pink)' }}>
+                    Voir
+                  </span>
+                  <ArrowRight className={`${compact ? 'w-4 h-4' : 'w-5 h-5'}`} style={{ color: 'var(--deep-pink)' }} />
+                </div>
               </div>
             );
           })}
