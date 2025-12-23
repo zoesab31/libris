@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
+import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -564,6 +565,9 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Mes amies */}
+            <TopFriendsWidget user={user} compact={false} />
 
             {/* Raccourcis */}
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
