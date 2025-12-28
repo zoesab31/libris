@@ -637,6 +637,7 @@ export default function Dashboard() {
           book={allBooks.find(b => b.id === selectedBookForDetails.book_id)}
           open={!!selectedBookForDetails}
           onOpenChange={(open) => !open && setSelectedBookForDetails(null)}
+          initialTab="myinfo"
         />
       )}
     </div>
