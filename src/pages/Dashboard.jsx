@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote as QuoteIcon, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -479,7 +479,7 @@ export default function Dashboard() {
               <CardContent className="p-6 md:p-8 text-center">
                 <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
                      style={{ backgroundColor: '#FFF9E6' }}>
-                  <QuoteIcon className="w-6 h-6" style={{ color: '#FFD700' }} />
+                  <Quote className="w-6 h-6" style={{ color: '#FFD700' }} />
                 </div>
                 <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3748' }}>
                   Citation du jour
@@ -596,7 +596,7 @@ export default function Dashboard() {
                          style={{ backgroundColor: '#FFF9E6' }}>
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
                            style={{ backgroundColor: '#FFF4CC' }}>
-                        <QuoteIcon className="w-5 h-5" style={{ color: '#FFD700' }} />
+                        <Quote className="w-5 h-5" style={{ color: '#FFD700' }} />
                       </div>
                       <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Citations</p>
                     </div>
