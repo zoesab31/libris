@@ -321,9 +321,8 @@ export default function Dashboard() {
 
                       return (
                         <div key={userBook.id}
-                             className="dash-card cursor-pointer p-4 md:p-5 rounded-2xl"
-                             style={{ backgroundColor: '#FFF5F8' }}
-                             onClick={() => setSelectedBookForDetails(userBook)}>
+                             className="dash-card p-4 md:p-5 rounded-2xl"
+                             style={{ backgroundColor: '#FFF5F8' }}>
                           <div className="flex gap-4">
                             <div className="relative flex-shrink-0">
                               <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden"
@@ -345,27 +344,53 @@ export default function Dashboard() {
                                 {book.author}
                               </p>
 
-                              {userBook.current_page && book.page_count && (
-                                <>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
-                                      Page {userBook.current_page} / {book.page_count}
-                                    </span>
-                                    <span className="text-xl font-bold" style={{ color: '#FF1493' }}>
-                                      {progress}%
-                                    </span>
-                                  </div>
-                                  <div className="relative h-2 rounded-full overflow-hidden"
-                                       style={{ backgroundColor: '#FFE9F0' }}>
-                                    <div className="h-full rounded-full"
-                                         style={{
-                                           width: `${progress}%`,
-                                           backgroundColor: '#FF69B4',
-                                           transition: 'width 300ms ease'
-                                         }} />
-                                  </div>
-                                </>
-                              )}
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Page</span>
+                                <input
+                                  type="number"
+                                  value={userBook.current_page || 0}
+                                  onChange={(e) => {
+                                    const newPage = parseInt(e.target.value) || 0;
+                                    base44.entities.UserBook.update(userBook.id, { current_page: newPage });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-16 px-2 py-1 rounded-lg text-sm font-bold text-center"
+                                  style={{ 
+                                    backgroundColor: 'white',
+                                    color: '#FF1493',
+                                    border: '2px solid #FFE9F0'
+                                  }}
+                                />
+                                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>/</span>
+                                <input
+                                  type="number"
+                                  value={book.page_count || 0}
+                                  onChange={(e) => {
+                                    const newTotal = parseInt(e.target.value) || 0;
+                                    base44.entities.Book.update(book.id, { page_count: newTotal });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-16 px-2 py-1 rounded-lg text-sm font-bold text-center"
+                                  style={{ 
+                                    backgroundColor: 'white',
+                                    color: '#FF1493',
+                                    border: '2px solid #FFE9F0'
+                                  }}
+                                />
+                                <span className="text-xl font-bold ml-auto" style={{ color: '#FF1493' }}>
+                                  {progress}%
+                                </span>
+                              </div>
+                              
+                              <div className="relative h-2 rounded-full overflow-hidden"
+                                   style={{ backgroundColor: '#FFE9F0' }}>
+                                <div className="h-full rounded-full"
+                                     style={{
+                                       width: `${progress}%`,
+                                       backgroundColor: '#FF69B4',
+                                       transition: 'width 300ms ease'
+                                     }} />
+                              </div>
                             </div>
                           </div>
                         </div>
