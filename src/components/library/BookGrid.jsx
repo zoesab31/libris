@@ -535,6 +535,7 @@ export default function BookGrid({
           book={allBooks.find(b => b.id === selectedUserBook.book_id)}
           open={!!selectedUserBook}
           onOpenChange={(open) => !open && setSelectedUserBook(null)}
+          initialTab="myinfo"
         />
       )}
 
