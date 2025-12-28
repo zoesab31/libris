@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Quote as QuoteIcon, Plus, Search, Trash2 } from "lucide-react";
+import { Quote, Plus, Search, Trash2 } from "lucide-react";
 import AddQuoteDialog from "../components/quotes/AddQuoteDialog";
 import QuoteCard from "../components/quotes/QuoteCard";
 
@@ -141,7 +141,7 @@ export default function Quotes() {
                       <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <QuoteIcon className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                        <Quote className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
                   </div>
@@ -164,7 +164,7 @@ export default function Quotes() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <QuoteIcon className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+            <Quote className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {searchQuery ? "Aucune citation trouvée" : "Aucune citation enregistrée"}
             </h3>
