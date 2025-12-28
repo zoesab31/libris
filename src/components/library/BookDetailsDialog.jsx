@@ -2075,7 +2075,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: '#2D3748' }}>
                     <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
                          style={{ backgroundColor: 'rgba(255, 215, 0, 0.15)' }}>
-                      <QuoteIcon className="w-5 h-5" style={{ color: '#FFD700' }} />
+                      <Quote className="w-5 h-5" style={{ color: '#FFD700' }} />
                     </div>
                     Mes citations ({myQuotes.length})
                   </h3>
@@ -2090,7 +2090,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                border: '1px solid rgba(255, 215, 0, 0.2)'
                              }}>
                           <div className="flex items-start gap-3">
-                            <QuoteIcon className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#FFD700' }} />
+                            <Quote className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#FFD700' }} />
                             <div className="flex-1">
                               <p className="italic leading-relaxed mb-2" 
                                  style={{ color: '#2D3748', fontSize: '15px', lineHeight: '1.7' }}>
@@ -2118,7 +2118,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   ) : (
                     <div className="text-center py-8 rounded-2xl"
                          style={{ backgroundColor: 'rgba(255, 249, 230, 0.3)' }}>
-                      <QuoteIcon className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: '#FFD700' }} />
+                      <Quote className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: '#FFD700' }} />
                       <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
                         Aucune citation enregistrée pour ce livre
                       </p>
@@ -2169,7 +2169,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                             </div>
 
                             <div className="flex items-start gap-3">
-                              <QuoteIcon className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#9C27B0' }} />
+                              <Quote className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#9C27B0' }} />
                               <div className="flex-1">
                                 <p className="italic leading-relaxed mb-2" 
                                    style={{ color: '#2D3748', fontSize: '15px', lineHeight: '1.7' }}>
@@ -2200,7 +2200,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
                 {friendsQuotes.length === 0 && myQuotes.length === 0 && (
                   <div className="text-center py-12">
-                    <QuoteIcon className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#9C27B0' }} />
+                    <Quote className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: '#9C27B0' }} />
                     <p className="text-lg font-semibold mb-2" style={{ color: '#2D3748' }}>
                       Aucune citation
                     </p>
