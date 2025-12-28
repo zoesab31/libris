@@ -32,7 +32,8 @@ import {
   Play,
   Layers,
   Search,
-  MessageSquare
+  MessageSquare,
+  Quote
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
