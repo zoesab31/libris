@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,8 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, Link as LinkIcon, Check, X } from "lucide-react";
+import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, Link as LinkIcon, Check, X, Camera } from "lucide-react";
 import { toast } from "sonner";
+import BarcodeScanner from "./BarcodeScanner";
 
 // Helper function to extract dominant color from image
 const getDominantColor = (imageUrl) => {
@@ -71,6 +71,8 @@ const LANGUAGES = ["Français", "Anglais", "Espagnol", "Italien", "Allemand", "A
 export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("search");
+  const [scannedBook, setScannedBook] = useState(null);
+  const [loadingScannedBook, setLoadingScannedBook] = useState(false);
 
   // Search tab state
   const [searchQuery, setSearchQuery] = useState("");
@@ -375,19 +377,136 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     }
   });
 
+  const handleBarcodeScanned = async (isbn) => {
+    setLoadingScannedBook(true);
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+      );
+      const data = await response.json();
+
+      if (data.items && data.items.length > 0) {
+        const item = data.items[0];
+        let coverUrl = "";
+        if (item.volumeInfo.imageLinks) {
+          coverUrl = item.volumeInfo.imageLinks.extraLarge ||
+                    item.volumeInfo.imageLinks.large ||
+                    item.volumeInfo.imageLinks.medium ||
+                    item.volumeInfo.imageLinks.thumbnail ||
+                    item.volumeInfo.imageLinks.smallThumbnail || "";
+          if (coverUrl) {
+            coverUrl = coverUrl.replace('http:', 'https:');
+            if (coverUrl.includes('books.google.com')) {
+              coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
+              if (!coverUrl.includes('zoom=')) {
+                coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
+              }
+            }
+          }
+        }
+
+        const book = {
+          id: item.id,
+          title: item.volumeInfo.title || "Titre inconnu",
+          authors: item.volumeInfo.authors || ["Auteur inconnu"],
+          author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
+          publishedDate: item.volumeInfo.publishedDate || "",
+          year: item.volumeInfo.publishedDate ? new Date(item.volumeInfo.publishedDate).getFullYear() : null,
+          pageCount: item.volumeInfo.pageCount || null,
+          description: item.volumeInfo.description || "",
+          coverUrl: coverUrl,
+          categories: item.volumeInfo.categories || [],
+          isbn: isbn
+        };
+
+        setScannedBook(book);
+        toast.success("📚 Livre trouvé !");
+      } else {
+        toast.error("Aucun livre trouvé pour cet ISBN");
+        setScannedBook(null);
+      }
+    } catch (error) {
+      console.error("Error fetching book by ISBN:", error);
+      toast.error("Erreur lors de la recherche du livre");
+      setScannedBook(null);
+    } finally {
+      setLoadingScannedBook(false);
+    }
+  };
+
+  const handleAddScannedBook = async () => {
+    if (!scannedBook) return;
+
+    try {
+      let finalCoverUrl = scannedBook.coverUrl;
+      let coverColor = '#FFB3D9';
+      
+      if (finalCoverUrl) {
+        try {
+          coverColor = await getDominantColor(finalCoverUrl);
+        } catch (error) {
+          console.log(`Could not extract color, using default`, error);
+        }
+      }
+
+      let genre = "Autre";
+      if (scannedBook.categories && scannedBook.categories.length > 0) {
+        const category = scannedBook.categories[0].toLowerCase();
+        if (category.includes("fiction") || category.includes("roman")) genre = "Romance";
+        else if (category.includes("fantasy") || category.includes("fantastique")) genre = "Fantasy";
+        else if (category.includes("thriller")) genre = "Thriller";
+        else if (category.includes("young adult") || category.includes("jeunesse")) genre = "Young Adult";
+        else if (category.includes("science fiction")) genre = "Science-Fiction";
+        else if (category.includes("historique")) genre = "Historique";
+      }
+      if (!GENRES.includes(genre)) {
+        genre = "Autre";
+      }
+
+      const createdBook = await base44.entities.Book.create({
+        title: scannedBook.title,
+        author: scannedBook.author,
+        cover_url: finalCoverUrl,
+        page_count: scannedBook.pageCount,
+        publication_year: scannedBook.year,
+        synopsis: scannedBook.description,
+        isbn: scannedBook.isbn,
+        genre: genre,
+      });
+
+      await base44.entities.UserBook.create({
+        book_id: createdBook.id,
+        status: "À lire",
+        book_color: coverColor,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      
+      toast.success("✨ Livre ajouté à votre bibliothèque !");
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error adding scanned book:", error);
+      toast.error("Erreur lors de l'ajout du livre");
+    }
+  };
+
   const resetForm = () => {
     setStep(1);
-    setActiveTab("search"); // Reset to search tab
+    setActiveTab("search");
     setSearchQuery("");
     setSearchResults([]);
-    setSelectedBooks([]); // Reset selected books
-    setDefaultStatus("À lire"); // Reset default status
-    setIndividualStatuses({}); // Reset individual statuses
-    setBookData({ // Reset manual tab form
+    setSelectedBooks([]);
+    setDefaultStatus("À lire");
+    setIndividualStatuses({});
+    setScannedBook(null);
+    setLoadingScannedBook(false);
+    setBookData({
       title: "",
       author: "",
       cover_url: "",
-      genre: "", // Reset to empty string to show placeholder
+      genre: "",
       language: "Français",
       page_count: "",
       synopsis: "",
@@ -395,7 +514,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       isbn: "",
       publication_year: ""
     });
-    setUserBookData({ // Reset manual tab user book data
+    setUserBookData({
       status: "À lire",
       rating: "",
       review: "",
@@ -439,11 +558,17 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="search" style={{ color: '#000000' }}>
+              <Search className="w-4 h-4 mr-1" />
               Rechercher
             </TabsTrigger>
+            <TabsTrigger value="scan" style={{ color: '#000000' }}>
+              <Camera className="w-4 h-4 mr-1" />
+              Scanner
+            </TabsTrigger>
             <TabsTrigger value="manual" style={{ color: '#000000' }}>
+              <Plus className="w-4 h-4 mr-1" />
               Manuel
             </TabsTrigger>
           </TabsList>
@@ -682,6 +807,88 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                     </>
                   )}
                 </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="scan" className="space-y-4">
+            {!scannedBook && !loadingScannedBook && (
+              <BarcodeScanner
+                onScanSuccess={handleBarcodeScanned}
+                onClose={() => setActiveTab("search")}
+              />
+            )}
+
+            {loadingScannedBook && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: 'var(--deep-pink)' }} />
+                <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
+                  Recherche du livre...
+                </p>
+              </div>
+            )}
+
+            {scannedBook && !loadingScannedBook && (
+              <div className="space-y-4">
+                <div className="p-6 rounded-xl border-2" style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
+                  <div className="flex gap-4">
+                    <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+                         style={{ backgroundColor: 'var(--beige)' }}>
+                      {scannedBook.coverUrl ? (
+                        <img
+                          src={scannedBook.coverUrl}
+                          alt={scannedBook.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--dark-text)' }}>
+                        {scannedBook.title}
+                      </h3>
+                      <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
+                        {scannedBook.author}
+                      </p>
+                      <div className="flex gap-3 text-xs mb-3" style={{ color: 'var(--dark-text)' }}>
+                        {scannedBook.year && <span>📅 {scannedBook.year}</span>}
+                        {scannedBook.pageCount && <span>📄 {scannedBook.pageCount} pages</span>}
+                        {scannedBook.isbn && <span>🔢 ISBN: {scannedBook.isbn}</span>}
+                      </div>
+                      {scannedBook.description && (
+                        <p className="text-xs line-clamp-3" style={{ color: 'var(--warm-pink)' }}>
+                          {scannedBook.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setScannedBook(null);
+                      setLoadingScannedBook(false);
+                    }}
+                    className="flex-1"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Scanner un autre
+                  </Button>
+                  <Button
+                    onClick={handleAddScannedBook}
+                    className="flex-1 text-white font-medium"
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Ajouter ce livre
+                  </Button>
+                </div>
               </div>
             )}
           </TabsContent>
