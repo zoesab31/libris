@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -16,7 +16,10 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedBookForDetails, setSelectedBookForDetails] = useState(null);
+  const [editingBookId, setEditingBookId] = useState(null);
+  const [editValues, setEditValues] = useState({ currentPage: '', totalPages: '' });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -60,6 +63,111 @@ export default function Dashboard() {
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
+
+  const { data: allProgressHistory = [] } = useQuery({
+    queryKey: ['readingProgress', user?.email],
+    queryFn: () => base44.entities.ReadingProgress.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  // Calculate estimated progress based on reading speed
+  const getEstimatedProgress = (userBook, book) => {
+    if (!userBook.current_page || !book.page_count) return null;
+
+    // Get progress history for this book
+    const bookProgress = allProgressHistory
+      .filter(p => p.user_book_id === userBook.id)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    if (bookProgress.length < 2) return null;
+
+    // Check if last update was more than 24h ago
+    const lastUpdate = userBook.updated_date || userBook.created_date;
+    const hoursSinceUpdate = (Date.now() - new Date(lastUpdate).getTime()) / (1000 * 60 * 60);
+
+    if (hoursSinceUpdate < 24) return null;
+
+    // Calculate average reading speed (pages per day)
+    const firstProgress = bookProgress[0];
+    const lastProgress = bookProgress[bookProgress.length - 1];
+    
+    const pagesRead = lastProgress.page_number - firstProgress.page_number;
+    const daysPassed = (new Date(lastProgress.timestamp) - new Date(firstProgress.timestamp)) / (1000 * 60 * 60 * 24);
+
+    if (daysPassed <= 0 || pagesRead <= 0) return null;
+
+    const pagesPerDay = pagesRead / daysPassed;
+    
+    // Estimate current page based on time since last update
+    const daysSinceLastUpdate = hoursSinceUpdate / 24;
+    const estimatedPage = Math.round(lastProgress.page_number + (pagesPerDay * daysSinceLastUpdate));
+    const estimatedPageCapped = Math.min(estimatedPage, book.page_count);
+
+    return {
+      estimatedPage: estimatedPageCapped,
+      pagesPerDay: Math.round(pagesPerDay),
+      daysSinceUpdate: Math.round(daysSinceLastUpdate)
+    };
+  };
+
+  const handleStartEdit = (userBook, book) => {
+    setEditingBookId(userBook.id);
+    setEditValues({
+      currentPage: userBook.current_page?.toString() || '',
+      totalPages: book.page_count?.toString() || ''
+    });
+  };
+
+  const handleSaveProgress = async (userBook, book) => {
+    const currentPage = parseInt(editValues.currentPage);
+    const totalPages = parseInt(editValues.totalPages);
+
+    if (isNaN(currentPage) || currentPage < 0) {
+      toast.error("Page invalide");
+      return;
+    }
+
+    if (!isNaN(totalPages) && currentPage > totalPages) {
+      toast.error("La page ne peut pas dépasser le total");
+      return;
+    }
+
+    try {
+      // Update UserBook
+      await base44.entities.UserBook.update(userBook.id, {
+        current_page: currentPage
+      });
+
+      // Update Book total pages if changed
+      if (!isNaN(totalPages) && totalPages !== book.page_count) {
+        await base44.entities.Book.update(book.id, {
+          page_count: totalPages
+        });
+      }
+
+      // Save progress history
+      await base44.entities.ReadingProgress.create({
+        user_book_id: userBook.id,
+        page_number: currentPage,
+        timestamp: new Date().toISOString()
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      
+      toast.success("✅ Progression enregistrée !");
+      setEditingBookId(null);
+    } catch (error) {
+      console.error("Error saving progress:", error);
+      toast.error("Erreur lors de l'enregistrement");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBookId(null);
+    setEditValues({ currentPage: '', totalPages: '' });
+  };
 
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
@@ -315,8 +423,18 @@ export default function Dashboard() {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       if (!book) return null;
 
-                      const progress = userBook.current_page && book.page_count 
-                        ? Math.round((userBook.current_page / book.page_count) * 100)
+                      const isEditing = editingBookId === userBook.id;
+                      const estimation = getEstimatedProgress(userBook, book);
+
+                      const displayPage = isEditing 
+                        ? parseInt(editValues.currentPage) || 0
+                        : userBook.current_page || 0;
+                      const displayTotal = isEditing
+                        ? parseInt(editValues.totalPages) || book.page_count || 0
+                        : book.page_count || 0;
+
+                      const progress = displayTotal > 0
+                        ? Math.round((displayPage / displayTotal) * 100)
                         : 0;
 
                       return (
@@ -344,53 +462,93 @@ export default function Dashboard() {
                                 {book.author}
                               </p>
 
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Page</span>
-                                <input
-                                  type="number"
-                                  value={userBook.current_page || 0}
-                                  onChange={(e) => {
-                                    const newPage = parseInt(e.target.value) || 0;
-                                    base44.entities.UserBook.update(userBook.id, { current_page: newPage });
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-16 px-2 py-1 rounded-lg text-sm font-bold text-center"
-                                  style={{ 
-                                    backgroundColor: 'white',
-                                    color: '#FF1493',
-                                    border: '2px solid #FFE9F0'
-                                  }}
-                                />
-                                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>/</span>
-                                <input
-                                  type="number"
-                                  value={book.page_count || 0}
-                                  onChange={(e) => {
-                                    const newTotal = parseInt(e.target.value) || 0;
-                                    base44.entities.Book.update(book.id, { page_count: newTotal });
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-16 px-2 py-1 rounded-lg text-sm font-bold text-center"
-                                  style={{ 
-                                    backgroundColor: 'white',
-                                    color: '#FF1493',
-                                    border: '2px solid #FFE9F0'
-                                  }}
-                                />
-                                <span className="text-xl font-bold ml-auto" style={{ color: '#FF1493' }}>
-                                  {progress}%
-                                </span>
-                              </div>
-                              
-                              <div className="relative h-2 rounded-full overflow-hidden"
-                                   style={{ backgroundColor: '#FFE9F0' }}>
-                                <div className="h-full rounded-full"
-                                     style={{
-                                       width: `${progress}%`,
-                                       backgroundColor: '#FF69B4',
-                                       transition: 'width 300ms ease'
-                                     }} />
-                              </div>
+                              {isEditing ? (
+                                <div className="space-y-2 mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#9CA3AF' }}>Page actuelle</span>
+                                    <input
+                                      type="number"
+                                      value={editValues.currentPage}
+                                      onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSaveProgress(userBook, book);
+                                        if (e.key === 'Escape') handleCancelEdit();
+                                      }}
+                                      className="flex-1 px-3 py-2 rounded-lg text-sm font-bold"
+                                      style={{ 
+                                        backgroundColor: 'white',
+                                        color: '#FF1493',
+                                        border: '2px solid #FF69B4'
+                                      }}
+                                      autoFocus
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#9CA3AF' }}>Pages totales</span>
+                                    <input
+                                      type="number"
+                                      value={editValues.totalPages}
+                                      onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSaveProgress(userBook, book);
+                                        if (e.key === 'Escape') handleCancelEdit();
+                                      }}
+                                      className="flex-1 px-3 py-2 rounded-lg text-sm font-bold"
+                                      style={{ 
+                                        backgroundColor: 'white',
+                                        color: '#FF1493',
+                                        border: '2px solid #FF69B4'
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleSaveProgress(userBook, book)}
+                                      className="flex-1 text-white"
+                                      style={{ backgroundColor: '#FF1493' }}
+                                    >
+                                      <Check className="w-4 h-4 mr-1" />
+                                      Valider
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={handleCancelEdit}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleStartEdit(userBook, book)}
+                                    className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+                                  >
+                                    <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
+                                      📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
+                                    </span>
+                                    <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
+                                  </button>
+
+                                  {estimation && (
+                                    <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>
+                                      ⏱️ Estimation : ~{estimation.estimatedPage} pages (basé sur {estimation.pagesPerDay} p/jour)
+                                    </p>
+                                  )}
+                                  
+                                  <div className="relative h-2 rounded-full overflow-hidden"
+                                       style={{ backgroundColor: '#FFE9F0' }}>
+                                    <div className="h-full rounded-full"
+                                         style={{
+                                           width: `${progress}%`,
+                                           backgroundColor: '#FF69B4',
+                                           transition: 'width 300ms ease'
+                                         }} />
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
