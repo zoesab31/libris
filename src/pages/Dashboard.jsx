@@ -483,6 +483,9 @@ export default function Dashboard() {
                                       }}
                                       autoFocus
                                     />
+                                    <span className="text-xl font-bold whitespace-nowrap" style={{ color: '#FF1493' }}>
+                                      {progress}%
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#9CA3AF' }}>Pages totales</span>
