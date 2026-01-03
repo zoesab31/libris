@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Target, Edit, Check, X, TrendingUp } from "lucide-react";
+import { Target, Edit, Check, X, TrendingUp, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+
+const MAX_GOAL_CHANGES_PER_YEAR = 3;
 
 export default function ReadingGoalManager({ year, compact = false }) {
   const [user, setUser] = useState(null);
@@ -28,6 +30,10 @@ export default function ReadingGoalManager({ year, compact = false }) {
     },
     enabled: !!user,
   });
+
+  const changesRemaining = readingGoal 
+    ? MAX_GOAL_CHANGES_PER_YEAR - (readingGoal.changes_count || 0)
+    : MAX_GOAL_CHANGES_PER_YEAR;
 
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
@@ -73,11 +79,19 @@ export default function ReadingGoalManager({ year, compact = false }) {
   const saveGoalMutation = useMutation({
     mutationFn: async (goalCount) => {
       if (readingGoal) {
-        await base44.entities.ReadingGoal.update(readingGoal.id, { goal_count: goalCount });
+        const currentChanges = readingGoal.changes_count || 0;
+        if (currentChanges >= MAX_GOAL_CHANGES_PER_YEAR) {
+          throw new Error("Vous avez atteint le nombre maximum de modifications pour cette année");
+        }
+        await base44.entities.ReadingGoal.update(readingGoal.id, { 
+          goal_count: goalCount,
+          changes_count: currentChanges + 1
+        });
       } else {
         await base44.entities.ReadingGoal.create({ 
           year, 
           goal_count: goalCount,
+          changes_count: 0,
           created_by: user?.email
         });
       }
@@ -88,6 +102,9 @@ export default function ReadingGoalManager({ year, compact = false }) {
       setIsEditing(false);
       setNewGoal("");
     },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de la mise à jour");
+    }
   });
 
   const handleSave = () => {
@@ -100,6 +117,10 @@ export default function ReadingGoalManager({ year, compact = false }) {
   };
 
   const startEditing = () => {
+    if (readingGoal && changesRemaining <= 0) {
+      toast.error(`Vous avez atteint le nombre maximum de modifications (${MAX_GOAL_CHANGES_PER_YEAR}) pour cette année`);
+      return;
+    }
     setNewGoal(readingGoal?.goal_count?.toString() || "");
     setIsEditing(true);
   };
@@ -131,6 +152,13 @@ export default function ReadingGoalManager({ year, compact = false }) {
 
           {isEditing ? (
             <div className="space-y-2">
+              {readingGoal && changesRemaining > 0 && (
+                <div className="flex items-center gap-1 text-xs p-2 rounded-lg" 
+                     style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                  <AlertCircle className="w-3 h-3" />
+                  <span>{changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}</span>
+                </div>
+              )}
               <Input
                 type="number"
                 min="1"
@@ -174,13 +202,18 @@ export default function ReadingGoalManager({ year, compact = false }) {
                   {progress}% complété
                 </p>
               </div>
-              <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+              <div className="w-full h-2 rounded-full mb-2" style={{ backgroundColor: 'var(--beige)' }}>
                 <div className="h-full rounded-full transition-all duration-500"
                      style={{ 
                        width: `${Math.min(progress, 100)}%`,
                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
                      }} />
               </div>
+              {changesRemaining > 0 && (
+                <p className="text-[10px] text-center" style={{ color: 'var(--warm-pink)' }}>
+                  {changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}
+                </p>
+              )}
             </>
           ) : (
             <Button
@@ -221,6 +254,13 @@ export default function ReadingGoalManager({ year, compact = false }) {
 
         {isEditing ? (
           <div className="space-y-4">
+            {readingGoal && changesRemaining > 0 && (
+              <div className="flex items-center gap-2 text-sm p-3 rounded-lg" 
+                   style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+                <AlertCircle className="w-4 h-4" />
+                <span>{changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''} cette année</span>
+              </div>
+            )}
             <Input
               type="number"
               min="1"
@@ -270,12 +310,17 @@ export default function ReadingGoalManager({ year, compact = false }) {
                      }} />
               </div>
             </div>
-            <p className="text-center font-medium" style={{ color: 'var(--dark-text)' }}>
+            <p className="text-center font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
               {readingGoal.goal_count - booksReadThisYear > 0 
                 ? `Plus que ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} à lire ! 📚`
                 : `Objectif atteint ! 🎉`
               }
             </p>
+            {changesRemaining > 0 && (
+              <p className="text-center text-sm" style={{ color: 'var(--warm-pink)' }}>
+                {changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}
+              </p>
+            )}
           </>
         ) : (
           <div className="text-center py-8">

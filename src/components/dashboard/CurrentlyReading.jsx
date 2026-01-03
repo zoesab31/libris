@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Calendar, Edit2 } from "lucide-react";
+import { BookOpen, Calendar, Edit2, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -16,7 +17,10 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
   const [selectedBook, setSelectedBook] = useState(null);
   const [currentPage, setCurrentPage] = useState("");
   const [totalPages, setTotalPages] = useState("");
+  const [editingBookId, setEditingBookId] = useState(null);
+  const [inlineCurrentPage, setInlineCurrentPage] = useState("");
   const queryClient = useQueryClient();
+  const inputRef = useRef(null);
 
   const updateProgressMutation = useMutation({
     mutationFn: async ({ userBookId, bookId, currentPage, totalPages }) => {
@@ -76,6 +80,37 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
       currentPage: currentPage,
       totalPages: totalPages || null
     });
+  };
+
+  const handleInlineEdit = (userBook, book) => {
+    setEditingBookId(userBook.id);
+    setInlineCurrentPage((userBook.current_page || 0).toString());
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleInlineSave = async (userBook, book) => {
+    const page = parseInt(inlineCurrentPage);
+    if (isNaN(page) || page < 0) {
+      toast.error("Veuillez entrer une page valide");
+      return;
+    }
+
+    if (book.page_count && page > book.page_count) {
+      toast.error("La page ne peut pas dépasser le nombre total de pages");
+      return;
+    }
+
+    try {
+      await base44.entities.UserBook.update(userBook.id, {
+        current_page: page
+      });
+      queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+      toast.success("Progression mise à jour !");
+      setEditingBookId(null);
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      toast.error("Erreur lors de la mise à jour");
+    }
   };
 
   if (isLoading) {
@@ -199,23 +234,62 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                             Début : {format(new Date(userBook.start_date), 'dd MMM yyyy', { locale: fr })}
                           </p>
                         )}
-                        {userBook.isYou && progress > 0 && (
+                        {userBook.isYou && (
                           <div className="mt-2">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span style={{ color: 'var(--dark-text)' }}>
-                                {userBook.current_page || 0} / {book.page_count || '?'} pages
-                              </span>
-                              <span style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
-                            </div>
-                            <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                              <div 
-                                className="h-full rounded-full transition-all"
-                                style={{ 
-                                  width: `${progress}%`,
-                                  background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                                }}
-                              />
-                            </div>
+                            {editingBookId === userBook.id ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  ref={inputRef}
+                                  type="number"
+                                  min="0"
+                                  max={book.page_count || 9999}
+                                  value={inlineCurrentPage}
+                                  onChange={(e) => setInlineCurrentPage(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleInlineSave(userBook, book);
+                                    if (e.key === 'Escape') setEditingBookId(null);
+                                  }}
+                                  className="h-8 text-sm flex-1"
+                                  placeholder="Page actuelle"
+                                />
+                                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--dark-text)' }}>
+                                  / {book.page_count || '?'}
+                                </span>
+                                <button
+                                  onClick={() => handleInlineSave(userBook, book)}
+                                  className="p-1.5 rounded-md hover:bg-green-50 transition-colors"
+                                >
+                                  <Check className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <button
+                                    onClick={() => handleInlineEdit(userBook, book)}
+                                    className="hover:underline flex items-center gap-1"
+                                    style={{ color: 'var(--dark-text)' }}
+                                  >
+                                    <span>{userBook.current_page || 0} / {book.page_count || '?'} pages</span>
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                  {progress > 0 && (
+                                    <span style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
+                                  )}
+                                </div>
+                                {progress > 0 && (
+                                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                    <div 
+                                      className="h-full rounded-full transition-all"
+                                      style={{ 
+                                        width: `${progress}%`,
+                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
