@@ -82,32 +82,30 @@ export default function Dashboard() {
 
     if (bookProgress.length < 2) return null;
 
-    // Check if last update was more than 24h ago
-    const lastUpdate = userBook.updated_date || userBook.created_date;
-    const hoursSinceUpdate = (Date.now() - new Date(lastUpdate).getTime()) / (1000 * 60 * 60);
-
-    if (hoursSinceUpdate < 24) return null;
-
-    // Calculate average reading speed (pages per day)
+    // Calculate average reading speed (pages per hour)
     const firstProgress = bookProgress[0];
     const lastProgress = bookProgress[bookProgress.length - 1];
     
     const pagesRead = lastProgress.page_number - firstProgress.page_number;
-    const daysPassed = (new Date(lastProgress.timestamp) - new Date(firstProgress.timestamp)) / (1000 * 60 * 60 * 24);
+    const hoursPassed = (new Date(lastProgress.timestamp) - new Date(firstProgress.timestamp)) / (1000 * 60 * 60);
 
-    if (daysPassed <= 0 || pagesRead <= 0) return null;
+    if (hoursPassed <= 0 || pagesRead <= 0) return null;
 
-    const pagesPerDay = pagesRead / daysPassed;
+    const pagesPerHour = pagesRead / hoursPassed;
     
     // Estimate current page based on time since last update
-    const daysSinceLastUpdate = hoursSinceUpdate / 24;
-    const estimatedPage = Math.round(lastProgress.page_number + (pagesPerDay * daysSinceLastUpdate));
+    const lastUpdateTime = new Date(lastProgress.timestamp).getTime();
+    const hoursSinceLastUpdate = (Date.now() - lastUpdateTime) / (1000 * 60 * 60);
+    
+    // Only show estimation if at least 1 hour has passed
+    if (hoursSinceLastUpdate < 1) return null;
+    
+    const estimatedPage = Math.round(lastProgress.page_number + (pagesPerHour * hoursSinceLastUpdate));
     const estimatedPageCapped = Math.min(estimatedPage, book.page_count);
 
     return {
       estimatedPage: estimatedPageCapped,
-      pagesPerDay: Math.round(pagesPerDay),
-      daysSinceUpdate: Math.round(daysSinceLastUpdate)
+      pagesPerHour: pagesPerHour
     };
   };
 
@@ -538,7 +536,7 @@ export default function Dashboard() {
 
                                   {estimation && (
                                     <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>
-                                      ⏱️ Estimation : ~{estimation.estimatedPage} pages (basé sur {estimation.pagesPerDay} p/jour)
+                                      ⏱️ Estimation : ~{estimation.estimatedPage} pages
                                     </p>
                                   )}
                                   
