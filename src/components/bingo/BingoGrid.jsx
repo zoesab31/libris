@@ -16,10 +16,10 @@ export default function BingoGrid({ challenges, books, onChallengeClick, isLoadi
   }
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+    <div className="grid grid-cols-5 gap-2 md:gap-3">
       {sortedChallenges.map((challenge, index) => {
         const book = books.find(b => b.id === challenge.book_id);
-        const isCenterCell = challenge.position === 12; // Center of 5x5 grid (0-indexed)
+        const isCenterCell = challenge.position === 12; // Center of 5x5 grid (0-indexed, position 12 = center)
         const isFreeSpace = challenge.title.includes("LIBRE") || challenge.title.includes("FREE");
         
         return (

@@ -40,7 +40,7 @@ export default function Bingo() {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedGridSize, setSelectedGridSize] = useState(25);
+  const selectedGridSize = 25; // Always 5x5 grid
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -110,14 +110,13 @@ export default function Bingo() {
               ))}
             </select>
 
-            {/* Grid Size Selector */}
+            {/* Grid Size Selector - Always 5x5 */}
             <select
-              value={selectedGridSize}
-              onChange={(e) => setSelectedGridSize(parseInt(e.target.value))}
-              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base"
+              value={25}
+              disabled
+              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base opacity-50"
               style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
             >
-              <option value={16}>4x4</option>
               <option value={25}>5x5</option>
             </select>
 
