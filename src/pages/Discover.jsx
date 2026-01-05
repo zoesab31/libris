@@ -18,6 +18,13 @@ export default function Discover() {
       url: "https://www.babelio.com/livres-/nouveautes",
       color: "linear-gradient(135deg, var(--warm-pink), var(--soft-pink))",
       icon: "📖"
+    },
+    {
+      name: "Z-Library",
+      description: "Accédez à une vaste collection de livres numériques et ressources",
+      url: "https://z-library.sk/",
+      color: "linear-gradient(135deg, var(--soft-pink), var(--gold))",
+      icon: "📱"
     }
   ];
 
