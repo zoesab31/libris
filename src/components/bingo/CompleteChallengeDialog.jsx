@@ -126,28 +126,28 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
               )}
 
               {selectedBook && (
-                <div className="flex gap-4 p-5 rounded-xl border-2 shadow-md" 
+                <div className="flex gap-4 p-4 rounded-xl border-2 shadow-md" 
                      style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
-                  <div className="w-20 h-32 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
+                  <div className="w-16 h-24 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
                        style={{ backgroundColor: 'var(--beige)' }}>
                     {selectedBook.cover_url ? (
                       <img src={selectedBook.cover_url} alt={selectedBook.title} 
                            className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
+                        <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-base mb-2" style={{ color: 'var(--dark-text)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                       {selectedBook.title}
                     </p>
-                    <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
+                    <p className="text-xs mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
                       {selectedBook.author}
                     </p>
                     {selectedBook.genre && (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
                             style={{ backgroundColor: 'var(--cream)', color: 'var(--deep-pink)' }}>
                         {selectedBook.genre}
                       </span>
@@ -157,12 +157,12 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
               )}
             </>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg"
+            <div className="text-center py-6">
+              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg"
                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                <Check className="w-12 h-12 text-white" strokeWidth={3} />
+                <Check className="w-10 h-10 text-white" strokeWidth={3} />
               </div>
-              <p className="font-bold text-xl mb-3" style={{ color: 'var(--dark-text)' }}>
+              <p className="font-bold text-lg mb-3" style={{ color: 'var(--dark-text)' }}>
                 🎉 Défi complété !
               </p>
               {selectedBook && (
@@ -170,11 +170,26 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
                   <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                     Validé avec :
                   </p>
-                  <p className="text-base font-bold mt-1" style={{ color: 'var(--dark-text)' }}>
+                  <p className="text-sm font-bold mt-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                     {selectedBook.title}
                   </p>
                 </div>
               )}
+              <Button
+                onClick={() => {
+                  updateMutation.mutate({
+                    is_completed: true,
+                    book_id: undefined,
+                    completed_date: undefined,
+                  });
+                }}
+                variant="outline"
+                className="mt-4 text-sm"
+                style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Retirer le livre du défi
+              </Button>
             </div>
           )}
 

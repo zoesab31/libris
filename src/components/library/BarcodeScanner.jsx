@@ -41,6 +41,10 @@ export default function BarcodeScanner({ onScanSuccess, onClose }) {
     }
 
     try {
+      if (html5QrCodeRef.current) {
+        await stopScanning();
+      }
+
       html5QrCodeRef.current = new Html5Qrcode("barcode-scanner");
       
       await html5QrCodeRef.current.start(
@@ -48,16 +52,18 @@ export default function BarcodeScanner({ onScanSuccess, onClose }) {
         {
           fps: 10,
           qrbox: { width: 250, height: 150 },
-          aspectRatio: 1.777778
+          aspectRatio: 1.777778,
+          formatsToSupport: [0, 1, 2, 3] // EAN-13, EAN-8, UPC-A, UPC-E
         },
         (decodedText, decodedResult) => {
-          // Successfully scanned
           console.log("Scanned:", decodedText);
-          onScanSuccess(decodedText);
+          // Clean ISBN (remove hyphens and spaces)
+          const cleanISBN = decodedText.replace(/[-\s]/g, '');
+          onScanSuccess(cleanISBN);
           stopScanning();
         },
         (errorMessage) => {
-          // Scanning in progress, errors are expected
+          // Scanning in progress
         }
       );
 
@@ -69,13 +75,17 @@ export default function BarcodeScanner({ onScanSuccess, onClose }) {
   };
 
   const stopScanning = async () => {
-    if (html5QrCodeRef.current && scanning) {
+    if (html5QrCodeRef.current) {
       try {
-        await html5QrCodeRef.current.stop();
+        if (scanning) {
+          await html5QrCodeRef.current.stop();
+        }
         html5QrCodeRef.current.clear();
+        html5QrCodeRef.current = null;
         setScanning(false);
       } catch (err) {
         console.error("Error stopping scanner:", err);
+        setScanning(false);
       }
     }
   };
