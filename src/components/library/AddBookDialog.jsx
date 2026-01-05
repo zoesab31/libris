@@ -380,50 +380,88 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const handleBarcodeScanned = async (isbn) => {
     setLoadingScannedBook(true);
     try {
-      const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
-      );
-      const data = await response.json();
+      // Try multiple APIs to find the book
+      let book = null;
 
-      if (data.items && data.items.length > 0) {
-        const item = data.items[0];
-        let coverUrl = "";
-        if (item.volumeInfo.imageLinks) {
-          coverUrl = item.volumeInfo.imageLinks.extraLarge ||
-                    item.volumeInfo.imageLinks.large ||
-                    item.volumeInfo.imageLinks.medium ||
-                    item.volumeInfo.imageLinks.thumbnail ||
-                    item.volumeInfo.imageLinks.smallThumbnail || "";
-          if (coverUrl) {
-            coverUrl = coverUrl.replace('http:', 'https:');
-            if (coverUrl.includes('books.google.com')) {
-              coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
-              if (!coverUrl.includes('zoom=')) {
-                coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
+      // 1. Try Google Books API first
+      try {
+        const googleResponse = await fetch(
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+        );
+        const googleData = await googleResponse.json();
+
+        if (googleData.items && googleData.items.length > 0) {
+          const item = googleData.items[0];
+          let coverUrl = "";
+          if (item.volumeInfo.imageLinks) {
+            coverUrl = item.volumeInfo.imageLinks.extraLarge ||
+                      item.volumeInfo.imageLinks.large ||
+                      item.volumeInfo.imageLinks.medium ||
+                      item.volumeInfo.imageLinks.thumbnail ||
+                      item.volumeInfo.imageLinks.smallThumbnail || "";
+            if (coverUrl) {
+              coverUrl = coverUrl.replace('http:', 'https:');
+              if (coverUrl.includes('books.google.com')) {
+                coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
+                if (!coverUrl.includes('zoom=')) {
+                  coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
+                }
               }
             }
           }
+
+          book = {
+            id: item.id,
+            title: item.volumeInfo.title || "Titre inconnu",
+            authors: item.volumeInfo.authors || ["Auteur inconnu"],
+            author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
+            publishedDate: item.volumeInfo.publishedDate || "",
+            year: item.volumeInfo.publishedDate ? new Date(item.volumeInfo.publishedDate).getFullYear() : null,
+            pageCount: item.volumeInfo.pageCount || null,
+            description: item.volumeInfo.description || "",
+            coverUrl: coverUrl,
+            categories: item.volumeInfo.categories || [],
+            isbn: isbn
+          };
         }
+      } catch (err) {
+        console.log("Google Books API failed, trying alternatives...");
+      }
 
-        const book = {
-          id: item.id,
-          title: item.volumeInfo.title || "Titre inconnu",
-          authors: item.volumeInfo.authors || ["Auteur inconnu"],
-          author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
-          publishedDate: item.volumeInfo.publishedDate || "",
-          year: item.volumeInfo.publishedDate ? new Date(item.volumeInfo.publishedDate).getFullYear() : null,
-          pageCount: item.volumeInfo.pageCount || null,
-          description: item.volumeInfo.description || "",
-          coverUrl: coverUrl,
-          categories: item.volumeInfo.categories || [],
-          isbn: isbn
-        };
+      // 2. If Google Books fails, try Open Library API
+      if (!book) {
+        try {
+          const openLibResponse = await fetch(
+            `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+          );
+          const openLibData = await openLibResponse.json();
+          const bookData = openLibData[`ISBN:${isbn}`];
 
+          if (bookData) {
+            book = {
+              id: isbn,
+              title: bookData.title || "Titre inconnu",
+              author: bookData.authors ? bookData.authors.map(a => a.name).join(", ") : "Auteur inconnu",
+              year: bookData.publish_date ? new Date(bookData.publish_date).getFullYear() : null,
+              pageCount: bookData.number_of_pages || null,
+              description: bookData.notes || bookData.subtitle || "",
+              coverUrl: bookData.cover?.large || bookData.cover?.medium || "",
+              categories: bookData.subjects ? bookData.subjects.map(s => s.name) : [],
+              isbn: isbn
+            };
+          }
+        } catch (err) {
+          console.log("Open Library API failed");
+        }
+      }
+
+      if (book) {
         setScannedBook(book);
         toast.success("📚 Livre trouvé !");
       } else {
-        toast.error("Aucun livre trouvé pour cet ISBN");
+        toast.error("Aucun livre trouvé pour cet ISBN. Essayez avec la recherche manuelle.");
         setScannedBook(null);
+        setActiveTab("search");
       }
     } catch (error) {
       console.error("Error fetching book by ISBN:", error);

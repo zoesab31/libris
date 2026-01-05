@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, BookOpen } from "lucide-react";
+import { Check, X, BookOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CompleteChallengeDialog({ challenge, books, open, onOpenChange }) {
@@ -36,23 +36,10 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       await base44.entities.BingoChallenge.update(challenge.id, data);
-      
-      // Award 20 points when completing a challenge
-      if (!challenge.is_completed && data.is_completed && user?.email) { // Ensure user.email exists before proceeding
-        const existingPoints = await base44.entities.ReadingPoints.filter({ created_by: user.email });
-        if (existingPoints.length > 0) {
-          await base44.entities.ReadingPoints.update(existingPoints[0].id, {
-            total_points: (existingPoints[0].total_points || 0) + 20
-          });
-        } else {
-          await base44.entities.ReadingPoints.create({ created_by: user.email, total_points: 20, points_spent: 0 });
-        }
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
-      queryClient.invalidateQueries({ queryKey: ['readingPoints'] }); // Invalidate reading points query
-      toast.success(challenge.is_completed ? "Défi marqué comme incomplet" : "Défi validé ! +20 points 🌟");
+      toast.success(challenge.is_completed ? "✨ Défi marqué comme incomplet" : "🎉 Défi validé avec succès !");
       onOpenChange(false);
     },
   });
@@ -78,33 +65,46 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full md:max-w-md mx-2 md:mx-0">
-        <DialogHeader>
-          <DialogTitle className="text-base md:text-lg" style={{ color: 'var(--deep-brown)' }}>
+      <DialogContent className="max-w-full md:max-w-md mx-2 md:mx-0 border-0 shadow-2xl" 
+                     style={{ backgroundColor: 'white' }}>
+        <div className="absolute top-0 left-0 right-0 h-2 rounded-t-xl"
+             style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))' }} />
+        
+        <DialogHeader className="pt-4">
+          <DialogTitle className="text-xl md:text-2xl font-bold text-center" 
+                       style={{ color: 'var(--dark-text)' }}>
             {challenge.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
           {challenge.description && (
-            <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
-              {challenge.description}
-            </p>
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
+              <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
+                {challenge.description}
+              </p>
+            </div>
           )}
 
           {!challenge.is_completed ? (
             <>
-              <div>
-                <Label htmlFor="book">Quel livre valide ce défi ?</Label>
+              <div className="space-y-3">
+                <Label htmlFor="book" className="text-base font-bold" style={{ color: 'var(--dark-text)' }}>
+                  📚 Quel livre valide ce défi ?
+                </Label>
                 <Select value={selectedBookId} onValueChange={setSelectedBookId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 text-base"
+                                 style={{ borderColor: 'var(--soft-pink)' }}>
                     <SelectValue placeholder={`Choisir un livre lu en ${challenge.year}`} />
                   </SelectTrigger>
                   <SelectContent>
                     {readBooks.length > 0 ? (
                       readBooks.map((book) => (
-                        <SelectItem key={book.id} value={book.id}>
-                          {book.title} - {book.author}
+                        <SelectItem key={book.id} value={book.id} className="text-base py-3">
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{book.title}</span>
+                            <span className="text-xs opacity-70">{book.author}</span>
+                          </div>
                         </SelectItem>
                       ))
                     ) : (
@@ -117,82 +117,97 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
               </div>
 
               {readBooks.length === 0 && (
-                <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                  <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                <div className="p-4 rounded-xl border-2" 
+                     style={{ backgroundColor: '#FFF0F5', borderColor: 'var(--soft-pink)' }}>
+                  <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
                     💡 Vous devez avoir lu au moins un livre en {challenge.year} pour valider ce défi
                   </p>
                 </div>
               )}
 
               {selectedBook && (
-                <div className="flex gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                  <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0 shadow-md"
+                <div className="flex gap-4 p-5 rounded-xl border-2 shadow-md" 
+                     style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
+                  <div className="w-20 h-32 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
                        style={{ backgroundColor: 'var(--beige)' }}>
                     {selectedBook.cover_url ? (
                       <img src={selectedBook.cover_url} alt={selectedBook.title} 
                            className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-brown)' }} />
+                        <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
                       </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-semibold text-sm" style={{ color: 'var(--deep-brown)' }}>
+                  <div className="flex-1">
+                    <p className="font-bold text-base mb-2" style={{ color: 'var(--dark-text)' }}>
                       {selectedBook.title}
                     </p>
-                    <p className="text-xs" style={{ color: 'var(--warm-brown)' }}>
+                    <p className="text-sm mb-1" style={{ color: 'var(--warm-pink)' }}>
                       {selectedBook.author}
                     </p>
+                    {selectedBook.genre && (
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                            style={{ backgroundColor: 'var(--cream)', color: 'var(--deep-pink)' }}>
+                        {selectedBook.genre}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
             </>
           ) : (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--gold)' }}>
-                <Check className="w-8 h-8 text-white" />
+            <div className="text-center py-8">
+              <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg"
+                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                <Check className="w-12 h-12 text-white" strokeWidth={3} />
               </div>
-              <p className="font-semibold mb-2" style={{ color: 'var(--deep-brown)' }}>
-                Défi complété !
+              <p className="font-bold text-xl mb-3" style={{ color: 'var(--dark-text)' }}>
+                🎉 Défi complété !
               </p>
               {selectedBook && (
-                <p className="text-sm" style={{ color: 'var(--warm-brown)' }}>
-                  Validé avec : {selectedBook.title}
-                </p>
+                <div className="p-4 rounded-xl mx-auto max-w-xs" style={{ backgroundColor: 'var(--cream)' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                    Validé avec :
+                  </p>
+                  <p className="text-base font-bold mt-1" style={{ color: 'var(--dark-text)' }}>
+                    {selectedBook.title}
+                  </p>
+                </div>
               )}
             </div>
           )}
 
-          <div className="flex gap-2 md:gap-3 pt-4">
+          <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 text-sm md:text-base py-5 md:py-3"
+              className="flex-1 text-base py-6 border-2"
+              style={{ borderColor: 'var(--beige)' }}
             >
               Annuler
             </Button>
             <Button
               onClick={handleComplete}
               disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
-              className="flex-1 font-medium text-sm md:text-base py-5 md:py-3"
+              className="flex-1 font-bold text-base py-6 text-white shadow-lg"
               style={{ 
                 background: challenge.is_completed 
                   ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
-                  : 'linear-gradient(135deg, var(--gold), var(--warm-brown))',
-                color: '#000000'
+                  : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
               }}
             >
-              {challenge.is_completed ? (
+              {updateMutation.isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : challenge.is_completed ? (
                 <>
-                  <X className="w-4 h-4 mr-1 md:mr-2" />
-                  <span className="text-xs md:text-base">Incomplet</span>
+                  <X className="w-5 h-5 mr-2" />
+                  Marquer incomplet
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-1 md:mr-2" />
-                  <span className="text-xs md:text-base">Valider</span>
+                  <Check className="w-5 h-5 mr-2" />
+                  Valider le défi
                 </>
               )}
             </Button>
