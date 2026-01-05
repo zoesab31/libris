@@ -146,20 +146,17 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Close sidebar on mobile when navigation changes
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
-      setOpen(false);
+      // Use a small timeout to ensure smooth transition
+      const timer = setTimeout(() => {
+        setOpen(false);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [location.pathname, setOpen]);
-
-  // Close sidebar on mobile when a link is clicked
-  const handleLinkClick = () => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setOpen(false);
-    }
-  };
 
   return (
     <>
@@ -211,7 +208,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                         backgroundColor: 'transparent'
                       }}
                     >
-                      <Link to={item.url} onClick={handleLinkClick} className="flex items-center gap-2 px-2 md:px-3 py-2">
+                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
                         <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
                         <span className="font-medium text-xs md:text-base">{item.title}</span>
                       </Link>
