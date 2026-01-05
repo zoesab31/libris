@@ -53,11 +53,6 @@ const navigationItems = [
     icon: TrendingUp,
   },
   {
-    title: "Récap Annuel",
-    url: createPageUrl("YearRecap"),
-    icon: Sparkles,
-  },
-  {
     title: "Tournoi du Livre",
     url: createPageUrl("BookTournament"),
     icon: Trophy,

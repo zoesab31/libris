@@ -530,7 +530,7 @@ export default function Dashboard() {
                                     onClick={() => handleStartEdit(userBook, book)}
                                     className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
                                   >
-                                    <span className="text-sm font-bold" style={{ color: '#9C27B0' }}>
+                                    <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
                                       📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
                                     </span>
                                     <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
@@ -538,7 +538,7 @@ export default function Dashboard() {
 
                                   {estimation && (
                                     <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>
-                                      ⏱️ ~{estimation.estimatedPage} pages
+                                      ⏱️ Estimation : ~{estimation.estimatedPage} pages (basé sur {estimation.pagesPerDay} p/jour)
                                     </p>
                                   )}
                                   

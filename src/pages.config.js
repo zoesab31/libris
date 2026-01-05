@@ -22,7 +22,6 @@ import ShelfView from './pages/ShelfView';
 import Statistics from './pages/Statistics';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import YearRecap from './pages/YearRecap';
 import __Layout from './Layout.jsx';
 
 
@@ -51,7 +50,6 @@ export const PAGES = {
     "Statistics": Statistics,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "YearRecap": YearRecap,
 }
 
 export const pagesConfig = {
