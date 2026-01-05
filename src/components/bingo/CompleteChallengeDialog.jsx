@@ -65,19 +65,19 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full md:max-w-md mx-2 md:mx-0 border-0 shadow-2xl" 
+      <DialogContent className="max-w-md mx-auto border-0 shadow-2xl" 
                      style={{ backgroundColor: 'white' }}>
         <div className="absolute top-0 left-0 right-0 h-2 rounded-t-xl"
              style={{ background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))' }} />
         
-        <DialogHeader className="pt-4">
-          <DialogTitle className="text-xl md:text-2xl font-bold text-center" 
+        <DialogHeader className="pt-4 pb-2">
+          <DialogTitle className="text-lg font-bold text-center px-4" 
                        style={{ color: 'var(--dark-text)' }}>
             {challenge.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-2 px-2">
           {challenge.description && (
             <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--cream)' }}>
               <p className="text-sm text-center" style={{ color: 'var(--warm-pink)' }}>
@@ -125,49 +125,20 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
                 </div>
               )}
 
-              {selectedBook && (
-                <div className="flex gap-4 p-4 rounded-xl border-2 shadow-md" 
-                     style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
-                  <div className="w-16 h-24 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
-                       style={{ backgroundColor: 'var(--beige)' }}>
-                    {selectedBook.cover_url ? (
-                      <img src={selectedBook.cover_url} alt={selectedBook.title} 
-                           className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                      {selectedBook.title}
-                    </p>
-                    <p className="text-xs mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
-                      {selectedBook.author}
-                    </p>
-                    {selectedBook.genre && (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={{ backgroundColor: 'var(--cream)', color: 'var(--deep-pink)' }}>
-                        {selectedBook.genre}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
+
             </>
           ) : (
-            <div className="text-center py-6">
-              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg"
+            <div className="text-center py-4">
+              <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg"
                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                <Check className="w-10 h-10 text-white" strokeWidth={3} />
+                <Check className="w-8 h-8 text-white" strokeWidth={3} />
               </div>
-              <p className="font-bold text-lg mb-3" style={{ color: 'var(--dark-text)' }}>
+              <p className="font-bold text-base mb-2" style={{ color: 'var(--dark-text)' }}>
                 🎉 Défi complété !
               </p>
               {selectedBook && (
-                <div className="p-4 rounded-xl mx-auto max-w-xs" style={{ backgroundColor: 'var(--cream)' }}>
-                  <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
+                <div className="p-3 rounded-xl mx-auto" style={{ backgroundColor: 'var(--cream)' }}>
+                  <p className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
                     Validé avec :
                   </p>
                   <p className="text-sm font-bold mt-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
@@ -184,20 +155,20 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
                   });
                 }}
                 variant="outline"
-                className="mt-4 text-sm"
+                className="mt-3 text-xs h-9"
                 style={{ borderColor: 'var(--soft-pink)', color: 'var(--deep-pink)' }}
               >
-                <X className="w-4 h-4 mr-2" />
-                Retirer le livre du défi
+                <X className="w-3 h-3 mr-1" />
+                Retirer le livre
               </Button>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-3">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 text-base py-6 border-2"
+              className="flex-1 text-sm h-11 border-2"
               style={{ borderColor: 'var(--beige)' }}
             >
               Annuler
@@ -205,7 +176,7 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             <Button
               onClick={handleComplete}
               disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
-              className="flex-1 font-bold text-base py-6 text-white shadow-lg"
+              className="flex-1 font-bold text-sm h-11 text-white shadow-lg"
               style={{ 
                 background: challenge.is_completed 
                   ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
@@ -213,15 +184,15 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
               }}
             >
               {updateMutation.isPending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : challenge.is_completed ? (
                 <>
-                  <X className="w-5 h-5 mr-2" />
+                  <X className="w-4 h-4 mr-1" />
                   Marquer incomplet
                 </>
               ) : (
                 <>
-                  <Check className="w-5 h-5 mr-2" />
+                  <Check className="w-4 h-4 mr-1" />
                   Valider le défi
                 </>
               )}
