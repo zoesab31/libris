@@ -5,14 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, BookOpen, Loader2, Trash2 } from "lucide-react";
+import { Check, X, BookOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CompleteChallengeDialog({ challenge, books, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [selectedBookId, setSelectedBookId] = useState(challenge.book_id || "");
   const [user, setUser] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -41,17 +40,6 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
       toast.success(challenge.is_completed ? "✨ Défi marqué comme incomplet" : "🎉 Défi validé avec succès !");
-      onOpenChange(false);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await base44.entities.BingoChallenge.delete(challenge.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
-      toast.success("🗑️ Défi supprimé");
       onOpenChange(false);
     },
   });
@@ -105,16 +93,16 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
                   📚 Quel livre valide ce défi ?
                 </Label>
                 <Select value={selectedBookId} onValueChange={setSelectedBookId}>
-                  <SelectTrigger className="h-auto min-h-[48px] border-2"
+                  <SelectTrigger className="h-12 border-2 text-base"
                                  style={{ borderColor: 'var(--soft-pink)' }}>
                     <SelectValue placeholder={`Choisir un livre lu en ${challenge.year}`} />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
+                  <SelectContent>
                     {readBooks.length > 0 ? (
                       readBooks.map((book) => (
-                        <SelectItem key={book.id} value={book.id} className="py-3 cursor-pointer">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-sm leading-tight">{book.title}</span>
+                        <SelectItem key={book.id} value={book.id} className="text-base py-3">
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{book.title}</span>
                             <span className="text-xs opacity-70">{book.author}</span>
                           </div>
                         </SelectItem>
@@ -190,90 +178,40 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
             </div>
           )}
 
-          {showDeleteConfirm ? (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl border-2 text-center" 
-                   style={{ backgroundColor: '#FFF0F5', borderColor: '#dc2626' }}>
-                <p className="font-bold text-base mb-2" style={{ color: '#dc2626' }}>
-                  ⚠️ Confirmer la suppression
-                </p>
-                <p className="text-sm" style={{ color: '#991b1b' }}>
-                  Voulez-vous vraiment supprimer ce défi ? Cette action est irréversible.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 text-base py-6 border-2"
-                  style={{ borderColor: 'var(--beige)' }}
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={() => deleteMutation.mutate()}
-                  disabled={deleteMutation.isPending}
-                  className="flex-1 font-bold text-base py-6 text-white shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #dc2626, #991b1b)' }}
-                >
-                  {deleteMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Trash2 className="w-5 h-5 mr-2" />
-                      Supprimer
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  className="flex-1 text-base py-6 border-2"
-                  style={{ borderColor: 'var(--beige)' }}
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={handleComplete}
-                  disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
-                  className="flex-1 font-bold text-base py-6 text-white shadow-lg"
-                  style={{ 
-                    background: challenge.is_completed 
-                      ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
-                      : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
-                  }}
-                >
-                  {updateMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : challenge.is_completed ? (
-                    <>
-                      <X className="w-5 h-5 mr-2" />
-                      Marquer incomplet
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5 mr-2" />
-                      Valider le défi
-                    </>
-                  )}
-                </Button>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="w-full text-sm py-3 mt-2"
-                style={{ color: '#dc2626' }}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Supprimer ce défi
-              </Button>
-            </>
-          )}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 text-base py-6 border-2"
+              style={{ borderColor: 'var(--beige)' }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleComplete}
+              disabled={updateMutation.isPending || (!challenge.is_completed && !selectedBookId)}
+              className="flex-1 font-bold text-base py-6 text-white shadow-lg"
+              style={{ 
+                background: challenge.is_completed 
+                  ? 'linear-gradient(135deg, #dc2626, #991b1b)' 
+                  : 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
+              }}
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : challenge.is_completed ? (
+                <>
+                  <X className="w-5 h-5 mr-2" />
+                  Marquer incomplet
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Valider le défi
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeScanType } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from "@/components/ui/button";
 import { Camera, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,27 +43,17 @@ export default function BarcodeScanner({ onScanSuccess, onClose }) {
     try {
       html5QrCodeRef.current = new Html5Qrcode("barcode-scanner");
       
-      const config = {
-        fps: 10,
-        qrbox: { width: 280, height: 200 },
-        aspectRatio: 1.777778,
-        formatsToSupport: [
-          Html5Qrcode.SCAN_TYPE_CODE_128,
-          Html5Qrcode.SCAN_TYPE_EAN_13,
-          Html5Qrcode.SCAN_TYPE_EAN_8,
-          Html5Qrcode.SCAN_TYPE_UPC_A,
-          Html5Qrcode.SCAN_TYPE_UPC_E
-        ]
-      };
-      
       await html5QrCodeRef.current.start(
         selectedCamera,
-        config,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 150 },
+          aspectRatio: 1.777778
+        },
         (decodedText, decodedResult) => {
-          console.log("Scanned ISBN:", decodedText);
-          // Clean up the ISBN (remove dashes, spaces)
-          const cleanISBN = decodedText.replace(/[-\s]/g, '');
-          onScanSuccess(cleanISBN);
+          // Successfully scanned
+          console.log("Scanned:", decodedText);
+          onScanSuccess(decodedText);
           stopScanning();
         },
         (errorMessage) => {
@@ -72,10 +62,9 @@ export default function BarcodeScanner({ onScanSuccess, onClose }) {
       );
 
       setScanning(true);
-      toast.success("📷 Scanner démarré - positionnez le code-barre");
     } catch (err) {
       console.error("Error starting scanner:", err);
-      toast.error("Impossible d'accéder à la caméra");
+      toast.error("Erreur lors du démarrage du scanner");
     }
   };
 
