@@ -596,14 +596,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="search" style={{ color: '#000000' }}>
               <Search className="w-4 h-4 mr-1" />
               Rechercher
-            </TabsTrigger>
-            <TabsTrigger value="scan" style={{ color: '#000000' }}>
-              <Camera className="w-4 h-4 mr-1" />
-              Scanner
             </TabsTrigger>
             <TabsTrigger value="manual" style={{ color: '#000000' }}>
               <Plus className="w-4 h-4 mr-1" />
@@ -849,87 +845,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
             )}
           </TabsContent>
 
-          <TabsContent value="scan" className="space-y-4">
-            {!scannedBook && !loadingScannedBook && (
-              <BarcodeScanner
-                onScanSuccess={handleBarcodeScanned}
-                onClose={() => setActiveTab("search")}
-              />
-            )}
 
-            {loadingScannedBook && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: 'var(--deep-pink)' }} />
-                <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                  Recherche du livre...
-                </p>
-              </div>
-            )}
-
-            {scannedBook && !loadingScannedBook && (
-              <div className="space-y-4">
-                <div className="p-6 rounded-xl border-2" style={{ backgroundColor: 'white', borderColor: 'var(--soft-pink)' }}>
-                  <div className="flex gap-4">
-                    <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                         style={{ backgroundColor: 'var(--beige)' }}>
-                      {scannedBook.coverUrl ? (
-                        <img
-                          src={scannedBook.coverUrl}
-                          alt={scannedBook.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--dark-text)' }}>
-                        {scannedBook.title}
-                      </h3>
-                      <p className="text-sm mb-2" style={{ color: 'var(--warm-pink)' }}>
-                        {scannedBook.author}
-                      </p>
-                      <div className="flex gap-3 text-xs mb-3" style={{ color: 'var(--dark-text)' }}>
-                        {scannedBook.year && <span>📅 {scannedBook.year}</span>}
-                        {scannedBook.pageCount && <span>📄 {scannedBook.pageCount} pages</span>}
-                        {scannedBook.isbn && <span>🔢 ISBN: {scannedBook.isbn}</span>}
-                      </div>
-                      {scannedBook.description && (
-                        <p className="text-xs line-clamp-3" style={{ color: 'var(--warm-pink)' }}>
-                          {scannedBook.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setScannedBook(null);
-                      setLoadingScannedBook(false);
-                    }}
-                    className="flex-1"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Scanner un autre
-                  </Button>
-                  <Button
-                    onClick={handleAddScannedBook}
-                    className="flex-1 text-white font-medium"
-                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Ajouter ce livre
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
             <DialogTitle className="text-xl mb-4" style={{ color: 'var(--deep-brown)' }}>
