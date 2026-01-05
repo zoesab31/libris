@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function CreateChallengesDialog({ open, onOpenChange, existingChallenges, defaultChallenges, selectedYear, gridSize }) {
   const queryClient = useQueryClient();
-  const [challenges, setChallenges] = useState(Array(gridSize || 25).fill(""));
+  const [challenges, setChallenges] = useState(Array(25).fill("")); // Always 25 challenges
   const [mode, setMode] = useState('custom'); // Controls the active tab: 'default' or 'custom'
 
   useEffect(() => {
@@ -19,7 +19,9 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
       setChallenges(sorted.map(c => c.title));
       setMode('custom'); // If existing challenges, user is editing, so default to custom tab
     } else {
-      setChallenges(defaultChallenges); // Initialize editable challenges with default set
+      // Ensure we have exactly 25 challenges
+      const defaultChallengesList = defaultChallenges.slice(0, 25);
+      setChallenges(defaultChallengesList); // Initialize editable challenges with default set
       setMode('default'); // If no existing challenges, start with default tab to show options
     }
   }, [existingChallenges, defaultChallenges]);
@@ -36,7 +38,7 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
           title: title || `Défi ${index + 1}`,
           position: index,
           year: selectedYear || new Date().getFullYear(),
-          grid_size: gridSize || 25,
+          grid_size: 25, // Always 25
           is_completed: false,
         })
       );

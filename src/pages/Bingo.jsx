@@ -8,31 +8,31 @@ import CreateChallengesDialog from "../components/bingo/CreateChallengesDialog";
 import CompleteChallengeDialog from "../components/bingo/CompleteChallengeDialog";
 
 const DEFAULT_CHALLENGES = [
-  "Un livre avec une couverture dorée",
-  "Un livre de plus de 500 pages",
+  "Un livre avec une couverture rose",
   "Une romance enemies-to-lovers",
   "Un livre d'un auteur français",
   "Un livre avec un triangle amoureux",
   "Un livre fantasy",
   "Un livre qui vous fait pleurer",
-  "Un livre avec un personnage LGBTQ+",
+  "Un livre avec les fantômes",
   "Une dystopie",
-  "Un livre avec une fin qui vous surprend",
-  "Un livre avec des dragons",
+  "Un livre avec un plot twist de fou",
+  "Finir une saga",
   "Une romance young adult",
-  "CASE LIBRE ✨",
-  "Un livre d'un auteur que vous adorez",
-  "Un livre new adult",
+  "Un livre de plus de 500 pages",
+  `${new Date().getFullYear()}`, // Center cell - year
+  "Un livre new-adult",
   "Un livre avec de la magie",
-  "Un thriller psychologique",
+  "Une recommandation de Marie",
   "Un livre avec un bad boy",
-  "Une romance paranormale",
+  "Une cosy fantaisie",
   "Un livre qui se passe à l'université",
-  "Un livre avec un road trip",
+  "Un thriller",
   "Un livre avec des fées",
-  "Une romance contemporaine",
-  "Un livre avec un love interest alpha",
-  "Un livre avec une héroïne badass"
+  "Avec un animal central",
+  "One best trope",
+  "Livre de plus de 900 pages",
+  "Un livre avec un triangle amoureux"
 ];
 
 export default function Bingo() {
