@@ -546,12 +546,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
   const [newMusic, setNewMusic] = useState({ title: "", artist: "", link: "" });
   const [isAddingMusic, setIsAddingMusic] = useState(false);
   const [showSeriesDialog, setShowSeriesDialog] = useState(false);
-  const [editingMetadata, setEditingMetadata] = useState(false);
-  const [metadataForm, setMetadataForm] = useState({
-    page_count: book?.page_count || "",
-    publication_year: book?.publication_year || "",
-    language: book?.language || "Français"
-  });
 
   useEffect(() => {
     if (userBook) {
@@ -2024,170 +2018,53 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                        backdropFilter: 'blur(12px)',
                        boxShadow: '0 8px 32px rgba(225, 190, 231, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
                      }}>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                           style={{ backgroundColor: 'rgba(156, 39, 176, 0.12)' }}>
-                        <Info className="w-5 h-5" style={{ color: '#9C27B0' }} />
-                      </div>
-                      <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
-                        Informations
-                      </h3>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: 'rgba(156, 39, 176, 0.12)' }}>
+                      <Info className="w-5 h-5" style={{ color: '#9C27B0' }} />
                     </div>
-                    {!editingMetadata ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setMetadataForm({
-                            page_count: book?.page_count || "",
-                            publication_year: book?.publication_year || "",
-                            language: book?.language || "Français"
-                          });
-                          setEditingMetadata(true);
-                        }}
-                        className="text-xs"
-                        style={{ color: '#9C27B0' }}
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Modifier
-                      </Button>
-                    ) : null}
+                    <h3 className="text-lg md:text-xl font-bold" style={{ color: '#2D3748' }}>
+                      Informations
+                    </h3>
                   </div>
-
-                  {editingMetadata ? (
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block" style={{ color: '#6B7280' }}>
-                          Nombre de pages
-                        </Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={metadataForm.page_count}
-                          onChange={(e) => setMetadataForm({...metadataForm, page_count: e.target.value})}
-                          placeholder="Ex: 363"
-                          className="glow-input rounded-2xl"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            border: '1px solid rgba(255, 182, 193, 0.3)'
-                          }}
-                        />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {book.page_count && (
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-3xl font-bold mb-1" style={{ color: '#FF69B4' }}>
+                          {book.page_count}
+                        </p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>pages</p>
                       </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block" style={{ color: '#6B7280' }}>
-                          Année de publication
-                        </Label>
-                        <Input
-                          type="number"
-                          min="1000"
-                          max="2100"
-                          value={metadataForm.publication_year}
-                          onChange={(e) => setMetadataForm({...metadataForm, publication_year: e.target.value})}
-                          placeholder="Ex: 2024"
-                          className="glow-input rounded-2xl"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            border: '1px solid rgba(255, 182, 193, 0.3)'
-                          }}
-                        />
+                    )}
+                    {book.publication_year && (
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-3xl font-bold mb-1" style={{ color: '#E91E63' }}>
+                          {book.publication_year}
+                        </p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>année</p>
                       </div>
-
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block" style={{ color: '#6B7280' }}>
-                          Langue du livre
-                        </Label>
-                        <Select
-                          value={metadataForm.language}
-                          onValueChange={(value) => setMetadataForm({...metadataForm, language: value})}
-                        >
-                          <SelectTrigger className="glow-input rounded-2xl">
-                            <SelectValue>
-                              <div className="flex items-center gap-2">
-                                {LANGUAGE_FLAGS[metadataForm.language]} {metadataForm.language}
-                              </div>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGES.map(lang => (
-                              <SelectItem key={lang} value={lang}>
-                                <div className="flex items-center gap-2">
-                                  <span>{LANGUAGE_FLAGS[lang]}</span>
-                                  <span>{lang}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    )}
+                    {book.language && (
+                      <div className="text-center p-4 rounded-2xl"
+                           style={{
+                             backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                             border: '1px solid rgba(255, 182, 193, 0.2)'
+                           }}>
+                        <p className="text-2xl font-bold mb-1" style={{ color: '#9C27B0' }}>
+                          {LANGUAGE_FLAGS[book.language]}
+                        </p>
+                        <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{book.language}</p>
                       </div>
-
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setEditingMetadata(false)}
-                          className="flex-1 rounded-2xl"
-                        >
-                          Annuler
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const updates = {};
-                            if (metadataForm.page_count) updates.page_count = parseInt(metadataForm.page_count);
-                            if (metadataForm.publication_year) updates.publication_year = parseInt(metadataForm.publication_year);
-                            if (metadataForm.language) updates.language = metadataForm.language;
-                            
-                            updateBookMutation.mutate(updates);
-                            setEditingMetadata(false);
-                          }}
-                          className="flex-1 text-white rounded-2xl"
-                          style={{ background: 'linear-gradient(135deg, #9C27B0, #E91E63)' }}
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          Enregistrer
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {book.page_count && (
-                        <div className="text-center p-4 rounded-2xl"
-                             style={{
-                               backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                               border: '1px solid rgba(255, 182, 193, 0.2)'
-                             }}>
-                          <p className="text-3xl font-bold mb-1" style={{ color: '#FF69B4' }}>
-                            {book.page_count}
-                          </p>
-                          <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>pages</p>
-                        </div>
-                      )}
-                      {book.publication_year && (
-                        <div className="text-center p-4 rounded-2xl"
-                             style={{
-                               backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                               border: '1px solid rgba(255, 182, 193, 0.2)'
-                             }}>
-                          <p className="text-3xl font-bold mb-1" style={{ color: '#E91E63' }}>
-                            {book.publication_year}
-                          </p>
-                          <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>année</p>
-                        </div>
-                      )}
-                      {book.language && (
-                        <div className="text-center p-4 rounded-2xl"
-                             style={{
-                               backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                               border: '1px solid rgba(255, 182, 193, 0.2)'
-                             }}>
-                          <p className="text-2xl font-bold mb-1" style={{ color: '#9C27B0' }}>
-                            {LANGUAGE_FLAGS[book.language]}
-                          </p>
-                          <p className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{book.language}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </TabsContent>
