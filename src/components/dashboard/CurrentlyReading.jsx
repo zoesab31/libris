@@ -14,32 +14,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export default function CurrentlyReading({ books, allBooks, isLoading, user, friendsBooks = [], myFriends = [], getTimeBasedProgress }) {
-  // Add animation styles for progress bar
-  React.useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes progressGlow {
-        0%, 100% { 
-          opacity: 1;
-          box-shadow: 0 0 8px rgba(236, 72, 153, 0.4);
-        }
-        50% { 
-          opacity: 0.9;
-          box-shadow: 0 0 16px rgba(236, 72, 153, 0.6);
-        }
-      }
-      .progress-bar-animated {
-        animation: progressGlow 3s ease-in-out infinite;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    };
-  }, []);
   const [selectedBook, setSelectedBook] = useState(null);
   const [currentPage, setCurrentPage] = useState("");
   const [totalPages, setTotalPages] = useState("");
@@ -300,13 +274,13 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   {progress > 0 && (
-                                    <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
+                                    <span style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
                                   )}
                                 </div>
                                 {progress > 0 && (
                                   <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
                                     <div 
-                                      className="h-full rounded-full transition-all duration-500 ease-out progress-bar-animated"
+                                      className="h-full rounded-full transition-all"
                                       style={{ 
                                         width: `${progress}%`,
                                         background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
