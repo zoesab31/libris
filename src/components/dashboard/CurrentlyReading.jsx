@@ -153,9 +153,13 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                 const book = allBooks.find(b => b.id === userBook.book_id);
                 if (!book) return null;
 
-                const progress = userBook.isYou && getTimeBasedProgress 
-                  ? getTimeBasedProgress(userBook) 
-                  : 0;
+                // Calculate progress from current_page if available, otherwise use time-based
+                let progress = 0;
+                if (userBook.current_page && book.page_count) {
+                  progress = Math.round((userBook.current_page / book.page_count) * 100);
+                } else if (userBook.isYou && getTimeBasedProgress) {
+                  progress = getTimeBasedProgress(userBook);
+                }
                 
                 return (
                   <div key={userBook.id} 
