@@ -645,20 +645,38 @@ export default function Dashboard() {
                               <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
                               </h4>
-                              <p className="text-xs" style={{ color: '#9CA3AF' }}>
+                              <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>
                                 {book.author}
                               </p>
+                              {userBook.current_page && book.page_count && (
+                                <div className="flex items-center justify-between text-xs mb-2">
+                                  <span style={{ color: '#9C27B0' }}>
+                                    {userBook.current_page} / {book.page_count} pages
+                                  </span>
+                                  <span className="font-bold text-sm" style={{ color: '#9C27B0' }}>
+                                    {progress}%
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {progress > 0 && (
-                            <div className="relative h-1.5 rounded-full" style={{ backgroundColor: '#F3E5F5' }}>
-                              <div className="h-full rounded-full"
+                            <div className="relative h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#F3E5F5' }}>
+                              <div className="h-full rounded-full relative"
                                    style={{
                                      width: `${progress}%`,
-                                     backgroundColor: '#9C27B0',
-                                     transition: 'width 300ms ease'
-                                   }} />
+                                     background: 'linear-gradient(90deg, #9C27B0, #BA68C8)',
+                                     transition: 'width 500ms ease'
+                                   }}>
+                                <div 
+                                  className="absolute inset-0"
+                                  style={{
+                                    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent)',
+                                    animation: 'shimmer 2.5s ease-in-out infinite'
+                                  }}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
