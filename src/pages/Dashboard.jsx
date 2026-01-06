@@ -244,6 +244,10 @@ export default function Dashboard() {
           transform: translateY(-3px);
           box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
         }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
       `}</style>
 
       {/* Hero Header */}
@@ -524,15 +528,20 @@ export default function Dashboard() {
                                 </div>
                               ) : (
                                 <>
-                                  <button
-                                    onClick={() => handleStartEdit(userBook, book)}
-                                    className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
-                                  >
-                                    <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
-                                      📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
+                                  <div className="flex items-center justify-between mb-2">
+                                    <button
+                                      onClick={() => handleStartEdit(userBook, book)}
+                                      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                    >
+                                      <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
+                                        📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
+                                      </span>
+                                      <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
+                                    </button>
+                                    <span className="text-base font-extrabold" style={{ color: '#FF1493' }}>
+                                      {progress}%
                                     </span>
-                                    <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
-                                  </button>
+                                  </div>
 
                                   {estimation && (
                                     <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>
@@ -540,14 +549,22 @@ export default function Dashboard() {
                                     </p>
                                   )}
                                   
-                                  <div className="relative h-2 rounded-full overflow-hidden"
+                                  <div className="relative h-3 rounded-full overflow-hidden"
                                        style={{ backgroundColor: '#FFE9F0' }}>
-                                    <div className="h-full rounded-full"
+                                    <div className="h-full rounded-full relative"
                                          style={{
                                            width: `${progress}%`,
-                                           backgroundColor: '#FF69B4',
-                                           transition: 'width 300ms ease'
-                                         }} />
+                                           background: 'linear-gradient(90deg, #FF1493, #FF69B4)',
+                                           transition: 'width 500ms ease'
+                                         }}>
+                                      <div 
+                                        className="absolute inset-0"
+                                        style={{
+                                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent)',
+                                          animation: 'shimmer 2.5s ease-in-out infinite'
+                                        }}
+                                      />
+                                    </div>
                                   </div>
                                 </>
                               )}
