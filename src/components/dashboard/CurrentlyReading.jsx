@@ -268,7 +268,7 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                               </div>
                             ) : (
                               <>
-                                <div className="flex justify-between text-xs mb-1">
+                                <div className="flex justify-between items-center text-xs mb-2">
                                   <button
                                     onClick={() => handleInlineEdit(userBook, book)}
                                     className="hover:underline flex items-center gap-1"
@@ -277,30 +277,28 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                                     <span>{userBook.current_page || 0} / {book.page_count || '?'} pages</span>
                                     <Edit2 className="w-3 h-3" />
                                   </button>
-                                  {progress > 0 && (
-                                    <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
-                                  )}
+                                  <span className="font-bold text-sm" style={{ color: 'var(--deep-pink)' }}>
+                                    {progress}%
+                                  </span>
                                 </div>
-                                {progress > 0 && (
-                                  <div className="w-full h-2.5 rounded-full relative overflow-hidden" style={{ backgroundColor: 'var(--beige)' }}>
+                                <div className="w-full h-2.5 rounded-full relative overflow-hidden" style={{ backgroundColor: 'var(--beige)' }}>
+                                  <div 
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{ 
+                                      width: `${progress}%`,
+                                      background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))',
+                                      position: 'relative'
+                                    }}
+                                  >
                                     <div 
-                                      className="h-full rounded-full transition-all duration-500"
-                                      style={{ 
-                                        width: `${progress}%`,
-                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))',
-                                        position: 'relative'
+                                      className="absolute inset-0 shimmer-effect"
+                                      style={{
+                                        background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent)',
+                                        animation: 'shimmer 2.5s ease-in-out infinite'
                                       }}
-                                    >
-                                      <div 
-                                        className="absolute inset-0 shimmer-effect"
-                                        style={{
-                                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
-                                          animation: 'shimmer 2s infinite'
-                                        }}
-                                      />
-                                    </div>
+                                    />
                                   </div>
-                                )}
+                                </div>
                               </>
                             )}
                           </div>
