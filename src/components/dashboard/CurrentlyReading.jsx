@@ -274,18 +274,27 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   {progress > 0 && (
-                                    <span style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
+                                    <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
                                   )}
                                 </div>
                                 {progress > 0 && (
-                                  <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
+                                  <div className="w-full h-2.5 rounded-full relative overflow-hidden" style={{ backgroundColor: 'var(--beige)' }}>
                                     <div 
-                                      className="h-full rounded-full transition-all"
+                                      className="h-full rounded-full transition-all duration-500"
                                       style={{ 
                                         width: `${progress}%`,
-                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))',
+                                        position: 'relative'
                                       }}
-                                    />
+                                    >
+                                      <div 
+                                        className="absolute inset-0 shimmer-effect"
+                                        style={{
+                                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                                          animation: 'shimmer 2s infinite'
+                                        }}
+                                      />
+                                    </div>
                                   </div>
                                 )}
                               </>
@@ -311,6 +320,13 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
           )}
         </CardContent>
       </Card>
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
 
       {/* Update Progress Dialog */}
       <Dialog open={!!selectedBook} onOpenChange={(open) => !open && setSelectedBook(null)}>
