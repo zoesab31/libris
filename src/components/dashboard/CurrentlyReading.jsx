@@ -274,16 +274,17 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   {progress > 0 && (
-                                    <span style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
+                                    <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>{progress}%</span>
                                   )}
                                 </div>
                                 {progress > 0 && (
                                   <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
                                     <div 
-                                      className="h-full rounded-full transition-all"
+                                      className="h-full rounded-full transition-all duration-500 ease-out"
                                       style={{ 
                                         width: `${progress}%`,
-                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                                        background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))',
+                                        boxShadow: '0 0 8px rgba(255, 20, 147, 0.3)'
                                       }}
                                     />
                                   </div>
