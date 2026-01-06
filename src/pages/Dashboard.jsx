@@ -244,6 +244,14 @@ export default function Dashboard() {
           transform: translateY(-3px);
           box-shadow: 0 12px 32px rgba(255, 105, 180, 0.2);
         }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
       `}</style>
 
       {/* Hero Header */}
@@ -540,15 +548,20 @@ export default function Dashboard() {
                                     </p>
                                   )}
                                   
-                                  <div className="relative h-2 rounded-full overflow-hidden"
+                                  <div className="relative h-2 rounded-full overflow-hidden mb-2"
                                        style={{ backgroundColor: '#FFE9F0' }}>
                                     <div className="h-full rounded-full"
                                          style={{
                                            width: `${progress}%`,
-                                           backgroundColor: '#FF69B4',
-                                           transition: 'width 300ms ease'
+                                           background: 'linear-gradient(90deg, #FF69B4, #FF1493)',
+                                           transition: 'width 600ms cubic-bezier(0.4, 0, 0.2, 1)',
+                                           boxShadow: '0 0 8px rgba(255, 105, 180, 0.5)',
+                                           animation: 'pulse 2s ease-in-out infinite'
                                          }} />
                                   </div>
+                                  <p className="text-xs font-bold text-right" style={{ color: '#FF1493' }}>
+                                    {progress}%
+                                  </p>
                                 </>
                               )}
                             </div>
