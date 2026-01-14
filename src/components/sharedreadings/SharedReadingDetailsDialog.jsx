@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Upload, X, Loader2, Smile, Trash2 } from "lucide-react";
+import { Send, Upload, X, Loader2, Smile, Trash2, Eye, EyeOff } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -22,6 +22,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [uploadingPlanningImage, setUploadingPlanningImage] = useState(false);
   const [customEmoji, setCustomEmoji] = useState("");
+  const [isSpoiler, setIsSpoiler] = useState(false);
+  const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
   const messagesEndRef = useRef(null);
 
   const { data: user } = useQuery({
@@ -154,8 +156,9 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       message: newMessage,
       chapter: newChapter,
       photo_url: photoUrl,
-      is_spoiler: false,
+      is_spoiler: isSpoiler,
     });
+    setIsSpoiler(false);
   };
 
   const updatePlanningImageMutation = useMutation({
@@ -404,6 +407,11 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                   reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
                 });
                 
+                const currentDay = getCurrentDay();
+                const canRevealSpoiler = currentDay >= parseInt(day);
+                const isSpoilerRevealed = revealedSpoilers.has(msg.id);
+                const shouldHideSpoiler = msg.is_spoiler && !canRevealSpoiler && !isSpoilerRevealed;
+                
                 return (
                   <div
                     key={msg.id}
@@ -432,7 +440,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                       )}
 
                       <div
-                        className="rounded-3xl px-5 py-4"
+                        className="rounded-3xl px-5 py-4 relative"
                         style={{
                           backgroundColor: isMyMessage ? '#FF1493' : 'white',
                           color: isMyMessage ? 'white' : '#1a1a1a',
@@ -443,34 +451,59 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                           border: isMyMessage ? 'none' : '2px solid #FFE4EC'
                         }}
                       >
-                        {msg.photo_url && (
-                          <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
-                               onClick={() => window.open(msg.photo_url, '_blank')}>
-                            <img 
-                              src={msg.photo_url} 
-                              alt="Photo" 
-                              className="w-full max-h-64 object-cover hover:scale-105 transition-transform" 
-                            />
+                        {shouldHideSpoiler ? (
+                          <div className="flex flex-col items-center justify-center py-8 gap-3">
+                            <EyeOff className="w-8 h-8" style={{ color: isMyMessage ? 'rgba(255,255,255,0.6)' : '#FF69B4' }} />
+                            <p className="text-sm font-bold" style={{ color: isMyMessage ? 'rgba(255,255,255,0.8)' : '#9C27B0' }}>
+                              ⚠️ Spoiler caché
+                            </p>
+                            <p className="text-xs" style={{ color: isMyMessage ? 'rgba(255,255,255,0.6)' : '#9CA3AF' }}>
+                              Disponible le jour {day}
+                            </p>
                           </div>
+                        ) : (
+                          <>
+                            {msg.is_spoiler && (
+                              <div className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold"
+                                   style={{
+                                     backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
+                                     color: isMyMessage ? 'white' : '#856404'
+                                   }}>
+                                <Eye className="w-3 h-3" />
+                                SPOILER
+                              </div>
+                            )}
+                            
+                            {msg.photo_url && (
+                              <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
+                                   onClick={() => window.open(msg.photo_url, '_blank')}>
+                                <img 
+                                  src={msg.photo_url} 
+                                  alt="Photo" 
+                                  className="w-full max-h-64 object-cover hover:scale-105 transition-transform" 
+                                />
+                              </div>
+                            )}
+
+                            {msg.chapter && (
+                              <div className="px-3 py-1 rounded-full inline-block mb-2 text-xs font-bold"
+                                   style={{
+                                     backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFE4EC',
+                                     color: isMyMessage ? 'white' : '#C2185B'
+                                   }}>
+                                📖 {msg.chapter}
+                              </div>
+                            )}
+
+                            <p className="text-base leading-relaxed whitespace-pre-wrap">
+                              {msg.message}
+                            </p>
+
+                            <p className="text-xs mt-2 opacity-50">
+                              {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
+                            </p>
+                          </>
                         )}
-
-                        {msg.chapter && (
-                          <div className="px-3 py-1 rounded-full inline-block mb-2 text-xs font-bold"
-                               style={{
-                                 backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFE4EC',
-                                 color: isMyMessage ? 'white' : '#C2185B'
-                               }}>
-                            📖 {msg.chapter}
-                          </div>
-                        )}
-
-                        <p className="text-base leading-relaxed whitespace-pre-wrap">
-                          {msg.message}
-                        </p>
-
-                        <p className="text-xs mt-2 opacity-50">
-                          {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
-                        </p>
                       </div>
 
                       {/* Reactions - only show for friends' messages */}
@@ -605,6 +638,24 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             </div>
           )}
 
+          <div className="flex gap-2 mb-2">
+            <Button
+              type="button"
+              onClick={() => setIsSpoiler(!isSpoiler)}
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              style={{
+                backgroundColor: isSpoiler ? '#FFF3CD' : 'white',
+                borderColor: isSpoiler ? '#856404' : '#FFD6E8',
+                color: isSpoiler ? '#856404' : '#9CA3AF'
+              }}
+            >
+              {isSpoiler ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              {isSpoiler ? 'Spoiler activé' : 'Marquer comme spoiler'}
+            </Button>
+          </div>
+          
           <div className="flex gap-2">
             <Input
               value={newChapter}
