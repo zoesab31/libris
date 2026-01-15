@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Send, Upload, X, Loader2, Smile, Trash2, Eye, EyeOff } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, differenceInCalendarDays, startOfDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -53,9 +54,19 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const getCurrentDay = () => {
     if (!reading.start_date) return 1;
     
+    // Si un jour a été défini manuellement
+    if (reading.current_day_override && reading.current_day_set_date) {
+      const today = startOfDay(new Date());
+      const setDate = startOfDay(parseISO(reading.current_day_set_date));
+      const daysSinceSet = differenceInCalendarDays(today, setDate);
+      
+      const calculatedDay = reading.current_day_override + daysSinceSet;
+      return Math.max(1, Math.min(calculatedDay, numberOfDays));
+    }
+    
+    // Sinon calcul automatique
     const today = startOfDay(new Date());
     const startDate = startOfDay(parseISO(reading.start_date));
-    
     const daysPassed = differenceInCalendarDays(today, startDate);
     
     return Math.max(1, Math.min(daysPassed + 1, numberOfDays));
@@ -194,6 +205,17 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
       toast.success("Image du planning ajoutée !");
+    },
+  });
+
+  const setCurrentDayMutation = useMutation({
+    mutationFn: (day) => base44.entities.SharedReading.update(reading.id, {
+      current_day_override: day,
+      current_day_set_date: new Date().toISOString().split('T')[0]
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
+      toast.success("Jour actuel défini !");
     },
   });
 
@@ -374,36 +396,72 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               )}
 
               {reading.start_date && reading.end_date && (
-                <div className="w-full max-w-md p-6 rounded-2xl" style={{ backgroundColor: 'rgba(156, 39, 176, 0.05)' }}>
-                  <h4 className="font-bold mb-3 text-center" style={{ color: '#9C27B0' }}>
-                    Informations
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span style={{ color: '#9CA3AF' }}>Début</span>
-                      <span className="font-bold" style={{ color: '#2D3748' }}>
-                        {format(new Date(reading.start_date), 'dd MMMM yyyy', { locale: fr })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span style={{ color: '#9CA3AF' }}>Fin</span>
-                      <span className="font-bold" style={{ color: '#2D3748' }}>
-                        {format(new Date(reading.end_date), 'dd MMMM yyyy', { locale: fr })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span style={{ color: '#9CA3AF' }}>Durée</span>
-                      <span className="font-bold" style={{ color: '#2D3748' }}>
-                        {numberOfDays} jours
-                      </span>
-                    </div>
-                    {reading.chapters_per_day && (
+                <div className="w-full max-w-md space-y-4">
+                  <div className="p-6 rounded-2xl" style={{ backgroundColor: 'rgba(156, 39, 176, 0.05)' }}>
+                    <h4 className="font-bold mb-3 text-center" style={{ color: '#9C27B0' }}>
+                      Informations
+                    </h4>
+                    <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span style={{ color: '#9CA3AF' }}>Rythme</span>
+                        <span style={{ color: '#9CA3AF' }}>Début</span>
                         <span className="font-bold" style={{ color: '#2D3748' }}>
-                          {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''}/jour
+                          {format(new Date(reading.start_date), 'dd MMMM yyyy', { locale: fr })}
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: '#9CA3AF' }}>Fin</span>
+                        <span className="font-bold" style={{ color: '#2D3748' }}>
+                          {format(new Date(reading.end_date), 'dd MMMM yyyy', { locale: fr })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: '#9CA3AF' }}>Durée</span>
+                        <span className="font-bold" style={{ color: '#2D3748' }}>
+                          {numberOfDays} jours
+                        </span>
+                      </div>
+                      {reading.chapters_per_day && (
+                        <div className="flex justify-between">
+                          <span style={{ color: '#9CA3AF' }}>Rythme</span>
+                          <span className="font-bold" style={{ color: '#2D3748' }}>
+                            {reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''}/jour
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl" style={{ backgroundColor: 'rgba(255, 107, 157, 0.08)' }}>
+                    <h4 className="font-bold mb-3 text-center" style={{ color: '#FF69B4' }}>
+                      📅 Définir le jour actuel
+                    </h4>
+                    <p className="text-xs text-center mb-4" style={{ color: '#9CA3AF' }}>
+                      Si le calcul automatique est incorrect, définissez le jour actuel manuellement
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        onValueChange={(value) => setCurrentDayMutation.mutate(parseInt(value))}
+                        disabled={setCurrentDayMutation.isPending}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder={`Jour actuel : ${getCurrentDay()}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => (
+                            <SelectItem key={day} value={day.toString()}>
+                              Jour {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {setCurrentDayMutation.isPending && (
+                        <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#FF69B4' }} />
+                      )}
+                    </div>
+                    {reading.current_day_override && (
+                      <p className="text-xs text-center mt-2" style={{ color: '#FF69B4' }}>
+                        ✓ Jour défini manuellement le {format(new Date(reading.current_day_set_date), 'dd/MM/yyyy')}
+                      </p>
                     )}
                   </div>
                 </div>
