@@ -24,6 +24,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const [customEmoji, setCustomEmoji] = useState("");
   const [isSpoiler, setIsSpoiler] = useState(false);
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
+  const [lastOpenDate, setLastOpenDate] = useState(null);
   const messagesEndRef = useRef(null);
 
   const { data: user } = useQuery({
@@ -76,6 +77,28 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
       }
     }
   }, [newChapter, reading.chapters_per_day, numberOfDays]);
+
+  // Reset revealed spoilers when dialog opens or day changes
+  useEffect(() => {
+    if (open) {
+      const today = new Date().toDateString();
+      if (lastOpenDate !== today) {
+        // Reset revealed spoilers for current day's messages
+        const currentDay = getCurrentDay();
+        setRevealedSpoilers(prev => {
+          const newRevealed = new Set(prev);
+          messages.forEach(msg => {
+            // Remove from revealed if it's from today or future days
+            if (msg.day_number >= currentDay && msg.is_spoiler) {
+              newRevealed.delete(msg.id);
+            }
+          });
+          return newRevealed;
+        });
+        setLastOpenDate(today);
+      }
+    }
+  }, [open, messages]);
 
   // Scroll to bottom when messages change or dialog opens
   useEffect(() => {
@@ -408,7 +431,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                 });
                 
                 const currentDay = getCurrentDay();
-                const canRevealSpoiler = currentDay >= parseInt(day);
+                const msgDay = parseInt(day);
+                const canRevealSpoiler = currentDay > msgDay;
                 const isSpoilerRevealed = revealedSpoilers.has(msg.id);
                 const shouldHideSpoiler = msg.is_spoiler && !canRevealSpoiler && !isSpoilerRevealed;
                 
@@ -461,7 +485,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                               ⚠️ Spoiler caché
                             </p>
                             <p className="text-xs" style={{ color: isMyMessage ? 'rgba(255,255,255,0.6)' : '#9CA3AF' }}>
-                              Disponible le jour {day}
+                              Disponible demain (jour {parseInt(day) + 1})
                             </p>
                             <p className="text-xs font-medium" style={{ color: isMyMessage ? 'rgba(255,255,255,0.7)' : '#FF69B4' }}>
                               👆 Cliquer pour révéler
