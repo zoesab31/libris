@@ -472,12 +472,14 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             {msg.is_spoiler && (
                               <div 
                                 onClick={() => {
-                                  if (isSpoilerRevealed) {
-                                    setRevealedSpoilers(prev => {
-                                      const newSet = new Set(prev);
+                                  if (isSpoilerRevealed || canRevealSpoiler) {
+                                    const newSet = new Set(revealedSpoilers);
+                                    if (newSet.has(msg.id)) {
                                       newSet.delete(msg.id);
-                                      return newSet;
-                                    });
+                                    } else {
+                                      newSet.add(msg.id);
+                                    }
+                                    setRevealedSpoilers(newSet);
                                   }
                                 }}
                                 className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity"
@@ -486,7 +488,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                                   color: isMyMessage ? 'white' : '#856404'
                                 }}>
                                 <Eye className="w-3 h-3" />
-                                SPOILER {isSpoilerRevealed ? '(cliquer pour cacher)' : 'RÉVÉLÉ'}
+                                SPOILER (cliquer pour cacher)
                               </div>
                             )}
                             
