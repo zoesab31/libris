@@ -53,9 +53,11 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   const getCurrentDay = () => {
     if (!reading.start_date) return 1;
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     const start = new Date(reading.start_date);
-    const daysPassed = differenceInDays(now, start) + 1;
-    return Math.max(1, Math.min(daysPassed, numberOfDays));
+    start.setHours(0, 0, 0, 0);
+    const daysPassed = differenceInDays(now, start);
+    return Math.max(1, Math.min(daysPassed + 1, numberOfDays));
   };
 
   useEffect(() => {
