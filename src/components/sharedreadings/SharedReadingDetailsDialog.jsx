@@ -468,27 +468,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             </p>
                           </div>
                         ) : (
-                          <div>
-                            {msg.is_spoiler && (
-                              <div 
-                                onClick={() => {
-                                  if (isSpoilerRevealed || canRevealSpoiler) {
-                                    const newSet = new Set(revealedSpoilers);
-                                    if (newSet.has(msg.id)) {
-                                      newSet.delete(msg.id);
-                                    } else {
-                                      newSet.add(msg.id);
-                                    }
-                                    setRevealedSpoilers(newSet);
-                                  }
-                                }}
-                                className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity"
-                                style={{
-                                  backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
-                                  color: isMyMessage ? 'white' : '#856404'
-                                }}>
+                          <>
+                            {msg.is_spoiler && canRevealSpoiler && (
+                              <div className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold"
+                                   style={{
+                                     backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
+                                     color: isMyMessage ? 'white' : '#856404'
+                                   }}>
                                 <Eye className="w-3 h-3" />
-                                SPOILER (cliquer pour cacher)
+                                SPOILER RÉVÉLÉ
                               </div>
                             )}
                             
@@ -520,7 +508,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             <p className="text-xs mt-2 opacity-50">
                               {format(new Date(msg.created_date), 'HH:mm', { locale: fr })}
                             </p>
-                          </div>
+                          </>
                         )}
                       </div>
 
