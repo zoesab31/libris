@@ -1569,38 +1569,86 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
-                            Début de lecture
-                          </Label>
-                          <Input
-                            type="date"
-                            value={editedData.start_date || ""}
-                            onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
-                            className="glow-input rounded-2xl text-sm"
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              border: '1px solid rgba(255, 182, 193, 0.25)'
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
-                            Fin de lecture
-                          </Label>
-                          <Input
-                            type="date"
-                            value={editedData.end_date || ""}
-                            onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
-                            className="glow-input rounded-2xl text-sm"
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              border: '1px solid rgba(255, 182, 193, 0.25)'
-                            }}
-                          />
+                      <div className="space-y-3">
+                        <Label className="text-xs font-bold mb-2 block" style={{ color: '#6B7280' }}>
+                          {editedData.is_reread ? "📅 Dates de lecture initiale" : "📅 Dates de lecture"}
+                        </Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                              Début de lecture
+                            </Label>
+                            <Input
+                              type="date"
+                              value={editedData.start_date || ""}
+                              onChange={(e) => setEditedData({...editedData, start_date: e.target.value})}
+                              className="glow-input rounded-2xl text-sm"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                border: '1px solid rgba(255, 182, 193, 0.25)'
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                              Fin de lecture
+                            </Label>
+                            <Input
+                              type="date"
+                              value={editedData.end_date || ""}
+                              onChange={(e) => setEditedData({...editedData, end_date: e.target.value})}
+                              className="glow-input rounded-2xl text-sm"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                border: '1px solid rgba(255, 182, 193, 0.25)'
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
+
+                      {editedData.is_reread && (
+                        <div className="p-4 rounded-2xl space-y-3" style={{ backgroundColor: 'rgba(156, 39, 176, 0.08)' }}>
+                          <Label className="text-xs font-bold mb-2 block flex items-center gap-2" style={{ color: '#9C27B0' }}>
+                            🔁 Dates de relecture
+                          </Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                                Début
+                              </Label>
+                              <Input
+                                type="date"
+                                value={editedData.reread_start_date || ""}
+                                onChange={(e) => setEditedData({...editedData, reread_start_date: e.target.value})}
+                                className="glow-input rounded-2xl text-sm"
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                  border: '1px solid rgba(156, 39, 176, 0.3)'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
+                                Fin
+                              </Label>
+                              <Input
+                                type="date"
+                                value={editedData.reread_end_date || ""}
+                                onChange={(e) => setEditedData({...editedData, reread_end_date: e.target.value})}
+                                className="glow-input rounded-2xl text-sm"
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                  border: '1px solid rgba(156, 39, 176, 0.3)'
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                            💡 La date de fin de relecture comptera pour l'objectif annuel
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
