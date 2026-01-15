@@ -60,10 +60,6 @@ export default function ReadingGoalManager({ year, compact = false }) {
   };
 
   const getEffectiveDate = (userBook) => {
-    // Pour les relectures, prioriser la date de fin de relecture
-    if (userBook.is_reread && userBook.reread_end_date) {
-      return userBook.reread_end_date;
-    }
     if (userBook.status === "Lu" && userBook.end_date) {
       return userBook.end_date;
     }
@@ -73,12 +69,26 @@ export default function ReadingGoalManager({ year, compact = false }) {
     return null;
   };
   
-  const booksReadThisYear = myBooks.filter(b => {
+  const booksReadThisYear = myBooks.reduce((count, b) => {
+    // Compter la lecture initiale
     const effectiveDate = getEffectiveDate(b);
-    if (!effectiveDate) return false;
-    const bookYear = new Date(effectiveDate).getFullYear();
-    return bookYear === year;
-  }).length;
+    if (effectiveDate) {
+      const bookYear = new Date(effectiveDate).getFullYear();
+      if (bookYear === year) count++;
+    }
+    
+    // Compter chaque relecture
+    if (b.rereads && b.rereads.length > 0) {
+      b.rereads.forEach(reread => {
+        if (reread.end_date) {
+          const rereadYear = new Date(reread.end_date).getFullYear();
+          if (rereadYear === year) count++;
+        }
+      });
+    }
+    
+    return count;
+  }, 0);
 
   const saveGoalMutation = useMutation({
     mutationFn: async (goalCount) => {

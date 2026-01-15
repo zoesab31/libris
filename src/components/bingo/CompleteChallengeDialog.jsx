@@ -23,13 +23,21 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
     queryFn: async () => {
       const allMyBooks = await base44.entities.UserBook.filter({ created_by: user?.email, status: "Lu" });
       
-      // Filter books read in the challenge year
+      // Filter books read in the challenge year (including rereads)
       return allMyBooks.filter(ub => {
-        // Pour les relectures, utiliser la date de fin de relecture
-        const effectiveDate = ub.is_reread && ub.reread_end_date ? ub.reread_end_date : ub.end_date;
-        if (!effectiveDate) return false;
-        const bookYear = new Date(effectiveDate).getFullYear();
-        return bookYear === challenge.year;
+        // Check initial read
+        if (ub.end_date && new Date(ub.end_date).getFullYear() === challenge.year) {
+          return true;
+        }
+        
+        // Check rereads
+        if (ub.rereads && ub.rereads.length > 0) {
+          return ub.rereads.some(reread => 
+            reread.end_date && new Date(reread.end_date).getFullYear() === challenge.year
+          );
+        }
+        
+        return false;
       });
     },
     enabled: !!user && !!challenge,

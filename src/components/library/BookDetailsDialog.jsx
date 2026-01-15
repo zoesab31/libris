@@ -530,8 +530,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     music_playlist: userBook?.music_playlist || [],
     start_date: userBook?.start_date || "",
     end_date: userBook?.end_date || "",
-    reread_start_date: userBook?.reread_start_date || "",
-    reread_end_date: userBook?.reread_end_date || "",
+    rereads: userBook?.rereads || [],
     abandon_page: userBook?.abandon_page || "",
     abandon_percentage: userBook?.abandon_percentage || "",
     is_shared_reading: userBook?.is_shared_reading || false,
@@ -539,7 +538,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     favorite_character: userBook?.favorite_character || "",
     reading_language: userBook?.reading_language || "Français",
     is_reread: userBook?.is_reread || false,
-    reread_count: userBook?.reread_count || 0,
   });
 
   const [editingCover, setEditingCover] = useState(false);
@@ -579,8 +577,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
         music_playlist: playlist,
         start_date: userBook.start_date || "",
         end_date: userBook.end_date || "",
-        reread_start_date: userBook.reread_start_date || "",
-        reread_end_date: userBook.reread_end_date || "",
+        rereads: userBook.rereads || [],
         abandon_page: userBook.abandon_page || "",
         abandon_percentage: userBook.abandon_percentage || "",
         is_shared_reading: userBook.is_shared_reading || false,
@@ -588,7 +585,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
         favorite_character: userBook.favorite_character || "",
         reading_language: userBook.reading_language || "Français",
         is_reread: userBook.is_reread || false,
-        reread_count: userBook.reread_count || 0,
       });
     }
   }, [userBook]);
@@ -1061,8 +1057,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     if (!updates.current_page) delete updates.current_page;
     if (!updates.start_date) delete updates.start_date;
     if (!updates.end_date) delete updates.end_date;
-    if (!updates.reread_start_date) delete updates.reread_start_date;
-    if (!updates.reread_end_date) delete updates.reread_end_date;
     if (!updates.abandon_page) delete updates.abandon_page;
     if (!updates.abandon_percentage) delete updates.abandon_percentage;
     if (!updates.custom_shelf) delete updates.custom_shelf;
@@ -1272,14 +1266,14 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         textShadow: '0 2px 12px rgba(255, 182, 193, 0.3)'
                       }}>
                     {book.title}
-                    {editedData.is_reread && (
+                    {editedData.rereads.length > 0 && (
                       <span className="ml-3 text-lg px-3 py-1 rounded-full align-middle"
                             style={{
                               backgroundColor: 'rgba(156, 39, 176, 0.15)',
                               color: '#9C27B0',
                               fontSize: '0.5em'
                             }}>
-                        🔁 Relecture
+                        🔁 {editedData.rereads.length} relecture{editedData.rereads.length > 1 ? 's' : ''}
                       </span>
                     )}
                   </h1>
@@ -1609,43 +1603,101 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
                       {editedData.is_reread && (
                         <div className="p-4 rounded-2xl space-y-3" style={{ backgroundColor: 'rgba(156, 39, 176, 0.08)' }}>
-                          <Label className="text-xs font-bold mb-2 block flex items-center gap-2" style={{ color: '#9C27B0' }}>
-                            🔁 Dates de relecture
-                          </Label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
-                                Début
-                              </Label>
-                              <Input
-                                type="date"
-                                value={editedData.reread_start_date || ""}
-                                onChange={(e) => setEditedData({...editedData, reread_start_date: e.target.value})}
-                                className="glow-input rounded-2xl text-sm"
-                                style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                  border: '1px solid rgba(156, 39, 176, 0.3)'
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs font-medium mb-2 block" style={{ color: '#9CA3AF' }}>
-                                Fin
-                              </Label>
-                              <Input
-                                type="date"
-                                value={editedData.reread_end_date || ""}
-                                onChange={(e) => setEditedData({...editedData, reread_end_date: e.target.value})}
-                                className="glow-input rounded-2xl text-sm"
-                                style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                  border: '1px solid rgba(156, 39, 176, 0.3)'
-                                }}
-                              />
-                            </div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-xs font-bold flex items-center gap-2" style={{ color: '#9C27B0' }}>
+                              🔁 Relectures ({editedData.rereads.length})
+                            </Label>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                setEditedData({
+                                  ...editedData,
+                                  rereads: [...editedData.rereads, { start_date: "", end_date: "" }]
+                                });
+                              }}
+                              className="text-xs h-7"
+                              style={{ backgroundColor: '#9C27B0', color: 'white' }}
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Ajouter
+                            </Button>
                           </div>
+
+                          {editedData.rereads.length === 0 ? (
+                            <p className="text-xs text-center py-4 italic" style={{ color: '#9CA3AF' }}>
+                              Cliquez sur "Ajouter" pour enregistrer une relecture
+                            </p>
+                          ) : (
+                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                              {editedData.rereads.map((reread, index) => (
+                                <div key={index} className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold" style={{ color: '#9C27B0' }}>
+                                      Relecture #{index + 1}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setEditedData({
+                                          ...editedData,
+                                          rereads: editedData.rereads.filter((_, i) => i !== index)
+                                        });
+                                      }}
+                                      className="h-6 w-6 p-0"
+                                      style={{ color: '#EF4444' }}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <Label className="text-xs mb-1 block" style={{ color: '#9CA3AF' }}>
+                                        Début
+                                      </Label>
+                                      <Input
+                                        type="date"
+                                        value={reread.start_date || ""}
+                                        onChange={(e) => {
+                                          const newRereads = [...editedData.rereads];
+                                          newRereads[index] = { ...newRereads[index], start_date: e.target.value };
+                                          setEditedData({ ...editedData, rereads: newRereads });
+                                        }}
+                                        className="text-xs h-8"
+                                        style={{
+                                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                          border: '1px solid rgba(156, 39, 176, 0.2)'
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs mb-1 block" style={{ color: '#9CA3AF' }}>
+                                        Fin
+                                      </Label>
+                                      <Input
+                                        type="date"
+                                        value={reread.end_date || ""}
+                                        onChange={(e) => {
+                                          const newRereads = [...editedData.rereads];
+                                          newRereads[index] = { ...newRereads[index], end_date: e.target.value };
+                                          setEditedData({ ...editedData, rereads: newRereads });
+                                        }}
+                                        className="text-xs h-8"
+                                        style={{
+                                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                          border: '1px solid rgba(156, 39, 176, 0.2)'
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                            💡 La date de fin de relecture comptera pour l'objectif annuel
+                            💡 Chaque relecture compte pour l'objectif annuel et le bingo
                           </p>
                         </div>
                       )}
