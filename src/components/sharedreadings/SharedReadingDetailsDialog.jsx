@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Send, Upload, X, Loader2, Smile, Trash2, Eye, EyeOff } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInCalendarDays, startOfDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -47,16 +47,17 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   });
 
   const numberOfDays = reading.start_date && reading.end_date 
-    ? differenceInDays(new Date(reading.end_date), new Date(reading.start_date)) + 1
+    ? differenceInCalendarDays(parseISO(reading.end_date), parseISO(reading.start_date)) + 1
     : 0;
 
   const getCurrentDay = () => {
     if (!reading.start_date) return 1;
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const start = new Date(reading.start_date);
-    start.setHours(0, 0, 0, 0);
-    const daysPassed = differenceInDays(now, start);
+    
+    const today = startOfDay(new Date());
+    const startDate = startOfDay(parseISO(reading.start_date));
+    
+    const daysPassed = differenceInCalendarDays(today, startDate);
+    
     return Math.max(1, Math.min(daysPassed + 1, numberOfDays));
   };
 
