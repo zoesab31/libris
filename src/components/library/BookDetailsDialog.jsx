@@ -536,6 +536,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     custom_shelf: userBook?.custom_shelf || "",
     favorite_character: userBook?.favorite_character || "",
     reading_language: userBook?.reading_language || "Français",
+    is_reread: userBook?.is_reread || false,
+    reread_count: userBook?.reread_count || 0,
   });
 
   const [editingCover, setEditingCover] = useState(false);
@@ -581,6 +583,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
         custom_shelf: userBook.custom_shelf || "",
         favorite_character: userBook.favorite_character || "",
         reading_language: userBook.reading_language || "Français",
+        is_reread: userBook.is_reread || false,
+        reread_count: userBook.reread_count || 0,
       });
     }
   }, [userBook]);
@@ -1262,6 +1266,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         textShadow: '0 2px 12px rgba(255, 182, 193, 0.3)'
                       }}>
                     {book.title}
+                    {editedData.is_reread && (
+                      <span className="ml-3 text-lg px-3 py-1 rounded-full align-middle"
+                            style={{
+                              backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                              color: '#9C27B0',
+                              fontSize: '0.5em'
+                            }}>
+                        🔁 Relecture
+                      </span>
+                    )}
                   </h1>
 
                   {isEditingAuthor ? (
@@ -1535,6 +1549,17 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         <Switch
                           checked={editedData.is_shared_reading}
                           onCheckedChange={(checked) => setEditedData({...editedData, is_shared_reading: checked})}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50 border-2 border-purple-200">
+                        <Label className="flex items-center gap-2 cursor-pointer">
+                          <BookOpen className="w-4 h-4" />
+                          Relecture
+                        </Label>
+                        <Switch
+                          checked={editedData.is_reread}
+                          onCheckedChange={(checked) => setEditedData({...editedData, is_reread: checked})}
                         />
                       </div>
 
