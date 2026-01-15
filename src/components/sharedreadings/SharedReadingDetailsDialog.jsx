@@ -468,21 +468,23 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             </p>
                           </div>
                         ) : (
-                          <div onClick={msg.is_spoiler ? () => {
-                            if (isSpoilerRevealed) {
-                              setRevealedSpoilers(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(msg.id);
-                                return newSet;
-                              });
-                            }
-                          } : undefined} className={msg.is_spoiler ? 'cursor-pointer' : ''}>
+                          <div>
                             {msg.is_spoiler && (
-                              <div className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold"
-                                   style={{
-                                     backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
-                                     color: isMyMessage ? 'white' : '#856404'
-                                   }}>
+                              <div 
+                                onClick={() => {
+                                  if (isSpoilerRevealed) {
+                                    setRevealedSpoilers(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(msg.id);
+                                      return newSet;
+                                    });
+                                  }
+                                }}
+                                className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                                style={{
+                                  backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
+                                  color: isMyMessage ? 'white' : '#856404'
+                                }}>
                                 <Eye className="w-3 h-3" />
                                 SPOILER {isSpoilerRevealed ? '(cliquer pour cacher)' : 'RÉVÉLÉ'}
                               </div>
@@ -490,10 +492,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             
                             {msg.photo_url && (
                               <div className="mb-3 rounded-lg overflow-hidden cursor-pointer"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     window.open(msg.photo_url, '_blank');
-                                   }}>
+                                   onClick={() => window.open(msg.photo_url, '_blank')}>
                                 <img 
                                   src={msg.photo_url} 
                                   alt="Photo" 
