@@ -452,7 +452,10 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                         }}
                       >
                         {shouldHideSpoiler ? (
-                          <div className="flex flex-col items-center justify-center py-8 gap-3">
+                          <div 
+                            className="flex flex-col items-center justify-center py-8 gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setRevealedSpoilers(prev => new Set([...prev, msg.id]))}
+                          >
                             <EyeOff className="w-8 h-8" style={{ color: isMyMessage ? 'rgba(255,255,255,0.6)' : '#FF69B4' }} />
                             <p className="text-sm font-bold" style={{ color: isMyMessage ? 'rgba(255,255,255,0.8)' : '#9C27B0' }}>
                               ⚠️ Spoiler caché
@@ -460,17 +463,20 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                             <p className="text-xs" style={{ color: isMyMessage ? 'rgba(255,255,255,0.6)' : '#9CA3AF' }}>
                               Disponible le jour {day}
                             </p>
+                            <p className="text-xs font-medium" style={{ color: isMyMessage ? 'rgba(255,255,255,0.7)' : '#FF69B4' }}>
+                              👆 Cliquer pour révéler
+                            </p>
                           </div>
                         ) : (
                           <>
-                            {msg.is_spoiler && (
+                            {msg.is_spoiler && canRevealSpoiler && (
                               <div className="px-2 py-1 rounded-full inline-flex items-center gap-1 mb-2 text-xs font-bold"
                                    style={{
                                      backgroundColor: isMyMessage ? 'rgba(255, 255, 255, 0.25)' : '#FFF3CD',
                                      color: isMyMessage ? 'white' : '#856404'
                                    }}>
                                 <Eye className="w-3 h-3" />
-                                SPOILER
+                                SPOILER RÉVÉLÉ
                               </div>
                             )}
                             
