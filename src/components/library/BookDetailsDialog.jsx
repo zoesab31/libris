@@ -530,6 +530,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     music_playlist: userBook?.music_playlist || [],
     start_date: userBook?.start_date || "",
     end_date: userBook?.end_date || "",
+    reread_start_date: userBook?.reread_start_date || "",
+    reread_end_date: userBook?.reread_end_date || "",
     abandon_page: userBook?.abandon_page || "",
     abandon_percentage: userBook?.abandon_percentage || "",
     is_shared_reading: userBook?.is_shared_reading || false,
@@ -577,6 +579,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
         music_playlist: playlist,
         start_date: userBook.start_date || "",
         end_date: userBook.end_date || "",
+        reread_start_date: userBook.reread_start_date || "",
+        reread_end_date: userBook.reread_end_date || "",
         abandon_page: userBook.abandon_page || "",
         abandon_percentage: userBook.abandon_percentage || "",
         is_shared_reading: userBook.is_shared_reading || false,
@@ -1057,6 +1061,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
     if (!updates.current_page) delete updates.current_page;
     if (!updates.start_date) delete updates.start_date;
     if (!updates.end_date) delete updates.end_date;
+    if (!updates.reread_start_date) delete updates.reread_start_date;
+    if (!updates.reread_end_date) delete updates.reread_end_date;
     if (!updates.abandon_page) delete updates.abandon_page;
     if (!updates.abandon_percentage) delete updates.abandon_percentage;
     if (!updates.custom_shelf) delete updates.custom_shelf;

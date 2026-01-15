@@ -25,8 +25,10 @@ export default function CompleteChallengeDialog({ challenge, books, open, onOpen
       
       // Filter books read in the challenge year
       return allMyBooks.filter(ub => {
-        if (!ub.end_date) return false;
-        const bookYear = new Date(ub.end_date).getFullYear();
+        // Pour les relectures, utiliser la date de fin de relecture
+        const effectiveDate = ub.is_reread && ub.reread_end_date ? ub.reread_end_date : ub.end_date;
+        if (!effectiveDate) return false;
+        const bookYear = new Date(effectiveDate).getFullYear();
         return bookYear === challenge.year;
       });
     },

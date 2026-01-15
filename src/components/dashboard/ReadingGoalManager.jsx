@@ -60,6 +60,10 @@ export default function ReadingGoalManager({ year, compact = false }) {
   };
 
   const getEffectiveDate = (userBook) => {
+    // Pour les relectures, prioriser la date de fin de relecture
+    if (userBook.is_reread && userBook.reread_end_date) {
+      return userBook.reread_end_date;
+    }
     if (userBook.status === "Lu" && userBook.end_date) {
       return userBook.end_date;
     }
