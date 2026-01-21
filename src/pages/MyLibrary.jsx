@@ -195,7 +195,7 @@ export default function MyLibrary() {
   };
 
   const filteredBooks = activeTab === "tous"
-    ? myBooks
+    ? myBooks.filter(b => b.status !== "Wishlist")
     : activeTab === "custom"
     ? [] // Don't show individual books in custom tab, only folders
     : activeTab === "historique"
@@ -207,7 +207,7 @@ export default function MyLibrary() {
   // Calculate book counts per tab
   const bookCounts = useMemo(() => {
     return {
-      tous: myBooks.length,
+      tous: myBooks.filter(b => b.status !== "Wishlist").length,
       custom: customShelves.reduce((sum, shelf) => 
         sum + myBooks.filter(b => b.custom_shelf === shelf.name).length, 0
       ),
