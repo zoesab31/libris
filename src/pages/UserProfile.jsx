@@ -1,16 +1,15 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music, Sparkles, TrendingUp, Trophy, Map, Edit2, UserPlus, UserMinus, UserCheck } from "lucide-react";
+import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2, Palette, UsersRound, Music, Sparkles, TrendingUp, Trophy, Map } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 import FriendBookDialog from "../components/library/FriendBookDialog";
-import EditProfileDialog from "../components/profile/EditProfileDialog";
-import { toast } from "sonner";
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
@@ -22,8 +21,7 @@ export default function UserProfile() {
   const [selectedShelf, setSelectedShelf] = useState(null);
   const [expandedYears, setExpandedYears] = useState({});
   const [selectedPAL, setSelectedPAL] = useState(null);
-  const [selectedFriendBook, setSelectedFriendBook] = useState(null);
-  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [selectedFriendBook, setSelectedFriendBook] = useState(null); // NEW
   
   const urlParams = new URLSearchParams(window.location.search);
   const userEmail = urlParams.get('userEmail');
@@ -128,28 +126,6 @@ export default function UserProfile() {
     queryKey: ['userLocations', userEmail],
     queryFn: () => base44.entities.ReadingLocation.filter({ created_by: userEmail }, '-date'),
     enabled: !!userEmail && activeTab === 'map',
-  });
-
-  const { data: isFollowing = false, refetch: refetchFollowStatus } = useQuery({
-    queryKey: ['isFollowing', currentUser?.email, userEmail],
-    queryFn: async () => {
-      if (!currentUser || !userEmail) return false;
-      const follows = await base44.entities.UserFollow.filter({
-        follower_email: currentUser.email,
-        following_email: userEmail
-      });
-      return follows.length > 0;
-    },
-    enabled: !!currentUser && !!userEmail && currentUser.email !== userEmail,
-  });
-
-  const { data: userActivityFeed = [] } = useQuery({
-    queryKey: ['userActivity', userEmail],
-    queryFn: () => base44.entities.ActivityFeed.filter({ 
-      created_by: userEmail,
-      is_visible: true
-    }, '-created_date', 10),
-    enabled: !!userEmail && activeTab === 'activity',
   });
 
   const { data: userPALs = [] } = useQuery({
@@ -310,61 +286,10 @@ export default function UserProfile() {
     navigate(createPageUrl("Chat"));
   };
 
+  // NEW: Function to handle book click
   const handleBookClick = (userBook) => {
     setSelectedFriendBook(userBook);
   };
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      if (isFollowing) {
-        const follows = await base44.entities.UserFollow.filter({
-          follower_email: currentUser.email,
-          following_email: userEmail
-        });
-        if (follows[0]) {
-          await base44.entities.UserFollow.delete(follows[0].id);
-        }
-        await base44.auth.updateMe({ 
-          following_count: (currentUser.following_count || 0) - 1 
-        });
-        // Update target user's follower count
-        const targetUser = allUsers.find(u => u.email === userEmail);
-        if (targetUser) {
-          await base44.entities.User.update(targetUser.id, {
-            follower_count: (targetUser.follower_count || 0) - 1
-          });
-        }
-      } else {
-        await base44.entities.UserFollow.create({
-          follower_email: currentUser.email,
-          following_email: userEmail
-        });
-        await base44.auth.updateMe({ 
-          following_count: (currentUser.following_count || 1) + 1 
-        });
-        // Update target user's follower count
-        const targetUser = allUsers.find(u => u.email === userEmail);
-        if (targetUser) {
-          await base44.entities.User.update(targetUser.id, {
-            follower_count: (targetUser.follower_count || 0) + 1
-          });
-        }
-      }
-    },
-    onSuccess: () => {
-      refetchFollowStatus();
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      toast.success(isFollowing ? "Vous ne suivez plus cette personne" : "Vous suivez maintenant cette personne");
-    }
-  });
-
-  // Get recently read books (last 3)
-  const recentlyRead = useMemo(() => {
-    return readBooks
-      .filter(b => b.end_date)
-      .sort((a, b) => new Date(b.end_date) - new Date(a.end_date))
-      .slice(0, 3);
-  }, [readBooks]);
 
   if (!userEmail) {
     return null;
@@ -463,67 +388,27 @@ export default function UserProfile() {
             <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
               {displayName}
             </h1>
-            {profileUser?.reading_personality && (
-              <p className="text-sm mb-2 font-medium" style={{ color: 'var(--warm-pink)' }}>
-                {profileUser.reading_personality === "Marathonienne" && "📚 Marathonienne"}
-                {profileUser.reading_personality === "Papillonne" && "🦋 Papillonne"}
-                {profileUser.reading_personality === "Sélective" && "⭐ Sélective"}
-                {profileUser.reading_personality === "Exploratrice" && "🌍 Exploratrice"}
-                {profileUser.reading_personality === "Nostalgique" && "💝 Nostalgique"}
-              </p>
-            )}
-            <p className="text-base mb-2" style={{ color: '#9CA3AF' }}>
+            <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
               {userEmail}
             </p>
-            <div className="flex gap-4 justify-center md:justify-start mb-4">
-              <button className="text-center">
-                <p className="font-bold" style={{ color: accentColor }}>{profileUser?.follower_count || 0}</p>
-                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>Followers</p>
-              </button>
-              <button className="text-center">
-                <p className="font-bold" style={{ color: accentColor }}>{profileUser?.following_count || 0}</p>
-                <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>Suivis</p>
-              </button>
-            </div>
 
-            {isOwnProfile ? (
-              <Button
-                onClick={() => setShowEditProfile(true)}
-                variant="outline"
-                className="px-6 py-3"
-                style={{ borderColor: accentColor, color: accentColor }}
-              >
-                <Edit2 className="w-5 h-5 mr-2" />
-                Modifier mon profil
-              </Button>
-            ) : (
+            {!isOwnProfile && (
               <div className="flex gap-3 justify-center md:justify-start flex-wrap">
                 <Button
-                  onClick={() => followMutation.mutate()}
-                  className="text-white font-medium px-6 py-3"
-                  style={{ backgroundColor: isFollowing ? '#9CA3AF' : accentColor }}
-                  disabled={followMutation.isPending}
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserCheck className="w-5 h-5 mr-2" />
-                      Suivi(e)
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-5 h-5 mr-2" />
-                      Suivre
-                    </>
-                  )}
-                </Button>
-                <Button
                   onClick={handleChat}
-                  variant="outline"
-                  className="px-6 py-3"
-                  style={{ borderColor: accentColor, color: accentColor }}
+                  className="text-white font-medium px-6 py-3"
+                  style={{ backgroundColor: accentColor }}
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Chat
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="px-6 py-3"
+                  style={{ borderColor: accentColor, color: accentColor }}
+                >
+                  <Users className="w-5 h-5 mr-2" />
+                  Amie
                 </Button>
               </div>
             )}
@@ -550,102 +435,9 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Bio Section */}
-        {(profileUser?.bio || profileUser?.reading_journal || profileUser?.favorite_quote || 
-          (profileUser?.favorite_genres && profileUser.favorite_genres.length > 0)) && (
-          <div className="mb-8 space-y-4">
-            {profileUser.bio && (
-              <div className="p-6 rounded-2xl bg-white shadow-md">
-                <p style={{ color: 'var(--dark-text)' }}>{profileUser.bio}</p>
-              </div>
-            )}
-            
-            {profileUser.favorite_genres && profileUser.favorite_genres.length > 0 && (
-              <div className="p-6 rounded-2xl bg-white shadow-md">
-                <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Heart className="w-5 h-5" style={{ color: accentColor }} />
-                  Genres favoris
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {profileUser.favorite_genres.map(genre => (
-                    <span key={genre} className="px-3 py-1 rounded-full text-sm font-medium"
-                          style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {recentlyRead.length > 0 && (
-              <div className="p-6 rounded-2xl bg-white shadow-md">
-                <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <BookOpen className="w-5 h-5" style={{ color: accentColor }} />
-                  Lectures récentes
-                </h3>
-                <div className="flex gap-4 overflow-x-auto">
-                  {recentlyRead.map(ub => {
-                    const book = allBooks.find(b => b.id === ub.book_id);
-                    if (!book) return null;
-                    return (
-                      <div key={ub.id} className="flex-shrink-0 w-24 cursor-pointer" onClick={() => handleBookClick(ub)}>
-                        <div className="w-24 h-36 rounded-lg overflow-hidden shadow-md mb-2"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          {book.cover_url ? (
-                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <BookOpen className="w-8 h-8" style={{ color: 'var(--warm-pink)' }} />
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                          {book.title}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {profileUser.reading_journal && (
-              <div className="p-6 rounded-2xl bg-white shadow-md">
-                <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <BookOpen className="w-5 h-5" style={{ color: accentColor }} />
-                  Lectures pour me connaître
-                </h3>
-                <p className="whitespace-pre-wrap" style={{ color: 'var(--dark-text)' }}>
-                  {profileUser.reading_journal}
-                </p>
-              </div>
-            )}
-
-            {profileUser.favorite_quote && (
-              <div className="p-6 rounded-2xl bg-white shadow-md">
-                <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Quote className="w-5 h-5" style={{ color: accentColor }} />
-                  Citation préférée
-                </h3>
-                <p className="italic text-lg" style={{ color: 'var(--dark-text)' }}>
-                  "{profileUser.favorite_quote}"
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap gap-2 h-auto">
-            <TabsTrigger 
-              value="activity" 
-              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
-              style={activeTab === "activity" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Activité
-            </TabsTrigger>
             <TabsTrigger 
               value="library" 
               className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
@@ -735,69 +527,6 @@ export default function UserProfile() {
               Map
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="activity">
-            <div className="space-y-4">
-              {userActivityFeed.map(activity => {
-                const book = activity.book_id ? allBooks.find(b => b.id === activity.book_id) : null;
-                
-                return (
-                  <div key={activity.id} className="p-6 rounded-2xl bg-white shadow-md">
-                    <div className="flex gap-4">
-                      {book?.cover_url && (
-                        <div className="w-16 h-24 rounded-lg overflow-hidden flex-shrink-0"
-                             style={{ backgroundColor: 'var(--beige)' }}>
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {activity.activity_type === "book_finished" && <span>✅</span>}
-                          {activity.activity_type === "book_started" && <span>📖</span>}
-                          {activity.activity_type === "book_rated" && <span>⭐</span>}
-                          {activity.activity_type === "book_added_pal" && <span>📚</span>}
-                          {activity.activity_type === "milestone_reached" && <span>🎉</span>}
-                          <span className="font-bold" style={{ color: 'var(--dark-text)' }}>
-                            {activity.activity_type === "book_finished" && "A terminé"}
-                            {activity.activity_type === "book_started" && "A commencé"}
-                            {activity.activity_type === "book_rated" && "A noté"}
-                            {activity.activity_type === "book_added_pal" && "A ajouté à sa PAL"}
-                            {activity.activity_type === "milestone_reached" && "Milestone atteint"}
-                          </span>
-                        </div>
-                        {book && (
-                          <p className="font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                            {book.title}
-                          </p>
-                        )}
-                        {activity.rating && (
-                          <p className="text-sm" style={{ color: 'var(--gold)' }}>
-                            ⭐ {activity.rating}/5
-                          </p>
-                        )}
-                        {activity.review_excerpt && (
-                          <p className="text-sm mt-2" style={{ color: '#666' }}>
-                            {activity.review_excerpt}
-                          </p>
-                        )}
-                        <p className="text-xs mt-2" style={{ color: 'var(--warm-pink)' }}>
-                          {new Date(activity.created_date).toLocaleDateString('fr-FR', { 
-                            day: 'numeric', month: 'long', year: 'numeric' 
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {userActivityFeed.length === 0 && (
-                <div className="text-center py-12">
-                  <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-                  <p style={{ color: 'var(--warm-pink)' }}>Aucune activité récente</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
 
           <TabsContent value="library">
             {/* Library sub-navigation - MOBILE OPTIMIZED WITH LARGER TOUCH TARGETS */}
@@ -1766,6 +1495,7 @@ export default function UserProfile() {
         </Tabs>
       </div>
 
+      {/* NEW: Friend Book Dialog */}
       {selectedFriendBook && (
         <FriendBookDialog
           friendUserBook={selectedFriendBook}
@@ -1774,14 +1504,6 @@ export default function UserProfile() {
           friendUser={profileUser}
           open={!!selectedFriendBook}
           onOpenChange={(open) => !open && setSelectedFriendBook(null)}
-        />
-      )}
-
-      {showEditProfile && (
-        <EditProfileDialog
-          open={showEditProfile}
-          onOpenChange={setShowEditProfile}
-          user={currentUser}
         />
       )}
     </div>
