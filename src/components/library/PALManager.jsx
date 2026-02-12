@@ -53,12 +53,17 @@ export default function PALManager({ open, onOpenChange, pals }) {
 
   useEffect(() => {
     if (editingPAL) {
-      setName(editingPAL.name || "");
-      setMonth(editingPAL.month?.toString() || "");
-      setYear(editingPAL.year || new Date().getFullYear());
-      setDescription(editingPAL.description || "");
-      setIcon(editingPAL.icon || "📚");
-      setSelectedBookIds(editingPAL.book_ids || []);
+      setNewPAL({
+        name: editingPAL.name || "",
+        month: editingPAL.month?.toString() || "",
+        year: editingPAL.year || new Date().getFullYear(),
+        description: editingPAL.description || "",
+        icon: editingPAL.icon || "📚",
+        book_ids: editingPAL.book_ids || [],
+        theme: editingPAL.theme || "",
+        monthly_goal: editingPAL.monthly_goal || null,
+        is_thematic: editingPAL.is_thematic || false
+      });
     }
   }, [editingPAL]);
 
@@ -101,30 +106,50 @@ export default function PALManager({ open, onOpenChange, pals }) {
     }
   });
 
+  const [newPAL, setNewPAL] = useState({
+    name: "",
+    month: "",
+    year: new Date().getFullYear(),
+    description: "",
+    icon: "📚",
+    book_ids: [],
+    theme: "",
+    monthly_goal: null,
+    is_thematic: false
+  });
+
   const resetForm = () => {
-    setName("");
-    setMonth("");
-    setYear(new Date().getFullYear());
-    setDescription("");
-    setIcon("📚");
-    setSelectedBookIds([]);
+    setNewPAL({
+      name: "",
+      month: "",
+      year: new Date().getFullYear(),
+      description: "",
+      icon: "📚",
+      book_ids: [],
+      theme: "",
+      monthly_goal: null,
+      is_thematic: false
+    });
     setSearchQuery("");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name.trim()) {
+    if (!newPAL.name.trim()) {
       toast.error("Le nom est requis");
       return;
     }
 
     const data = {
-      name: name.trim(),
-      month: month ? parseInt(month) : undefined,
-      year,
-      description: description.trim() || undefined,
-      icon,
-      book_ids: selectedBookIds,
+      name: newPAL.name.trim(),
+      month: newPAL.month ? parseInt(newPAL.month) : undefined,
+      year: newPAL.year,
+      description: newPAL.description.trim() || undefined,
+      icon: newPAL.icon,
+      book_ids: newPAL.book_ids,
+      theme: newPAL.theme.trim() || undefined,
+      monthly_goal: newPAL.monthly_goal || undefined,
+      is_thematic: newPAL.is_thematic
     };
 
     if (editingPAL) {
@@ -145,11 +170,12 @@ export default function PALManager({ open, onOpenChange, pals }) {
   };
 
   const toggleBookSelection = (bookId) => {
-    setSelectedBookIds(prev =>
-      prev.includes(bookId)
-        ? prev.filter(id => id !== bookId)
-        : [...prev, bookId]
-    );
+    setNewPAL(prev => ({
+      ...prev,
+      book_ids: prev.book_ids.includes(bookId)
+        ? prev.book_ids.filter(id => id !== bookId)
+        : [...prev.book_ids, bookId]
+    }));
   };
 
   const handleClose = () => {
@@ -181,19 +207,43 @@ export default function PALManager({ open, onOpenChange, pals }) {
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(156, 39, 176, 0.08)' }}>
+                <Switch
+                  id="thematic-pal"
+                  checked={newPAL.is_thematic}
+                  onCheckedChange={(checked) => setNewPAL({...newPAL, is_thematic: checked})}
+                />
+                <Label htmlFor="thematic-pal" className="font-medium cursor-pointer text-sm">
+                  PAL Thématique (non liée à un mois spécifique)
+                </Label>
+              </div>
+
               <div className="col-span-2">
                 <Label>Nom de la PAL *</Label>
                 <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={newPAL.name}
+                  onChange={(e) => setNewPAL({...newPAL, name: e.target.value})}
                   placeholder="Ex: PAL Novembre 2025"
                   required
                 />
               </div>
 
-              <div>
-                <Label>Mois</Label>
-                <Select value={month} onValueChange={setMonth}>
+              {newPAL.is_thematic && (
+                <div className="col-span-2">
+                  <Label>Thème *</Label>
+                  <Input
+                    value={newPAL.theme}
+                    onChange={(e) => setNewPAL({...newPAL, theme: e.target.value})}
+                    placeholder="Ex: Fantasy de l'année, Classiques français, Romance..."
+                  />
+                </div>
+              )}
+
+              {!newPAL.is_thematic && (
+                <>
+                  <div>
+                    <Label>Mois</Label>
+                    <Select value={newPAL.month} onValueChange={(value) => setNewPAL({...newPAL, month: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choisir un mois" />
                   </SelectTrigger>
@@ -212,18 +262,34 @@ export default function PALManager({ open, onOpenChange, pals }) {
                 <Label>Année</Label>
                 <Input
                   type="number"
-                  value={year}
-                  onChange={(e) => setYear(parseInt(e.target.value))}
+                  value={newPAL.year}
+                  onChange={(e) => setNewPAL({...newPAL, year: parseInt(e.target.value)})}
                   min={2020}
                   max={2050}
                 />
+              </div>
+                </>
+              )}
+
+              <div className="col-span-2">
+                <Label>Objectif de lecture (optionnel)</Label>
+                <Input
+                  type="number"
+                  value={newPAL.monthly_goal || ""}
+                  onChange={(e) => setNewPAL({...newPAL, monthly_goal: e.target.value ? parseInt(e.target.value) : null})}
+                  placeholder="Nombre de livres à lire"
+                  min={1}
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--warm-pink)' }}>
+                  💡 Fixez un objectif pour suivre votre progression
+                </p>
               </div>
 
               <div className="col-span-2">
                 <Label>Description</Label>
                 <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={newPAL.description}
+                  onChange={(e) => setNewPAL({...newPAL, description: e.target.value})}
                   placeholder="Décrivez cette PAL..."
                   rows={2}
                 />
@@ -232,8 +298,8 @@ export default function PALManager({ open, onOpenChange, pals }) {
               <div className="col-span-2">
                 <Label>Emoji</Label>
                 <Input
-                  value={icon}
-                  onChange={(e) => setIcon(e.target.value)}
+                  value={newPAL.icon}
+                  onChange={(e) => setNewPAL({...newPAL, icon: e.target.value})}
                   placeholder="Choisissez un emoji (ex: 📚, 🎯, ⭐)"
                   className="text-2xl text-center"
                   maxLength={2}
@@ -246,7 +312,7 @@ export default function PALManager({ open, onOpenChange, pals }) {
 
             {/* Book Selection */}
             <div>
-              <Label>Livres dans cette PAL ({selectedBookIds.length})</Label>
+              <Label>Livres dans cette PAL ({newPAL.book_ids.length})</Label>
               <p className="text-xs mb-2" style={{ color: 'var(--warm-pink)' }}>
                 Recherchez et sélectionnez des livres marqués "À lire"
               </p>
@@ -263,13 +329,13 @@ export default function PALManager({ open, onOpenChange, pals }) {
               </div>
 
               {/* Selected Books */}
-              {selectedBookIds.length > 0 && (
+              {newPAL.book_ids.length > 0 && (
                 <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: 'white' }}>
                   <p className="text-sm font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                    {selectedBookIds.length} livre{selectedBookIds.length > 1 ? 's' : ''} sélectionné{selectedBookIds.length > 1 ? 's' : ''}
+                    {newPAL.book_ids.length} livre{newPAL.book_ids.length > 1 ? 's' : ''} sélectionné{newPAL.book_ids.length > 1 ? 's' : ''}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedBookIds.map(bookId => {
+                    {newPAL.book_ids.map(bookId => {
                       const book = allBooks.find(b => b.id === bookId);
                       if (!book) return null;
                       return (
@@ -298,7 +364,7 @@ export default function PALManager({ open, onOpenChange, pals }) {
                 <div className="border rounded-lg max-h-64 overflow-y-auto" 
                      style={{ borderColor: 'var(--beige)' }}>
                   {filteredBooks.map(book => {
-                    const isSelected = selectedBookIds.includes(book.id);
+                    const isSelected = newPAL.book_ids.includes(book.id);
                     return (
                       <button
                         key={book.id}
@@ -367,7 +433,7 @@ export default function PALManager({ open, onOpenChange, pals }) {
               )}
               <Button
                 type="submit"
-                disabled={!name.trim() || createPALMutation.isPending || updatePALMutation.isPending}
+                disabled={!newPAL.name.trim() || createPALMutation.isPending || updatePALMutation.isPending}
                 className="flex-1 text-white font-medium"
                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
               >
@@ -397,9 +463,20 @@ export default function PALManager({ open, onOpenChange, pals }) {
                           <p className="font-bold" style={{ color: 'var(--dark-text)' }}>
                             {pal.name}
                           </p>
-                          <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                            {monthName && `${monthName} `}{pal.year} • {pal.book_ids?.length || 0} livre{(pal.book_ids?.length || 0) > 1 ? 's' : ''}
-                          </p>
+                          <div className="flex flex-col gap-1">
+                            <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                              {pal.is_thematic ? (
+                                <>🌟 {pal.theme || 'Thématique'}</>
+                              ) : (
+                                <>{monthName && `${monthName} `}{pal.year}</>
+                              )} • {pal.book_ids?.length || 0} livre{(pal.book_ids?.length || 0) > 1 ? 's' : ''}
+                            </p>
+                            {pal.monthly_goal && (
+                              <p className="text-xs font-medium" style={{ color: 'var(--deep-pink)' }}>
+                                🎯 Objectif : {pal.monthly_goal} livre{pal.monthly_goal > 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">

@@ -1422,6 +1422,16 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   💬 Avis ({friendsUserBooks.length + 1})
                 </TabsTrigger>
                 <TabsTrigger
+                  value="journal"
+                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
+                  style={activeTab === "journal" ? {
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                    color: '#FFFFFF'
+                  } : { color: '#2D3748' }}
+                >
+                  📖 Journal
+                </TabsTrigger>
+                <TabsTrigger
                   value="quotes"
                   className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
                   style={activeTab === "quotes" ? {
@@ -2463,6 +2473,12 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     </p>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="journal">
+              <div className="p-4 md:p-8">
+                <ReadingJournal userBook={userBook} book={book} />
               </div>
             </TabsContent>
 
