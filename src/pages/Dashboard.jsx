@@ -15,6 +15,7 @@ import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import BookRecommendations from "../components/library/BookRecommendations";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
+import ForYouSection from "../components/discovery/ForYouSection";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -758,9 +759,17 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Recommandations */}
+            {/* Pour toi - Recommandation du jour */}
             {myBooks.filter(b => b.status === "Lu").length >= 3 && (
-              <BookRecommendations user={user} myBooks={myBooks} allBooks={allBooks} />
+              <ForYouSection 
+                user={user}
+                myBooks={myBooks}
+                friendsBooks={friendsBooks}
+                allBooks={allBooks}
+                myFriends={myFriends}
+                allUsers={allUsers}
+                compact={true}
+              />
             )}
           </div>
 
