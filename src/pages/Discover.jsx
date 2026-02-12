@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import ForYouSection from "../components/discovery/ForYouSection";
 
 export default function Discover() {
   const [user, setUser] = useState(null);
@@ -13,40 +12,6 @@ export default function Discover() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: myBooks = [] } = useQuery({
-    queryKey: ['myBooks'],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
-  const { data: allBooks = [] } = useQuery({
-    queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
-  });
-
-  const { data: myFriends = [] } = useQuery({
-    queryKey: ['myFriends'],
-    queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
-    enabled: !!user,
-  });
-
-  const { data: friendsBooks = [] } = useQuery({
-    queryKey: ['friendsBooks'],
-    queryFn: async () => {
-      const friendsEmails = myFriends.map(f => f.friend_email);
-      if (friendsEmails.length === 0) return [];
-      const allFriendsBooks = await Promise.all(
-        friendsEmails.map(email => base44.entities.UserBook.filter({ created_by: email }))
-      );
-      return allFriendsBooks.flat();
-    },
-    enabled: myFriends.length > 0,
-  });
-
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
-  });
   const resources = [
     {
       name: "Booknode",
@@ -88,21 +53,6 @@ export default function Discover() {
             </p>
           </div>
         </div>
-
-        {/* Recommandation personnalisée */}
-        {myBooks.filter(b => b.status === "Lu").length >= 3 && (
-          <div className="mb-8">
-            <ForYouSection 
-              user={user}
-              myBooks={myBooks}
-              friendsBooks={friendsBooks}
-              allBooks={allBooks}
-              myFriends={myFriends}
-              allUsers={allUsers}
-              compact={false}
-            />
-          </div>
-        )}
 
         <div className="grid gap-6">
           {resources.map((resource) => (
