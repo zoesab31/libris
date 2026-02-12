@@ -9,7 +9,6 @@ export default function Maps() {
   const [user, setUser] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
-  const [showFriendsOnly, setShowFriendsOnly] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -61,21 +60,16 @@ export default function Maps() {
     enabled: !!user,
   });
 
-  // Combine all locations
+  // Combine all locations (user + friends)
   const allLocations = [...locations, ...friendsLocations];
-
-  // Filter by friends toggle
-  const locationsByFriendFilter = showFriendsOnly 
-    ? allLocations 
-    : locations;
 
   // Filter by category
   const filteredLocations = filterCategory === "all" 
-    ? locationsByFriendFilter 
-    : locationsByFriendFilter.filter(loc => loc.category === filterCategory);
+    ? allLocations 
+    : allLocations.filter(loc => loc.category === filterCategory);
 
   // Stats by category
-  const statsByCategory = locationsByFriendFilter.reduce((acc, loc) => {
+  const statsByCategory = allLocations.reduce((acc, loc) => {
     acc[loc.category] = (acc[loc.category] || 0) + 1;
     return acc;
   }, {});
@@ -96,7 +90,7 @@ export default function Maps() {
                 Lieux de Lecture 📍
               </h1>
               <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {filteredLocations.length} lieu{filteredLocations.length > 1 ? 'x' : ''}
+                {filteredLocations.length} lieu{filteredLocations.length > 1 ? 'x' : ''} • {locations.length} toi + {friendsLocations.length} amies
               </p>
             </div>
           </div>
@@ -106,34 +100,6 @@ export default function Maps() {
             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Plus className="w-5 h-5 mr-2" />
             Ajouter un lieu
-          </Button>
-        </div>
-
-        {/* Filter buttons */}
-        <div className="flex gap-2 mb-6">
-          <Button
-            variant={showFriendsOnly ? "outline" : "default"}
-            onClick={() => setShowFriendsOnly(false)}
-            className="flex-1"
-            style={!showFriendsOnly ? {
-              background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-              color: 'white'
-            } : {}}
-          >
-            <MapPin className="w-4 h-4 mr-2" />
-            Mes lieux ({locations.length})
-          </Button>
-          <Button
-            variant={!showFriendsOnly ? "outline" : "default"}
-            onClick={() => setShowFriendsOnly(true)}
-            className="flex-1"
-            style={showFriendsOnly ? {
-              background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-              color: 'white'
-            } : {}}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Tous ({allLocations.length})
           </Button>
         </div>
 
@@ -182,18 +148,13 @@ export default function Maps() {
           <div className="text-center py-20">
             <MapPin className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {showFriendsOnly && friendsLocations.length === 0
-                ? "Vos amies n'ont pas encore de lieux enregistrés"
-                : filterCategory === "all" 
-                  ? "Aucun lieu enregistré" 
-                  : `Aucun lieu "${filterCategory}"`
+              {filterCategory === "all" 
+                ? "Aucun lieu enregistré" 
+                : `Aucun lieu "${filterCategory}"`
               }
             </h3>
             <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-              {showFriendsOnly
-                ? "Encouragez vos amies à enregistrer leurs lieux de lecture préférés !"
-                : "Commencez à enregistrer vos endroits préférés pour lire"
-              }
+              Commencez à enregistrer vos endroits préférés pour lire
             </p>
           </div>
         )}
