@@ -781,6 +781,17 @@ export default function Dashboard() {
 
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
+            {/* Daily Challenges & Badges */}
+            <div className="grid grid-cols-1 gap-4">
+              <DailyChallenges 
+                user={user}
+                booksToday={todayStats.booksReadToday}
+                pagesGoal={20}
+                streak={todayStats.streak}
+              />
+              <BadgesShowcase user={user} />
+            </div>
+
             {/* Citation du jour */}
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
