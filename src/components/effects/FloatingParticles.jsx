@@ -16,7 +16,7 @@ export default function FloatingParticles({ count = 20 }) {
   }, [count]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -999 }}>
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
