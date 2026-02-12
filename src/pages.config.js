@@ -52,6 +52,7 @@ import Authors from './pages/Authors';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
 import Chat from './pages/Chat';
+import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
@@ -68,10 +69,9 @@ import SeriesTracking from './pages/SeriesTracking';
 import SharedReadings from './pages/SharedReadings';
 import ShelfView from './pages/ShelfView';
 import Statistics from './pages/Statistics';
+import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import Dashboard from './pages/Dashboard';
-import SuggestionsWall from './pages/SuggestionsWall';
 import __Layout from './Layout.jsx';
 
 
@@ -81,6 +81,7 @@ export const PAGES = {
     "Bingo": Bingo,
     "BookTournament": BookTournament,
     "Chat": Chat,
+    "Dashboard": Dashboard,
     "Discover": Discover,
     "FanArt": FanArt,
     "Friends": Friends,
@@ -97,10 +98,9 @@ export const PAGES = {
     "SharedReadings": SharedReadings,
     "ShelfView": ShelfView,
     "Statistics": Statistics,
+    "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "Dashboard": Dashboard,
-    "SuggestionsWall": SuggestionsWall,
 }
 
 export const pagesConfig = {

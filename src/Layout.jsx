@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
-import GlobalSearch from "@/components/layout/GlobalSearch";
+
 import BottomNavbar from "@/components/layout/BottomNavbar";
 import MobileHeader from "@/components/layout/MobileHeader";
 
@@ -293,9 +293,6 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
-            <div className="flex-1 max-w-md">
-              <GlobalSearch user={user} />
-            </div>
           </div>
           {user && (
             <div className="flex items-center gap-3">
