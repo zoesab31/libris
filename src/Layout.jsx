@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
+import GlobalSearch from "@/components/layout/GlobalSearch";
 
 const navigationItems = [
   {
@@ -270,7 +271,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                   borderColor: isDark ? '#ff1493' : '#FFE1F0',
                   backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
             <h1 className="text-lg md:text-xl font-bold md:hidden truncate cursor-pointer" 
@@ -281,6 +282,9 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                 }}>
               Nos Livres
             </h1>
+            <div className="hidden md:block flex-1 max-w-md">
+              <GlobalSearch user={user} />
+            </div>
           </div>
           {user && (
             <div className="flex items-center gap-1 md:gap-3">

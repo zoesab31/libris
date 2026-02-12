@@ -6,9 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle } from "lucide-react";
+import { Trophy } from "lucide-react";
+import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle, Palette, Lightbulb, Send } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import BadgeDisplay from "@/components/badges/BadgeDisplay";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -17,6 +21,9 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [suggestionTitle, setSuggestionTitle] = useState("");
+  const [suggestionDescription, setSuggestionDescription] = useState("");
+  const [suggestionCategory, setSuggestionCategory] = useState("nouvelle_fonctionnalité");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -64,10 +71,42 @@ export default function AccountSettings() {
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = user?.theme === 'dark' ? 'light' : 'dark';
-    updateProfileMutation.mutate({ theme: newTheme });
+  const setColorTheme = (color) => {
+    updateProfileMutation.mutate({ color_theme: color });
   };
+
+  const sendSuggestionMutation = useMutation({
+    mutationFn: async (data) => {
+      const suggestion = await base44.entities.Suggestion.create(data);
+      
+      // Notify all admins
+      const allUsers = await base44.entities.User.list();
+      const admins = allUsers.filter(u => u.role === 'admin');
+      
+      await Promise.all(
+        admins.map(admin => 
+          base44.entities.Notification.create({
+            type: "system",
+            title: `💡 Nouvelle suggestion`,
+            message: `${user?.display_name || user?.full_name} : ${data.title}`,
+            link_type: "suggestion",
+            link_id: suggestion.id,
+            created_by: admin.email,
+            is_read: false
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      toast.success("✅ Suggestion envoyée aux admins !");
+      setSuggestionTitle("");
+      setSuggestionDescription("");
+      setSuggestionCategory("nouvelle_fonctionnalité");
+    },
+    onError: () => {
+      toast.error("Erreur lors de l'envoi de la suggestion");
+    }
+  });
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
@@ -159,7 +198,17 @@ export default function AccountSettings() {
     }
   };
 
-  const isDark = user?.theme === 'dark';
+  const colorTheme = user?.color_theme || 'pink';
+  
+  const themeColors = {
+    pink: { primary: '#FF1493', secondary: '#FF69B4', gradient: 'linear-gradient(135deg, #FF1493, #FF69B4)' },
+    yellow: { primary: '#F59E0B', secondary: '#FCD34D', gradient: 'linear-gradient(135deg, #F59E0B, #FCD34D)' },
+    blue: { primary: '#3B82F6', secondary: '#60A5FA', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
+    green: { primary: '#10B981', secondary: '#34D399', gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
+    purple: { primary: '#9C27B0', secondary: '#BA68C8', gradient: 'linear-gradient(135deg, #9C27B0, #BA68C8)' },
+    red: { primary: '#EF4444', secondary: '#F87171', gradient: 'linear-gradient(135deg, #EF4444, #F87171)' },
+    dark: { primary: '#1F2937', secondary: '#4B5563', gradient: 'linear-gradient(135deg, #1F2937, #4B5563)' }
+  };
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -256,32 +305,142 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
 
-          {/* Theme Toggle */}
+          {/* Color Theme */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
-              <CardTitle style={{ color: 'var(--dark-text)' }}>Thème de l'application</CardTitle>
+              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                <Palette className="w-5 h-5" />
+                Couleur du thème
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--dark-text)' }}>
-                      Mode {isDark ? 'sombre' : 'clair'}
-                    </p>
-                    <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                      {isDark ? 'Parfait pour lire le soir' : 'Interface lumineuse et colorée'}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={isDark}
-                  onCheckedChange={toggleTheme}
-                  disabled={updateProfileMutation.isPending}
-                />
+              <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                Choisissez votre couleur préférée
+              </p>
+              <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
+                {Object.entries(themeColors).map(([key, colors]) => (
+                  <button
+                    key={key}
+                    onClick={() => setColorTheme(key)}
+                    className={`relative w-full aspect-square rounded-2xl transition-all ${
+                      colorTheme === key ? 'ring-4 ring-offset-2' : 'hover:scale-110'
+                    }`}
+                    style={{ 
+                      background: colors.gradient,
+                      ringColor: colors.primary
+                    }}
+                    title={key.charAt(0).toUpperCase() + key.slice(1)}
+                  >
+                    {colorTheme === key && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                          <span className="text-lg">✓</span>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 text-center">
+                <p className="text-xs font-medium" style={{ color: 'var(--dark-text)' }}>
+                  Thème actuel : <span className="capitalize">{colorTheme}</span>
+                </p>
               </div>
             </CardContent>
           </Card>
+
+          {/* Badges Section */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} />
+                Mes badges
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BadgeDisplay user={user} />
+            </CardContent>
+          </Card>
+
+          {/* Suggestions */}
+          {user?.role !== 'admin' && (
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                  <Lightbulb className="w-5 h-5" style={{ color: '#F59E0B' }} />
+                  Suggérer une amélioration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                  Vous avez une idée pour améliorer l'application ? Partagez-la avec les admins !
+                </p>
+                
+                <div>
+                  <Label>Titre de la suggestion</Label>
+                  <Input
+                    value={suggestionTitle}
+                    onChange={(e) => setSuggestionTitle(e.target.value)}
+                    placeholder="Ex: Ajouter un système de notation par étoiles"
+                  />
+                </div>
+
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={suggestionDescription}
+                    onChange={(e) => setSuggestionDescription(e.target.value)}
+                    placeholder="Décrivez votre idée en détail..."
+                    rows={4}
+                  />
+                </div>
+
+                <div>
+                  <Label>Catégorie</Label>
+                  <Select value={suggestionCategory} onValueChange={setSuggestionCategory}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nouvelle_fonctionnalité">🆕 Nouvelle fonctionnalité</SelectItem>
+                      <SelectItem value="amélioration">✨ Amélioration</SelectItem>
+                      <SelectItem value="bug">🐛 Bug à corriger</SelectItem>
+                      <SelectItem value="contenu">📚 Contenu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    if (!suggestionTitle.trim() || !suggestionDescription.trim()) {
+                      toast.error("Veuillez remplir tous les champs");
+                      return;
+                    }
+                    sendSuggestionMutation.mutate({
+                      title: suggestionTitle,
+                      description: suggestionDescription,
+                      category: suggestionCategory
+                    });
+                  }}
+                  disabled={sendSuggestionMutation.isPending || !suggestionTitle.trim() || !suggestionDescription.trim()}
+                  className="w-full text-white"
+                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+                >
+                  {sendSuggestionMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Envoi...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Envoyer ma suggestion
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Account Info */}
           <Card className="border-0 shadow-lg">
