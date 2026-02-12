@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { motion } from "framer-motion";
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
@@ -281,14 +282,55 @@ export default function Dashboard() {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(255, 105, 180, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(255, 105, 180, 0.6); }
+        }
+        .floating-sparkle {
+          animation: float 3s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Hero Header */}
       <div className="relative overflow-hidden">
+        {/* Floating decorative elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            className="absolute top-10 right-20"
+            animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Sparkles className="w-8 h-8" style={{ color: '#FFD700', opacity: 0.3 }} />
+          </motion.div>
+          <motion.div
+            className="absolute top-32 left-16"
+            animate={{ y: [0, 15, 0], rotate: [0, -15, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          >
+            <BookOpen className="w-10 h-10" style={{ color: '#FF69B4', opacity: 0.2 }} />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-20 right-32"
+            animate={{ y: [0, -25, 0], rotate: [0, 20, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          >
+            <Heart className="w-6 h-6" style={{ color: '#FF1493', opacity: 0.25 }} />
+          </motion.div>
+        </div>
+
         <div className="relative p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
-            <div className="mb-8">
+            <motion.div 
+              className="mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
               <h1 className="text-3xl md:text-5xl font-bold mb-2" 
                   style={{ color: '#FF1493' }}>
                 Bonjour {displayName} ✨
@@ -296,11 +338,17 @@ export default function Dashboard() {
               <p className="text-base md:text-xl" style={{ color: '#2c2c2cff' }}>
                 Ton univers littéraire t'attend
               </p>
-            </div>
+            </motion.div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
-              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+              <motion.div 
+                className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
                    style={{ 
                      background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
@@ -319,9 +367,15 @@ export default function Dashboard() {
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Livres lus en {selectedYear}
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+              <motion.div 
+                className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                    onClick={() => navigate(createPageUrl("Statistics"))}
                    style={{ 
                      background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
@@ -340,9 +394,15 @@ export default function Dashboard() {
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Pages dévorées
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+              <motion.div 
+                className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
                    style={{ 
                      background: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)',
@@ -361,9 +421,15 @@ export default function Dashboard() {
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Lectures communes
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+              <motion.div 
+                className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                    onClick={() => navigate(createPageUrl("MyLibrary"))}
                    style={{ 
                      background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
@@ -382,7 +448,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Livres dans ta PAL
                 </p>
-              </div>
+              </motion.div>
             </div>
 
             {/* Actions */}
@@ -425,12 +491,29 @@ export default function Dashboard() {
           {/* Colonne gauche */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Reading Streak Card */}
-            <ReadingStreakCard user={user} />
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ReadingStreakCard user={user} />
+            </motion.div>
 
             {/* Objectif de lecture */}
-            <ReadingGoalManager year={selectedYear} compact={false} />
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <ReadingGoalManager year={selectedYear} compact={false} />
+            </motion.div>
 
             {/* Lectures en cours */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
                     backgroundColor: 'white',
@@ -633,9 +716,15 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
 
             {/* Feed d'activité des amies */}
             {activityFeed.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
               <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                     style={{ 
                       backgroundColor: 'white',
@@ -670,6 +759,7 @@ export default function Dashboard() {
                   )}
                 </CardContent>
               </Card>
+              </motion.div>
             )}
 
             {/* Amies qui lisent */}
@@ -766,6 +856,11 @@ export default function Dashboard() {
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
             {/* Citation du jour */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
                     backgroundColor: 'white',
@@ -795,9 +890,16 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
 
             {/* Playlist musicale */}
             {allMusicWithBooks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                whileHover={{ scale: 1.02 }}
+              >
               <Card className="border-0 rounded-3xl overflow-hidden cursor-pointer dash-card"
                     onClick={() => navigate(createPageUrl("MusicPlaylist"))}
                     style={{ 
@@ -859,12 +961,24 @@ export default function Dashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </motion.div>
             )}
 
             {/* Mes amies */}
-            <TopFriendsWidget user={user} compact={false} />
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <TopFriendsWidget user={user} compact={false} />
+            </motion.div>
 
             {/* Raccourcis */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
                     backgroundColor: 'white',
@@ -921,6 +1035,7 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
           </div>
         </div>
       </div>
