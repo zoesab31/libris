@@ -21,6 +21,8 @@ import {
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
 import GlobalSearch from "@/components/layout/GlobalSearch";
+import BottomNavbar from "@/components/layout/BottomNavbar";
+import MobileHeader from "@/components/layout/MobileHeader";
 
 const navigationItems = [
   {
@@ -103,7 +105,7 @@ const navigationItems = [
 
 function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
-  const { setOpen } = useSidebar();
+  const { setOpen, open } = useSidebar();
 
   // Fetch unread messages count
   const { data: unreadCount = 0 } = useQuery({
@@ -161,8 +163,18 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
     }
   }, [location.pathname, setOpen]);
 
+  const handleMoreClick = () => {
+    setOpen(true);
+  };
+
   return (
     <>
+      {/* Mobile Header */}
+      <MobileHeader user={user} />
+
+      {/* Bottom Navigation */}
+      <BottomNavbar unreadCount={unreadCount} onMoreClick={handleMoreClick} />
+
       <Sidebar 
         className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
         style={{ 
@@ -271,31 +283,24 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
       </Sidebar>
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="border-b px-3 md:px-6 py-3 md:py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm" 
+        {/* Desktop Header */}
+        <header className="hidden md:flex border-b px-3 md:px-6 py-3 md:py-4 items-center justify-between sticky top-0 z-10 shadow-sm" 
                 style={{ 
                   borderColor: isDark ? '#ff1493' : '#FFE1F0',
                   backgroundColor: isDark ? '#0f1419' : 'white'
                 }}>
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-            <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
+            <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
-            <h1 className="text-lg md:text-xl font-bold md:hidden truncate cursor-pointer" 
-                style={{ color: isDark ? '#ffc0cb' : '#FF1493' }}
-                onClick={() => {
-                  const trigger = document.querySelector('[data-sidebar-trigger]');
-                  if (trigger) trigger.click();
-                }}>
-              Nos Livres
-            </h1>
-            <div className="hidden md:block flex-1 max-w-md">
+            <div className="flex-1 max-w-md">
               <GlobalSearch user={user} />
             </div>
           </div>
           {user && (
-            <div className="flex items-center gap-1 md:gap-3">
+            <div className="flex items-center gap-3">
               <Link to={createPageUrl("Chat")}>
-                <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
-                  <MessageSquare className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                <Button variant="ghost" size="icon" className="relative w-10 h-10">
+                  <MessageSquare className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
                           style={{ backgroundColor: '#FF0000' }}>
@@ -309,7 +314,13 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           )}
         </header>
 
-        <div className="flex-1 overflow-auto">
+        <div 
+          className="flex-1 overflow-auto"
+          style={{
+            marginTop: 'calc(env(safe-area-inset-top, 0px) + 56px)',
+            marginBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)'
+          }}
+        >
           {children}
         </div>
       </main>
@@ -341,6 +352,43 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider defaultOpen={false}>
       <style>{`
+        /* Native Android styling */
+        body {
+          overscroll-behavior: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        button, a, nav a, [role="button"] {
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .touch-none {
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 767px) {
+          body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+          }
+        }
+        
+        /* Hide scrollbars on mobile for cleaner look */
+        @media (max-width: 767px) {
+          ::-webkit-scrollbar {
+            display: none;
+          }
+          * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        }
+        
         :root {
           --cream: #FFF0F6;
           --beige: #FFD6E8;
@@ -522,7 +570,7 @@ export default function Layout({ children, currentPageName }) {
           transition: background-color 0.2s ease, transform 0.2s ease;
         }
       `}</style>
-      <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--cream)' }}>
+      <div className="min-h-screen flex w-full overflow-hidden" style={{ backgroundColor: 'var(--cream)' }}>
         <LayoutContent user={user} handleLogout={handleLogout} isDark={isDark}>
           {children}
         </LayoutContent>
