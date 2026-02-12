@@ -936,7 +936,7 @@ export default function Dashboard() {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
                 whileHover={{ scale: 1.02 }}
               >
               <Card className="border-0 rounded-3xl overflow-hidden cursor-pointer dash-card"
