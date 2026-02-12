@@ -213,13 +213,14 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                       asChild 
                       className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
                         location.pathname === item.url 
-                          ? 'text-white shadow-md' 
+                          ? 'text-white shadow-lg font-bold' 
                           : 'hover:bg-opacity-50'
                       }`}
                       style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, var(--app-primary), var(--app-secondary))'
+                        background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                        boxShadow: '0 4px 12px rgba(255, 20, 147, 0.3)'
                       } : {
-                        color: isDark ? '#cbd5e0' : 'inherit',
+                        color: isDark ? '#cbd5e0' : '#4A5568',
                         backgroundColor: 'transparent'
                       }}
                     >
