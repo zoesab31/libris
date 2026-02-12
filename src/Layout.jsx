@@ -296,6 +296,11 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           </div>
           {user && (
             <div className="flex items-center gap-3">
+              <Link to={createPageUrl("Friends")}>
+                <Button variant="ghost" size="icon" className="w-10 h-10">
+                  <Users className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                </Button>
+              </Link>
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-10 h-10">
                   <MessageSquare className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
