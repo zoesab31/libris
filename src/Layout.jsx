@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageSquare, TrendingUp } from "lucide-react";
+import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageSquare, TrendingUp, Lightbulb } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -96,6 +96,14 @@ const navigationItems = [
   },
 ];
 
+const adminNavigationItems = [
+  {
+    title: "💡 Suggestions",
+    url: createPageUrl("AdminSuggestions"),
+    icon: Sparkles,
+  },
+];
+
 function LayoutContent({ children, user, handleLogout, isDark }) {
   const location = useLocation();
   const { setOpen } = useSidebar();
@@ -172,14 +180,14 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
           }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                 style={{ background: 'linear-gradient(135deg, var(--app-primary), var(--app-secondary))' }}>
               <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
+              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#ffc0cb' : 'var(--app-primary)' }}>
                 Nos Livres
               </h2>
-              <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
+              <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--app-secondary)' }}>
                 Notre bibliothèque 🌸
               </p>
             </div>
@@ -200,7 +208,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                           : 'hover:bg-opacity-50'
                       }`}
                       style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
+                        background: 'linear-gradient(135deg, var(--app-primary), var(--app-secondary))'
                       } : {
                         color: isDark ? '#cbd5e0' : 'inherit',
                         backgroundColor: 'transparent'
@@ -208,6 +216,30 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     >
                       <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
                         <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                        <span className="font-medium text-xs md:text-base">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+
+                {user?.role === 'admin' && adminNavigationItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
+                        location.pathname === item.url 
+                          ? 'text-white shadow-md' 
+                          : 'hover:bg-opacity-50'
+                      }`}
+                      style={location.pathname === item.url ? {
+                        background: 'linear-gradient(135deg, var(--app-primary), var(--app-secondary))'
+                      } : {
+                        color: isDark ? '#cbd5e0' : 'inherit',
+                        backgroundColor: 'transparent'
+                      }}
+                    >
+                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
+                        <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
                         <span className="font-medium text-xs md:text-base">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -232,7 +264,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                        backgroundColor: isDark ? 'rgba(255, 107, 157, 0.1)' : 'transparent',
                      }}>
                   <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0"
-                       style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
+                       style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, var(--app-secondary), var(--app-light))' }}>
                     {user.profile_picture ? (
                       <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -240,10 +272,10 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
+                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--app-primary)' }}>
                       {user.full_name || 'Lectrice'}
                     </p>
-                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
+                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--app-secondary)' }}>
                       {user.email}
                     </p>
                   </div>
@@ -253,8 +285,8 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors"
                 style={{ 
-                  backgroundColor: isDark ? '#16213e' : 'var(--beige)',
-                  color: isDark ? '#ff6b9d' : 'var(--deep-pink)'
+                  backgroundColor: isDark ? '#16213e' : 'var(--app-lighter)',
+                  color: isDark ? '#ff6b9d' : 'var(--app-primary)'
                 }}
               >
                 <LogOut className="w-3 h-3 md:w-4 h-4" />
@@ -275,7 +307,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <SidebarTrigger className="hover:bg-opacity-50 p-4 md:p-2 rounded-lg transition-colors -ml-2 md:m-0 flex-shrink-0" 
                             style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
             <h1 className="text-lg md:text-xl font-bold md:hidden truncate cursor-pointer" 
-                style={{ color: isDark ? '#ffc0cb' : '#FF1493' }}
+                style={{ color: isDark ? '#ffc0cb' : 'var(--app-primary)' }}
                 onClick={() => {
                   const trigger = document.querySelector('[data-sidebar-trigger]');
                   if (trigger) trigger.click();
@@ -290,7 +322,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
             <div className="flex items-center gap-1 md:gap-3">
               <Link to={createPageUrl("Chat")}>
                 <Button variant="ghost" size="icon" className="relative w-8 h-8 md:w-10 md:h-10">
-                  <MessageSquare className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
+                  <MessageSquare className="w-4 h-4 md:w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--app-primary)' }} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
                           style={{ backgroundColor: '#FF0000' }}>
@@ -325,7 +357,26 @@ export default function Layout({ children, currentPageName }) {
     } else {
       document.documentElement.classList.remove('dark-theme');
     }
-  }, [user?.theme]);
+
+    // Apply color theme
+    const colorTheme = user?.color_theme || 'pink';
+    const themeColors = {
+      pink: { primary: '#FF1493', secondary: '#FF69B4', light: '#FFB7D5', lighter: '#FFD6E8', lightest: '#FFF0F6' },
+      yellow: { primary: '#F59E0B', secondary: '#FCD34D', light: '#FDE68A', lighter: '#FEF3C7', lightest: '#FFFBEB' },
+      blue: { primary: '#3B82F6', secondary: '#60A5FA', light: '#93C5FD', lighter: '#BFDBFE', lightest: '#EFF6FF' },
+      green: { primary: '#10B981', secondary: '#34D399', light: '#6EE7B7', lighter: '#A7F3D0', lightest: '#D1FAE5' },
+      purple: { primary: '#9C27B0', secondary: '#BA68C8', light: '#CE93D8', lighter: '#E1BEE7', lightest: '#F3E5F5' },
+      red: { primary: '#EF4444', secondary: '#F87171', light: '#FCA5A5', lighter: '#FECACA', lightest: '#FEE2E2' },
+      dark: { primary: '#1F2937', secondary: '#4B5563', light: '#6B7280', lighter: '#9CA3AF', lightest: '#F3F4F6' }
+    };
+
+    const colors = themeColors[colorTheme];
+    document.documentElement.style.setProperty('--app-primary', colors.primary);
+    document.documentElement.style.setProperty('--app-secondary', colors.secondary);
+    document.documentElement.style.setProperty('--app-light', colors.light);
+    document.documentElement.style.setProperty('--app-lighter', colors.lighter);
+    document.documentElement.style.setProperty('--app-lightest', colors.lightest);
+  }, [user?.theme, user?.color_theme]);
 
   const handleLogout = () => {
     base44.auth.logout();
@@ -347,6 +398,13 @@ export default function Layout({ children, currentPageName }) {
           --dark-text: #C2185B;
           --lavender: #F8BBD0;
           --peach: #FFCCE5;
+
+          /* Dynamic theme colors */
+          --app-primary: #FF1493;
+          --app-secondary: #FF69B4;
+          --app-light: #FFB7D5;
+          --app-lighter: #FFD6E8;
+          --app-lightest: #FFF0F6;
         }
 
         .dark-theme {

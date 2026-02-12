@@ -71,6 +71,7 @@ import ShelfView from './pages/ShelfView';
 import Statistics from './pages/Statistics';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
+import AdminSuggestions from './pages/AdminSuggestions';
 import __Layout from './Layout.jsx';
 
 
@@ -99,6 +100,7 @@ export const PAGES = {
     "Statistics": Statistics,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
+    "AdminSuggestions": AdminSuggestions,
 }
 
 export const pagesConfig = {
