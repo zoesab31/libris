@@ -61,10 +61,16 @@ export default function SuggestionsWall() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.Suggestion.update(id, { status }),
-    onSuccess: () => {
+    mutationFn: async ({ id, status }) => {
+      if (status === 'refusée') {
+        await base44.entities.Suggestion.delete(id);
+      } else {
+        await base44.entities.Suggestion.update(id, { status });
+      }
+    },
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['suggestions'] });
-      toast.success("Statut mis à jour");
+      toast.success(variables.status === 'refusée' ? "Suggestion supprimée" : "Statut mis à jour");
     },
   });
 

@@ -68,10 +68,10 @@ import SeriesTracking from './pages/SeriesTracking';
 import SharedReadings from './pages/SharedReadings';
 import ShelfView from './pages/ShelfView';
 import Statistics from './pages/Statistics';
-import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
 import Dashboard from './pages/Dashboard';
+import SuggestionsWall from './pages/SuggestionsWall';
 import __Layout from './Layout.jsx';
 
 
@@ -97,10 +97,10 @@ export const PAGES = {
     "SharedReadings": SharedReadings,
     "ShelfView": ShelfView,
     "Statistics": Statistics,
-    "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
     "Dashboard": Dashboard,
+    "SuggestionsWall": SuggestionsWall,
 }
 
 export const pagesConfig = {
