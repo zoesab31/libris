@@ -320,6 +320,29 @@ export default function Dashboard() {
           >
             <Heart className="w-6 h-6" style={{ color: '#FF1493', opacity: 0.25 }} />
           </motion.div>
+          <motion.div
+            className="absolute top-64 right-64"
+            animate={{ 
+              y: [0, -30, 0], 
+              x: [0, 20, 0],
+              rotate: [0, 360, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          >
+            <Star className="w-5 h-5" style={{ color: '#FFB6C1', opacity: 0.2 }} />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-40 left-40"
+            animate={{ 
+              y: [0, 20, 0], 
+              rotate: [0, -10, 0],
+              opacity: [0.2, 0.4, 0.2]
+            }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+          >
+            <Music className="w-7 h-7" style={{ color: '#E91E63', opacity: 0.25 }} />
+          </motion.div>
         </div>
 
         <div className="relative p-6 md:p-10">
@@ -541,7 +564,7 @@ export default function Dashboard() {
 
                 <div className="space-y-4">
                   {currentlyReading.length > 0 ? (
-                    currentlyReading.slice(0, 3).map((userBook) => {
+                    currentlyReading.slice(0, 3).map((userBook, idx) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       if (!book) return null;
 
@@ -560,9 +583,14 @@ export default function Dashboard() {
                         : 0;
 
                       return (
-                        <div key={userBook.id}
-                             className="dash-card p-4 md:p-5 rounded-2xl"
-                             style={{ backgroundColor: '#FFF5F8' }}>
+                        <motion.div 
+                          key={userBook.id}
+                          initial={{ opacity: 0, x: -30 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: idx * 0.1 }}
+                          whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                          className="dash-card p-4 md:p-5 rounded-2xl"
+                          style={{ backgroundColor: '#FFF5F8' }}>
                           <div className="flex gap-4">
                             <div className="relative flex-shrink-0">
                               <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden"
@@ -689,7 +717,7 @@ export default function Dashboard() {
                               )}
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })
                   ) : (
@@ -740,13 +768,19 @@ export default function Dashboard() {
                   </h2>
 
                   <div className="space-y-4">
-                    {activityFeed.slice(0, 5).map(activity => (
-                      <SocialFeedCard
+                    {activityFeed.slice(0, 5).map((activity, idx) => (
+                      <motion.div
                         key={activity.id}
-                        activity={activity}
-                        currentUser={user}
-                        allUsers={allUsers}
-                      />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.05 }}
+                      >
+                        <SocialFeedCard
+                          activity={activity}
+                          currentUser={user}
+                          allUsers={allUsers}
+                        />
+                      </motion.div>
                     ))}
                   </div>
 
@@ -779,7 +813,7 @@ export default function Dashboard() {
                   </h2>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    {friendsBooks.filter(b => b.status === "En cours").slice(0, 4).map((userBook) => {
+                    {friendsBooks.filter(b => b.status === "En cours").slice(0, 4).map((userBook, idx) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                       if (!book || !friend) return null;
@@ -789,9 +823,14 @@ export default function Dashboard() {
                         : 0;
 
                       return (
-                        <div key={userBook.id}
-                             className="dash-card p-4 rounded-2xl"
-                             style={{ backgroundColor: '#F9F5FF' }}>
+                        <motion.div 
+                          key={userBook.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3, delay: idx * 0.1 }}
+                          whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                          className="dash-card p-4 rounded-2xl"
+                          style={{ backgroundColor: '#F9F5FF' }}>
                           <div className="flex gap-3 mb-3">
                             <div className="w-14 h-20 rounded-xl overflow-hidden flex-shrink-0"
                                  style={{ 
@@ -843,7 +882,7 @@ export default function Dashboard() {
                               </div>
                             </div>
                           )}
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
@@ -932,8 +971,14 @@ export default function Dashboard() {
                   </h2>
                   <div className="space-y-2">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
-                      <div key={idx} className="p-3 rounded-xl flex items-center gap-3"
-                           style={{ backgroundColor: 'white' }}>
+                      <motion.div 
+                        key={idx} 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.1 }}
+                        whileHover={{ x: 5, backgroundColor: '#FFF5F8', transition: { duration: 0.2 } }}
+                        className="p-3 rounded-xl flex items-center gap-3"
+                        style={{ backgroundColor: 'white' }}>
                         <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0"
                              style={{ backgroundColor: '#FFE9F0' }}>
                           {musicItem.book.cover_url && (
@@ -948,7 +993,7 @@ export default function Dashboard() {
                             {musicItem.artist}
                           </p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                   <Button className="w-full mt-4 font-semibold rounded-xl py-3"
@@ -990,47 +1035,71 @@ export default function Dashboard() {
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   <Link to={createPageUrl("SharedReadings")}>
-                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                         style={{ backgroundColor: '#FFF5F8' }}>
+                    <motion.div 
+                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ scale: 1.08, rotate: 2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ backgroundColor: '#FFF5F8' }}>
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
                            style={{ backgroundColor: '#FFE9F0' }}>
                         <Users className="w-5 h-5" style={{ color: '#FF1493' }} />
                       </div>
                       <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Lectures<br/>communes</p>
-                    </div>
+                    </motion.div>
                   </Link>
 
                   <Link to={createPageUrl("Quotes")}>
-                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                         style={{ backgroundColor: '#FFF9E6' }}>
+                    <motion.div 
+                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.05 }}
+                      whileHover={{ scale: 1.08, rotate: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ backgroundColor: '#FFF9E6' }}>
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
                            style={{ backgroundColor: '#FFF4CC' }}>
                         <Quote className="w-5 h-5" style={{ color: '#FFD700' }} />
                       </div>
                       <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Citations</p>
-                    </div>
+                    </motion.div>
                   </Link>
 
                   <Link to={createPageUrl("BookTournament")}>
-                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                         style={{ backgroundColor: '#FFF5E6' }}>
+                    <motion.div 
+                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      whileHover={{ scale: 1.08, rotate: 2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ backgroundColor: '#FFF5E6' }}>
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
                            style={{ backgroundColor: '#FFEACC' }}>
                         <Trophy className="w-5 h-5" style={{ color: '#FF9F7F' }} />
                       </div>
                       <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
-                    </div>
+                    </motion.div>
                   </Link>
 
                   <Link to={createPageUrl("Profile")}>
-                    <div className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                         style={{ backgroundColor: '#FFE6F0' }}>
+                    <motion.div 
+                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.15 }}
+                      whileHover={{ scale: 1.08, rotate: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ backgroundColor: '#FFE6F0' }}>
                       <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
                            style={{ backgroundColor: '#FFD6E4' }}>
                         <Heart className="w-5 h-5" style={{ color: '#E91E63' }} />
                       </div>
                       <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
-                    </div>
+                    </motion.div>
                   </Link>
                 </div>
               </CardContent>
