@@ -15,8 +15,6 @@ import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import BookRecommendations from "../components/library/BookRecommendations";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
-import DailyChallenges from "../components/dashboard/DailyChallenges";
-import BadgesShowcase from "../components/dashboard/BadgesShowcase";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -95,19 +93,6 @@ export default function Dashboard() {
     queryKey: ['allUsers'],
     queryFn: () => base44.entities.User.list(),
   });
-
-  // Calculate daily stats for challenges
-  const todayStats = React.useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const booksReadToday = myBooks.filter(b => 
-      b.end_date && b.end_date.startsWith(today)
-    ).length;
-    
-    // Calculate reading streak (simplified - days with activity)
-    const streak = 5; // TODO: Calculate actual streak
-    
-    return { booksReadToday, streak };
-  }, [myBooks]);
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
   const toReadCount = myBooks.filter(b => b.status === "À lire").length;
@@ -781,17 +766,6 @@ export default function Dashboard() {
 
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
-            {/* Daily Challenges & Badges */}
-            <div className="grid grid-cols-1 gap-4">
-              <DailyChallenges 
-                user={user}
-                booksToday={todayStats.booksReadToday}
-                pagesGoal={20}
-                streak={todayStats.streak}
-              />
-              <BadgesShowcase user={user} />
-            </div>
-
             {/* Citation du jour */}
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
