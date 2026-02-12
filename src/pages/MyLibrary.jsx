@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft } from "lucide-react";
+import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft, TrendingUp, CheckCircle2, Target, Sparkles } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
@@ -12,6 +12,8 @@ import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import PALManager from "../components/library/PALManager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 
 export default function MyLibrary() {
@@ -193,6 +195,86 @@ export default function MyLibrary() {
 
     return { total, completed, percentage };
   };
+
+  // PAL Dashboard stats
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
+  const palStats = useMemo(() => {
+    const thematicPALs = readingLists.filter(pal => pal.is_thematic);
+    const monthlyPALs = readingLists.filter(pal => !pal.is_thematic);
+    const currentMonthPAL = readingLists.find(pal => pal.month === currentMonth && pal.year === currentYear);
+
+    const totalBooks = readingLists.reduce((sum, pal) => sum + (pal.book_ids?.length || 0), 0);
+    const uniqueBooks = new Set();
+    readingLists.forEach(pal => {
+      pal.book_ids?.forEach(bookId => uniqueBooks.add(bookId));
+    });
+
+    const booksRead = myBooks.filter(ub => {
+      if (ub.status !== "Lu") return false;
+      return Array.from(uniqueBooks).includes(ub.book_id);
+    }).length;
+
+    let monthlyGoalProgress = 0;
+    if (currentMonthPAL && currentMonthPAL.monthly_goal) {
+      const readThisMonth = myBooks.filter(ub => {
+        if (ub.status !== "Lu" || !ub.end_date) return false;
+        const endDate = new Date(ub.end_date);
+        return endDate.getMonth() + 1 === currentMonth && 
+               endDate.getFullYear() === currentYear &&
+               currentMonthPAL.book_ids?.includes(ub.book_id);
+      }).length;
+      monthlyGoalProgress = currentMonthPAL.monthly_goal > 0 
+        ? (readThisMonth / currentMonthPAL.monthly_goal) * 100 
+        : 0;
+    }
+
+    return {
+      totalPALs: readingLists.length,
+      thematicPALs: thematicPALs.length,
+      monthlyPALs: monthlyPALs.length,
+      totalBooks,
+      uniqueBooks: uniqueBooks.size,
+      booksRead,
+      completionRate: uniqueBooks.size > 0 ? (booksRead / uniqueBooks.size) * 100 : 0,
+      currentMonthPAL,
+      monthlyGoalProgress
+    };
+  }, [readingLists, myBooks, currentMonth, currentYear]);
+
+  const palsByCategory = useMemo(() => {
+    const thematic = readingLists.filter(pal => pal.is_thematic);
+    const monthly = readingLists.filter(pal => !pal.is_thematic);
+
+    const calculateProgress = (pal) => {
+      if (!pal.book_ids || pal.book_ids.length === 0) return 0;
+      const read = myBooks.filter(ub => 
+        pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
+      ).length;
+      return (read / pal.book_ids.length) * 100;
+    };
+
+    return {
+      thematic: thematic.map(pal => ({
+        ...pal,
+        progress: calculateProgress(pal),
+        booksToRead: myBooks.filter(ub => 
+          pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+        ).length
+      })),
+      monthly: monthly.map(pal => ({
+        ...pal,
+        progress: calculateProgress(pal),
+        booksToRead: myBooks.filter(ub => 
+          pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+        ).length
+      })).sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        return (b.month || 0) - (a.month || 0);
+      })
+    };
+  }, [readingLists, myBooks]);
 
   const filteredBooks = activeTab === "tous"
     ? myBooks.filter(b => b.status !== "Wishlist")
@@ -441,7 +523,7 @@ export default function MyLibrary() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                Mes PAL (Piles À Lire)
+                📊 Tableau de bord PAL
               </h2>
               <Button
                 onClick={() => setShowPALs(true)}
@@ -460,7 +542,7 @@ export default function MyLibrary() {
                   Aucune PAL créée
                 </h3>
                 <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
-                  Créez votre première PAL pour organiser vos futures lectures par mois
+                  Créez votre première PAL pour organiser vos futures lectures
                 </p>
                 <Button
                   onClick={() => setShowPALs(true)}
@@ -556,149 +638,191 @@ export default function MyLibrary() {
               </div>
             ) : (
               <div className="space-y-6">
-                {palYears.map(year => {
-                  const yearPALs = palsByYear[year];
-                  const totalBooks = yearPALs.reduce((sum, pal) => sum + (pal.book_ids?.length || 0), 0);
-                  const isExpanded = expandedPALYears[year];
+                {/* Global Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">📚</span>
+                        <span className="text-3xl font-bold" style={{ color: 'var(--deep-pink)' }}>
+                          {palStats.totalPALs}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                        PAL totales
+                      </p>
+                    </CardContent>
+                  </Card>
 
-                  return (
-                    <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                      <button
-                        onClick={() => togglePALYear(year)}
-                        className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
-                        style={{ backgroundColor: 'var(--cream)' }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-                            <span className="text-white font-bold text-lg">{year}</span>
-                          </div>
-                          <div>
-                            <h2 className="text-2xl font-bold text-left" style={{ color: 'var(--dark-text)' }}>
-                              PAL {year}
-                            </h2>
-                            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                              {yearPALs.length} PAL{yearPALs.length > 1 ? 's' : ''} • {totalBooks} livre{totalBooks > 1 ? 's' : ''}
-                            </p>
-                          </div>
+                  <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">📖</span>
+                        <span className="text-3xl font-bold" style={{ color: 'var(--warm-pink)' }}>
+                          {palStats.uniqueBooks}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                        Livres uniques
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">✅</span>
+                        <span className="text-3xl font-bold" style={{ color: '#4CAF50' }}>
+                          {palStats.booksRead}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                        Livres lus
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <TrendingUp className="w-6 h-6" style={{ color: 'var(--gold)' }} />
+                        <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>
+                          {Math.round(palStats.completionRate)}%
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                        Taux de complétion
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Current Month Goal */}
+                {palStats.currentMonthPAL && palStats.currentMonthPAL.monthly_goal && (
+                  <Card className="shadow-lg border-2" style={{ borderColor: 'var(--warm-pink)' }}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                        <Target className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                        Objectif du mois en cours
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-lg font-bold" style={{ color: 'var(--dark-text)' }}>
+                            {palStats.currentMonthPAL.name}
+                          </p>
+                          <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                            Objectif : {palStats.currentMonthPAL.monthly_goal} livre{palStats.currentMonthPAL.monthly_goal > 1 ? 's' : ''}
+                          </p>
                         </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-                        ) : (
-                          <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-                        )}
-                      </button>
+                        <span className="text-3xl font-bold" style={{ color: palStats.monthlyGoalProgress >= 100 ? '#4CAF50' : 'var(--deep-pink)' }}>
+                          {Math.round(palStats.monthlyGoalProgress)}%
+                        </span>
+                      </div>
+                      <Progress value={palStats.monthlyGoalProgress} className="h-3" />
+                    </CardContent>
+                  </Card>
+                )}
 
-                      {isExpanded && (
-                        <div className="p-6">
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {yearPALs.map((pal) => {
-                              const palBooks = myBooks.filter(userBook => 
-                                pal.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
-                              );
-                              const previewBooks = palBooks.slice(0, 3);
-                              const monthName = pal.month ? monthNames[pal.month - 1] : "";
-                              const progress = calculatePALProgress(pal);
-
-                              return (
-                                <div
-                                  key={pal.id}
-                                  onClick={() => setSelectedPAL(pal)}
-                                  className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                                  style={{
-                                    backgroundColor: 'white',
-                                    border: '2px solid var(--beige)'
-                                  }}
-                                >
-                                  <div className="mb-4 flex items-center justify-center gap-1 h-32">
-                                    {previewBooks.length > 0 ? (
-                                      <div className="flex gap-1 items-end">
-                                        {previewBooks.map((userBook, idx) => {
-                                          const book = allBooks.find(b => b.id === userBook.book_id);
-                                          return (
-                                            <div
-                                              key={userBook.id}
-                                              className="w-8 h-20 rounded-sm shadow-md overflow-hidden"
-                                              style={{
-                                                transform: `translateY(${idx * 2}px)`
-                                              }}
-                                            >
-                                              {book?.cover_url ? (
-                                                <img
-                                                  src={book.cover_url}
-                                                  alt={book.title}
-                                                  className="w-full h-full object-cover"
-                                                />
-                                              ) : (
-                                                <div className="w-full h-full bg-pink-200 flex items-center justify-center text-xs text-center text-gray-500">
-                                                  ?
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <div className="text-6xl opacity-20">{pal.icon}</div>
-                                    )}
-                                  </div>
-
-                                  <div className="text-center">
-                                    <h3 className="text-lg font-bold mb-1"
-                                        style={{ color: 'var(--dark-text)' }}>
-                                      {pal.icon} {pal.name}
-                                    </h3>
-                                    {monthName && (
-                                      <p className="text-xs mb-2 flex items-center justify-center gap-1" style={{ color: 'var(--warm-brown)' }}>
-                                        <Calendar className="w-3 h-3" />
-                                        {monthName} {pal.year}
-                                      </p>
-                                    )}
-                                    
-                                    {/* Progress Bar and Counter */}
-                                    {progress.total > 0 && (
-                                      <div className="mt-3 space-y-2">
-                                        <div className="flex items-center justify-center gap-2">
-                                          <span className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
-                                            {palBooks.length} à lire
-                                          </span>
-                                          <span style={{ color: 'var(--warm-pink)' }}>•</span>
-                                          <span className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>
-                                            {progress.completed}/{progress.total} lus
-                                          </span>
-                                        </div>
-                                        <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                                          <div 
-                                            className="h-full rounded-full transition-all duration-500"
-                                            style={{ 
-                                              width: `${progress.percentage}%`,
-                                              background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                                            }}
-                                          />
-                                        </div>
-                                        {progress.percentage > 0 && (
-                                          <p className="text-xs font-bold" style={{ color: 'var(--deep-pink)' }}>
-                                            {progress.percentage}% complété
-                                          </p>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {pal.description && (
-                                      <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                                        {pal.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                {/* Thematic PALs */}
+                {palsByCategory.thematic.length > 0 && (
+                  <div>
+                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                      <Sparkles className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                      PAL Thématiques
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {palsByCategory.thematic.map(pal => (
+                        <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                              onClick={() => setSelectedPAL(pal)}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                              <span className="text-2xl">{pal.icon}</span>
+                              {pal.name}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {pal.theme && (
+                              <p className="text-sm mb-3 px-3 py-1 rounded-full inline-block" 
+                                 style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                                {pal.theme}
+                              </p>
+                            )}
+                            <div className="space-y-3">
+                              <div className="flex justify-between text-sm">
+                                <span style={{ color: 'var(--warm-pink)' }}>
+                                  {pal.booksToRead} à lire
+                                </span>
+                                <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                  {Math.round(pal.progress)}% complété
+                                </span>
+                              </div>
+                              <Progress value={pal.progress} className="h-2" />
+                              {pal.description && (
+                                <p className="text-xs" style={{ color: '#666' }}>
+                                  {pal.description}
+                                </p>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* Monthly PALs */}
+                {palsByCategory.monthly.length > 0 && (
+                  <div>
+                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                      <Calendar className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                      PAL Mensuelles
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {palsByCategory.monthly.map(pal => (
+                        <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                              onClick={() => setSelectedPAL(pal)}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                              <span className="text-2xl">{pal.icon}</span>
+                              {pal.name}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Calendar className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
+                              <span className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                                {pal.month ? monthNames[pal.month - 1] : ''} {pal.year}
+                              </span>
+                            </div>
+                            {pal.monthly_goal && (
+                              <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--beige)' }}>
+                                <div className="flex items-center gap-2">
+                                  <Target className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                                  <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
+                                    Objectif : {pal.monthly_goal} livre{pal.monthly_goal > 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            <div className="space-y-3">
+                              <div className="flex justify-between text-sm">
+                                <span style={{ color: 'var(--warm-pink)' }}>
+                                  {pal.booksToRead} à lire
+                                </span>
+                                <span className="font-bold" style={{ color: 'var(--deep-pink)' }}>
+                                  {Math.round(pal.progress)}% complété
+                                </span>
+                              </div>
+                              <Progress value={pal.progress} className="h-2" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
