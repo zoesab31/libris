@@ -94,13 +94,10 @@ const navigationItems = [
     url: createPageUrl("Discover"),
     icon: Sparkles,
   },
-];
-
-const adminNavigationItems = [
   {
-    title: "💡 Suggestions",
-    url: createPageUrl("AdminSuggestions"),
-    icon: Sparkles,
+    title: "💡 Mur des idées",
+    url: createPageUrl("SuggestionsWall"),
+    icon: Lightbulb,
   },
 ];
 
@@ -221,30 +218,6 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-
-                {user?.role === 'admin' && adminNavigationItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
-                        location.pathname === item.url 
-                          ? 'text-white shadow-md' 
-                          : 'hover:bg-opacity-50'
-                      }`}
-                      style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))'
-                      } : {
-                        color: isDark ? '#cbd5e0' : 'inherit',
-                        backgroundColor: 'transparent'
-                      }}
-                      >
-                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
-                        <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                        <span className="font-medium text-xs md:text-base">{item.title}</span>
-                      </Link>
-                      </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

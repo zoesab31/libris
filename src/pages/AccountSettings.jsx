@@ -7,11 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Trophy } from "lucide-react";
-import { User, Save, Upload, Loader2, Moon, Sun, Trash2, AlertTriangle, Palette, Lightbulb, Send } from "lucide-react";
+import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import BadgeDisplay from "@/components/badges/BadgeDisplay";
 
 export default function AccountSettings() {
@@ -21,9 +19,6 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [suggestionTitle, setSuggestionTitle] = useState("");
-  const [suggestionDescription, setSuggestionDescription] = useState("");
-  const [suggestionCategory, setSuggestionCategory] = useState("nouvelle_fonctionnalité");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -70,39 +65,6 @@ export default function AccountSettings() {
       toast.error("Erreur lors de l'upload de l'image");
     }
   };
-
-  const sendSuggestionMutation = useMutation({
-    mutationFn: async (data) => {
-      const suggestion = await base44.entities.Suggestion.create(data);
-      
-      // Notify all admins
-      const allUsers = await base44.entities.User.list();
-      const admins = allUsers.filter(u => u.role === 'admin');
-      
-      await Promise.all(
-        admins.map(admin => 
-          base44.entities.Notification.create({
-            type: "system",
-            title: `💡 Nouvelle suggestion`,
-            message: `${user?.display_name || user?.full_name} : ${data.title}`,
-            link_type: "suggestion",
-            link_id: suggestion.id,
-            created_by: admin.email,
-            is_read: false
-          })
-        )
-      );
-    },
-    onSuccess: () => {
-      toast.success("✅ Suggestion envoyée aux admins !");
-      setSuggestionTitle("");
-      setSuggestionDescription("");
-      setSuggestionCategory("nouvelle_fonctionnalité");
-    },
-    onError: () => {
-      toast.error("Erreur lors de l'envoi de la suggestion");
-    }
-  });
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
@@ -303,86 +265,6 @@ export default function AccountSettings() {
               <BadgeDisplay user={user} />
             </CardContent>
           </Card>
-
-          {/* Suggestions */}
-          {user?.role !== 'admin' && (
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                  <Lightbulb className="w-5 h-5" style={{ color: '#F59E0B' }} />
-                  Suggérer une amélioration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                  Vous avez une idée pour améliorer l'application ? Partagez-la avec les admins !
-                </p>
-                
-                <div>
-                  <Label>Titre de la suggestion</Label>
-                  <Input
-                    value={suggestionTitle}
-                    onChange={(e) => setSuggestionTitle(e.target.value)}
-                    placeholder="Ex: Ajouter un système de notation par étoiles"
-                  />
-                </div>
-
-                <div>
-                  <Label>Description</Label>
-                  <Textarea
-                    value={suggestionDescription}
-                    onChange={(e) => setSuggestionDescription(e.target.value)}
-                    placeholder="Décrivez votre idée en détail..."
-                    rows={4}
-                  />
-                </div>
-
-                <div>
-                  <Label>Catégorie</Label>
-                  <Select value={suggestionCategory} onValueChange={setSuggestionCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nouvelle_fonctionnalité">🆕 Nouvelle fonctionnalité</SelectItem>
-                      <SelectItem value="amélioration">✨ Amélioration</SelectItem>
-                      <SelectItem value="bug">🐛 Bug à corriger</SelectItem>
-                      <SelectItem value="contenu">📚 Contenu</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  onClick={() => {
-                    if (!suggestionTitle.trim() || !suggestionDescription.trim()) {
-                      toast.error("Veuillez remplir tous les champs");
-                      return;
-                    }
-                    sendSuggestionMutation.mutate({
-                      title: suggestionTitle,
-                      description: suggestionDescription,
-                      category: suggestionCategory
-                    });
-                  }}
-                  disabled={sendSuggestionMutation.isPending || !suggestionTitle.trim() || !suggestionDescription.trim()}
-                  className="w-full text-white"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                >
-                  {sendSuggestionMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Envoi...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Envoyer ma suggestion
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Account Info */}
           <Card className="border-0 shadow-lg">
