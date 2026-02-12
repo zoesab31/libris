@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Calendar, Trophy } from "lucide-react";
+import { Flame, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,6 @@ export default function ReadingStreakCard({ user }) {
       const today = new Date().toISOString().split('T')[0];
       
       if (!streakData) {
-        // Créer le premier streak
         return await base44.entities.ReadingStreak.create({
           current_streak: 1,
           longest_streak: 1,
@@ -60,7 +59,6 @@ export default function ReadingStreakCard({ user }) {
 
   const currentStreak = streakData?.current_streak || 0;
   const longestStreak = streakData?.longest_streak || 0;
-  const totalDays = streakData?.total_reading_days || 0;
 
   const canLogToday = () => {
     if (!streakData) return true;
@@ -69,64 +67,45 @@ export default function ReadingStreakCard({ user }) {
   };
 
   return (
-    <Card className="overflow-hidden border-0 shadow-lg" style={{ 
-      background: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
+    <Card className="border-0 rounded-3xl overflow-hidden dash-card" style={{ 
+      backgroundColor: 'white',
+      boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
     }}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Flame className="w-6 h-6 text-white" />
-            <h3 className="font-bold text-white text-lg">Série de lecture</h3>
+      <CardContent className="p-5 md:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: 'linear-gradient(135deg, #FF69B4, #FF1493)' }}>
+              <Flame className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-base md:text-lg" style={{ color: '#2D3748' }}>
+                  {currentStreak === 0 ? "Commence ta série !" : `${currentStreak} jour${currentStreak > 1 ? 's' : ''} 🔥`}
+                </h3>
+                {currentStreak >= 7 && <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />}
+              </div>
+              <p className="text-xs md:text-sm" style={{ color: '#9CA3AF' }}>
+                {longestStreak > 0 ? `Record : ${longestStreak} jour${longestStreak > 1 ? 's' : ''}` : 'Enregistre ta première lecture'}
+              </p>
+            </div>
           </div>
+
           {canLogToday() && (
             <Button
               size="sm"
               onClick={() => updateStreakMutation.mutate()}
               disabled={updateStreakMutation.isPending}
-              className="bg-white text-orange-600 hover:bg-gray-100 font-bold shadow-md"
+              className="font-semibold rounded-xl px-4 py-2 text-xs md:text-sm flex-shrink-0"
+              style={{ 
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                color: 'white'
+              }}
             >
-              J'ai lu aujourd'hui
+              ✓ J'ai lu
             </Button>
           )}
         </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-1">
-              {currentStreak}
-            </div>
-            <div className="text-xs text-white/90 flex items-center justify-center gap-1">
-              <Flame className="w-3 h-3" />
-              Série actuelle
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-1">
-              {longestStreak}
-            </div>
-            <div className="text-xs text-white/90 flex items-center justify-center gap-1">
-              <Trophy className="w-3 h-3" />
-              Record
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-1">
-              {totalDays}
-            </div>
-            <div className="text-xs text-white/90 flex items-center justify-center gap-1">
-              <Calendar className="w-3 h-3" />
-              Total de jours
-            </div>
-          </div>
-        </div>
-
-        {currentStreak >= 7 && (
-          <div className="mt-4 text-center text-sm text-white/95 font-medium">
-            🎉 Incroyable ! {currentStreak} jours consécutifs !
-          </div>
-        )}
       </CardContent>
     </Card>
   );
