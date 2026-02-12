@@ -16,6 +16,7 @@ import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
+import FloatingParticles from "../components/effects/FloatingParticles";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -262,7 +263,8 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <FloatingParticles count={30} />
       <style>{`
         .dash-card {
           transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
