@@ -13,9 +13,8 @@ import { fr } from 'date-fns/locale';
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
-import BookRecommendations from "../components/library/BookRecommendations";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
-import ForYouSection from "../components/discovery/ForYouSection";
+import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -425,6 +424,9 @@ export default function Dashboard() {
         <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
           {/* Colonne gauche */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6">
+            {/* Reading Streak Card */}
+            <ReadingStreakCard user={user} />
+
             {/* Objectif de lecture */}
             <ReadingGoalManager year={selectedYear} compact={false} />
 
@@ -759,18 +761,6 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Pour toi - Recommandation du jour */}
-            {myBooks.filter(b => b.status === "Lu").length >= 3 && (
-              <ForYouSection 
-                user={user}
-                myBooks={myBooks}
-                friendsBooks={friendsBooks}
-                allBooks={allBooks}
-                myFriends={myFriends}
-                allUsers={allUsers}
-                compact={true}
-              />
-            )}
           </div>
 
           {/* Colonne droite */}
