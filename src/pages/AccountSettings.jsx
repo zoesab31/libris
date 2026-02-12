@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy, Shield } from "lucide-react";
+import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
 import BadgeDisplay from "@/components/badges/BadgeDisplay";
@@ -19,7 +18,6 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -288,28 +286,6 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
 
-          {/* Privacy Policy */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                <Shield className="w-5 h-5" style={{ color: '#FF1493' }} />
-                Politique de confidentialité
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-4" style={{ color: '#4B5563' }}>
-                Découvrez comment nous protégeons vos données et respectons votre vie privée.
-              </p>
-              <Button
-                onClick={() => setShowPrivacyPolicy(true)}
-                className="text-white"
-                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-              >
-                Lire la politique de confidentialité
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Delete Account - DANGER ZONE */}
           <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid #DC2626' }}>
             <CardHeader>
@@ -409,92 +385,6 @@ export default function AccountSettings() {
           }}
         />
       )}
-
-      {/* Privacy Policy Dialog */}
-      <Dialog open={showPrivacyPolicy} onOpenChange={setShowPrivacyPolicy}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto max-w-2xl">
-          <DialogHeader>
-            <DialogTitle style={{ color: 'var(--dark-text)' }}>Politique de Confidentialité</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm" style={{ color: '#4B5563' }}>
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>1. Introduction</h3>
-              <p>
-                Nos Livres s'engage à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos données personnelles.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>2. Données que nous collectons</h3>
-              <ul className="list-disc ml-5 space-y-1">
-                <li>Informations de profil : nom, email, photo de profil</li>
-                <li>Données de lecture : livres lus, notes, évaluations, commentaires</li>
-                <li>Contenu social : amies, messages, activités partagées</li>
-                <li>Localisation : lieux où vous lisez (optionnel)</li>
-                <li>Préférences : thème, paramètres de confidentialité</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>3. Utilisation de vos données</h3>
-              <p>Nous utilisons vos données pour :</p>
-              <ul className="list-disc ml-5 space-y-1 mt-2">
-                <li>Fournir et améliorer nos services</li>
-                <li>Personnaliser votre expérience</li>
-                <li>Créer des recommandations de livres</li>
-                <li>Permettre les fonctionnalités sociales</li>
-                <li>Assurer la sécurité de la plateforme</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>4. Partage de données</h3>
-              <p>
-                Vos données ne sont partagées qu'avec vos amies sur la plateforme. Les administrateurs peuvent accéder à des données techniques pour gérer le service. Nous ne vendons jamais vos données à des tiers.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>5. Sécurité des données</h3>
-              <p>
-                Nous utilisons le chiffrement et les meilleures pratiques de sécurité pour protéger vos informations personnelles contre les accès non autorisés.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>6. Vos droits</h3>
-              <p>Vous avez le droit de :</p>
-              <ul className="list-disc ml-5 space-y-1 mt-2">
-                <li>Accéder à vos données personnelles</li>
-                <li>Modifier vos informations de profil</li>
-                <li>Supprimer votre compte et vos données</li>
-                <li>Contrôler vos paramètres de confidentialité</li>
-              </ul>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>7. Conservation des données</h3>
-              <p>
-                Vos données sont conservées tant que votre compte est actif. Vous pouvez supprimer votre compte à tout moment, ce qui entraînera l'effacement de toutes vos données.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>8. Modifications de cette politique</h3>
-              <p>
-                Nous pouvons mettre à jour cette politique de confidentialité de temps en temps. Les modifications seront affichées sur cette page.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="font-bold mb-2" style={{ color: 'var(--dark-text)' }}>9. Contact</h3>
-              <p>
-                Si vous avez des questions concernant cette politique de confidentialité ou vos données, veuillez nous contacter via l'adresse email associée à votre compte.
-              </p>
-            </section>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

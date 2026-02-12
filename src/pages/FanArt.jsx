@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Plus, FolderOpen, ChevronLeft, Trash2, Download, Share2, Loader2 } from "lucide-react";
+import { Image as ImageIcon, Plus, FolderOpen, ChevronLeft, Trash2 } from "lucide-react";
 import AddFanArtDialog from "../components/fanart/AddFanArtDialog";
 import FanArtGallery from "../components/fanart/FanArtGallery";
 import { toast } from "sonner";
@@ -12,7 +12,6 @@ export default function FanArt() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [selectedSubfolder, setSelectedSubfolder] = useState(null);
-  const [importingPinterest, setImportingPinterest] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -59,23 +58,6 @@ export default function FanArt() {
       setSelectedSubfolder(null);
     },
   });
-
-  const handleImportPinterest = async () => {
-    setImportingPinterest(true);
-    try {
-      const response = await base44.functions.invoke('importPinterestPins', {});
-      if (response.data.success) {
-        queryClient.invalidateQueries({ queryKey: ['fanArts'] });
-        toast.success(`✅ ${response.data.imported} fan art${response.data.imported > 1 ? 's' : ''} importé${response.data.imported > 1 ? 's' : ''} de Pinterest !`);
-      } else {
-        toast.error('Erreur lors de l\'import Pinterest');
-      }
-    } catch (error) {
-      toast.error('Erreur lors de l\'import: ' + error.message);
-    } finally {
-      setImportingPinterest(false);
-    }
-  };
 
   // Group by book
   const fanArtsByBook = fanArts.reduce((acc, fanArt) => {
@@ -134,32 +116,13 @@ export default function FanArt() {
                 {fanArts.length} fan art{fanArts.length > 1 ? 's' : ''} • {books.length} livre{books.length > 1 ? 's' : ''}
               </p>
             </div>
-            <div className="flex gap-3 flex-wrap">
-              <Button 
-                onClick={handleImportPinterest}
-                disabled={importingPinterest}
-                className="shadow-xl font-bold px-6 py-6 rounded-2xl hover:scale-105 transition-transform"
-                style={{ backgroundColor: 'white', color: '#E60023' }}>
-                {importingPinterest ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Import...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5 mr-2" />
-                    Importer Pinterest
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={() => setShowAddDialog(true)}
-                className="shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
-                style={{ backgroundColor: 'white', color: '#FF1493' }}>
-                <Plus className="w-5 h-5 mr-2" />
-                Ajouter
-              </Button>
-            </div>
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              className="shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
+              style={{ backgroundColor: 'white', color: '#FF1493' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              Ajouter
+            </Button>
           </div>
         </div>
 

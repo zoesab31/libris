@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Trash2, ExternalLink, Image as ImageIcon, Share2, Loader2 } from "lucide-react";
+import { Trash2, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +9,6 @@ import { toast } from "sonner";
 
 export default function FanArtGallery({ fanArts, isLoading }) {
   const queryClient = useQueryClient();
-  const [sharingId, setSharingId] = useState(null);
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.FanArt.delete(id),
@@ -16,25 +16,6 @@ export default function FanArtGallery({ fanArts, isLoading }) {
       queryClient.invalidateQueries({ queryKey: ['fanArts'] });
       toast.success("Fan art supprimé");
     },
-  });
-
-  const shareMutation = useMutation({
-    mutationFn: async (fanArt) => {
-      const response = await base44.functions.invoke('shareFanArtToPinterest', {
-        image_url: fanArt.image_url,
-        description: fanArt.note,
-        book_title: 'Nos Livres'
-      });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setSharingId(null);
-      toast.success(`✅ Partagé sur Pinterest ! ${data.pin_url}`);
-    },
-    onError: (error) => {
-      setSharingId(null);
-      toast.error('Erreur: ' + error.message);
-    }
   });
 
   if (isLoading) {
@@ -97,22 +78,6 @@ export default function FanArtGallery({ fanArts, isLoading }) {
                     </a>
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setSharingId(fanArt.id);
-                    shareMutation.mutate(fanArt);
-                  }}
-                  disabled={shareMutation.isPending || sharingId === fanArt.id}
-                  title="Partager sur Pinterest"
-                >
-                  {sharingId === fanArt.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Share2 className="w-3 h-3" />
-                  )}
-                </Button>
                 <Button
                   size="sm"
                   variant="destructive"

@@ -70,8 +70,8 @@ import SharedReadings from './pages/SharedReadings';
 import ShelfView from './pages/ShelfView';
 import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
-import VirtualLibrary from './pages/VirtualLibrary';
 import UserProfile from './pages/UserProfile';
+import VirtualLibrary from './pages/VirtualLibrary';
 import __Layout from './Layout.jsx';
 
 
@@ -99,8 +99,8 @@ export const PAGES = {
     "ShelfView": ShelfView,
     "Statistics": Statistics,
     "SuggestionsWall": SuggestionsWall,
-    "VirtualLibrary": VirtualLibrary,
     "UserProfile": UserProfile,
+    "VirtualLibrary": VirtualLibrary,
 }
 
 export const pagesConfig = {
