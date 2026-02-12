@@ -894,11 +894,20 @@ export default function Dashboard() {
 
           {/* Colonne droite */}
           <div className="space-y-4 md:space-y-6">
-            {/* Citation du jour */}
+            {/* Mes amies */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <TopFriendsWidget user={user} compact={false} />
+            </motion.div>
+
+            {/* Citation du jour */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
             <Card className="border-0 rounded-3xl overflow-hidden dash-card"
                   style={{ 
@@ -1008,103 +1017,6 @@ export default function Dashboard() {
               </Card>
               </motion.div>
             )}
-
-            {/* Mes amies */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <TopFriendsWidget user={user} compact={false} />
-            </motion.div>
-
-            {/* Raccourcis */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
-            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
-                  style={{ 
-                    backgroundColor: 'white',
-                    boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
-                  }}>
-              <CardContent className="p-6 md:p-8">
-                <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3748' }}>
-                  Raccourcis
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <Link to={createPageUrl("SharedReadings")}>
-                    <motion.div 
-                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ backgroundColor: '#FFF5F8' }}>
-                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
-                           style={{ backgroundColor: '#FFE9F0' }}>
-                        <Users className="w-5 h-5" style={{ color: '#FF1493' }} />
-                      </div>
-                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Lectures<br/>communes</p>
-                    </motion.div>
-                  </Link>
-
-                  <Link to={createPageUrl("Quotes")}>
-                    <motion.div 
-                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 0.05 }}
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ backgroundColor: '#FFF9E6' }}>
-                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
-                           style={{ backgroundColor: '#FFF4CC' }}>
-                        <Quote className="w-5 h-5" style={{ color: '#FFD700' }} />
-                      </div>
-                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Citations</p>
-                    </motion.div>
-                  </Link>
-
-                  <Link to={createPageUrl("BookTournament")}>
-                    <motion.div 
-                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 0.1 }}
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ backgroundColor: '#FFF5E6' }}>
-                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
-                           style={{ backgroundColor: '#FFEACC' }}>
-                        <Trophy className="w-5 h-5" style={{ color: '#FF9F7F' }} />
-                      </div>
-                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Tournoi</p>
-                    </motion.div>
-                  </Link>
-
-                  <Link to={createPageUrl("Profile")}>
-                    <motion.div 
-                      className="p-4 rounded-2xl text-center dash-card cursor-pointer"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 0.15 }}
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ backgroundColor: '#FFE6F0' }}>
-                      <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center"
-                           style={{ backgroundColor: '#FFD6E4' }}>
-                        <Heart className="w-5 h-5" style={{ color: '#E91E63' }} />
-                      </div>
-                      <p className="text-xs font-bold" style={{ color: '#2D3748' }}>Mes Persos</p>
-                    </motion.div>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-            </motion.div>
           </div>
         </div>
       </div>
