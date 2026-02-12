@@ -12,6 +12,7 @@ import { fr } from 'date-fns/locale';
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
+import BookRecommendations from "../components/library/BookRecommendations";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -685,6 +686,11 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Recommandations */}
+            {myBooks.filter(b => b.status === "Lu").length >= 3 && (
+              <BookRecommendations user={user} myBooks={myBooks} allBooks={allBooks} />
             )}
           </div>
 
