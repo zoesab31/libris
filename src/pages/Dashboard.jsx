@@ -14,6 +14,7 @@ import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import BookRecommendations from "../components/library/BookRecommendations";
+import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -71,6 +72,26 @@ export default function Dashboard() {
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
     enabled: !!user,
+  });
+
+  const { data: activityFeed = [] } = useQuery({
+    queryKey: ['activityFeed'],
+    queryFn: async () => {
+      const friendsEmails = myFriends.map(f => f.friend_email);
+      if (friendsEmails.length === 0) return [];
+      
+      const allActivities = await base44.entities.ActivityFeed.list('-created_date', 50);
+      return allActivities.filter(activity => 
+        friendsEmails.includes(activity.created_by) && activity.is_visible
+      );
+    },
+    enabled: myFriends.length > 0,
+    refetchInterval: 30000,
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
   });
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
@@ -609,6 +630,44 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Feed d'activité des amies */}
+            {activityFeed.length > 0 && (
+              <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                    style={{ 
+                      backgroundColor: 'white',
+                      boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
+                    }}>
+                <CardContent className="p-6 md:p-8">
+                  <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE9F0' }}>
+                      <Sparkles className="w-5 h-5" style={{ color: '#FF1493' }} />
+                    </div>
+                    🔥 Activité de tes amies
+                  </h2>
+
+                  <div className="space-y-4">
+                    {activityFeed.slice(0, 5).map(activity => (
+                      <SocialFeedCard
+                        key={activity.id}
+                        activity={activity}
+                        currentUser={user}
+                        allUsers={allUsers}
+                      />
+                    ))}
+                  </div>
+
+                  {activityFeed.length > 5 && (
+                    <div className="text-center mt-6">
+                      <p className="text-sm" style={{ color: '#9CA3AF' }}>
+                        +{activityFeed.length - 5} autres activités
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Amies qui lisent */}
             {friendsBooks.filter(b => b.status === "En cours").length > 0 && (
