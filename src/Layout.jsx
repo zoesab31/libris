@@ -225,11 +225,7 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
                     >
                       <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
                         <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                        <span className={`font-medium text-xs md:text-base ${
-                          location.pathname === item.url ? 'text-white' : ''
-                        }`} style={location.pathname === item.url ? {} : { color: isDark ? '#cbd5e0' : '#FF1493' }}>
-                          {item.title}
-                        </span>
+                        <span className="font-medium text-xs md:text-base">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
