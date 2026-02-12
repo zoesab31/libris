@@ -40,6 +40,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
 import CommentSection from "./CommentSection";
+import ReadingJournal from "./ReadingJournal";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 

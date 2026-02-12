@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from 'sonner';
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import PALManager from "../components/library/PALManager";
+import BookRecommendations from "../components/library/BookRecommendations";
 
 
 export default function MyLibrary() {
@@ -970,21 +971,28 @@ export default function MyLibrary() {
             )}
           </div>
         ) : (
-          <BookGrid
-            userBooks={filteredBooks}
-            allBooks={allBooks}
-            customShelves={customShelves}
-            isLoading={isLoading}
-            selectionMode={selectionMode}
-            selectedBooks={selectedBooks}
-            onSelectionChange={setSelectedBooks}
-            onExitSelectionMode={() => {
-              setSelectionMode(false);
-              setSelectedBooks([]);
-            }}
-            showPALSelector={activeTab === "À lire"}
-            readingLists={readingLists}
-          />
+          <>
+            {activeTab === "tous" && myBooks.filter(b => b.status === "Lu").length >= 3 && (
+              <div className="mb-6">
+                <BookRecommendations user={user} myBooks={myBooks} allBooks={allBooks} />
+              </div>
+            )}
+            <BookGrid
+              userBooks={filteredBooks}
+              allBooks={allBooks}
+              customShelves={customShelves}
+              isLoading={isLoading}
+              selectionMode={selectionMode}
+              selectedBooks={selectedBooks}
+              onSelectionChange={setSelectedBooks}
+              onExitSelectionMode={() => {
+                setSelectionMode(false);
+                setSelectedBooks([]);
+              }}
+              showPALSelector={activeTab === "À lire"}
+              readingLists={readingLists}
+            />
+          </>
         )}
 
         <AddBookDialog

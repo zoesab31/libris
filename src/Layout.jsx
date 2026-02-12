@@ -53,6 +53,11 @@ const navigationItems = [
     icon: TrendingUp,
   },
   {
+    title: "Tableau de bord PAL",
+    url: createPageUrl("PALDashboard"),
+    icon: Trophy,
+  },
+  {
     title: "Tournoi du Livre",
     url: createPageUrl("BookTournament"),
     icon: Trophy,
