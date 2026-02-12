@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import PullToRefresh from "@/components/layout/PullToRefresh";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -238,7 +239,8 @@ export default function Dashboard() {
   const years = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
       <style>{`
         .dash-card {
           transition: all 250ms ease;
@@ -876,5 +878,6 @@ export default function Dashboard() {
         />
       )}
     </div>
+    </PullToRefresh>
   );
 }
