@@ -84,14 +84,14 @@ export default function AdminSuggestions() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, var(--app-primary), var(--app-secondary))' }}>
+               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
             <Lightbulb className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--app-primary)' }}>
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--dark-text)' }}>
               Suggestions des utilisateurs
             </h1>
-            <p className="text-lg" style={{ color: 'var(--app-secondary)' }}>
+            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
               {suggestions.length} suggestion{suggestions.length > 1 ? 's' : ''} au total
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function AdminSuggestions() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="text-2xl">{categoryIcons[suggestion.category]}</span>
-                          <Badge variant="outline" style={{ borderColor: 'var(--app-primary)', color: 'var(--app-primary)' }}>
+                          <Badge variant="outline" style={{ borderColor: 'var(--warm-pink)', color: 'var(--warm-pink)' }}>
                             {suggestion.category.replace('_', ' ')}
                           </Badge>
                           <Badge style={{ backgroundColor: statusConfig.bg, color: statusConfig.text }}>

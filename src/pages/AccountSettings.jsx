@@ -71,10 +71,6 @@ export default function AccountSettings() {
     }
   };
 
-  const setColorTheme = (color) => {
-    updateProfileMutation.mutate({ color_theme: color });
-  };
-
   const sendSuggestionMutation = useMutation({
     mutationFn: async (data) => {
       const suggestion = await base44.entities.Suggestion.create(data);
@@ -198,17 +194,7 @@ export default function AccountSettings() {
     }
   };
 
-  const colorTheme = user?.color_theme || 'pink';
-  
-  const themeColors = {
-    pink: { primary: '#FF1493', secondary: '#FF69B4', gradient: 'linear-gradient(135deg, #FF1493, #FF69B4)' },
-    yellow: { primary: '#F59E0B', secondary: '#FCD34D', gradient: 'linear-gradient(135deg, #F59E0B, #FCD34D)' },
-    blue: { primary: '#3B82F6', secondary: '#60A5FA', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
-    green: { primary: '#10B981', secondary: '#34D399', gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
-    purple: { primary: '#9C27B0', secondary: '#BA68C8', gradient: 'linear-gradient(135deg, #9C27B0, #BA68C8)' },
-    red: { primary: '#EF4444', secondary: '#F87171', gradient: 'linear-gradient(135deg, #EF4444, #F87171)' },
-    dark: { primary: '#1F2937', secondary: '#4B5563', gradient: 'linear-gradient(135deg, #1F2937, #4B5563)' }
-  };
+
 
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
@@ -302,50 +288,6 @@ export default function AccountSettings() {
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Color Theme */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                <Palette className="w-5 h-5" />
-                Couleur du thème
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                Choisissez votre couleur préférée
-              </p>
-              <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                {Object.entries(themeColors).map(([key, colors]) => (
-                  <button
-                    key={key}
-                    onClick={() => setColorTheme(key)}
-                    className={`relative w-full aspect-square rounded-2xl transition-all ${
-                      colorTheme === key ? 'ring-4 ring-offset-2' : 'hover:scale-110'
-                    }`}
-                    style={{ 
-                      background: colors.gradient,
-                      ringColor: colors.primary
-                    }}
-                    title={key.charAt(0).toUpperCase() + key.slice(1)}
-                  >
-                    {colorTheme === key && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                          <span className="text-lg">✓</span>
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-3 text-center">
-                <p className="text-xs font-medium" style={{ color: 'var(--dark-text)' }}>
-                  Thème actuel : <span className="capitalize">{colorTheme}</span>
-                </p>
-              </div>
             </CardContent>
           </Card>
 
