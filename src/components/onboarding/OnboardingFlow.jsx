@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Trophy, Users, Sparkles, Library, ChevronRight, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import confetti from 'canvas-confetti';
 
 const onboardingSteps = [
   {
@@ -63,11 +62,6 @@ export default function OnboardingFlow({ onComplete, onSkip }) {
 
   const handleNext = () => {
     if (isLastStep) {
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.6 }
-      });
       onComplete();
     } else {
       setCurrentStep(currentStep + 1);

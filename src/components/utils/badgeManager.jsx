@@ -1,6 +1,5 @@
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
 import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
 
 export class BadgeManager {
@@ -186,13 +185,6 @@ export class BadgeManager {
   showBadgeUnlockNotifications(badges) {
     badges.forEach((badge, index) => {
       setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: [badge.color_primary, badge.color_secondary]
-        });
-        
         toast.success(
           `🏆 Badge débloqué ! ${badge.icon} ${badge.name}`,
           {

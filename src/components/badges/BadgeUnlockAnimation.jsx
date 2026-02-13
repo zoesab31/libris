@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
 import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,31 +8,6 @@ export default function BadgeUnlockAnimation({ badge, onClose }) {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
-    const duration = 3000;
-    const end = Date.now() + duration;
-
-    const frame = () => {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: [badge.color_primary, badge.color_secondary]
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: [badge.color_primary, badge.color_secondary]
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    frame();
-
     if (navigator.vibrate) {
       navigator.vibrate([100, 50, 100, 50, 200]);
     }
