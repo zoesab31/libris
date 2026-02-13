@@ -49,10 +49,12 @@
  */
 import AccountSettings from './pages/AccountSettings';
 import Authors from './pages/Authors';
+import Badges from './pages/Badges';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
 import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
+import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
@@ -66,6 +68,7 @@ import NailInspo from './pages/NailInspo';
 import OneSignalGuide from './pages/OneSignalGuide';
 import Profile from './pages/Profile';
 import Quotes from './pages/Quotes';
+import ReadingTracker from './pages/ReadingTracker';
 import Series from './pages/Series';
 import SeriesTracking from './pages/SeriesTracking';
 import SharedReadings from './pages/SharedReadings';
@@ -75,9 +78,6 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import ReadingTracker from './pages/ReadingTracker';
-import Dashboard from './pages/Dashboard';
-import Badges from './pages/Badges';
 import EnrichedProfile from './pages/EnrichedProfile';
 import __Layout from './Layout.jsx';
 
@@ -85,10 +85,12 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AccountSettings": AccountSettings,
     "Authors": Authors,
+    "Badges": Badges,
     "Bingo": Bingo,
     "BookTournament": BookTournament,
     "Challenges": Challenges,
     "Chat": Chat,
+    "Dashboard": Dashboard,
     "Discover": Discover,
     "FanArt": FanArt,
     "Friends": Friends,
@@ -102,6 +104,7 @@ export const PAGES = {
     "OneSignalGuide": OneSignalGuide,
     "Profile": Profile,
     "Quotes": Quotes,
+    "ReadingTracker": ReadingTracker,
     "Series": Series,
     "SeriesTracking": SeriesTracking,
     "SharedReadings": SharedReadings,
@@ -111,9 +114,6 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "ReadingTracker": ReadingTracker,
-    "Dashboard": Dashboard,
-    "Badges": Badges,
     "EnrichedProfile": EnrichedProfile,
 }
 

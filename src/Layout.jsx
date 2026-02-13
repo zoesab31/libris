@@ -282,7 +282,80 @@ export default function Layout({ children, currentPageName }) {
         /* Smooth transitions globally */
         * {
           transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        /* Ripple animation */
+        @keyframes ripple {
+          to {
+            width: 500px;
+            height: 500px;
+            opacity: 0;
+            transform: translate(-50%, -50%);
           }
+        }
+
+        .animate-ripple {
+          animation: ripple 0.6s ease-out;
+        }
+
+        /* Shimmer animation for skeletons */
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s infinite linear;
+        }
+
+        /* Enhanced hover states */
+        button:not(:disabled):hover,
+        a:not(.no-hover):hover {
+          transform: translateY(-1px);
+        }
+
+        button:not(:disabled):active,
+        a:not(.no-hover):active {
+          transform: translateY(0);
+        }
+
+        /* Card hover effects */
+        .hover-lift {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Glow effect for primary actions */
+        .glow-on-hover {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .glow-on-hover::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.5);
+          transform: translate(-50%, -50%);
+          transition: width 0.6s, height 0.6s;
+        }
+
+        .glow-on-hover:hover::before {
+          width: 300px;
+          height: 300px;
+        }
 
           /* Safe area handling for mobile */
           .safe-area-bottom {
