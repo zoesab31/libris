@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ALL_BADGES } from '@/utils/badgeDefinitions';
+import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
 import BadgeCard from '@/components/badges/BadgeCard';
 import { motion } from 'framer-motion';
 
