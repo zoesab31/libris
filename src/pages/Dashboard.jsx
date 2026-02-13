@@ -17,6 +17,7 @@ import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
+import AnimatedAura from "../components/effects/AnimatedAura";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 
 export default function Dashboard() {
@@ -264,21 +265,31 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <div className="min-h-screen relative overflow-hidden" style={{ background: 'transparent' }}>
       <OnboardingTrigger />
-      <FloatingParticles count={30} />
+      <AnimatedAura />
+      <FloatingParticles count={25} />
       <style>{`
         .dash-card {
           transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+          background: rgba(255,255,255,0.6) !important;
+          backdrop-filter: saturate(140%) blur(12px);
+          -webkit-backdrop-filter: saturate(140%) blur(12px);
+          border: 1px solid rgba(255,255,255,0.45) !important;
+          box-shadow: 0 8px 28px rgba(255, 105, 180, 0.12);
         }
         .dash-card:hover {
           transform: translateY(-6px) scale(1.02);
-          box-shadow: 0 20px 40px rgba(255, 105, 180, 0.25);
+          box-shadow: 0 20px 40px rgba(255, 105, 180, 0.22);
         }
         .stat-bubble {
           transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
           overflow: hidden;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.35);
+          box-shadow: 0 10px 30px rgba(255,105,180,0.15);
         }
         .stat-bubble::before {
           content: '';
