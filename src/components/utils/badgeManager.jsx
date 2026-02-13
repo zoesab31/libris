@@ -1,7 +1,7 @@
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { ALL_BADGES } from './badgeDefinitions';
+import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
 
 export class BadgeManager {
   constructor(user) {
