@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy } from "lucide-react";
+import { User, Save, Upload, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
-import BadgeDisplay from "@/components/badges/BadgeDisplay";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -249,19 +248,6 @@ export default function AccountSettings() {
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Badges Section */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
-                <Trophy className="w-5 h-5" style={{ color: '#FFD700' }} />
-                Mes badges
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BadgeDisplay user={user} />
             </CardContent>
           </Card>
 

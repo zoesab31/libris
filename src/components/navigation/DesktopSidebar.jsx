@@ -115,7 +115,7 @@ export default function DesktopSidebar({ user }) {
 
         {user && (
           <div className="space-y-2">
-            <Link to={createPageUrl("AccountSettings")}>
+            <Link to={createPageUrl("MyPage")}>
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
                      style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, #FF69B4, #FFB6C1)' }}>
@@ -127,10 +127,7 @@ export default function DesktopSidebar({ user }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate" style={{ color: '#2D3748' }}>
-                    {user.full_name || 'Lectrice'}
-                  </p>
-                  <p className="text-xs truncate" style={{ color: '#FF69B4' }}>
-                    {user.email}
+                    {user.display_name || user.full_name || 'Lectrice'}
                   </p>
                 </div>
               </div>

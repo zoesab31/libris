@@ -171,12 +171,15 @@ export default function MyPage() {
         <AnimatedCard delay={0.1} className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                {user.full_name?.[0] || 'U'}
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                {user.profile_picture ? (
+                  <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user.full_name?.[0] || 'U'
+                )}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <h2 className="text-2xl font-bold text-gray-800">{user.display_name || user.full_name}</h2>
               </div>
             </div>
             <Button
