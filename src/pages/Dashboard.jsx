@@ -374,8 +374,8 @@ export default function Dashboard() {
       </div>
 
       {/* Contenu principal */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
-        <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
+        <div className="grid lg:grid-cols-3 gap-4">
           {/* Colonne gauche */}
           <div className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Reading Streak Card */}
@@ -400,34 +400,23 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ delay: 0.2 }}
             >
-            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
-                  style={{ 
-                    backgroundColor: 'white',
-                    boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
-                  }}>
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3" style={{ color: '#2D3748' }}>
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                         style={{ backgroundColor: '#FFE9F0' }}>
-                      <BookOpen className="w-5 h-5" style={{ color: '#FF1493' }} />
-                    </div>
-                    En cours de lecture
+            <Card className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-pink-500" />
+                    En cours
                   </h2>
                   {currentlyReading.length > 0 && (
-                    <span className="px-3 py-1 rounded-full text-sm font-bold"
-                          style={{ 
-                            backgroundColor: '#FFE9F0',
-                            color: '#FF1493'
-                          }}>
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-600">
                       {currentlyReading.length}
                     </span>
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {currentlyReading.length > 0 ? (
                     currentlyReading.slice(0, 3).map((userBook, idx) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
@@ -450,19 +439,13 @@ export default function Dashboard() {
                       return (
                         <motion.div 
                           key={userBook.id}
-                          initial={{ opacity: 0, x: -30 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.4, delay: idx * 0.1 }}
-                          whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-                          className="dash-card p-4 md:p-5 rounded-2xl"
-                          style={{ backgroundColor: '#FFF5F8' }}>
-                          <div className="flex gap-4">
-                            <div className="relative flex-shrink-0">
-                              <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden"
-                                   style={{ 
-                                     backgroundColor: '#FFE9F0',
-                                     boxShadow: '0 2px 8px rgba(255, 105, 180, 0.15)'
-                                   }}>
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className="bg-gradient-to-br from-pink-50 to-purple-50 p-4 rounded-xl border border-gray-100">
+                          <div className="flex gap-3">
+                            <div className="flex-shrink-0">
+                              <div className="w-16 h-24 rounded-lg overflow-hidden bg-gray-100 shadow-sm">
                                 {book.cover_url && (
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
                                 )}
@@ -470,10 +453,10 @@ export default function Dashboard() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-base md:text-lg mb-1 line-clamp-2" style={{ color: '#2D3748' }}>
+                              <h3 className="font-semibold text-sm line-clamp-2 text-gray-800 mb-1">
                                 {book.title}
                               </h3>
-                              <p className="text-sm mb-3" style={{ color: '#9CA3AF' }}>
+                              <p className="text-xs text-gray-500 mb-3">
                                 {book.author}
                               </p>
 
@@ -543,14 +526,14 @@ export default function Dashboard() {
                                   <div className="flex items-center justify-between mb-2">
                                     <button
                                       onClick={() => handleStartEdit(userBook, book)}
-                                      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                      className="flex items-center gap-1 hover:opacity-70 transition-opacity"
                                     >
-                                      <span className="text-sm font-bold" style={{ color: '#FF1493' }}>
-                                        📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
+                                      <span className="text-xs font-medium text-gray-600">
+                                        {userBook.current_page || 0} / {book.page_count || '?'}
                                       </span>
-                                      <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
+                                      <Edit2 className="w-3 h-3 text-gray-400" />
                                     </button>
-                                    <span className="text-base font-extrabold" style={{ color: '#FF1493' }}>
+                                    <span className="text-sm font-bold text-pink-500">
                                       {progress}%
                                     </span>
                                   </div>
@@ -561,28 +544,13 @@ export default function Dashboard() {
                                     </p>
                                   )}
                                   
-                                  <div className="relative h-3 rounded-full overflow-hidden progress-shimmer"
-                                       style={{ backgroundColor: '#FFE9F0' }}>
+                                  <div className="relative h-2 rounded-full overflow-hidden bg-gray-200">
                                     <motion.div 
-                                      className="h-full rounded-full relative"
+                                      className="h-full rounded-full bg-gradient-to-r from-pink-400 to-purple-400"
                                       initial={{ width: 0 }}
                                       animate={{ width: `${progress}%` }}
-                                      transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                                      style={{
-                                        background: 'linear-gradient(90deg, #FF1493, #FF69B4, #FF1493)',
-                                        backgroundSize: '200% 100%'
-                                      }}
-                                    >
-                                      <motion.div 
-                                        className="absolute inset-0"
-                                        animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }}
-                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        style={{
-                                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent)',
-                                        }}
-                                      />
-                                    </motion.div>
-                                  </div>
+                                      transition={{ duration: 0.8, ease: "easeOut" }}
+                                    />
                                 </>
                               )}
                             </div>
