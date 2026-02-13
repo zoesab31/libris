@@ -47,7 +47,6 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import AccountSettings from './pages/AccountSettings';
 import Authors from './pages/Authors';
 import Badges from './pages/Badges';
 import Bingo from './pages/Bingo';
@@ -56,6 +55,7 @@ import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
 import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
+import EnrichedProfile from './pages/EnrichedProfile';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
 import Home from './pages/Home';
@@ -66,7 +66,6 @@ import MusicPlaylist from './pages/MusicPlaylist';
 import MyLibrary from './pages/MyLibrary';
 import NailInspo from './pages/NailInspo';
 import OneSignalGuide from './pages/OneSignalGuide';
-import Profile from './pages/Profile';
 import Quotes from './pages/Quotes';
 import ReadingTracker from './pages/ReadingTracker';
 import Series from './pages/Series';
@@ -78,12 +77,13 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import EnrichedProfile from './pages/EnrichedProfile';
+import Profile from './pages/Profile';
+import AccountSettings from './pages/AccountSettings';
+import MyPage from './pages/MyPage';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AccountSettings": AccountSettings,
     "Authors": Authors,
     "Badges": Badges,
     "Bingo": Bingo,
@@ -92,6 +92,7 @@ export const PAGES = {
     "Chat": Chat,
     "Dashboard": Dashboard,
     "Discover": Discover,
+    "EnrichedProfile": EnrichedProfile,
     "FanArt": FanArt,
     "Friends": Friends,
     "Home": Home,
@@ -102,7 +103,6 @@ export const PAGES = {
     "MyLibrary": MyLibrary,
     "NailInspo": NailInspo,
     "OneSignalGuide": OneSignalGuide,
-    "Profile": Profile,
     "Quotes": Quotes,
     "ReadingTracker": ReadingTracker,
     "Series": Series,
@@ -114,7 +114,9 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "EnrichedProfile": EnrichedProfile,
+    "Profile": Profile,
+    "AccountSettings": AccountSettings,
+    "MyPage": MyPage,
 }
 
 export const pagesConfig = {
