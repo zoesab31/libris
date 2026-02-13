@@ -6,15 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy, Heart, Users, Plus } from "lucide-react";
+import { User, Save, Upload, Loader2, Trash2, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageCropper from "@/components/profile/ImageCropper";
 import BadgeDisplay from "@/components/badges/BadgeDisplay";
-import AddBookBoyfriendDialog from "@/components/profile/AddBookBoyfriendDialog";
-import BookBoyfriendCard from "@/components/profile/BookBoyfriendCard";
-import AddFavoriteCoupleDialog from "@/components/profile/AddFavoriteCoupleDialog";
-import FavoriteCoupleCard from "@/components/profile/FavoriteCoupleCard";
 
 export default function AccountSettings() {
   const [user, setUser] = useState(null);
@@ -23,11 +18,6 @@ export default function AccountSettings() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showAddCoupleDialog, setShowAddCoupleDialog] = useState(false);
-  const [editingCharacter, setEditingCharacter] = useState(null);
-  const [editingCouple, setEditingCouple] = useState(null);
-  const [selectedTab, setSelectedTab] = useState("male");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -36,26 +26,6 @@ export default function AccountSettings() {
       setDisplayName(u.display_name || "");
     }).catch(() => {});
   }, []);
-
-  const { data: bookBoyfriends = [] } = useQuery({
-    queryKey: ['bookBoyfriends'],
-    queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: user?.email }, 'rank'),
-    enabled: !!user,
-  });
-
-  const { data: favoriteCouples = [] } = useQuery({
-    queryKey: ['favoriteCouples'],
-    queryFn: () => base44.entities.FavoriteCouple.filter({ created_by: user?.email }, 'rank'),
-    enabled: !!user,
-  });
-
-  const { data: allBooks = [] } = useQuery({
-    queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
-  });
-
-  const maleCharacters = bookBoyfriends.filter(bf => !bf.gender || bf.gender === 'male');
-  const femaleCharacters = bookBoyfriends.filter(bf => bf.gender === 'female');
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -183,26 +153,6 @@ export default function AccountSettings() {
     } else {
       toast.error("Veuillez taper exactement 'supprimer mon compte'");
     }
-  };
-
-  const handleEdit = (character) => {
-    setEditingCharacter(character);
-    setShowAddDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setShowAddDialog(false);
-    setEditingCharacter(null);
-  };
-
-  const handleEditCouple = (couple) => {
-    setEditingCouple(couple);
-    setShowAddCoupleDialog(true);
-  };
-
-  const handleCloseCoupleDialog = () => {
-    setShowAddCoupleDialog(false);
-    setEditingCouple(null);
   };
 
 
@@ -336,161 +286,91 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
 
-          {/* Favorite Characters Section */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between" style={{ color: 'var(--dark-text)' }}>
-                <span className="flex items-center gap-2">
-                  <Heart className="w-5 h-5" style={{ color: 'var(--soft-pink)' }} />
-                  Mes personnages préférés
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="bg-white shadow-md p-2 rounded-xl border-0 mb-6 grid grid-cols-3 w-full">
-                  <TabsTrigger 
-                    value="male" 
-                    className="rounded-lg font-semibold text-sm"
-                  >
-                    <User className="w-4 h-4 mr-1 inline" />
-                    Masculins ({maleCharacters.length})
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="female" 
-                    className="rounded-lg font-semibold text-sm"
-                  >
-                    <User className="w-4 h-4 mr-1 inline" />
-                    Féminins ({femaleCharacters.length})
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="couples" 
-                    className="rounded-lg font-semibold text-sm"
-                  >
-                    <Users className="w-4 h-4 mr-1 inline" />
-                    Couples ({favoriteCouples.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="male">
-                  {maleCharacters.length > 0 ? (
-                    <div className="grid gap-4">
-                      {maleCharacters.map((char) => {
-                        const book = allBooks.find(b => b.id === char.book_id);
-                        return (
-                          <BookBoyfriendCard 
-                            key={char.id} 
-                            character={char} 
-                            book={book}
-                            onEdit={handleEdit}
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Heart className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--soft-pink)' }} />
-                      <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                        Aucun personnage masculin
-                      </p>
-                      <Button 
-                        onClick={() => setShowAddDialog(true)}
-                        size="sm"
-                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                        className="text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ajouter
-                      </Button>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="female">
-                  {femaleCharacters.length > 0 ? (
-                    <div className="grid gap-4">
-                      {femaleCharacters.map((char) => {
-                        const book = allBooks.find(b => b.id === char.book_id);
-                        return (
-                          <BookBoyfriendCard 
-                            key={char.id} 
-                            character={char} 
-                            book={book}
-                            onEdit={handleEdit}
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Heart className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--soft-pink)' }} />
-                      <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                        Aucun personnage féminin
-                      </p>
-                      <Button 
-                        onClick={() => setShowAddDialog(true)}
-                        size="sm"
-                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                        className="text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ajouter
-                      </Button>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="couples">
-                  {favoriteCouples.length > 0 ? (
-                    <div className="grid gap-4">
-                      {favoriteCouples.map((couple) => {
-                        const book = allBooks.find(b => b.id === couple.book_id);
-                        return (
-                          <FavoriteCoupleCard 
-                            key={couple.id} 
-                            couple={couple} 
-                            book={book}
-                            onEdit={handleEditCouple}
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Users className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--soft-pink)' }} />
-                      <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
-                        Aucun couple préféré
-                      </p>
-                      <Button 
-                        onClick={() => setShowAddCoupleDialog(true)}
-                        size="sm"
-                        style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                        className="text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ajouter
-                      </Button>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-
-              <div className="mt-4 flex gap-2">
-                <Button 
-                  onClick={() => selectedTab === "couples" ? setShowAddCoupleDialog(true) : setShowAddDialog(true)}
-                  className="w-full text-white"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {selectedTab === "couples" ? "Ajouter un couple" : "Ajouter un personnage"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Delete Account - DANGER ZONE */}
           <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid #DC2626' }}>
-...
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                Zone dangereuse
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-xl" style={{ backgroundColor: '#FEE2E2' }}>
+                <p className="text-sm font-medium text-red-800 mb-2">
+                  ⚠️ Attention : Cette action est irréversible !
+                </p>
+                <p className="text-xs text-red-700">
+                  La suppression de votre compte entraînera la perte définitive de toutes vos données :
+                </p>
+                <ul className="text-xs text-red-700 mt-2 ml-4 list-disc space-y-1">
+                  <li>Tous vos livres et lectures</li>
+                  <li>Vos amitiés et messages</li>
+                  <li>Vos citations et commentaires</li>
+                  <li>Vos étagères personnalisées</li>
+                  <li>Vos objectifs de lecture</li>
+                  <li>Tous vos autres contenus</li>
+                </ul>
+              </div>
+
+              {!showDeleteConfirm ? (
+                <Button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  variant="outline"
+                  className="w-full border-red-600 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer mon compte
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-red-700 font-medium">
+                      Pour confirmer, tapez : <span className="font-bold">supprimer mon compte</span>
+                    </Label>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="supprimer mon compte"
+                      className="mt-2 border-red-300 focus:border-red-500"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmText("");
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteAccountMutation.isPending || deleteConfirmText.toLowerCase() !== "supprimer mon compte"}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {deleteAccountMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Suppression...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Supprimer définitivement
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-center text-red-600 font-medium">
+                    ⚠️ Cette action ne peut pas être annulée
+                  </p>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -505,22 +385,6 @@ export default function AccountSettings() {
           }}
         />
       )}
-
-      <AddBookBoyfriendDialog 
-        open={showAddDialog}
-        onOpenChange={handleCloseDialog}
-        books={allBooks}
-        existingCharacters={bookBoyfriends}
-        editingCharacter={editingCharacter}
-      />
-
-      <AddFavoriteCoupleDialog 
-        open={showAddCoupleDialog}
-        onOpenChange={handleCloseCoupleDialog}
-        books={allBooks}
-        existingCouples={favoriteCouples}
-        editingCouple={editingCouple}
-      />
     </div>
   );
 }

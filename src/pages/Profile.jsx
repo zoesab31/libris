@@ -1,26 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import ProfileHeader from "@/components/profile/ProfileHeader";
-import KnowMeBooks from "@/components/profile/KnowMeBooks";
-import ReadingHighlights from "@/components/profile/ReadingHighlights";
-import SoftStats from "@/components/profile/SoftStats";
-import BadgesPreview from "@/components/profile/BadgesPreview";
-import ActivityTimeline from "@/components/profile/ActivityTimeline";
-import LifestylePreview from "@/components/profile/LifestylePreview";
-import FadeIn from "@/components/animations/FadeIn";
-import { Skeleton } from "@/components/animations/SkeletonLoader";
+import { Button } from "@/components/ui/button";
+import { Heart, Plus, User, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AddBookBoyfriendDialog from "../components/profile/AddBookBoyfriendDialog";
+import BookBoyfriendCard from "../components/profile/BookBoyfriendCard";
+import AddFavoriteCoupleDialog from "../components/profile/AddFavoriteCoupleDialog";
+import FavoriteCoupleCard from "../components/profile/FavoriteCoupleCard";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddCoupleDialog, setShowAddCoupleDialog] = useState(false);
+  const [editingCharacter, setEditingCharacter] = useState(null);
+  const [editingCouple, setEditingCouple] = useState(null);
+  const [selectedTab, setSelectedTab] = useState("male");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const { data: userBooks = [], isLoading: booksLoading } = useQuery({
-    queryKey: ['userBooks', user?.email],
-    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+  const { data: bookBoyfriends = [], isLoading } = useQuery({
+    queryKey: ['bookBoyfriends'],
+    queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: user?.email }, 'rank'),
+    enabled: !!user,
+  });
+
+  const { data: favoriteCouples = [] } = useQuery({
+    queryKey: ['favoriteCouples'],
+    queryFn: () => base44.entities.FavoriteCouple.filter({ created_by: user?.email }, 'rank'),
     enabled: !!user,
   });
 
@@ -29,125 +38,218 @@ export default function Profile() {
     queryFn: () => base44.entities.Book.list(),
   });
 
-  const { data: userBadges = [] } = useQuery({
-    queryKey: ['userBadges', user?.email],
-    queryFn: () => base44.entities.UserBadge.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
+  const maleCharacters = bookBoyfriends.filter(bf => !bf.gender || bf.gender === 'male');
+  const femaleCharacters = bookBoyfriends.filter(bf => bf.gender === 'female');
 
-  const { data: friendships = [] } = useQuery({
-    queryKey: ['friendships', user?.email],
-    queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: 'Acceptée' }),
-    enabled: !!user,
-  });
+  const handleEdit = (character) => {
+    setEditingCharacter(character);
+    setShowAddDialog(true);
+  };
 
-  const { data: readingGoals = [] } = useQuery({
-    queryKey: ['readingGoals', user?.email],
-    queryFn: () => base44.entities.ReadingGoal.filter({ created_by: user?.email, year: new Date().getFullYear() }),
-    enabled: !!user,
-  });
+  const handleCloseDialog = () => {
+    setShowAddDialog(false);
+    setEditingCharacter(null);
+  };
 
-  const { data: activityFeed = [] } = useQuery({
-    queryKey: ['activityFeed', user?.email],
-    queryFn: () => base44.entities.ActivityFeed.filter({ created_by: user?.email }, '-created_date', 50),
-    enabled: !!user,
-  });
+  const handleEditCouple = (couple) => {
+    setEditingCouple(couple);
+    setShowAddCoupleDialog(true);
+  };
 
-  const { data: readingStreak = [] } = useQuery({
-    queryKey: ['readingStreak', user?.email],
-    queryFn: () => base44.entities.ReadingStreak.filter({ created_by: user?.email }),
-    enabled: !!user,
-  });
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--cream)' }}>
-        <Skeleton className="w-24 h-24 rounded-full" />
-      </div>
-    );
-  }
-
-  const currentStreak = readingStreak[0]?.current_streak || 0;
-  const completedBooks = userBooks.filter(ub => ub.status === 'Lu');
-  const currentYear = new Date().getFullYear();
-  const thisYearBooks = completedBooks.filter(ub => {
-    const endDate = ub.end_date ? new Date(ub.end_date) : null;
-    return endDate && endDate.getFullYear() === currentYear;
-  });
+  const handleCloseCoupleDialog = () => {
+    setShowAddCoupleDialog(false);
+    setEditingCouple(null);
+  };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
-      {/* Desktop: Two Column Layout */}
-      <div className="hidden md:block max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-3 gap-6">
-          {/* Left Column - Identity & Stats */}
-          <div className="space-y-6">
-            <ProfileHeader 
-              user={user}
-              streak={currentStreak}
-              followersCount={friendships.length}
-              followingCount={friendships.length}
-              isOwnProfile={true}
-            />
-            <SoftStats 
-              user={user}
-              userBooks={userBooks}
-              allBooks={allBooks}
-              readingGoals={readingGoals}
-              currentStreak={currentStreak}
-            />
-            <BadgesPreview userBadges={userBadges} />
-            <LifestylePreview user={user} />
-          </div>
-
-          {/* Right Column - Highlights & Activity */}
-          <div className="col-span-2 space-y-6">
-            <KnowMeBooks user={user} allBooks={allBooks} />
-            <ReadingHighlights 
-              user={user}
-              userBooks={userBooks}
-              allBooks={allBooks}
-            />
-            <ActivityTimeline 
-              activities={activityFeed}
-              allBooks={allBooks}
-            />
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        {/* Header avec background rose gradient */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-xl" 
+             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+                💕 Mes Personnages Préférés
+              </h1>
+              <p className="text-lg md:text-xl text-white text-opacity-90">
+                {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} • {favoriteCouples.length} couple{favoriteCouples.length > 1 ? 's' : ''}
+              </p>
+            </div>
+            <Button 
+              onClick={() => selectedTab === "couples" ? setShowAddCoupleDialog(true) : setShowAddDialog(true)}
+              className="shadow-xl text-pink-600 font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
+              style={{ backgroundColor: 'white' }}>
+              <Plus className="w-5 h-5 mr-2" />
+              {selectedTab === "couples" ? "Couple" : "Personnage"}
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile: Single Column Layout */}
-      <div className="md:hidden">
-        <div className="space-y-4 pb-6">
-          <ProfileHeader 
-            user={user}
-            streak={currentStreak}
-            followersCount={friendships.length}
-            followingCount={friendships.length}
-            isOwnProfile={true}
-          />
-          <div className="px-4 space-y-4">
-            <KnowMeBooks user={user} allBooks={allBooks} />
-            <ReadingHighlights 
-              user={user}
-              userBooks={userBooks}
-              allBooks={allBooks}
-            />
-            <SoftStats 
-              user={user}
-              userBooks={userBooks}
-              allBooks={allBooks}
-              readingGoals={readingGoals}
-              currentStreak={currentStreak}
-            />
-            <BadgesPreview userBadges={userBadges} />
-            <ActivityTimeline 
-              activities={activityFeed}
-              allBooks={allBooks}
-            />
-            <LifestylePreview user={user} />
-          </div>
-        </div>
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="bg-white shadow-xl p-2 rounded-2xl border-0 mb-8 grid grid-cols-3 w-full">
+            <TabsTrigger 
+              value="male" 
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
+              style={selectedTab === "male" ? {
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
+              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
+              Masculins ({maleCharacters.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="female" 
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
+              style={selectedTab === "female" ? {
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
+              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
+              Féminins ({femaleCharacters.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="couples" 
+              className="rounded-xl font-bold data-[state=active]:text-white text-sm md:text-base py-3"
+              style={selectedTab === "couples" ? {
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                color: '#FFFFFF'
+              } : {
+                color: '#000000'
+              }}
+            >
+              <Users className="w-4 h-4 mr-1 md:mr-2 inline" />
+              Couples ({favoriteCouples.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="male">
+            {maleCharacters.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                {maleCharacters.map((char) => {
+                  const book = allBooks.find(b => b.id === char.book_id);
+                  return (
+                    <BookBoyfriendCard 
+                      key={char.id} 
+                      character={char} 
+                      book={book}
+                      onEdit={handleEdit}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
+                <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucun personnage masculin
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Ajoutez vos book boyfriends préférés
+                </p>
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter maintenant
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="female">
+            {femaleCharacters.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                {femaleCharacters.map((char) => {
+                  const book = allBooks.find(b => b.id === char.book_id);
+                  return (
+                    <BookBoyfriendCard 
+                      key={char.id} 
+                      character={char} 
+                      book={book}
+                      onEdit={handleEdit}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
+                <Heart className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucun personnage féminin
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Ajoutez vos personnages féminins préférés
+                </p>
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter maintenant
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="couples">
+            {favoriteCouples.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                {favoriteCouples.map((couple) => {
+                  const book = allBooks.find(b => b.id === couple.book_id);
+                  return (
+                    <FavoriteCoupleCard 
+                      key={couple.id} 
+                      couple={couple} 
+                      book={book}
+                      onEdit={handleEditCouple}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl shadow-lg">
+                <Users className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--soft-pink)' }} />
+                <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
+                  Aucun couple préféré
+                </h3>
+                <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
+                  Ajoutez vos couples préférés ! 💕
+                </p>
+                <Button 
+                  onClick={() => setShowAddCoupleDialog(true)}
+                  className="shadow-lg text-white font-medium px-8 py-6 rounded-2xl text-lg"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Ajouter un couple
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <AddBookBoyfriendDialog 
+          open={showAddDialog}
+          onOpenChange={handleCloseDialog}
+          books={allBooks}
+          existingCharacters={bookBoyfriends}
+          editingCharacter={editingCharacter}
+        />
+
+        <AddFavoriteCoupleDialog 
+          open={showAddCoupleDialog}
+          onOpenChange={handleCloseCoupleDialog}
+          books={allBooks}
+          existingCouples={favoriteCouples}
+          editingCouple={editingCouple}
+        />
       </div>
     </div>
   );
