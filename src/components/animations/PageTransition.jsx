@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const pageVariants = {
   initial: {
@@ -25,20 +24,15 @@ const pageVariants = {
 };
 
 export default function PageTransition({ children }) {
-  const location = useLocation();
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={pageVariants}
-        className="w-full"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageVariants}
+      className="w-full"
+    >
+      {children}
+    </motion.div>
   );
 }
