@@ -51,12 +51,15 @@ import AccountSettings from './pages/AccountSettings';
 import Authors from './pages/Authors';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
+import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
 import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
 import Home from './pages/Home';
+import Library from './pages/Library';
+import Lifestyle from './pages/Lifestyle';
 import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
 import MyLibrary from './pages/MyLibrary';
@@ -68,14 +71,12 @@ import Series from './pages/Series';
 import SeriesTracking from './pages/SeriesTracking';
 import SharedReadings from './pages/SharedReadings';
 import ShelfView from './pages/ShelfView';
+import Social from './pages/Social';
 import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import Library from './pages/Library';
-import Challenges from './pages/Challenges';
-import Social from './pages/Social';
-import Lifestyle from './pages/Lifestyle';
+import ReadingTracker from './pages/ReadingTracker';
 import __Layout from './Layout.jsx';
 
 
@@ -84,12 +85,15 @@ export const PAGES = {
     "Authors": Authors,
     "Bingo": Bingo,
     "BookTournament": BookTournament,
+    "Challenges": Challenges,
     "Chat": Chat,
     "Dashboard": Dashboard,
     "Discover": Discover,
     "FanArt": FanArt,
     "Friends": Friends,
     "Home": Home,
+    "Library": Library,
+    "Lifestyle": Lifestyle,
     "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
     "MyLibrary": MyLibrary,
@@ -101,14 +105,12 @@ export const PAGES = {
     "SeriesTracking": SeriesTracking,
     "SharedReadings": SharedReadings,
     "ShelfView": ShelfView,
+    "Social": Social,
     "Statistics": Statistics,
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "Library": Library,
-    "Challenges": Challenges,
-    "Social": Social,
-    "Lifestyle": Lifestyle,
+    "ReadingTracker": ReadingTracker,
 }
 
 export const pagesConfig = {
