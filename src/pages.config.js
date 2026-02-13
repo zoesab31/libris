@@ -78,6 +78,7 @@ import VirtualLibrary from './pages/VirtualLibrary';
 import ReadingTracker from './pages/ReadingTracker';
 import Dashboard from './pages/Dashboard';
 import Badges from './pages/Badges';
+import EnrichedProfile from './pages/EnrichedProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +114,7 @@ export const PAGES = {
     "ReadingTracker": ReadingTracker,
     "Dashboard": Dashboard,
     "Badges": Badges,
+    "EnrichedProfile": EnrichedProfile,
 }
 
 export const pagesConfig = {
