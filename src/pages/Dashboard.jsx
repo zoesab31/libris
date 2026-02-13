@@ -17,6 +17,7 @@ import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
+import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -264,6 +265,7 @@ export default function Dashboard() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <OnboardingTrigger />
       <FloatingParticles count={30} />
       <style>{`
         .dash-card {
