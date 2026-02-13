@@ -36,6 +36,7 @@ export const navigationConfig = {
       { label: 'Bingo', path: createPageUrl('Bingo'), icon: Grid3x3 },
       { label: 'Tournoi', path: createPageUrl('BookTournament'), icon: Trophy },
       { label: 'Reading tracker', path: createPageUrl('ReadingTracker'), icon: Target },
+      { label: 'Badges', path: createPageUrl('Badges'), icon: Award },
     ]
   },
   social: {
