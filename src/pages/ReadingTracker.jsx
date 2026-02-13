@@ -3,7 +3,18 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, BookOpen, Flame, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, Flame, Calendar as CalendarIcon, RotateCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -12,6 +23,7 @@ import { toast } from "sonner";
 export default function ReadingTracker() {
   const [user, setUser] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -36,6 +48,24 @@ export default function ReadingTracker() {
     });
     return days;
   }, [readingProgress]);
+
+  // Mutation to reset all reading progress
+  const resetProgressMutation = useMutation({
+    mutationFn: async () => {
+      const entriesToDelete = readingProgress.map(entry => entry.id);
+      await Promise.all(
+        entriesToDelete.map(id => base44.entities.ReadingProgress.delete(id))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      toast.success('Tous les jours de lecture ont été réinitialisés');
+      setIsResetDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la réinitialisation');
+    }
+  });
 
   // Calculate calendar days
   const monthStart = startOfMonth(currentMonth);
@@ -66,19 +96,55 @@ export default function ReadingTracker() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
               <CalendarIcon className="w-8 h-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl md:text-5xl font-bold" style={{ color: '#FF1493' }}>
-                Reading Tracker
-              </h1>
-              <p className="text-base md:text-xl" style={{ color: '#2c2c2c' }}>
-                Visualise tes jours de lecture
-              </p>
+              <div>
+                <h1 className="text-3xl md:text-5xl font-bold" style={{ color: '#FF1493' }}>
+                  Reading Tracker
+                </h1>
+                <p className="text-base md:text-xl" style={{ color: '#2c2c2c' }}>
+                  Visualise tes jours de lecture
+                </p>
+              </div>
             </div>
+
+            {/* Reset button */}
+            <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-xl shadow-lg"
+                  style={{ borderColor: '#FF1493', color: '#FF1493' }}
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle style={{ color: '#FF1493' }}>
+                    Réinitialiser les jours de lecture ?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action supprimera tous les jours de lecture enregistrés. Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => resetProgressMutation.mutate()}
+                    disabled={resetProgressMutation.isPending}
+                    style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}
+                  >
+                    {resetProgressMutation.isPending ? 'Réinitialisation...' : 'Réinitialiser'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           {/* Stats */}
