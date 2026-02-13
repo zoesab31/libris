@@ -1,10 +1,8 @@
-// Placeholder file, this should be overridden by the generated code
+import React from "react";
+import Dashboard from "./Dashboard";
 
-
+// Home page container - currently wraps Dashboard
+// Will be refactored to include new home experience components
 export default function Home() {
-
-  return (
-    <div>
-    </div>
-  );
+  return <Dashboard />;
 }

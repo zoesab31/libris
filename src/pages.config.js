@@ -72,6 +72,10 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
+import Library from './pages/Library';
+import Challenges from './pages/Challenges';
+import Social from './pages/Social';
+import Lifestyle from './pages/Lifestyle';
 import __Layout from './Layout.jsx';
 
 
@@ -101,6 +105,10 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
+    "Library": Library,
+    "Challenges": Challenges,
+    "Social": Social,
+    "Lifestyle": Lifestyle,
 }
 
 export const pagesConfig = {

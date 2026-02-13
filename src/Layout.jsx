@@ -1,140 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { BookOpen, Library, Sparkles, Heart, Users, LogOut, Trophy, BookUser, Quote, Image, Palette, Map, Store, MessageSquare, TrendingUp, Lightbulb } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import NotificationBell from "@/components/notifications/NotificationBell";
-import { Button } from "@/components/ui/button";
-
-import BottomNavbar from "@/components/layout/BottomNavbar";
-import MobileHeader from "@/components/layout/MobileHeader";
-
-const navigationItems = [
-  {
-    title: "Tableau de bord",
-    url: createPageUrl("Dashboard"),
-    icon: BookOpen,
-  },
-  {
-    title: "Ma Bibliothèque",
-    url: createPageUrl("MyLibrary"),
-    icon: Library,
-  },
-  {
-    title: "Séries à compléter",
-    url: createPageUrl("Series"),
-    icon: BookOpen,
-  },
-  {
-    title: "Citations",
-    url: createPageUrl("Quotes"),
-    icon: Quote,
-  },
-  {
-    title: "Bingo Lecture",
-    url: createPageUrl("Bingo"),
-    icon: Sparkles,
-  },
-  {
-    title: "Statistiques",
-    url: createPageUrl("Statistics"),
-    icon: TrendingUp,
-  },
-
-  {
-    title: "Tournoi du Livre",
-    url: createPageUrl("BookTournament"),
-    icon: Trophy,
-  },
-  {
-    title: "Abécédaire",
-    url: createPageUrl("Authors"),
-    icon: BookUser,
-  },
-  {
-    title: "Lectures Communes",
-    url: createPageUrl("SharedReadings"),
-    icon: Users,
-  },
-  {
-    title: "Fan Art",
-    url: createPageUrl("FanArt"),
-    icon: Image,
-  },
-  {
-    title: "Mes Persos Préférés",
-    url: createPageUrl("Profile"),
-    icon: Heart,
-  },
-  {
-    title: "Inspi Ongles",
-    url: createPageUrl("NailInspo"),
-    icon: Palette,
-  },
-  {
-    title: "Maps",
-    url: createPageUrl("Maps"),
-    icon: Map,
-  },
-  {
-    title: "Découvrir",
-    url: createPageUrl("Discover"),
-    icon: Sparkles,
-  },
-  {
-    title: "💡 Mur des idées",
-    url: createPageUrl("SuggestionsWall"),
-    icon: Lightbulb,
-  },
-];
+import DesktopSidebar from "@/components/navigation/DesktopSidebar";
+import BottomNavigation from "@/components/navigation/BottomNavigation";
 
 function LayoutContent({ children, user, handleLogout, isDark }) {
-  const location = useLocation();
-  const { setOpen, open } = useSidebar();
 
-  // Fetch unread messages count
-  const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['unreadMessagesCount', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return 0;
-      
-      const allRooms = await base44.entities.ChatRoom.list();
-      const userRooms = allRooms.filter(room => 
-        room.participants?.includes(user.email)
-      );
-      
-      if (userRooms.length === 0) return 0;
-      
-      const roomIds = userRooms.map(r => r.id);
-      const allMessages = await base44.entities.ChatMessage.list();
-      
-      const unread = allMessages.filter(msg => 
-        roomIds.includes(msg.chat_room_id) &&
-        msg.sender_email !== user.email &&
-        (!msg.seen_by || !msg.seen_by.includes(user.email))
-      );
-      
-      return unread.length;
-    },
-    enabled: !!user?.email,
-    refetchInterval: 10000,
-    staleTime: 5000,
-  });
+
 
   useEffect(() => {
     if (!user) return;
@@ -155,177 +26,17 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Close sidebar on mobile when route changes
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setOpen(false);
-    }
-  }, [location.pathname, setOpen]);
-
-  const handleMoreClick = () => {
-    setOpen(true);
-  };
-
   return (
     <>
-      {/* Mobile Header */}
-      <MobileHeader user={user} />
+      {/* Desktop Sidebar */}
+      <DesktopSidebar user={user} />
 
-      {/* Bottom Navigation */}
-      <BottomNavbar unreadCount={unreadCount} onMoreClick={handleMoreClick} />
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation />
 
-      <Sidebar 
-        className={`border-r sidebar-container ${isDark ? 'dark-sidebar' : ''}`}
-        style={{ 
-          borderColor: isDark ? '#2d3748' : 'var(--beige)',
-          backgroundColor: isDark ? '#0f1419' : 'white'
-        }}>
-        <SidebarHeader 
-          className="border-b p-3 md:p-6 sidebar-header" 
-          style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
-          }}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center" 
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm md:text-lg" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
-                Nos Livres
-              </h2>
-              <p className="text-[9px] md:text-xs font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
-                Notre bibliothèque 🌸
-              </p>
-            </div>
-          </div>
-        </SidebarHeader>
-        
-        <SidebarContent className="p-2 md:p-3" style={{ backgroundColor: isDark ? '#0f1419' : 'transparent' }}>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navigationItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      className={`mb-1 rounded-xl transition-all duration-200 sidebar-link ${
-                        location.pathname === item.url 
-                          ? 'text-white shadow-lg font-bold' 
-                          : 'hover:bg-opacity-50'
-                      }`}
-                      style={location.pathname === item.url ? {
-                        background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                        boxShadow: '0 4px 12px rgba(255, 20, 147, 0.3)'
-                      } : {
-                        color: isDark ? '#cbd5e0' : '#4A5568',
-                        backgroundColor: 'transparent'
-                      }}
-                    >
-                      <Link to={item.url} className="flex items-center gap-2 px-2 md:px-3 py-2">
-                        <item.icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                        <span className="font-medium text-xs md:text-base">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter 
-          className="border-t p-2 md:p-4 sidebar-footer" 
-          style={{ 
-            borderColor: isDark ? '#2d3748' : 'var(--beige)',
-            backgroundColor: isDark ? '#0f1419' : 'transparent'
-          }}>
-          {user && (
-            <div className="space-y-2">
-              <Link to={createPageUrl("AccountSettings")}>
-                <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-opacity-10 transition-colors cursor-pointer"
-                     style={{ 
-                       backgroundColor: isDark ? 'rgba(255, 107, 157, 0.1)' : 'transparent',
-                     }}>
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0"
-                       style={{ background: user.profile_picture ? 'transparent' : 'linear-gradient(135deg, var(--warm-pink), var(--rose-gold))' }}>
-                    {user.profile_picture ? (
-                      <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      user.full_name?.[0]?.toUpperCase() || 'U'
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate" style={{ color: isDark ? '#ffc0cb' : 'var(--dark-text)' }}>
-                      {user.full_name || 'Lectrice'}
-                    </p>
-                    <p className="text-[9px] md:text-xs truncate font-medium" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }}>
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors"
-                style={{ 
-                  backgroundColor: isDark ? '#16213e' : 'var(--beige)',
-                  color: isDark ? '#ff6b9d' : 'var(--deep-pink)'
-                }}
-              >
-                <LogOut className="w-3 h-3 md:w-4 h-4" />
-                Déconnexion
-              </button>
-            </div>
-          )}
-        </SidebarFooter>
-      </Sidebar>
-
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Desktop Header */}
-        <header className="hidden md:flex border-b px-3 md:px-6 py-3 md:py-4 items-center justify-between sticky top-0 z-10 shadow-sm" 
-                style={{ 
-                  borderColor: isDark ? '#ff1493' : '#FFE1F0',
-                  backgroundColor: isDark ? '#0f1419' : 'white'
-                }}>
-          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-            <SidebarTrigger className="hover:bg-opacity-50 p-2 rounded-lg transition-colors flex-shrink-0" 
-                            style={{ color: isDark ? '#cbd5e0' : 'inherit' }} />
-          </div>
-          {user && (
-            <div className="flex items-center gap-3">
-              <Link to={createPageUrl("Friends")}>
-                <Button variant="ghost" size="icon" className="w-10 h-10">
-                  <Users className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
-                </Button>
-              </Link>
-              <Link to={createPageUrl("Chat")}>
-                <Button variant="ghost" size="icon" className="relative w-10 h-10">
-                  <MessageSquare className="w-5 h-5" style={{ color: isDark ? '#ff6b9d' : 'var(--deep-pink)' }} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
-                          style={{ backgroundColor: '#FF0000' }}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-              <NotificationBell user={user} />
-            </div>
-          )}
-        </header>
-
-        <div 
-          className="flex-1 overflow-auto"
-          style={{
-            marginTop: 'calc(env(safe-area-inset-top, 0px) + 56px)',
-            marginBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)'
-          }}
-        >
-          {children}
-        </div>
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        {children}
       </main>
     </>
   );
@@ -353,7 +64,7 @@ export default function Layout({ children, currentPageName }) {
   const isDark = user?.theme === 'dark';
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <div className="flex min-h-screen w-full">
       <style>{`
         /* Native Android styling */
         body {
@@ -571,13 +282,16 @@ export default function Layout({ children, currentPageName }) {
         /* Smooth transitions globally */
         * {
           transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-      `}</style>
-      <div className="min-h-screen flex w-full overflow-hidden" style={{ backgroundColor: 'var(--cream)' }}>
-        <LayoutContent user={user} handleLogout={handleLogout} isDark={isDark}>
+          }
+
+          /* Safe area handling for mobile */
+          .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+          `}</style>
+          <LayoutContent user={user} handleLogout={handleLogout} isDark={isDark}>
           {children}
-        </LayoutContent>
-      </div>
-    </SidebarProvider>
-  );
-}
+          </LayoutContent>
+          </div>
+          );
+          }
