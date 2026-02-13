@@ -5,9 +5,19 @@ import PullToRefresh from "@/components/layout/PullToRefresh";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion } from "framer-motion";
@@ -24,6 +34,7 @@ export default function Dashboard() {
   const [selectedBookForDetails, setSelectedBookForDetails] = useState(null);
   const [editingBookId, setEditingBookId] = useState(null);
   const [editValues, setEditValues] = useState({ currentPage: '', totalPages: '' });
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -200,6 +211,27 @@ export default function Dashboard() {
   const handleCancelEdit = () => {
     setEditingBookId(null);
     setEditValues({ currentPage: '', totalPages: '' });
+  };
+
+  const handleResetReadingDays = async () => {
+    try {
+      // Get all reading progress entries for the user
+      const allProgress = await base44.entities.ReadingProgress.filter({ created_by: user?.email });
+      
+      // Delete all progress entries
+      await Promise.all(
+        allProgress.map(entry => base44.entities.ReadingProgress.delete(entry.id))
+      );
+
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      
+      toast.success("✅ Jours de lecture réinitialisés !");
+      setShowResetDialog(false);
+    } catch (error) {
+      console.error("Error resetting reading days:", error);
+      toast.error("Erreur lors de la réinitialisation");
+    }
   };
 
   const abandonedBookCounts = (userBook) => {
@@ -456,6 +488,23 @@ export default function Dashboard() {
 
         <div className="relative p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
+            {/* Reset Button */}
+            <div className="flex justify-start mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResetDialog(true)}
+                className="rounded-xl"
+                style={{ 
+                  borderColor: 'rgba(255, 105, 180, 0.3)',
+                  color: '#FF1493'
+                }}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Réinitialiser les jours
+              </Button>
+            </div>
+
             {/* Titre principal */}
             <motion.div 
               className="mb-8"
@@ -1197,6 +1246,33 @@ export default function Dashboard() {
           initialTab="myinfo"
         />
       )}
+
+      {/* Reset Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle style={{ color: '#FF1493' }}>
+              Réinitialiser les jours de lecture ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprimera définitivement tous vos jours de lecture enregistrés. 
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetReadingDays}
+              style={{ 
+                backgroundColor: '#FF1493',
+                color: 'white'
+              }}
+            >
+              Confirmer la réinitialisation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
     </PullToRefresh>
   );
