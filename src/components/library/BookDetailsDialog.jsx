@@ -1436,7 +1436,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 md:gap-6 md:grid-cols-[1fr_1fr]">
                   {/* Card: Ton ressenti */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 md:row-start-1"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
@@ -1703,7 +1703,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Univers du livre */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 md:row-start-2"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
