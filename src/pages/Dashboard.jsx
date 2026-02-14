@@ -13,7 +13,7 @@ import { fr } from 'date-fns/locale';
 import { motion } from "framer-motion";
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
-import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
+import BestFriendCard from "../components/dashboard/BestFriendCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
@@ -69,12 +69,6 @@ export default function Dashboard() {
       return allFriendsBooks.flat();
     },
     enabled: myFriends.length > 0,
-  });
-
-  const { data: mySharedReadings = [] } = useQuery({
-    queryKey: ['mySharedReadings', user?.email],
-    queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
-    enabled: !!user,
   });
 
   const { data: allQuotes = [] } = useQuery({
@@ -270,7 +264,7 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #FFF2F7 0%, #FFE6F1 55%, #FFDDED 100%)' }}>
+      <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #FFEAF4 0%, #FDE7F1 50%, #FADDEB 100%)' }}>
       <OnboardingTrigger />
       <FloatingParticles count={30} />
       <style>{`
@@ -575,8 +569,8 @@ export default function Dashboard() {
                 whileTap={{ scale: 0.95 }}
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
                    style={{ 
-                   background: 'linear-gradient(135deg, #EDE4FF 0%, #DCCBFF 100%)',
-                   border: '1px solid rgba(124, 58, 237, 0.15)'
+                     background: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)',
+                     border: '1px solid rgba(156, 39, 176, 0.15)'
                    }}>
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div 
@@ -594,11 +588,11 @@ export default function Dashboard() {
                     <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                   </motion.div>
                 </div>
-                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#7C3AED' }}>
-                  {mySharedReadings.length}
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#9C27B0' }}>
+                  {myFriends.length}
                 </p>
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
-                  Lecture commune
+                  Lectures communes
                 </p>
               </motion.div>
 
@@ -889,12 +883,18 @@ export default function Dashboard() {
                                   </div>
 
                                   <div className="mt-3 flex flex-wrap gap-2">
-                                    <Link to={createPageUrl('MyLibrary')}>
-                                      <Button variant="outline" size="sm" className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">+ Livre</Button>
-                                    </Link>
-                                    <Button variant="outline" size="sm" onClick={() => handleStartEdit(userBook, book)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">+ Pages</Button>
-                                    <Button variant="outline" size="sm" onClick={() => setSelectedBookForDetails(userBook)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">Noter</Button>
-                                    <Button size="sm" onClick={async () => { const next = (userBook.current_page || 0) + 20; try { await base44.entities.UserBook.update(userBook.id, { current_page: next }); await base44.entities.ReadingProgress.create({ user_book_id: userBook.id, page_number: next, timestamp: new Date().toISOString() }); queryClient.invalidateQueries({ queryKey: ['myBooks'] }); queryClient.invalidateQueries({ queryKey: ['readingProgress'] }); toast.success('+20 pages ajoutées'); } catch { toast.error('Impossible d’ajouter 20 pages'); } }} className="rounded-xl bg-pink-600 hover:bg-pink-700 text-white">+ 20 pages</Button>
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      + Livre
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      + Pages
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      Noter
+                                    </Button>
+                                    <Button size="sm" className="rounded-full bg-pink-500 hover:bg-pink-600 text-white">
+                                      + 20 pages
+                                    </Button>
                                   </div>
                                 </>
                               )}
@@ -947,7 +947,7 @@ export default function Dashboard() {
                          style={{ backgroundColor: '#FFE9F0' }}>
                       <Sparkles className="w-5 h-5" style={{ color: '#FF1493' }} />
                     </div>
-                    Activité des amis
+                    🔥 Activité de tes amies
                   </h2>
 
                   <div className="space-y-4">
@@ -967,8 +967,15 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  <div className="mt-4 text-right">
-                    <Link to={createPageUrl('Social')} className="text-sm font-semibold" style={{ color: '#FF1493' }}>
+                  <div className="mt-6 flex items-center justify-between">
+                    {activityFeed.length > 5 ? (
+                      <p className="text-sm" style={{ color: '#9CA3AF' }}>
+                        +{activityFeed.length - 5} autres activités
+                      </p>
+                    ) : (
+                      <span />
+                    )}
+                    <Link to={createPageUrl('Social')} className="text-sm font-semibold no-hover" style={{ color: '#FF1493' }}>
                       Voir plus
                     </Link>
                   </div>
@@ -1081,7 +1088,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <TopFriendsWidget user={user} compact={false} />
+              <BestFriendCard user={user} />
             </motion.div>
 
             {/* Citation du jour */}
@@ -1199,7 +1206,7 @@ export default function Dashboard() {
               </motion.div>
             )}
 
-            {/* Deuxième carte Playlist pour correspondre à la maquette */}
+            {/* Playlist bis */}
             {allMusicWithBooks.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -1223,7 +1230,7 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
                       <motion.div 
-                        key={`pl2-${idx}`} 
+                        key={`p2-${idx}`} 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: idx * 0.1 }}
