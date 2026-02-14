@@ -272,9 +272,9 @@ export default function EnrichedProfilePage() {
              isOwnProfile={isOwnProfile}
            />
          </div>
-        )
+        )}
 
-        {currentUser?.role === 'admin' && (
+         {currentUser?.role === 'admin' && (
           <div className="mt-2 p-3 bg-white/70 border rounded-xl flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
             <span className="text-sm font-medium text-gray-700">Admin · Débloquer un badge</span>
             <div className="flex-1">

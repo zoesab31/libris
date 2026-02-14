@@ -296,8 +296,14 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
   };
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
-      {availableBooks.map(book => {
+    <div className="space-y-2">
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Rechercher par titre ou auteur..."
+      />
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
+      {filtered.map(book => {
         const isSelected = selectedIds.includes(book.id);
         
         return (
@@ -340,7 +346,8 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
               {book.title}
             </p>
           </div>
-        );
+          </div>
+          );
       })}
     </div>
   );
