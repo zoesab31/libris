@@ -285,6 +285,11 @@ export default function EditProfileModal({
 }
 
 function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) {
+  const [q, setQ] = useState('');
+  const filtered = availableBooks.filter(b => {
+    const s = q.toLowerCase();
+    return (b.title || '').toLowerCase().includes(s) || (b.author || '').toLowerCase().includes(s);
+  });
   const toggleBook = (bookId) => {
     if (selectedIds.includes(bookId)) {
       onChange(selectedIds.filter(id => id !== bookId));
@@ -345,9 +350,8 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
             <p className="text-xs text-center mt-1 line-clamp-2 font-medium">
               {book.title}
             </p>
-          </div>
-          </div>
-          );
+            </div>
+            );
       })}
     </div>
   );
