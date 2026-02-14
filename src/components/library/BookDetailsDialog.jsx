@@ -1436,7 +1436,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               <div className="p-4 md:p-8 space-y-4 md:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                   {/* Card: Ton ressenti */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 order-1 md:order-1"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
@@ -1703,7 +1703,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Univers du livre */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 order-2 md:order-2"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
@@ -2415,7 +2415,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                 )}
                               </div>
                               <span className="text-sm font-bold" style={{ color: '#9C27B0' }}>
-                                {friend?.friend_name || quote.created_by?.split('@')[0]}
+                                {friendUser?.username || friendUser?.display_name || quote.created_by?.split('@')[0]}
                               </span>
                             </div>
 
@@ -2558,7 +2558,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                             {/* Friend Info */}
                             <div className="flex-1">
                               <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                                {friend?.friend_name || friendBook.created_by?.split('@')[0]}
+                                {friendUser?.username || friendUser?.display_name || friendBook.created_by?.split('@')[0]}
                               </h3>
                               
                               {/* Status Badge */}
