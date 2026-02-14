@@ -322,7 +322,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
                 </Button>
               ))}
             </div>
-            {reading.status !== 'Terminée' && (
+            {reading.status !== 'Terminée' && selectedDay === 0 && (
               <div className="px-2 pt-2 pb-3 border-b" style={{ borderColor: '#FFD6E8', backgroundColor: '#FFFAFC' }}>
                 <Button size="sm" className="text-white rounded-lg" style={{ backgroundColor: '#10B981' }} onClick={() => completeNowMutation.mutate()}>
                   <CheckCircle2 className="w-4 h-4 mr-1" /> Terminer maintenant
