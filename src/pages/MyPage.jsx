@@ -239,33 +239,6 @@ export default function MyPage() {
         {/* Badges (discret) */}
         <BadgeShowcase userBadges={userBadges} isOwnProfile={true} />
 
-        {/* Admin unlock badge */}
-        {user?.role === 'admin' && (
-          <div className="bg-white/70 border rounded-2xl p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-              <span className="text-sm font-medium text-gray-700">Admin · Débloquer un badge</span>
-              <div className="flex-1">
-                <Select value={selectedBadgeId} onValueChange={setSelectedBadgeId}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Choisir un badge"/></SelectTrigger>
-                  <SelectContent>
-                    {ALL_BADGES.filter(b => !userBadges.some(ub => ub.badge_id === b.id)).map(b => (
-                      <SelectItem key={b.id} value={b.id}>{b.icon} {b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                disabled={!selectedBadgeId}
-                onClick={async ()=>{
-                  await base44.entities.UserBadge.create({ badge_id: selectedBadgeId, unlocked_at: new Date().toISOString(), is_new: true });
-                  setSelectedBadgeId("");
-                  queryClient.invalidateQueries({ queryKey: ['userBadges', user?.email] });
-                }}
-                className="bg-pink-500 hover:bg-pink-600"
-              >Débloquer</Button>
-            </div>
-          </div>
-        )}
 
         {/* Collections */}
         <div className="flex items-center justify-between">
