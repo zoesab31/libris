@@ -13,7 +13,7 @@ import { fr } from 'date-fns/locale';
 import { motion } from "framer-motion";
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
-import TopFriendsWidget from "../components/dashboard/TopFriendsWidget";
+import BestFriendCard from "../components/dashboard/BestFriendCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
@@ -264,7 +264,7 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #FFEAF4 0%, #FDE7F1 50%, #FADDEB 100%)' }}>
       <OnboardingTrigger />
       <FloatingParticles count={30} />
       <style>{`
@@ -952,13 +952,18 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {activityFeed.length > 5 && (
-                    <div className="text-center mt-6">
+                  <div className="mt-6 flex items-center justify-between">
+                    {activityFeed.length > 5 ? (
                       <p className="text-sm" style={{ color: '#9CA3AF' }}>
                         +{activityFeed.length - 5} autres activités
                       </p>
-                    </div>
-                  )}
+                    ) : (
+                      <span />
+                    )}
+                    <Link to={createPageUrl('Social')} className="text-sm font-semibold no-hover" style={{ color: '#FF1493' }}>
+                      Voir plus
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
               </motion.div>
@@ -1068,7 +1073,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <TopFriendsWidget user={user} compact={false} />
+              <BestFriendCard user={user} />
             </motion.div>
 
             {/* Citation du jour */}
