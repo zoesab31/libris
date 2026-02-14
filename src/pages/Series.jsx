@@ -306,7 +306,7 @@ export default function Series() {
 
         {/* Series List */}
         {sortedSeriesWithAbandoned.length > 0 ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedSeriesWithAbandoned.map((series) => (
               <SeriesCard
                 key={series.id}
@@ -326,7 +326,7 @@ export default function Series() {
             <BookOpen className="w-20 h-20 mx-auto mb-6 opacity-20" 
                       style={{ color: 'var(--warm-pink)' }} />
             <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {searchQuery ? "Aucune série trouvée" : filterType ? "Aucune série dans cette catégorie" : "Aucune série ajoutée"}
+              {searchQuery ? "Aucune saga trouvée" : filterType ? "Aucune saga dans cette catégorie" : "Aucune saga ajoutée"}
             </h3>
             <p className="text-lg mb-6" style={{ color: 'var(--warm-pink)' }}>
               {searchQuery ? "Essayez une autre recherche" : filterType ? "Changez de filtre ou ajoutez des séries" : "Commencez à suivre vos sagas préférées"}
@@ -338,7 +338,7 @@ export default function Series() {
                 style={{ background: 'linear-gradient(135deg, #A8D5E5, #B8E6D5)' }}
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Ajouter ma première série
+                Ajouter ma première saga
               </Button>
             )}
           </div>

@@ -460,7 +460,7 @@ export default function UserProfile() {
               style={activeTab === "series" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}
             >
               <BookOpen className="w-5 h-5 mr-2" />
-              Séries
+              Sagas
             </TabsTrigger>
             <TabsTrigger 
               value="quotes" 

@@ -19,7 +19,7 @@ export const navigationConfig = {
     gradient: 'linear-gradient(135deg, #FF69B4, #FFB6C1)',
     subItems: [
       { label: 'Ma bibliothèque', path: createPageUrl('MyLibrary'), icon: BookOpen },
-      { label: 'Mes séries', path: createPageUrl('Series'), icon: BookMarked },
+      { label: 'Mes sagas', path: createPageUrl('Series'), icon: BookMarked },
       { label: 'Abécédaire', path: createPageUrl('Authors'), icon: BookUser },
       { label: 'Statistiques', path: createPageUrl('Statistics'), icon: TrendingUp },
       { label: 'Citations', path: createPageUrl('Quotes'), icon: Quote },
