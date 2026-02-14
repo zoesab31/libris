@@ -13,27 +13,27 @@ export default function MobileSubNav() {
 
   return (
     <div className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur border-b"
-         style={{ borderColor: 'rgba(255,105,180,0.15)' }}>
+    style={{ borderColor: 'rgba(255,105,180,0.15)' }}>
       <div className="px-4 py-3">
         <div className="space-y-2">
           {config.subItems.map((sub) => {
             const isActive = location.pathname === sub.path;
-            return (
-              <Link
-                key={sub.path}
-                to={sub.path}
-                className={`block w-full px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                  isActive
-                    ? 'bg-pink-500 text-white shadow'
-                    : 'bg-white text-pink-600 border border-pink-200'
-                }`}
-              >
-                {sub.label}
-              </Link>
-            );
+            return null;
+
+
+
+
+
+
+
+
+
+
+
+
           })}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
