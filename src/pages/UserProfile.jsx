@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -10,13 +9,14 @@ import { ArrowLeft, MessageCircle, Users, BookOpen, Quote, Image, Heart, Loader2
 import { createPageUrl } from "@/utils";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 import FriendBookDialog from "../components/library/FriendBookDialog";
+import FourBooksSection from "../components/profile/FourBooksSection";
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("library");
+  const [activeTab, setActiveTab] = useState("mypage");
   const [libraryView, setLibraryView] = useState("shelves"); // "shelves", "read", "toread", "wishlist", "abandoned", "history", "pal"
   const [selectedShelf, setSelectedShelf] = useState(null);
   const [expandedYears, setExpandedYears] = useState({});
@@ -24,7 +24,7 @@ export default function UserProfile() {
   const [selectedFriendBook, setSelectedFriendBook] = useState(null); // NEW
   
   const urlParams = new URLSearchParams(window.location.search);
-  const userEmail = urlParams.get('userEmail');
+  const userEmail = urlParams.get('userEmail') || urlParams.get('email');
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -527,6 +527,37 @@ export default function UserProfile() {
               Map
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="mypage">
+            <div className="space-y-6">
+              <Card className="border-0 shadow-lg bg-white">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>Bio</h3>
+                  {profileUser.bio ? (
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-pink)' }}>{profileUser.bio}</p>
+                  ) : (
+                    <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Pas de bio pour le moment.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <FourBooksSection
+                title="📚 En 4 livres pour la connaître"
+                description="Ces livres la définissent en tant que lectrice"
+                bookIds={profileUser.books_to_know_me || []}
+                allBooks={allBooks}
+                isOwnProfile={false}
+              />
+
+              <FourBooksSection
+                title="⭐ Ses 4 coups de cœur de l'année"
+                description="Ses lectures préférées de cette année"
+                bookIds={profileUser.favorite_books_2024 || []}
+                allBooks={allBooks}
+                isOwnProfile={false}
+              />
+            </div>
+          </TabsContent>
 
           <TabsContent value="library">
             {/* Library sub-navigation - MOBILE OPTIMIZED WITH LARGER TOUCH TARGETS */}
