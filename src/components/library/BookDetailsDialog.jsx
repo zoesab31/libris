@@ -2482,9 +2482,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </div>
             </TabsContent>
 
-            {/* Onglet Avis remplacé par Synopsis */}
-            {/* <TabsContent value="comments"> */
-              <div className="p-4 md:p-8">
                 {/* Filter Toggle */}
                 <div className="flex gap-2 mb-6">
                   <Button
