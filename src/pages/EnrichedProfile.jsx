@@ -8,6 +8,7 @@ import {
   BookOpen, UserPlus, MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
@@ -27,6 +28,7 @@ export default function EnrichedProfilePage() {
   
   const [currentUser, setCurrentUser] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [adminSelectedBadge, setAdminSelectedBadge] = useState('');
 
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -59,6 +61,8 @@ export default function EnrichedProfilePage() {
     queryFn: () => base44.entities.UserBadge.filter({ created_by: profileUser?.email }),
     enabled: !!profileUser
   });
+
+  const lockedBadges = ALL_BADGES.filter(b => !userBadges.some(ub => ub.badge_id === b.id));
 
   const { data: friends = [] } = useQuery({
     queryKey: ['friends', profileUser?.email],
@@ -268,6 +272,38 @@ export default function EnrichedProfilePage() {
              isOwnProfile={isOwnProfile}
            />
          </div>
+        )
+
+        {currentUser?.role === 'admin' && (
+          <div className="mt-2 p-3 bg-white/70 border rounded-xl flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <span className="text-sm font-medium text-gray-700">Admin · Débloquer un badge</span>
+            <div className="flex-1">
+              <Select value={adminSelectedBadge} onValueChange={setAdminSelectedBadge}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choisir un badge à débloquer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {lockedBadges.map(b => (
+                    <SelectItem key={b.id} value={b.id}>{b.icon} {b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              size="sm"
+              disabled={!adminSelectedBadge}
+              onClick={async () => {
+                if (!adminSelectedBadge) return;
+                await base44.functions.invoke('unlockBadgeForUser', { target_email: profileUser.email, badge_id: adminSelectedBadge });
+                setAdminSelectedBadge('');
+                toast.success('Badge débloqué');
+                queryClient.invalidateQueries({ queryKey: ['userBadges', profileUser?.email] });
+              }}
+              className="bg-pink-500 hover:bg-pink-600 text-white"
+            >
+              Débloquer
+            </Button>
+          </div>
         )}
 
         <div className="space-y-6 mt-6">
