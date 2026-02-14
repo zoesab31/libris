@@ -2415,7 +2415,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                 )}
                               </div>
                               <span className="text-sm font-bold" style={{ color: '#9C27B0' }}>
-                                {friend?.friend_name || quote.created_by?.split('@')[0]}
+                                {friendUser?.display_name || friendUser?.username || quote.created_by?.split('@')[0]}
                               </span>
                             </div>
 
@@ -2558,7 +2558,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                             {/* Friend Info */}
                             <div className="flex-1">
                               <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                                {friend?.friend_name || friendBook.created_by?.split('@')[0]}
+                                {friendUser?.display_name || friendUser?.username || friendBook.created_by?.split('@')[0]}
                               </h3>
                               
                               {/* Status Badge */}

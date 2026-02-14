@@ -1,11 +1,21 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navigationConfig, getActiveTab } from "./NavigationConfig";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { motion } from "framer-motion";
 
 export default function BottomNavigation() {
   const location = useLocation();
+  const navigate = useNavigate();
   const activeTab = getActiveTab(location.pathname);
+  const [openFor, setOpenFor] = React.useState(null);
+
+  const handleMainClick = (e, key, config) => {
+    if (config.subItems && config.subItems.length > 0) {
+      e.preventDefault();
+      setOpenFor(key);
+    }
+  };
 
   return (
     <nav 
@@ -24,6 +34,7 @@ export default function BottomNavigation() {
             <Link
               key={key}
               to={config.path}
+              onClick={(e) => handleMainClick(e, key, config)}
               className="flex flex-col items-center justify-center flex-1 h-full relative"
             >
               <motion.div
@@ -63,6 +74,25 @@ export default function BottomNavigation() {
         })}
         
       </div>
+
+      <Sheet open={!!openFor} onOpenChange={(val) => !val && setOpenFor(null)}>
+        <SheetContent side="bottom" className="pb-8">
+          <SheetHeader>
+            <SheetTitle>Choisir une page</SheetTitle>
+          </SheetHeader>
+          <div className="grid gap-2 mt-2">
+            {openFor && navigationConfig[openFor]?.subItems?.map((sub) => (
+              <button
+                key={sub.path}
+                className="w-full px-4 py-3 rounded-xl border text-left font-semibold"
+                onClick={() => { navigate(sub.path); setOpenFor(null); }}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
     </nav>
   );
 }
