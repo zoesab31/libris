@@ -1809,9 +1809,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Ma pensée intime */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
-                       style={{
-                         backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-1 md:row-start-1"
+                                           style={{
+                                             backgroundColor: 'rgba(255, 255, 255, 0.5)',
                          backdropFilter: 'blur(12px)',
                          boxShadow: '0 8px 32px rgba(225, 190, 231, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
                        }}>
@@ -1840,9 +1840,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Music Section - Ambiance sonore */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
-                       style={{
-                         background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.5) 100%)',
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-1 md:row-start-2"
+                                           style={{
+                                             background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.5) 100%)',
                          backdropFilter: 'blur(12px)',
                          boxShadow: '0 8px 32px rgba(230, 179, 232, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
                        }}>
