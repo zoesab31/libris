@@ -262,10 +262,12 @@ export default function EnrichedProfilePage() {
         <ProfileStats stats={stats} />
 
         {profileUser.show_badges !== false && (
-          <BadgeShowcase 
-            userBadges={userBadges}
-            isOwnProfile={isOwnProfile}
-          />
+         <div className="mt-4">
+           <BadgeShowcase 
+             userBadges={userBadges}
+             isOwnProfile={isOwnProfile}
+           />
+         </div>
         )}
 
         <div className="space-y-6 mt-6">
