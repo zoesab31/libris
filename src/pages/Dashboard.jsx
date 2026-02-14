@@ -881,6 +881,21 @@ export default function Dashboard() {
                                       />
                                     </motion.div>
                                   </div>
+
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      + Livre
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      + Pages
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="rounded-full border-pink-200 text-pink-600">
+                                      Noter
+                                    </Button>
+                                    <Button size="sm" className="rounded-full bg-pink-500 hover:bg-pink-600 text-white">
+                                      + 20 pages
+                                    </Button>
+                                  </div>
                                 </>
                               )}
                             </div>
