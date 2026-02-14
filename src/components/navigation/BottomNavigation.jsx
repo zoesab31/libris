@@ -14,6 +14,11 @@ export default function BottomNavigation() {
     setOpenMenu(null);
   }, [location.pathname]);
 
+  const mobileOrder = ['library','challenges','home','social','lifestyle'];
+  const orderedKeys = mobileOrder.filter(k => navigationConfig[k]).concat(
+    Object.keys(navigationConfig).filter(k => !mobileOrder.includes(k))
+  );
+
   return (
     <nav 
       className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50 safe-area-bottom"
@@ -23,7 +28,8 @@ export default function BottomNavigation() {
       }}
     >
       <div className="flex items-center justify-around h-16 px-2">
-        {Object.entries(navigationConfig).map(([key, config]) => {
+        {orderedKeys.map((key) => {
+          const config = navigationConfig[key];
           const Icon = config.icon;
           const isActive = activeTab === key;
 
@@ -32,7 +38,7 @@ export default function BottomNavigation() {
               key={key}
               to={config.path}
               onClick={(e) => {
-                if (config.subItems && config.subItems.length > 0 && location.pathname === config.path) {
+                if (config.subItems && config.subItems.length > 0) {
                   e.preventDefault();
                   setOpenMenu(prev => (prev === key ? null : key));
                 } else {
@@ -83,22 +89,27 @@ export default function BottomNavigation() {
           const cfg = navigationConfig[openMenu];
           if (!cfg) return null;
           return (
-            <div className="absolute bottom-16 left-2 right-2 z-[60]">
-              <div className="rounded-2xl border bg-white shadow-xl max-h-60 overflow-auto p-2" style={{ borderColor: 'rgba(255,105,180,0.25)' }}>
-                {cfg.subItems?.map((sub) => (
-                  <button
-                    key={sub.path}
-                    onClick={() => {
-                      navigate(sub.path);
-                      setOpenMenu(null);
-                    }}
-                    className="w-full text-left px-3 py-3 rounded-xl hover:bg-pink-50 text-pink-600 font-semibold"
-                  >
-                    {sub.label}
-                  </button>
-                ))}
+            <>
+              <div className="fixed inset-0 z-[59] bg-black/30" onClick={() => setOpenMenu(null)} />
+              <div className="fixed bottom-0 left-0 right-0 z-[60] h-[50vh] rounded-t-2xl border-t bg-white shadow-2xl" style={{ borderColor: 'rgba(255,105,180,0.25)' }}>
+                <div className="w-12 h-1.5 bg-pink-200 rounded-full mx-auto mt-3 mb-2" />
+                <div className="px-5 py-2 space-y-2 overflow-y-auto h-[calc(50vh-40px)]">
+                  {cfg.subItems?.map((sub) => (
+                    <button
+                      key={sub.path}
+                      onClick={() => {
+                        navigate(sub.path);
+                        setOpenMenu(null);
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-pink-50 text-pink-600 font-semibold border"
+                      style={{ borderColor: 'rgba(255,105,180,0.2)' }}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
           );
         })()}
     </nav>
