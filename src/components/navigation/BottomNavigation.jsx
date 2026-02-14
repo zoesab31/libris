@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navigationConfig, getActiveTab } from "./NavigationConfig";
 import { motion } from "framer-motion";
@@ -8,6 +8,11 @@ export default function BottomNavigation() {
   const navigate = useNavigate();
   const activeTab = getActiveTab(location.pathname);
   const [openMenu, setOpenMenu] = useState(null);
+
+  useEffect(() => {
+    // Fermer le menu dès que l'URL change
+    setOpenMenu(null);
+  }, [location.pathname]);
 
   return (
     <nav 
@@ -29,7 +34,9 @@ export default function BottomNavigation() {
               onClick={(e) => {
                 if (config.subItems && config.subItems.length > 0) {
                   e.preventDefault();
-                  setOpenMenu(key);
+                  setOpenMenu(prev => (prev === key ? null : key));
+                } else {
+                  setOpenMenu(null);
                 }
               }}
               className="flex flex-col items-center justify-center flex-1 h-full relative"
@@ -72,28 +79,20 @@ export default function BottomNavigation() {
         
       </div>
 
-      {openMenu && (
-        (() => {
+      {openMenu && (() => {
           const cfg = navigationConfig[openMenu];
           if (!cfg) return null;
           return (
-            <div className="fixed inset-0 z-[60] bg-white">
-              <div className="px-5 pt-12 pb-24 space-y-3 max-w-md mx-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-lg font-bold" style={{ color: cfg.color }}>Choisir une page</h2>
-                  <button onClick={() => setOpenMenu(null)} className="px-3 py-1 rounded-xl border" style={{ borderColor: 'rgba(255,105,180,0.25)', color: cfg.color }}>
-                    Fermer
-                  </button>
-                </div>
+            <div className="absolute bottom-16 left-2 right-2 z-[60]">
+              <div className="rounded-2xl border bg-white shadow-xl max-h-60 overflow-auto p-2" style={{ borderColor: 'rgba(255,105,180,0.25)' }}>
                 {cfg.subItems?.map((sub) => (
                   <button
                     key={sub.path}
                     onClick={() => {
-                      setOpenMenu(null);
                       navigate(sub.path);
+                      setOpenMenu(null);
                     }}
-                    className="block w-full text-left px-4 py-4 rounded-2xl text-base font-semibold border shadow-sm"
-                    style={{ borderColor: 'rgba(255,105,180,0.25)', color: cfg.color }}
+                    className="w-full text-left px-3 py-3 rounded-xl hover:bg-pink-50 text-pink-600 font-semibold"
                   >
                     {sub.label}
                   </button>
@@ -101,8 +100,7 @@ export default function BottomNavigation() {
               </div>
             </div>
           );
-        })()
-      )}
+        })()}
     </nav>
   );
 }
