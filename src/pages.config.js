@@ -47,13 +47,13 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AccountSettings from './pages/AccountSettings';
 import Authors from './pages/Authors';
 import Badges from './pages/Badges';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
 import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
-import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import EnrichedProfile from './pages/EnrichedProfile';
 import FanArt from './pages/FanArt';
@@ -64,8 +64,10 @@ import Lifestyle from './pages/Lifestyle';
 import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
 import MyLibrary from './pages/MyLibrary';
+import MyPage from './pages/MyPage';
 import NailInspo from './pages/NailInspo';
 import OneSignalGuide from './pages/OneSignalGuide';
+import Profile from './pages/Profile';
 import Quotes from './pages/Quotes';
 import ReadingTracker from './pages/ReadingTracker';
 import Series from './pages/Series';
@@ -77,20 +79,18 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import Profile from './pages/Profile';
-import AccountSettings from './pages/AccountSettings';
-import MyPage from './pages/MyPage';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AccountSettings": AccountSettings,
     "Authors": Authors,
     "Badges": Badges,
     "Bingo": Bingo,
     "BookTournament": BookTournament,
     "Challenges": Challenges,
     "Chat": Chat,
-    "Dashboard": Dashboard,
     "Discover": Discover,
     "EnrichedProfile": EnrichedProfile,
     "FanArt": FanArt,
@@ -101,8 +101,10 @@ export const PAGES = {
     "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
     "MyLibrary": MyLibrary,
+    "MyPage": MyPage,
     "NailInspo": NailInspo,
     "OneSignalGuide": OneSignalGuide,
+    "Profile": Profile,
     "Quotes": Quotes,
     "ReadingTracker": ReadingTracker,
     "Series": Series,
@@ -114,9 +116,7 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "Profile": Profile,
-    "AccountSettings": AccountSettings,
-    "MyPage": MyPage,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

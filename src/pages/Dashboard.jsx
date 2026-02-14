@@ -71,6 +71,12 @@ export default function Dashboard() {
     enabled: myFriends.length > 0,
   });
 
+  const { data: mySharedReadings = [] } = useQuery({
+    queryKey: ['mySharedReadings', user?.email],
+    queryFn: () => base44.entities.SharedReading.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
@@ -264,7 +270,7 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
+      <div className="min-h-screen relative" style={{ background: 'linear-gradient(180deg, #FFF2F7 0%, #FFE6F1 55%, #FFDDED 100%)' }}>
       <OnboardingTrigger />
       <FloatingParticles count={30} />
       <style>{`
@@ -569,8 +575,8 @@ export default function Dashboard() {
                 whileTap={{ scale: 0.95 }}
                    onClick={() => navigate(createPageUrl("SharedReadings"))}
                    style={{ 
-                     background: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)',
-                     border: '1px solid rgba(156, 39, 176, 0.15)'
+                   background: 'linear-gradient(135deg, #EDE4FF 0%, #DCCBFF 100%)',
+                   border: '1px solid rgba(124, 58, 237, 0.15)'
                    }}>
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div 
@@ -588,11 +594,11 @@ export default function Dashboard() {
                     <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                   </motion.div>
                 </div>
-                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#9C27B0' }}>
-                  {myFriends.length}
+                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#7C3AED' }}>
+                  {mySharedReadings.length}
                 </p>
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
-                  Lectures communes
+                  Lecture commune
                 </p>
               </motion.div>
 
@@ -932,7 +938,7 @@ export default function Dashboard() {
                          style={{ backgroundColor: '#FFE9F0' }}>
                       <Sparkles className="w-5 h-5" style={{ color: '#FF1493' }} />
                     </div>
-                    🔥 Activité de tes amies
+                    Activité des amis
                   </h2>
 
                   <div className="space-y-4">
