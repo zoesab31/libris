@@ -237,46 +237,39 @@ export default function Authors() {
                     {author.name}
                   </h3>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: 'var(--warm-pink)' }}>Livres lus</span>
-                      <span className="font-bold px-2 py-1 rounded-lg" 
-                            style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
-                        {author.readBooks.length}
-                      </span>
+                  {/* Mosaïque de grandes couvertures */}
+                  <div className="mt-3">
+                    <div className="grid grid-cols-3 grid-rows-2 gap-1 h-44 md:h-48 rounded-xl overflow-hidden">
+                      {[...author.readBooks, ...author.unreadBooks].slice(0,5).map((book, idx) => (
+                        <div key={idx} className={`relative ${idx === 0 ? 'col-span-2 row-span-2' : ''}`}>
+                          {book.cover_url ? (
+                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-[var(--beige)]">
+                              <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                            </div>
+                          )}
+                          {(author.readBooks.length + author.unreadBooks.length) > 5 && idx === 4 && (
+                            <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center text-sm font-bold">
+                              +{(author.readBooks.length + author.unreadBooks.length) - 5}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    {author.unreadBooks.length > 0 && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span style={{ color: 'var(--warm-pink)' }}>À lire</span>
-                        <span className="font-bold px-2 py-1 rounded-lg" 
-                              style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
-                          {author.unreadBooks.length}
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 rounded-full bg-[var(--cream)] text-[var(--dark-text)]">
+                        Lus {author.readBooks.length}
+                      </span>
+                      {author.unreadBooks.length > 0 && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-[var(--beige)] text-[var(--dark-text)]">
+                          À lire {author.unreadBooks.length}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t flex -space-x-2" style={{ borderColor: 'var(--beige)' }}>
-                    {author.readBooks.slice(0, 3).map((book, idx) => (
-                      <div key={idx} 
-                           className="w-10 h-14 rounded-md overflow-hidden shadow-md border-2 border-white"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book.cover_url ? (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {author.readBooks.length > 3 && (
-                      <div className="w-10 h-14 rounded-md shadow-md border-2 border-white flex items-center justify-center text-xs font-bold"
-                           style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
-                        +{author.readBooks.length - 3}
-                      </div>
-                    )}
-                  </div>
+
                 </button>
               ))}
             </div>
