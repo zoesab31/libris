@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import DesktopSidebar from "@/components/navigation/DesktopSidebar";
 import BottomNavigation from "@/components/navigation/BottomNavigation";
+import MobileSubNav from "@/components/navigation/MobileSubNav";
 
 function LayoutContent({ children, user, handleLogout, isDark }) {
 
@@ -33,6 +34,9 @@ function LayoutContent({ children, user, handleLogout, isDark }) {
 
       {/* Mobile Bottom Navigation */}
       <BottomNavigation />
+
+      {/* Mobile Sub Navigation */}
+      <MobileSubNav />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto pb-20 md:pb-0">
