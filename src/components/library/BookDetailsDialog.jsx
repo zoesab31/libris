@@ -2478,8 +2478,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
              <TabsContent value="journal">
 
-            </TabsContent>
-
                 {/* Filter Toggle */}
                 <div className="flex gap-2 mb-6">
                   <Button
@@ -2715,8 +2713,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                     </p>
                   </div>
                 )}
-              </div>
-          </Tabs>
+                </TabsContent>
+                </Tabs>
         </DialogContent>
       </Dialog>
 
