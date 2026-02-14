@@ -275,61 +275,61 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           borderColor: '#E91E63',
           backgroundColor: '#FFF0F6'
         }}>
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold truncate" style={{ color: '#C2185B' }}>
-                {book?.title}
-              </h2>
-              {reading.start_date && reading.end_date && (
-                <p className="text-sm font-medium" style={{ color: '#E91E63' }}>
-                  {format(new Date(reading.start_date), 'dd MMM', { locale: fr })} - {format(new Date(reading.end_date), 'dd MMM', { locale: fr })}
-                </p>
-              )}
-            </div>
-            {reading.status !== 'Terminée' && (
-              <Button size="sm" className="text-white" style={{ backgroundColor: '#10B981' }} onClick={() => completeNowMutation.mutate()}>
-                <CheckCircle2 className="w-4 h-4 mr-1" /> Terminer maintenant
-              </Button>
-            )}
-          </div>
+          <h2 className="text-lg font-bold truncate" style={{ color: '#C2185B' }}>
+            {book?.title}
+          </h2>
+          {reading.start_date && reading.end_date && (
+            <p className="text-sm font-medium" style={{ color: '#E91E63' }}>
+              {format(new Date(reading.start_date), 'dd MMM', { locale: fr })} - {format(new Date(reading.end_date), 'dd MMM', { locale: fr })}
+            </p>
+          )}
         </div>
 
         {/* Day selector */}
         {numberOfDays > 0 && (
-          <div className="px-2 py-3 flex items-center gap-2 border-b overflow-x-auto"
-               style={{ 
-                 borderColor: '#FFD6E8',
-                 backgroundColor: '#FFFAFC'
-               }}>
-            <Button
-              size="sm"
-              onClick={() => setSelectedDay(0)}
-              className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
-              style={{
-                backgroundColor: selectedDay === 0 ? '#FF1493' : '#FFE4EC',
-                color: selectedDay === 0 ? 'white' : '#9CA3AF',
-                border: 'none',
-              }}
-            >
-              📋
-            </Button>
-            {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => (
+          <>
+            <div className="px-2 py-3 flex items-center gap-2 border-b overflow-x-auto"
+                 style={{ 
+                   borderColor: '#FFD6E8',
+                   backgroundColor: '#FFFAFC'
+                 }}>
               <Button
-                key={day}
                 size="sm"
-                onClick={() => setSelectedDay(day)}
-                className="h-10 md:h-9 min-w-[44px] md:min-w-[36px] px-3 md:px-2 text-base md:text-sm rounded-lg shrink-0"
+                onClick={() => setSelectedDay(0)}
+                className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
                 style={{
-                  backgroundColor: selectedDay === day ? '#FF1493' : '#FFE4EC',
-                  color: selectedDay === day ? 'white' : '#9CA3AF',
+                  backgroundColor: selectedDay === 0 ? '#FF1493' : '#FFE4EC',
+                  color: selectedDay === 0 ? 'white' : '#9CA3AF',
                   border: 'none',
-                  fontWeight: selectedDay === day ? '700' : '500'
                 }}
               >
-                {day}
+                📋
               </Button>
-            ))}
-          </div>
+              {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => (
+                <Button
+                  key={day}
+                  size="sm"
+                  onClick={() => setSelectedDay(day)}
+                  className="h-10 md:h-9 min-w-[44px] md:min-w-[36px] px-3 md:px-2 text-base md:text-sm rounded-lg shrink-0"
+                  style={{
+                    backgroundColor: selectedDay === day ? '#FF1493' : '#FFE4EC',
+                    color: selectedDay === day ? 'white' : '#9CA3AF',
+                    border: 'none',
+                    fontWeight: selectedDay === day ? '700' : '500'
+                  }}
+                >
+                  {day}
+                </Button>
+              ))}
+            </div>
+            {reading.status !== 'Terminée' && (
+              <div className="px-2 pt-2 pb-3 border-b" style={{ borderColor: '#FFD6E8', backgroundColor: '#FFFAFC' }}>
+                <Button size="sm" className="text-white rounded-lg" style={{ backgroundColor: '#10B981' }} onClick={() => completeNowMutation.mutate()}>
+                  <CheckCircle2 className="w-4 h-4 mr-1" /> Terminer maintenant
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Messages */}
