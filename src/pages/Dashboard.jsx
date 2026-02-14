@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PullToRefresh from "@/components/layout/PullToRefresh";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X } from "lucide-react";
+import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X, Home, Settings, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [editingBookId, setEditingBookId] = useState(null);
   const [editValues, setEditValues] = useState({ currentPage: '', totalPages: '' });
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -457,6 +458,9 @@ export default function Dashboard() {
         </div>
 
         <div className="relative p-6 md:p-10">
+          <Link to={createPageUrl('AccountSettings')} className="absolute top-4 right-4 md:top-6 md:right-6 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
+            <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
+          </Link>
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
             <motion.div 
@@ -473,6 +477,32 @@ export default function Dashboard() {
                 Ton univers littéraire t'attend
               </p>
             </motion.div>
+
+            {/* Mobile top tabs navigation */}
+            <div className="md:hidden mb-5">
+              <div className="grid grid-cols-5 gap-2">
+                <Link to={createPageUrl('Dashboard')} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition ${location.pathname===createPageUrl('Dashboard')? 'bg-pink-500 text-white' : 'bg-white text-pink-600 border border-pink-200'}`}>
+                  <Home className="w-4 h-4" />
+                  Accueil
+                </Link>
+                <Link to={createPageUrl('Library')} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition ${location.pathname===createPageUrl('Library')? 'bg-pink-500 text-white' : 'bg-white text-pink-600 border border-pink-200'}`}>
+                  <BookOpen className="w-4 h-4" />
+                  Bibliothèque
+                </Link>
+                <Link to={createPageUrl('Challenges')} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition ${location.pathname===createPageUrl('Challenges')? 'bg-pink-500 text-white' : 'bg-white text-pink-600 border border-pink-200'}`}>
+                  <Trophy className="w-4 h-4" />
+                  Défis
+                </Link>
+                <Link to={createPageUrl('Social')} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition ${location.pathname===createPageUrl('Social')? 'bg-pink-500 text-white' : 'bg-white text-pink-600 border border-pink-200'}`}>
+                  <Users className="w-4 h-4" />
+                  Social
+                </Link>
+                <Link to={createPageUrl('MyPage')} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-semibold transition ${location.pathname===createPageUrl('MyPage')? 'bg-pink-500 text-white' : 'bg-white text-pink-600 border border-pink-200'}`}>
+                  <User className="w-4 h-4" />
+                  Profil
+                </Link>
+              </div>
+            </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
