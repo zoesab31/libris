@@ -14,7 +14,7 @@ export default function BottomNavigation() {
     setOpenMenu(null);
   }, [location.pathname]);
 
-  const mobileOrder = ['library','challenges','home','social','lifestyle'];
+  const mobileOrder = ['challenges','library','home','social','lifestyle'];
   const orderedKeys = mobileOrder.filter(k => navigationConfig[k]).concat(
     Object.keys(navigationConfig).filter(k => !mobileOrder.includes(k))
   );
