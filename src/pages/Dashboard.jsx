@@ -6,6 +6,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X, Home, Settings, User } from "lucide-react";
+import NotificationBell from "../components/notifications/NotificationBell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -459,10 +460,7 @@ export default function Dashboard() {
 
         <div className="relative p-6 md:p-10">
           <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2">
-            {/* Notifications moved to Dashboard header */}
-            <Link to={createPageUrl('Social')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
-              <span role="img" aria-label="bell" className="text-pink-600">🔔</span>
-            </Link>
+            <NotificationBell user={user} />
             <Link to={createPageUrl('AccountSettings')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
               <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
             </Link>
@@ -1001,7 +999,8 @@ export default function Dashboard() {
                     {friendsBooks.filter(b => b.status === "En cours").slice(0, 4).map((userBook, idx) => {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       const friend = myFriends.find(f => f.friend_email === userBook.created_by);
-                      if (!book || !friend) return null;
+                                              const friendUser = allUsers.find(u => u.email === userBook.created_by);
+                                              if (!book || !friend) return null;
 
                       const progress = userBook.current_page && book.page_count 
                         ? Math.round((userBook.current_page / book.page_count) * 100)
@@ -1028,7 +1027,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold mb-1" style={{ color: '#9C27B0' }}>
-                                {friend.friend_name?.split(' ')[0]}
+                                {friendUser?.display_name || friendUser?.username || 'Amie'}
                               </p>
                               <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
