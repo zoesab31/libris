@@ -5,6 +5,7 @@ import { BookOpen, LogOut, Settings } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function DesktopSidebar({ user }) {
   const location = useLocation();
@@ -102,6 +103,9 @@ export default function DesktopSidebar({ user }) {
 
       {/* User section */}
       <div className="p-4 border-t space-y-3" style={{ borderColor: 'rgba(255, 105, 180, 0.15)' }}>
+        <div className="flex items-center gap-3">
+          <NotificationBell user={user} />
+        </div>
 
         {user && (
           <div className="space-y-2">

@@ -1434,9 +1434,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             <TabsContent value="myinfo">
               {/* CORPS PRINCIPAL */}
               <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-                <div className="grid md:grid-cols-2 gap-4 md:gap-6 md:grid-cols-[1fr_1fr]">
+                <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                   {/* Card: Ton ressenti */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 md:row-start-1"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
@@ -1703,7 +1703,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Univers du livre */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-2 md:row-start-2"
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
                        style={{
                          backgroundColor: 'rgba(255, 255, 255, 0.6)',
                          backdropFilter: 'blur(12px)',
@@ -1809,9 +1809,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Card: Ma pensée intime */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-1 md:row-start-1"
-                                           style={{
-                                             backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         backgroundColor: 'rgba(255, 255, 255, 0.5)',
                          backdropFilter: 'blur(12px)',
                          boxShadow: '0 8px 32px rgba(225, 190, 231, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
                        }}>
@@ -1840,9 +1840,9 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
 
                   {/* Music Section - Ambiance sonore */}
-                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7 md:col-start-1 md:row-start-2"
-                                           style={{
-                                             background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.5) 100%)',
+                  <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
+                       style={{
+                         background: 'linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(255, 240, 246, 0.5) 100%)',
                          backdropFilter: 'blur(12px)',
                          boxShadow: '0 8px 32px rgba(230, 179, 232, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
                        }}>
@@ -2415,7 +2415,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                                 )}
                               </div>
                               <span className="text-sm font-bold" style={{ color: '#9C27B0' }}>
-                                {friendUser?.display_name || friendUser?.username || quote.created_by?.split('@')[0]}
+                                {friend?.friend_name || quote.created_by?.split('@')[0]}
                               </span>
                             </div>
 
@@ -2558,7 +2558,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                             {/* Friend Info */}
                             <div className="flex-1">
                               <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
-                                {friendUser?.display_name || friendUser?.username || friendBook.created_by?.split('@')[0]}
+                                {friend?.friend_name || friendBook.created_by?.split('@')[0]}
                               </h3>
                               
                               {/* Status Badge */}
