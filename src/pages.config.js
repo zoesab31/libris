@@ -54,11 +54,13 @@ import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
 import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
+import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import EnrichedProfile from './pages/EnrichedProfile';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
 import Home from './pages/Home';
+import Library from './pages/Library';
 import Lifestyle from './pages/Lifestyle';
 import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
@@ -78,8 +80,6 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
-import Library from './pages/Library';
-import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -91,11 +91,13 @@ export const PAGES = {
     "BookTournament": BookTournament,
     "Challenges": Challenges,
     "Chat": Chat,
+    "Dashboard": Dashboard,
     "Discover": Discover,
     "EnrichedProfile": EnrichedProfile,
     "FanArt": FanArt,
     "Friends": Friends,
     "Home": Home,
+    "Library": Library,
     "Lifestyle": Lifestyle,
     "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
@@ -115,8 +117,6 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
-    "Library": Library,
-    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

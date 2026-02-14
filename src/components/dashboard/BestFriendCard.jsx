@@ -45,8 +45,9 @@ export default function BestFriendCard({ user }) {
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-base" style={{ color: '#2D3748' }}>{friend.friend_name}</p>
-            <p className="text-sm" style={{ color: '#FF69B4' }}>@{friend.friend_name?.split(' ')[0]?.toLowerCase()}</p>
+            <p className="font-bold text-base" style={{ color: '#2D3748' }}>
+              @{(friendUser?.pseudo || friendUser?.display_name || friend.friend_email?.split('@')[0] || 'amie')}
+            </p>
           </div>
         </Link>
       </CardContent>

@@ -98,7 +98,7 @@ export default function TopFriendsWidget({ user, compact = false }) {
                   )}
                 </div>
                 <p className="font-bold text-sm text-center line-clamp-2 w-full" style={{ color: '#2D3748' }}>
-                  {friend.friend_name?.split(' ')[0]}
+                  @{friendUser?.pseudo || friendUser?.display_name || friend.friend_email?.split('@')[0] || 'amie'}
                 </p>
               </div>
               

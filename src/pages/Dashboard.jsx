@@ -1027,7 +1027,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold mb-1" style={{ color: '#9C27B0' }}>
-                                {friendUser?.display_name || friendUser?.username || 'Amie'}
+                                @{friendUser?.pseudo || friendUser?.username || friendUser?.display_name || 'amie'}
                               </p>
                               <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
