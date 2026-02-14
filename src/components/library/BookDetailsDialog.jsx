@@ -1434,7 +1434,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             <TabsContent value="myinfo">
               {/* CORPS PRINCIPAL */}
               <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-                <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid md:grid-cols-2 gap-4 md:gap-6 md:grid-cols-[1fr_1fr]">
                   {/* Card: Ton ressenti */}
                   <div className="cascade-item card-hover rounded-3xl p-6 md:p-7"
                        style={{
