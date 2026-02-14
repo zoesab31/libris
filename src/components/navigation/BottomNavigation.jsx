@@ -95,17 +95,15 @@ export default function BottomNavigation() {
                 <div className="w-12 h-1.5 bg-pink-200 rounded-full mx-auto mt-3 mb-2" />
                 <div className="px-5 py-2 space-y-2 overflow-y-auto h-[calc(50vh-40px)]">
                   {cfg.subItems?.map((sub) => (
-                    <button
+                    <Link
                       key={sub.path}
-                      onClick={() => {
-                        navigate(sub.path);
-                        setOpenMenu(null);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-pink-50 text-pink-600 font-semibold border"
+                      to={sub.path}
+                      onClick={() => setOpenMenu(null)}
+                      className="block w-full text-left px-4 py-3 rounded-xl hover:bg-pink-50 text-pink-600 font-semibold border"
                       style={{ borderColor: 'rgba(255,105,180,0.2)' }}
                     >
                       {sub.label}
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>
