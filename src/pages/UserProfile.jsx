@@ -10,6 +10,7 @@ import { createPageUrl } from "@/utils";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 import FriendBookDialog from "../components/library/FriendBookDialog";
 import FourBooksSection from "../components/profile/FourBooksSection";
+import BadgeShowcase from "../components/profile/BadgeShowcase";
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
@@ -120,6 +121,12 @@ export default function UserProfile() {
       year: new Date().getFullYear()
     }),
     enabled: !!userEmail && activeTab === 'bingo',
+  });
+
+  const { data: userBadges = [] } = useQuery({
+    queryKey: ['userBadges', userEmail],
+    queryFn: () => base44.entities.UserBadge.filter({ created_by: userEmail }),
+    enabled: !!userEmail && activeTab === 'mypage',
   });
 
   const { data: userLocations = [] } = useQuery({
@@ -548,6 +555,10 @@ export default function UserProfile() {
                   )}
                 </CardContent>
               </Card>
+
+              {userBadges.length > 0 && (
+                <BadgeShowcase userBadges={userBadges} isOwnProfile={false} />
+              )}
 
               <FourBooksSection
                 title="📚 En 4 livres pour la connaître"

@@ -47,9 +47,11 @@ export default function TopFriendsWidget({ user, compact = false }) {
       .filter(friend => !friend.is_hidden)
       .map(friend => {
         const friendUser = allUsers.find(u => u.email === friend.friend_email);
+        const handle = friendUser?.pseudo || friendUser?.username || friendUser?.display_name || (friend.friend_email?.split('@')[0]);
         return {
           ...friend,
-          profile_picture: friendUser?.profile_picture
+          profile_picture: friendUser?.profile_picture,
+          handle: handle ? `@${handle}` : '@amie'
         };
       })
       .slice(0, 4);
@@ -98,7 +100,7 @@ export default function TopFriendsWidget({ user, compact = false }) {
                   )}
                 </div>
                 <p className="font-bold text-sm text-center line-clamp-2 w-full" style={{ color: '#2D3748' }}>
-                  @{friendUser?.pseudo || friendUser?.display_name || friend.friend_email?.split('@')[0] || 'amie'}
+                  {friend.handle}
                 </p>
               </div>
               
