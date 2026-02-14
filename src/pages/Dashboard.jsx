@@ -894,7 +894,7 @@ export default function Dashboard() {
                                     </Link>
                                     <Button variant="outline" size="sm" onClick={() => handleStartEdit(userBook, book)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">+ Pages</Button>
                                     <Button variant="outline" size="sm" onClick={() => setSelectedBookForDetails(userBook)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">Noter</Button>
-                                    <Button size="sm" onClick={() => { const next = (userBook.current_page || 0) + 20; setEditValues({ currentPage: String(next), totalPages: String(book.page_count || 0) }); handleSaveProgress(userBook, book); }} className="rounded-xl bg-pink-600 hover:bg-pink-700 text-white">+ 20 pages</Button>
+                                    <Button size="sm" onClick={async () => { const next = (userBook.current_page || 0) + 20; try { await base44.entities.UserBook.update(userBook.id, { current_page: next }); await base44.entities.ReadingProgress.create({ user_book_id: userBook.id, page_number: next, timestamp: new Date().toISOString() }); queryClient.invalidateQueries({ queryKey: ['myBooks'] }); queryClient.invalidateQueries({ queryKey: ['readingProgress'] }); toast.success('+20 pages ajoutées'); } catch { toast.error('Impossible d’ajouter 20 pages'); } }} className="rounded-xl bg-pink-600 hover:bg-pink-700 text-white">+ 20 pages</Button>
                                   </div>
                                 </>
                               )}
