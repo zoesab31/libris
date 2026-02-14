@@ -6,8 +6,10 @@ export default function MobileSubNav() {
   const location = useLocation();
   const activeTab = getActiveTab(location.pathname);
   const config = navigationConfig[activeTab];
+  const isOnMainPath = config && location.pathname === config.path;
 
-  if (!config || !config.subItems || config.subItems.length === 0) return null;
+  // Show the sommaire only on the section's root path; hide once a page is selected
+  if (!config || !config.subItems || config.subItems.length === 0 || !isOnMainPath) return null;
 
   return (
     <div className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur border-b"
