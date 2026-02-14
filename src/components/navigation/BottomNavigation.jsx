@@ -1,11 +1,13 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navigationConfig, getActiveTab } from "./NavigationConfig";
 import { motion } from "framer-motion";
 
 export default function BottomNavigation() {
   const location = useLocation();
+  const navigate = useNavigate();
   const activeTab = getActiveTab(location.pathname);
+  const [openMenu, setOpenMenu] = useState(null);
 
   return (
     <nav 
@@ -24,6 +26,12 @@ export default function BottomNavigation() {
             <Link
               key={key}
               to={config.path}
+              onClick={(e) => {
+                if (config.subItems && config.subItems.length > 0) {
+                  e.preventDefault();
+                  setOpenMenu(key);
+                }
+              }}
               className="flex flex-col items-center justify-center flex-1 h-full relative"
             >
               <motion.div
@@ -63,6 +71,38 @@ export default function BottomNavigation() {
         })}
         
       </div>
+
+      {openMenu && (
+        (() => {
+          const cfg = navigationConfig[openMenu];
+          if (!cfg) return null;
+          return (
+            <div className="fixed inset-0 z-[60] bg-white">
+              <div className="px-5 pt-12 pb-24 space-y-3 max-w-md mx-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold" style={{ color: cfg.color }}>Choisir une page</h2>
+                  <button onClick={() => setOpenMenu(null)} className="px-3 py-1 rounded-xl border" style={{ borderColor: 'rgba(255,105,180,0.25)', color: cfg.color }}>
+                    Fermer
+                  </button>
+                </div>
+                {cfg.subItems?.map((sub) => (
+                  <button
+                    key={sub.path}
+                    onClick={() => {
+                      setOpenMenu(null);
+                      navigate(sub.path);
+                    }}
+                    className="block w-full text-left px-4 py-4 rounded-2xl text-base font-semibold border shadow-sm"
+                    style={{ borderColor: 'rgba(255,105,180,0.25)', color: cfg.color }}
+                  >
+                    {sub.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()
+      )}
     </nav>
   );
 }
