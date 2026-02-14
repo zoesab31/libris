@@ -105,12 +105,6 @@ export default function DesktopSidebar({ user }) {
       <div className="p-4 border-t space-y-3" style={{ borderColor: 'rgba(255, 105, 180, 0.15)' }}>
         <div className="flex items-center gap-3">
           <NotificationBell user={user} />
-          <Link to={createPageUrl("AccountSettings")} className="flex-1">
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <Settings className="w-4 h-4 mr-2" />
-              Paramètres
-            </Button>
-          </Link>
         </div>
 
         {user && (

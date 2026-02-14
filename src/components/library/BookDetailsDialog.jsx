@@ -2476,7 +2476,20 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </div>
             </TabsContent>
 
-            <TabsContent value="journal">
+            <TabsContent value="synopsis">
+              <div className="p-4 md:p-6">
+                <div className="rounded-2xl p-5 bg-white shadow-md border" style={{ borderColor: 'var(--beige)' }}>
+                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--dark-text)' }}>Synopsis</h3>
+                  {book?.synopsis ? (
+                    <p className="text-sm leading-relaxed" style={{ color: '#4B5563' }}>{book.synopsis}</p>
+                  ) : (
+                    <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Aucun synopsis renseigné pour ce livre.</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+             <TabsContent value="journal">
               <div className="p-4 md:p-8">
                 <ReadingJournal userBook={userBook} book={book} />
               </div>
