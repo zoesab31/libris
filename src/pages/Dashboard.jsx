@@ -958,13 +958,11 @@ export default function Dashboard() {
                     ))}
                   </div>
 
-                  {activityFeed.length > 5 && (
-                    <div className="text-center mt-6">
-                      <p className="text-sm" style={{ color: '#9CA3AF' }}>
-                        +{activityFeed.length - 5} autres activités
-                      </p>
-                    </div>
-                  )}
+                  <div className="mt-4 text-right">
+                    <Link to={createPageUrl('Social')} className="text-sm font-semibold" style={{ color: '#FF1493' }}>
+                      Voir plus
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
               </motion.div>
@@ -1187,6 +1185,59 @@ export default function Dashboard() {
                     Voir toute la playlist
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
+                </CardContent>
+              </Card>
+              </motion.div>
+            )}
+
+            {/* Deuxième carte Playlist pour correspondre à la maquette */}
+            {allMusicWithBooks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                whileHover={{ scale: 1.02 }}
+              >
+              <Card className="border-0 rounded-3xl overflow-hidden dash-card"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #F9F5FF 0%, #FFE9F0 100%)',
+                      boxShadow: '0 4px 16px rgba(233, 30, 99, 0.08)'
+                    }}>
+                <CardContent className="p-6 md:p-8">
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-3" style={{ color: '#2D3748' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                         style={{ backgroundColor: '#FFE9F0' }}>
+                      <Music className="w-5 h-5" style={{ color: '#E91E63' }} />
+                    </div>
+                    Ta Playlist
+                  </h2>
+                  <div className="space-y-2">
+                    {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
+                      <motion.div 
+                        key={`pl2-${idx}`} 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.1 }}
+                        whileHover={{ x: 5, backgroundColor: '#FFF5F8', transition: { duration: 0.2 } }}
+                        className="p-3 rounded-xl flex items-center gap-3"
+                        style={{ backgroundColor: 'white' }}>
+                        <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0"
+                             style={{ backgroundColor: '#FFE9F0' }}>
+                          {musicItem.book.cover_url && (
+                            <img src={musicItem.book.cover_url} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm line-clamp-1" style={{ color: '#2D3748' }}>
+                            {musicItem.title}
+                          </p>
+                          <p className="text-xs line-clamp-1" style={{ color: '#9CA3AF' }}>
+                            {musicItem.artist}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
               </motion.div>
