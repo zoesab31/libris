@@ -350,9 +350,8 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
             <p className="text-xs text-center mt-1 line-clamp-2 font-medium">
               {book.title}
             </p>
-            </div>
             );
-      })}
-    </div>
+            })}
+            </div>
   );
 }
