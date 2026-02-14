@@ -458,9 +458,15 @@ export default function Dashboard() {
         </div>
 
         <div className="relative p-6 md:p-10">
-          <Link to={createPageUrl('AccountSettings')} className="absolute top-4 right-4 md:top-6 md:right-6 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
-            <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
-          </Link>
+          <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2">
+            {/* Notifications moved to Dashboard header */}
+            <Link to={createPageUrl('Social')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
+              <span role="img" aria-label="bell" className="text-pink-600">🔔</span>
+            </Link>
+            <Link to={createPageUrl('AccountSettings')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
+              <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
+            </Link>
+          </div>
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
             <motion.div 
