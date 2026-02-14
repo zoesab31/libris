@@ -2718,7 +2718,6 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
                 )}
               </div>
-            {/* </TabsContent> */}
           </Tabs>
         </DialogContent>
       </Dialog>
