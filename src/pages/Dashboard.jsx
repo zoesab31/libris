@@ -887,6 +887,15 @@ export default function Dashboard() {
                                       />
                                     </motion.div>
                                   </div>
+
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <Link to={createPageUrl('MyLibrary')}>
+                                      <Button variant="outline" size="sm" className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">+ Livre</Button>
+                                    </Link>
+                                    <Button variant="outline" size="sm" onClick={() => handleStartEdit(userBook, book)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">+ Pages</Button>
+                                    <Button variant="outline" size="sm" onClick={() => setSelectedBookForDetails(userBook)} className="rounded-xl border-pink-200 text-pink-600 hover:bg-pink-50">Noter</Button>
+                                    <Button size="sm" onClick={() => { const next = (userBook.current_page || 0) + 20; setEditValues({ currentPage: String(next), totalPages: String(book.page_count || 0) }); handleSaveProgress(userBook, book); }} className="rounded-xl bg-pink-600 hover:bg-pink-700 text-white">+ 20 pages</Button>
+                                  </div>
                                 </>
                               )}
                             </div>
