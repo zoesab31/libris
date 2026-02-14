@@ -237,46 +237,43 @@ export default function Authors() {
                     {author.name}
                   </h3>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: 'var(--warm-pink)' }}>Livres lus</span>
-                      <span className="font-bold px-2 py-1 rounded-lg" 
-                            style={{ backgroundColor: 'var(--cream)', color: 'var(--dark-text)' }}>
-                        {author.readBooks.length}
-                      </span>
-                    </div>
-                    {author.unreadBooks.length > 0 && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span style={{ color: 'var(--warm-pink)' }}>À lire</span>
-                        <span className="font-bold px-2 py-1 rounded-lg" 
-                              style={{ backgroundColor: 'var(--beige)', color: 'var(--dark-text)' }}>
-                          {author.unreadBooks.length}
-                        </span>
+                  {/* Grandes couvertures (2–3) */}
+                  {(() => {
+                    const books = [...author.readBooks, ...author.unreadBooks];
+                    const featured = books.slice(0, 3);
+                    const extra = Math.max(0, books.length - featured.length);
+                    return (
+                      <div className="mt-2">
+                        <div className="flex gap-3">
+                          {featured.map((book, idx) => (
+                            <div
+                              key={idx}
+                              className="relative w-24 h-32 md:w-28 md:h-40 rounded-xl overflow-hidden shadow-md bg-[var(--beige)]"
+                            >
+                              {book.cover_url ? (
+                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
+                                </div>
+                              )}
+                              {extra > 0 && idx === featured.length - 1 && (
+                                <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
+                                  <span className="text-white font-semibold text-sm">+{extra}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex gap-2 text-xs">
+                          <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 font-semibold">{author.readBooks.length} lus</span>
+                          {author.unreadBooks.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-semibold">{author.unreadBooks.length} à lire</span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t flex -space-x-2" style={{ borderColor: 'var(--beige)' }}>
-                    {author.readBooks.slice(0, 3).map((book, idx) => (
-                      <div key={idx} 
-                           className="w-10 h-14 rounded-md overflow-hidden shadow-md border-2 border-white"
-                           style={{ backgroundColor: 'var(--beige)' }}>
-                        {book.cover_url ? (
-                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {author.readBooks.length > 3 && (
-                      <div className="w-10 h-14 rounded-md shadow-md border-2 border-white flex items-center justify-center text-xs font-bold"
-                           style={{ backgroundColor: 'var(--deep-pink)', color: 'white' }}>
-                        +{author.readBooks.length - 3}
-                      </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </button>
               ))}
             </div>

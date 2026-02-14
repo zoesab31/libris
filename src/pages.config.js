@@ -48,7 +48,6 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AccountSettings from './pages/AccountSettings';
-import Authors from './pages/Authors';
 import Badges from './pages/Badges';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
@@ -80,12 +79,12 @@ import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
 import EnrichedProfile from './pages/EnrichedProfile';
 import MyPage from './pages/MyPage';
+import Authors from './pages/Authors';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AccountSettings": AccountSettings,
-    "Authors": Authors,
     "Badges": Badges,
     "Bingo": Bingo,
     "BookTournament": BookTournament,
@@ -117,6 +116,7 @@ export const PAGES = {
     "VirtualLibrary": VirtualLibrary,
     "EnrichedProfile": EnrichedProfile,
     "MyPage": MyPage,
+    "Authors": Authors,
 }
 
 export const pagesConfig = {
