@@ -2482,6 +2482,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                 <ReadingJournal userBook={userBook} book={book} />
               </div>
             </TabsContent>
+            </TabsContent>
 
                 {/* Filter Toggle */}
                 <div className="flex gap-2 mb-6">
