@@ -18,7 +18,6 @@ import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
-import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -459,12 +458,9 @@ export default function Dashboard() {
         </div>
 
         <div className="relative p-6 md:p-10">
-          <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2">
-            <NotificationBell user={user} />
-            <Link to={createPageUrl('AccountSettings')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
-              <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
-            </Link>
-          </div>
+          <Link to={createPageUrl('AccountSettings')} className="absolute top-4 right-4 md:top-6 md:right-6 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md md:w-11 md:h-11" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
+            <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
+          </Link>
           <div className="max-w-7xl mx-auto">
             {/* Titre principal */}
             <motion.div 
@@ -1000,8 +996,6 @@ export default function Dashboard() {
                       const book = allBooks.find(b => b.id === userBook.book_id);
                       const friend = myFriends.find(f => f.friend_email === userBook.created_by);
                       if (!book || !friend) return null;
-                      const friendUser = allUsers.find(u => u.email === userBook.created_by);
-                      const friendDisplay = friendUser?.username || friendUser?.display_name || userBook.created_by?.split('@')[0];
 
                       const progress = userBook.current_page && book.page_count 
                         ? Math.round((userBook.current_page / book.page_count) * 100)
@@ -1028,7 +1022,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold mb-1" style={{ color: '#9C27B0' }}>
-                                {friendDisplay}
+                                {friend.friend_name?.split(' ')[0]}
                               </p>
                               <h4 className="font-bold text-sm line-clamp-2 mb-1" style={{ color: '#2D3748' }}>
                                 {book.title}
