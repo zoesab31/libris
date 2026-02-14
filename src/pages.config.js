@@ -56,7 +56,6 @@ import Challenges from './pages/Challenges';
 import Chat from './pages/Chat';
 import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
-import EnrichedProfile from './pages/EnrichedProfile';
 import FanArt from './pages/FanArt';
 import Friends from './pages/Friends';
 import Home from './pages/Home';
@@ -65,7 +64,6 @@ import Lifestyle from './pages/Lifestyle';
 import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
 import MyLibrary from './pages/MyLibrary';
-import MyPage from './pages/MyPage';
 import NailInspo from './pages/NailInspo';
 import OneSignalGuide from './pages/OneSignalGuide';
 import Profile from './pages/Profile';
@@ -80,6 +78,8 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
+import EnrichedProfile from './pages/EnrichedProfile';
+import MyPage from './pages/MyPage';
 import __Layout from './Layout.jsx';
 
 
@@ -93,7 +93,6 @@ export const PAGES = {
     "Chat": Chat,
     "Dashboard": Dashboard,
     "Discover": Discover,
-    "EnrichedProfile": EnrichedProfile,
     "FanArt": FanArt,
     "Friends": Friends,
     "Home": Home,
@@ -102,7 +101,6 @@ export const PAGES = {
     "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
     "MyLibrary": MyLibrary,
-    "MyPage": MyPage,
     "NailInspo": NailInspo,
     "OneSignalGuide": OneSignalGuide,
     "Profile": Profile,
@@ -117,6 +115,8 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
+    "EnrichedProfile": EnrichedProfile,
+    "MyPage": MyPage,
 }
 
 export const pagesConfig = {

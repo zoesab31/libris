@@ -10,6 +10,9 @@ import { Plus, Edit2, Trash2, BookOpen, Heart, Frown, Smile } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AnimatedCard from '@/components/animations/AnimatedCard';
+import BadgeShowcase from '@/components/profile/BadgeShowcase';
+import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { BookGridSkeleton } from '@/components/animations/SkeletonLoader';
 
 export default function MyPage() {
@@ -20,6 +23,8 @@ export default function MyPage() {
   const [editCollectionId, setEditCollectionId] = useState(null);
   const [collectionTitle, setCollectionTitle] = useState('');
   const [selectedBooks, setSelectedBooks] = useState([]);
+  const [bookSearch, setBookSearch] = useState("");
+  const [selectedBadgeId, setSelectedBadgeId] = useState("");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -47,6 +52,12 @@ export default function MyPage() {
   const { data: books = [] } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list()
+  });
+
+  const { data: userBadges = [] } = useQuery({
+    queryKey: ['userBadges', user?.email],
+    queryFn: () => base44.entities.UserBadge.filter({ created_by: user?.email }),
+    enabled: !!user
   });
 
   const updateBioMutation = useMutation({
@@ -132,6 +143,11 @@ export default function MyPage() {
   const availableBooks = books.filter(book => 
     userBooks.some(ub => ub.book_id === book.id)
   );
+  const availableBooksFiltered = availableBooks.filter(b => {
+    if (!bookSearch) return true;
+    const q = bookSearch.toLowerCase();
+    return (b.title || '').toLowerCase().includes(q) || (b.author || '').toLowerCase().includes(q);
+  });
 
   const suggestedTitles = [
     '📚 3 livres pour me connaître',
@@ -162,7 +178,7 @@ export default function MyPage() {
           className="text-center space-y-2"
         >
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-            Ma Page
+           Mon profil
           </h1>
           <p className="text-gray-600">Créez votre vitrine littéraire personnelle</p>
         </motion.div>
@@ -179,7 +195,7 @@ export default function MyPage() {
                 )}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{user.display_name || user.full_name}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{user.display_name || user.username || 'Lectrice'}</h2>
               </div>
             </div>
             <Button
@@ -220,6 +236,37 @@ export default function MyPage() {
           )}
         </AnimatedCard>
 
+        {/* Badges (discret) */}
+        <BadgeShowcase userBadges={userBadges} isOwnProfile={true} />
+
+        {/* Admin unlock badge */}
+        {user?.role === 'admin' && (
+          <div className="bg-white/70 border rounded-2xl p-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <span className="text-sm font-medium text-gray-700">Admin · Débloquer un badge</span>
+              <div className="flex-1">
+                <Select value={selectedBadgeId} onValueChange={setSelectedBadgeId}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Choisir un badge"/></SelectTrigger>
+                  <SelectContent>
+                    {ALL_BADGES.filter(b => !userBadges.some(ub => ub.badge_id === b.id)).map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.icon} {b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                disabled={!selectedBadgeId}
+                onClick={async ()=>{
+                  await base44.entities.UserBadge.create({ badge_id: selectedBadgeId, unlocked_at: new Date().toISOString(), is_new: true });
+                  setSelectedBadgeId("");
+                  queryClient.invalidateQueries({ queryKey: ['userBadges', user?.email] });
+                }}
+                className="bg-pink-500 hover:bg-pink-600"
+              >Débloquer</Button>
+            </div>
+          </div>
+        )}
+
         {/* Collections */}
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-bold text-gray-800">Mes collections</h3>
@@ -259,11 +306,14 @@ export default function MyPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Sélectionnez 3 livres maximum ({selectedBooks.length}/3)
-                  </label>
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border rounded-lg">
-                    {availableBooks.map(book => {
+                 <label className="text-sm font-medium mb-2 block">
+                   Sélectionnez 3 livres maximum ({selectedBooks.length}/3)
+                 </label>
+                 <div className="mb-3">
+                   <Input value={bookSearch} onChange={(e)=>setBookSearch(e.target.value)} placeholder="Rechercher dans ma bibliothèque..." />
+                 </div>
+                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border rounded-lg">
+                   {availableBooksFiltered.map(book => {
                       const isSelected = selectedBooks.includes(book.id);
                       return (
                         <motion.div

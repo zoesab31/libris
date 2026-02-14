@@ -15,6 +15,7 @@ export default function Series() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeries, setSelectedSeries] = useState(null);
   const [sortBy, setSortBy] = useState("name");
+  const [showAbandoned, setShowAbandoned] = useState(false);
   const [editingSeries, setEditingSeries] = useState(null);
   const [filterType, setFilterType] = useState(null); // null, 'completed', 'inProgress', 'toBuy'
 
@@ -80,7 +81,7 @@ export default function Series() {
   }, 0);
 
   // Filter series based on active filter
-  let displayedSeries = allSeries.filter(s => !s.is_abandoned);
+  let displayedSeries = allSeries.filter(s => showAbandoned ? true : !s.is_abandoned);
 
   if (filterType === 'completed') {
     displayedSeries = displayedSeries.filter(s => isSeriesCompleted(s));
@@ -94,16 +95,9 @@ export default function Series() {
     series.author?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Sort series - abandoned ones go to the bottom
+  // Sort: inachevées d'abord puis A–Z; option progress when chosen
   const sortedSeries = [...filteredSeries].sort((a, b) => {
-    // Abandoned series always go to the bottom
-    if (a.is_abandoned && !b.is_abandoned) return 1;
-    if (!a.is_abandoned && b.is_abandoned) return -1;
-    
-    // For non-abandoned series, apply normal sorting
-    if (sortBy === "name") {
-      return a.series_name.localeCompare(b.series_name);
-    } else if (sortBy === "progress") {
+    if (sortBy === 'progress') {
       const getProgress = (series) => {
         if (!series.reading_order || series.reading_order.length === 0) return 0;
         const booksWithId = series.reading_order.filter(ro => ro.book_id);
@@ -114,16 +108,14 @@ export default function Series() {
         }).length;
         return readCount / booksWithId.length;
       };
-      const progressA = getProgress(a);
-      const progressB = getProgress(b);
-      return progressB - progressA;
+      return getProgress(b) - getProgress(a);
     }
-    return 0;
+    // default: incomplete first then A–Z
+    const aCompleted = isSeriesCompleted(a);
+    const bCompleted = isSeriesCompleted(b);
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+    return a.series_name.localeCompare(b.series_name, 'fr', { sensitivity: 'base' });
   });
-
-  // Abandoned series at the bottom
-  const abandonedSeries = allSeries.filter(s => s.is_abandoned);
-  const sortedSeriesWithAbandoned = [...sortedSeries, ...abandonedSeries];
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
@@ -253,7 +245,7 @@ export default function Series() {
           </div>
         )}
 
-        {/* Search, Sort */}
+        {/* Search, Sort, Toggle Abandonnées */}
         <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" 
@@ -269,7 +261,13 @@ export default function Series() {
               }}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <Button
+              variant={showAbandoned ? 'default' : 'outline'}
+              onClick={() => setShowAbandoned(v => !v)}
+              className="rounded-xl"
+              style={showAbandoned ? { background: 'linear-gradient(135deg, #9CA3AF, #6B7280)', color: 'white' } : {}}
+            >{showAbandoned ? 'Masquer abandonnées' : 'Afficher abandonnées'}</Button>
             <Button
               variant={sortBy === "name" ? "default" : "outline"}
               onClick={() => setSortBy("name")}
@@ -305,9 +303,9 @@ export default function Series() {
         </div>
 
         {/* Series List */}
-        {sortedSeriesWithAbandoned.length > 0 ? (
+        {sortedSeries.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedSeriesWithAbandoned.map((series) => (
+            {sortedSeries.map((series) => (
               <SeriesCard
                 key={series.id}
                 series={series}

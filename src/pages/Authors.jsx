@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +11,7 @@ export default function Authors() {
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState(null);
+  const [letterFilter, setLetterFilter] = useState('All');
   const [viewMode, setViewMode] = useState("authors"); // "authors" or "books"
 
   useEffect(() => {
@@ -103,9 +103,11 @@ export default function Authors() {
     return grouped;
   }, [myBooks, allBooks]);
 
-  const filteredAuthors = authorsData.filter(author =>
-    author.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })); // Sort authors alphabetically
+  const filteredAuthors = authorsData.filter(author => {
+    const matchesSearch = author.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLetter = letterFilter === 'All' ? true : author.name.trim().charAt(0).toUpperCase() === letterFilter;
+    return matchesSearch && matchesLetter;
+  }).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 
   const isLoading = loadingMyBooks || loadingBooks;
 
@@ -168,6 +170,17 @@ export default function Authors() {
             >
               Par Livres
             </Button>
+          </div>
+
+          {/* A–Z Filter */}
+          <div className="flex flex-wrap gap-1 md:gap-2">
+            {['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')].map(l => (
+              <button
+                key={l}
+                onClick={()=> setLetterFilter(l)}
+                className={`px-2 py-1 text-sm rounded-lg ${letterFilter===l? 'bg-pink-600 text-white' : 'bg-white text-pink-600 border'}`}
+              >{l}</button>
+            ))}
           </div>
 
           <div className="flex-1 relative">
@@ -371,4 +384,3 @@ export default function Authors() {
     </div>
   );
 }
-

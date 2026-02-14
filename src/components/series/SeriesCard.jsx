@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Trash2, Ban, Edit } from 'lucide-react';
+import { BookOpen, Trash2, Ban, Edit, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -243,55 +244,26 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick, onEdit 
               </span>
             )}
 
-            {/* Action buttons */}
-            <div className="flex gap-2 mt-auto justify-end">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleEdit}
-                className="h-8 px-3 rounded-lg transition-all hover:scale-105"
-                style={{ 
-                  backgroundColor: '#f78fb3',
-                  color: 'white'
-                }}
-                title="Modifier"
-              >
-                <Edit className="w-3.5 h-3.5 mr-1.5" />
-                <span className="text-xs font-medium">Modifier</span>
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleToggleAbandon}
-                disabled={toggleAbandonMutation.isPending}
-                className="h-8 px-3 rounded-lg transition-all hover:scale-105"
-                style={{ 
-                  backgroundColor: series.is_abandoned ? '#10b981' : '#ddd',
-                  color: series.is_abandoned ? 'white' : '#666'
-                }}
-                title={series.is_abandoned ? "Réactiver la série" : "Marquer comme abandonnée"}
-              >
-                <Ban className="w-3.5 h-3.5 mr-1.5" />
-                <span className="text-xs font-medium">
-                  {series.is_abandoned ? "Réactiver" : "Abandonner"}
-                </span>
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleDelete}
-                disabled={deleteSeriesMutation.isPending}
-                className="h-8 w-8 p-0 rounded-lg transition-all hover:scale-105"
-                style={{ 
-                  backgroundColor: '#ff5b5b',
-                  color: 'white'
-                }}
-                title="Supprimer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
+            {/* Single actions menu */}
+            <div className="mt-auto self-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8 px-2">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleEdit(e); }}>
+                    <Edit className="w-4 h-4 mr-2"/> Modifier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleToggleAbandon(e); }}>
+                    <Ban className="w-4 h-4 mr-2"/> {series.is_abandoned ? 'Réactiver' : 'Abandonner'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleDelete(e); }} className="text-red-600">
+                    <Trash2 className="w-4 h-4 mr-2"/> Supprimer
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

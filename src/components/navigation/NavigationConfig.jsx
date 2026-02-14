@@ -47,7 +47,7 @@ export const navigationConfig = {
     color: '#9C27B0',
     gradient: 'linear-gradient(135deg, #9C27B0, #BA68C8)',
     subItems: [
-      { label: 'Ma page', path: createPageUrl('MyPage'), icon: BookUser },
+      { label: 'Mon profil', path: createPageUrl('MyPage'), icon: BookUser },
       { label: 'Mes amies', path: createPageUrl('Friends'), icon: Users },
       { label: 'Lecture commune', path: createPageUrl('SharedReadings'), icon: BookOpen },
       { label: 'Maps', path: createPageUrl('Maps'), icon: Map },

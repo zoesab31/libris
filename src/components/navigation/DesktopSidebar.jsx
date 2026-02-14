@@ -122,12 +122,12 @@ export default function DesktopSidebar({ user }) {
                   {user.profile_picture ? (
                     <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    user.full_name?.[0]?.toUpperCase() || 'U'
+                    (user.display_name?.[0] || user.username?.[0] || 'L').toUpperCase()
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate" style={{ color: '#2D3748' }}>
-                    {user.display_name || user.full_name || 'Lectrice'}
+                    {user.display_name || user.username || 'Lectrice'}
                   </p>
                 </div>
               </div>
