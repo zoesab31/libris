@@ -1390,57 +1390,44 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
           {/* Tabs modernes */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4 md:px-8 pt-6 pb-2 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm">
-              <TabsList className="bg-white shadow-2xl p-2 rounded-2xl border-0 w-full">
-                <TabsTrigger
-                  value="myinfo"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
-                  style={activeTab === "myinfo" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
-                  📝 Ma lecture
-                </TabsTrigger>
-                <TabsTrigger
-                  value="bookinfo"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
-                  style={activeTab === "bookinfo" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
-                  📚 Le livre
-                </TabsTrigger>
-                <TabsTrigger
-                  value="comments"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
-                  style={activeTab === "comments" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
-                  💬 Avis ({friendsUserBooks.length + 1})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="journal"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
-                  style={activeTab === "journal" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
-                  📖 Journal
-                </TabsTrigger>
-                <TabsTrigger
-                  value="quotes"
-                  className="flex-1 rounded-xl font-bold data-[state=active]:text-white py-3 text-xs md:text-base transition-all"
-                  style={activeTab === "quotes" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
-                  ✨ Citations
-                </TabsTrigger>
+              <TabsList className="bg-white shadow-2xl p-1.5 rounded-2xl border-0 w-full">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-1.5">
+                  <TabsTrigger
+                    value="myinfo"
+                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[13px] md:text-sm transition-all"
+                    style={activeTab === "myinfo" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}
+                  >
+                    📝 Ma lecture
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="journal"
+                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[13px] md:text-sm transition-all"
+                    style={activeTab === "journal" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}
+                  >
+                    📖 Journal
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="quotes"
+                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[13px] md:text-sm transition-all"
+                    style={activeTab === "quotes" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}
+                  >
+                    ✨ Citations
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="synopsis"
+                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[13px] md:text-sm transition-all"
+                    style={activeTab === "synopsis" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}
+                  >
+                    📘 Synopsis
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="bookinfo"
+                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[13px] md:text-sm transition-all"
+                    style={activeTab === "bookinfo" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}
+                  >
+                    📚 Le livre
+                  </TabsTrigger>
+                </div>
               </TabsList>
             </div>
 
@@ -2495,7 +2482,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
               </div>
             </TabsContent>
 
-            <TabsContent value="comments">
+            {/* Onglet Avis remplacé par Synopsis */}
+            {/* <TabsContent value="comments"> */
               <div className="p-4 md:p-8">
                 {/* Filter Toggle */}
                 <div className="flex gap-2 mb-6">
@@ -2733,7 +2721,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                   </div>
                 )}
               </div>
-            </TabsContent>
+            {/* </TabsContent> */}
           </Tabs>
         </DialogContent>
       </Dialog>
