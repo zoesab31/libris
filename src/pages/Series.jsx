@@ -134,7 +134,7 @@ export default function Series() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
-                📚 Séries à compléter
+               📚 Mes sagas
               </h1>
               <p className="text-lg md:text-xl text-white text-opacity-90">
                 Suivez vos sagas, tomes lus et à venir
@@ -306,7 +306,7 @@ export default function Series() {
 
         {/* Series List */}
         {sortedSeriesWithAbandoned.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {sortedSeriesWithAbandoned.map((series) => (
               <SeriesCard
                 key={series.id}
