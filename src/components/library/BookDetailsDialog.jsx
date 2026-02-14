@@ -2477,6 +2477,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             </TabsContent>
 
              <TabsContent value="journal">
+            <TabsContent value="comments" className="hidden">
               <div className="p-4 md:p-8">
                 <ReadingJournal userBook={userBook} book={book} />
               </div>
