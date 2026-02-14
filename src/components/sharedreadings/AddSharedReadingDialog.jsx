@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   });
   const [aiLoading, setAiLoading] = useState(false);
   const [aiImage, setAiImage] = useState("");
+  const aiFileRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -147,6 +148,49 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const numberOfDays = formData.duration_days || (formData.start_date && formData.end_date 
     ? differenceInDays(new Date(formData.end_date), new Date(formData.start_date)) + 1
     : 0);
+
+  const handleAiImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAiLoading(true);
+    try {
+      const upload = await base44.integrations.Core.UploadFile({ file });
+      setAiImage(upload.file_url);
+      const schema = {
+        type: 'object',
+        properties: {
+          days: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                day_number: { type: 'number' },
+                chapters_text: { type: 'string' }
+              },
+              required: ['day_number','chapters_text']
+            }
+          }
+        },
+        required: ['days']
+      };
+      const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: upload.file_url, json_schema: schema });
+      if (res.status === 'success' && res.output?.days?.length) {
+        const custom = res.output.days
+          .filter(d => d.day_number && d.chapters_text)
+          .map(d => ({ day_number: Number(d.day_number), chapters_text: String(d.chapters_text) }));
+        setFormData(prev => ({ ...prev, custom_plan: custom, duration_days: prev.duration_days || custom.length, ai_plan_source_image: upload.file_url, use_custom_plan: true }));
+        toast.success('Répartition importée');
+      } else {
+        toast.error("Impossible d'extraire la répartition");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la lecture IA');
+    } finally {
+      setAiLoading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -315,52 +359,10 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
             {formData.use_custom_plan ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="cursor-pointer">
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setAiLoading(true);
-                      try {
-                        const upload = await base44.integrations.Core.UploadFile({ file });
-                        setAiImage(upload.file_url);
-                        const schema = {
-                          type: 'object',
-                          properties: {
-                            days: {
-                              type: 'array',
-                              items: {
-                                type: 'object',
-                                properties: {
-                                  day_number: { type: 'number' },
-                                  chapters_text: { type: 'string' }
-                                },
-                                required: ['day_number','chapters_text']
-                              }
-                            }
-                          },
-                          required: ['days']
-                        };
-                        const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: upload.file_url, json_schema: schema });
-                        if (res.status === 'success' && res.output?.days?.length) {
-                          const custom = res.output.days
-                            .filter(d => d.day_number && d.chapters_text)
-                            .map(d => ({ day_number: Number(d.day_number), chapters_text: String(d.chapters_text) }));
-                          setFormData(prev => ({ ...prev, custom_plan: custom, duration_days: prev.duration_days || custom.length, ai_plan_source_image: upload.file_url }));
-                          toast.success('Répartition importée');
-                        } else {
-                          toast.error("Impossible d'extraire la répartition");
-                        }
-                      } catch (err) {
-                        console.error(err);
-                        toast.error('Erreur lors de la lecture IA');
-                      } finally {
-                        setAiLoading(false);
-                      }
-                    }} />
-                    <Button type="button" variant="outline" className="gap-2">
-                      <Upload className="w-4 h-4" /> Importer une feuille
-                    </Button>
-                  </label>
+                  <Button type="button" variant="outline" className="gap-2" onClick={() => aiFileRef.current?.click()}>
+                    <Upload className="w-4 h-4" /> Importer une feuille
+                  </Button>
+                  <input ref={aiFileRef} type="file" accept="image/*" className="hidden" onChange={handleAiImport} />
                   <Button type="button" variant="outline" disabled className="gap-2" title="Utilise l'import image ci‑dessus">
                     <Wand2 className="w-4 h-4" /> Remplir via IA
                   </Button>
