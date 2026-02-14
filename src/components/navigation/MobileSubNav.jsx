@@ -8,7 +8,7 @@ export default function MobileSubNav() {
   const config = navigationConfig[activeTab];
   const isOnMainPath = config && location.pathname === config.path;
 
-  // Show the sommaire only on the section's root path; hide once a page is selected
+  // Afficher la sous-nav uniquement sur la racine de section; cacher après sélection
   if (!config || !config.subItems || config.subItems.length === 0 || !isOnMainPath) return null;
 
   return (
