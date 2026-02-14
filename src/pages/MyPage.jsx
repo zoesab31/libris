@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AnimatedCard from '@/components/animations/AnimatedCard';
 import { BookGridSkeleton } from '@/components/animations/SkeletonLoader';
-import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
 
 export default function MyPage() {
   const [user, setUser] = useState(null);
@@ -21,7 +20,6 @@ export default function MyPage() {
   const [editCollectionId, setEditCollectionId] = useState(null);
   const [collectionTitle, setCollectionTitle] = useState('');
   const [selectedBooks, setSelectedBooks] = useState([]);
-  const [bookSearch, setBookSearch] = useState('');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -135,11 +133,6 @@ export default function MyPage() {
     userBooks.some(ub => ub.book_id === book.id)
   );
 
-  const filteredAvailableBooks = availableBooks.filter(b => {
-    const q = bookSearch.toLowerCase();
-    return b.title?.toLowerCase().includes(q) || b.author?.toLowerCase().includes(q);
-  });
-
   const suggestedTitles = [
     '📚 3 livres pour me connaître',
     '💔 3 livres qui m\'ont déçu(e)',
@@ -169,7 +162,7 @@ export default function MyPage() {
           className="text-center space-y-2"
         >
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-            Mon Profil
+            Ma Page
           </h1>
           <p className="text-gray-600">Créez votre vitrine littéraire personnelle</p>
         </motion.div>
@@ -269,16 +262,8 @@ export default function MyPage() {
                   <label className="text-sm font-medium mb-2 block">
                     Sélectionnez 3 livres maximum ({selectedBooks.length}/3)
                   </label>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Input
-                      value={bookSearch}
-                      onChange={(e) => setBookSearch(e.target.value)}
-                      placeholder="Rechercher par titre ou auteur..."
-                      className="w-full"
-                    />
-                  </div>
                   <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border rounded-lg">
-                    {filteredAvailableBooks.map(book => {
+                    {availableBooks.map(book => {
                       const isSelected = selectedBooks.includes(book.id);
                       return (
                         <motion.div

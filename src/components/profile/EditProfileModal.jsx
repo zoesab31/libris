@@ -285,11 +285,6 @@ export default function EditProfileModal({
 }
 
 function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) {
-  const [q, setQ] = useState('');
-  const filtered = availableBooks.filter(b => {
-    const s = q.toLowerCase();
-    return (b.title || '').toLowerCase().includes(s) || (b.author || '').toLowerCase().includes(s);
-  });
   const toggleBook = (bookId) => {
     if (selectedIds.includes(bookId)) {
       onChange(selectedIds.filter(id => id !== bookId));
@@ -301,14 +296,8 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
   };
 
   return (
-    <div className="space-y-2">
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Rechercher par titre ou auteur..."
-      />
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
-      {filtered.map(book => {
+    <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
+      {availableBooks.map(book => {
         const isSelected = selectedIds.includes(book.id);
         
         return (
@@ -350,8 +339,9 @@ function BookSelector({ selectedIds = [], availableBooks, maxBooks, onChange }) 
             <p className="text-xs text-center mt-1 line-clamp-2 font-medium">
               {book.title}
             </p>
-            );
-            })}
-            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
