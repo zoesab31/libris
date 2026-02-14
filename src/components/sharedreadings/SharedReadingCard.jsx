@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, BookOpen, Users } from "lucide-react";
@@ -34,12 +33,12 @@ export default function SharedReadingCard({ reading, book, onClick }) {
 
           <div className="flex-1">
             <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--dark-text)' }}>
-              {reading.title}
+              {book?.title || reading.title}
             </h3>
             
             {book && (
               <p className="text-sm mb-3" style={{ color: 'var(--warm-pink)' }}>
-                {book.title} - {book.author}
+                {book.author}
               </p>
             )}
 

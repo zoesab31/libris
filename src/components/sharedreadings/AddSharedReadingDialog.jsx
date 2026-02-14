@@ -1,15 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Users, Search, Check, Calendar, BookOpen, X } from "lucide-react";
+import { Send, Users, Search, Check, Calendar, BookOpen, X, Upload, Wand2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, addDays, format } from "date-fns";
 
 export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const queryClient = useQueryClient();
@@ -22,28 +22,36 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
     book_id: "",
     start_date: "",
     end_date: "",
+    duration_days: 14,
     total_chapters: 0,
     chapters_per_day: 0,
+    use_custom_plan: false,
+    custom_plan: [],
     status: "À venir",
   });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiImage, setAiImage] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Calculate chapters per day automatically
+  // Compute end_date from start_date + duration and chapters/day
   useEffect(() => {
-    if (formData.start_date && formData.end_date && formData.total_chapters > 0) {
-      const days = differenceInDays(new Date(formData.end_date), new Date(formData.start_date)) + 1;
-      if (days > 0) {
-        const chaptersPerDay = Math.ceil(formData.total_chapters / days);
-        setFormData(prev => ({
-          ...prev,
-          chapters_per_day: chaptersPerDay
-        }));
-      }
+    if (formData.start_date && formData.duration_days > 0) {
+      const end = addDays(new Date(formData.start_date), formData.duration_days - 1);
+      const endStr = end.toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, end_date: endStr }));
     }
-  }, [formData.start_date, formData.end_date, formData.total_chapters]);
+  }, [formData.start_date, formData.duration_days]);
+
+  // Calculate chapters per day automatically (when not using custom plan)
+  useEffect(() => {
+    if (!formData.use_custom_plan && formData.duration_days > 0 && formData.total_chapters > 0) {
+      const chaptersPerDay = Math.ceil(formData.total_chapters / formData.duration_days);
+      setFormData(prev => ({ ...prev, chapters_per_day: chaptersPerDay }));
+    }
+  }, [formData.duration_days, formData.total_chapters, formData.use_custom_plan]);
 
   const { data: myFriends = [] } = useQuery({
     queryKey: ['myFriends'],
@@ -72,10 +80,14 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const reading = await base44.entities.SharedReading.create({
+      // Ensure title uses the selected book title
+      const bookTitle = books.find(b => b.id === data.book_id)?.title || data.title || '';
+      const payload = {
         ...data,
+        title: bookTitle,
         participants: [user.email, ...selectedFriends],
-      });
+      };
+      const reading = await base44.entities.SharedReading.create(payload);
 
       // Create notifications for invited friends
       const notificationPromises = selectedFriends.map(friendEmail =>
@@ -101,13 +113,18 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
         book_id: "",
         start_date: "",
         end_date: "",
+        duration_days: 14,
         total_chapters: 0,
         chapters_per_day: 0,
+        use_custom_plan: false,
+        custom_plan: [],
         status: "À venir",
       });
       setSelectedFriends([]);
       setSearchQuery("");
-      setBookSearchQuery(""); // Clear book search query on success
+      setBookSearchQuery("");
+      setAiImage("");
+      setAiLoading(false);
     },
   });
 
@@ -127,9 +144,9 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
   const selectedBook = availableBooks.find(b => b.id === formData.book_id);
 
   // Calculate program details
-  const numberOfDays = formData.start_date && formData.end_date 
+  const numberOfDays = formData.duration_days || (formData.start_date && formData.end_date 
     ? differenceInDays(new Date(formData.end_date), new Date(formData.start_date)) + 1
-    : 0;
+    : 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,7 +179,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
                     <button
                       key={book.id}
                       onClick={() => {
-                        setFormData({ ...formData, book_id: book.id });
+                        setFormData({ ...formData, book_id: book.id, title: book.title });
                         setBookSearchQuery("");
                       }}
                       className="w-full p-3 text-left hover:bg-opacity-50 transition-colors flex items-center gap-3 border-b last:border-b-0"
@@ -231,20 +248,11 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
             </div>
           </div>
 
-          {/* Title */}
-          <div>
-            <Label htmlFor="title">Titre de la lecture commune</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder={selectedBook ? `Lecture de "${selectedBook.title}"` : "Ex: Lecture d'été 2025"}
-            />
-          </div>
+          {/* Le titre est automatiquement le titre du livre sélectionné */}
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          {/* Date de début + durée (calcule automatiquement la date de fin) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
               <Label htmlFor="start_date">Date de début *</Label>
               <Input
                 id="start_date"
@@ -253,20 +261,33 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
               />
             </div>
-            <div>
-              <Label htmlFor="end_date">Date de fin *</Label>
-              <Input
-                id="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-              />
+            <div className="md:col-span-1">
+              <Label>Durée</Label>
+              <Select
+                value={String(formData.duration_days || 14)}
+                onValueChange={(v) => setFormData({ ...formData, duration_days: parseInt(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">1 semaine (7 jours)</SelectItem>
+                  <SelectItem value="14">2 semaines (14 jours)</SelectItem>
+                  <SelectItem value="15">15 jours</SelectItem>
+                  <SelectItem value="21">3 semaines (21 jours)</SelectItem>
+                  <SelectItem value="28">4 semaines (28 jours)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-1">
+              <Label>Date de fin (calculée)</Label>
+              <Input value={formData.end_date ? format(new Date(formData.end_date), 'yyyy-MM-dd') : ''} disabled />
             </div>
           </div>
 
           {/* Total chapters */}
           <div>
-            <Label htmlFor="total_chapters">Nombre total de chapitres *</Label>
+            <Label htmlFor="total_chapters">Nombre total de chapitres</Label>
             <Input
               id="total_chapters"
               type="number"
@@ -275,6 +296,106 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
               onChange={(e) => setFormData({ ...formData, total_chapters: parseInt(e.target.value) || 0 })}
               placeholder="Ex: 45"
             />
+          </div>
+
+          {/* Répartition personnalisée */}
+          <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--cream)' }}>
+            <div className="flex items-center justify-between">
+              <Label>Répartition des chapitres par jour</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="use_custom"
+                  checked={!!formData.use_custom_plan}
+                  onCheckedChange={(v) => setFormData(prev => ({ ...prev, use_custom_plan: !!v }))}
+                />
+                <label htmlFor="use_custom" className="text-sm">Personnalisée</label>
+              </div>
+            </div>
+
+            {formData.use_custom_plan ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer">
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setAiLoading(true);
+                      try {
+                        const upload = await base44.integrations.Core.UploadFile({ file });
+                        setAiImage(upload.file_url);
+                        const schema = {
+                          type: 'object',
+                          properties: {
+                            days: {
+                              type: 'array',
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  day_number: { type: 'number' },
+                                  chapters_text: { type: 'string' }
+                                },
+                                required: ['day_number','chapters_text']
+                              }
+                            }
+                          },
+                          required: ['days']
+                        };
+                        const res = await base44.integrations.Core.ExtractDataFromUploadedFile({ file_url: upload.file_url, json_schema: schema });
+                        if (res.status === 'success' && res.output?.days?.length) {
+                          const custom = res.output.days
+                            .filter(d => d.day_number && d.chapters_text)
+                            .map(d => ({ day_number: Number(d.day_number), chapters_text: String(d.chapters_text) }));
+                          setFormData(prev => ({ ...prev, custom_plan: custom, duration_days: prev.duration_days || custom.length, ai_plan_source_image: upload.file_url }));
+                          toast.success('Répartition importée');
+                        } else {
+                          toast.error("Impossible d'extraire la répartition");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Erreur lors de la lecture IA');
+                      } finally {
+                        setAiLoading(false);
+                      }
+                    }} />
+                    <Button type="button" variant="outline" className="gap-2">
+                      <Upload className="w-4 h-4" /> Importer une feuille
+                    </Button>
+                  </label>
+                  <Button type="button" variant="outline" disabled className="gap-2" title="Utilise l'import image ci‑dessus">
+                    <Wand2 className="w-4 h-4" /> Remplir via IA
+                  </Button>
+                  {aiLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-2 bg-white rounded-lg border" style={{ borderColor: 'var(--beige)' }}>
+                  {Array.from({ length: numberOfDays || 0 }, (_, i) => i + 1).map((day) => {
+                    const current = formData.custom_plan?.find(p => p.day_number === day)?.chapters_text || '';
+                    return (
+                      <div key={day} className="flex items-center gap-2">
+                        <div className="w-14 text-xs font-bold text-center px-2 py-1 rounded-md" style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                          Jour {day}
+                        </div>
+                        <Input
+                          placeholder="Ex: 1 à 4"
+                          value={current}
+                          onChange={(e) => {
+                            const txt = e.target.value;
+                            setFormData(prev => {
+                              const others = (prev.custom_plan || []).filter(p => p.day_number !== day);
+                              return { ...prev, custom_plan: [...others, { day_number: day, chapters_text: txt }] };
+                            });
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
+                Répartition automatique: environ {formData.chapters_per_day || '-'} chapitres/jour
+              </p>
+            )}
           </div>
 
           {/* Program summary */}
@@ -298,15 +419,15 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
                 </div>
                 <div className="text-center p-3 rounded-lg bg-white">
                   <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                    {formData.total_chapters}
+                    {formData.total_chapters || (formData.use_custom_plan ? formData.custom_plan.length ? '—' : 0 : 0)}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
-                    chapitre{formData.total_chapters > 1 ? 's' : ''}
+                    chapitres (total)
                   </p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-white">
                   <p className="text-2xl font-bold" style={{ color: 'var(--deep-pink)' }}>
-                    {formData.chapters_per_day}
+                    {formData.use_custom_plan ? 'perso' : formData.chapters_per_day}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--warm-pink)' }}>
                     chap/jour
@@ -403,7 +524,7 @@ export default function AddSharedReadingDialog({ open, onOpenChange, books }) {
           {/* Submit */}
           <Button
             onClick={() => createMutation.mutate(formData)}
-            disabled={!formData.book_id || !formData.start_date || !formData.end_date || !formData.total_chapters || createMutation.isPending}
+            disabled={!formData.book_id || !formData.start_date || (!formData.total_chapters && !formData.use_custom_plan) || createMutation.isPending}
             className="w-full text-white font-medium py-6"
             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
           >

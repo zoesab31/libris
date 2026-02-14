@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Upload, X, Loader2, Smile, Trash2, Eye, EyeOff } from "lucide-react";
+import { Send, Upload, X, Loader2, Smile, Trash2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, differenceInCalendarDays, startOfDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -219,6 +219,22 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
     },
   });
 
+  // Terminer la lecture immédiatement
+  const completeNowMutation = useMutation({
+    mutationFn: async () => {
+      const today = new Date();
+      const endStr = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
+      await base44.entities.SharedReading.update(reading.id, {
+        end_date: endStr,
+        status: 'Terminée'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sharedReadings'] });
+      toast.success('Lecture marquée comme terminée');
+    }
+  });
+
   const handlePlanningImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -259,14 +275,23 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           borderColor: '#E91E63',
           backgroundColor: '#FFF0F6'
         }}>
-          <h2 className="text-lg font-bold truncate" style={{ color: '#C2185B' }}>
-            {book?.title}
-          </h2>
-          {reading.start_date && reading.end_date && (
-            <p className="text-sm font-medium" style={{ color: '#E91E63' }}>
-              {format(new Date(reading.start_date), 'dd MMM', { locale: fr })} - {format(new Date(reading.end_date), 'dd MMM', { locale: fr })}
-            </p>
-          )}
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-bold truncate" style={{ color: '#C2185B' }}>
+                {book?.title}
+              </h2>
+              {reading.start_date && reading.end_date && (
+                <p className="text-sm font-medium" style={{ color: '#E91E63' }}>
+                  {format(new Date(reading.start_date), 'dd MMM', { locale: fr })} - {format(new Date(reading.end_date), 'dd MMM', { locale: fr })}
+                </p>
+              )}
+            </div>
+            {reading.status !== 'Terminée' && (
+              <Button size="sm" className="text-white" style={{ backgroundColor: '#10B981' }} onClick={() => completeNowMutation.mutate()}>
+                <CheckCircle2 className="w-4 h-4 mr-1" /> Terminer maintenant
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Day selector */}
@@ -309,6 +334,18 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {selectedDay > 0 && reading.use_custom_plan && (
+            (() => {
+              const plan = (reading.custom_plan || []).find(p => p.day_number === selectedDay);
+              if (!plan) return null;
+              return (
+                <div className="px-3 py-2 rounded-lg inline-flex items-center gap-2" style={{ backgroundColor: '#FFE4EC', color: '#C2185B' }}>
+                  <span className="text-xs font-bold">Plan du jour {selectedDay}:</span>
+                  <span className="text-sm">Chapitres {plan.chapters_text}</span>
+                </div>
+              );
+            })()
+          )}
           {selectedDay === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-6">
               <div className="text-center">
