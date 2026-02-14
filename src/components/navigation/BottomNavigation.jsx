@@ -32,7 +32,7 @@ export default function BottomNavigation() {
               key={key}
               to={config.path}
               onClick={(e) => {
-                if (config.subItems && config.subItems.length > 0) {
+                if (config.subItems && config.subItems.length > 0 && location.pathname === config.path) {
                   e.preventDefault();
                   setOpenMenu(prev => (prev === key ? null : key));
                 } else {
