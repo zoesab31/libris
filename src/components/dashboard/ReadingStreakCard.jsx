@@ -16,13 +16,13 @@ export default function ReadingStreakCard({ user }) {
       return streaks[0] || null;
     },
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 5000
   });
 
   const updateStreakMutation = useMutation({
     mutationFn: async () => {
       const today = new Date().toISOString().split('T')[0];
-      
+
       if (!streakData) {
         return await base44.entities.ReadingStreak.create({
           current_streak: 1,
@@ -55,7 +55,7 @@ export default function ReadingStreakCard({ user }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingStreak'] });
       toast.success("Lecture enregistrée ! 🔥");
-    },
+    }
   });
 
   const currentStreak = streakData?.current_streak || 0;
@@ -68,46 +68,46 @@ export default function ReadingStreakCard({ user }) {
   };
 
   return (
-    <Card className="border-0 rounded-3xl overflow-hidden dash-card" style={{ 
+    <Card className="border-0 rounded-3xl overflow-hidden dash-card" style={{
       backgroundColor: 'white',
       boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
     }}>
-      <CardContent className="p-5 md:p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: 'linear-gradient(135deg, #FF69B4, #FF1493)' }}>
-              <Flame className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-base md:text-lg" style={{ color: '#2D3748' }}>
-                  {currentStreak === 0 ? "Commence ta série !" : `${currentStreak} jour${currentStreak > 1 ? 's' : ''} 🔥`}
-                </h3>
-                {currentStreak >= 7 && <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />}
-              </div>
-              <p className="text-xs md:text-sm" style={{ color: '#9CA3AF' }}>
-                {longestStreak > 0 ? `Record : ${longestStreak} jour${longestStreak > 1 ? 's' : ''}` : 'Enregistre ta première lecture'}
-              </p>
-            </div>
-          </div>
+      
 
-          {canLogToday() && (
-            <Button
-              size="sm"
-              onClick={() => updateStreakMutation.mutate()}
-              disabled={updateStreakMutation.isPending}
-              className="font-semibold rounded-xl px-4 py-2 text-xs md:text-sm flex-shrink-0"
-              style={{ 
-                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                color: 'white'
-              }}
-            >
-              ✓ J'ai lu
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </Card>);
+
 }
