@@ -29,7 +29,7 @@ export default function Objectifs() {
   }, []);
 
   const { data: objectives = [], isLoading } = useQuery({
-    queryKey: ["objectives", user?.email],
+    queryKey: ["objectives", user?.email, form.year],
     queryFn: async () => {
       const list = await base44.entities.ReadingObjective.filter({ created_by: user?.email, year: form.year }, "-updated_date", 100);
       return list;

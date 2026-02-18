@@ -1,4 +1,4 @@
-import { BookOpen, Library, Trophy, Users, Sparkles, TrendingUp, Grid3x3, BookUser, MessageSquare, Quote, Image, Palette, Map, Heart, Target, BookMarked } from "lucide-react";
+import { BookOpen, Library, Trophy, Users, Sparkles, TrendingUp, Grid3x3, BookUser, MessageSquare, Quote, Image, Palette, Map, Heart, Target, BookMarked, Flag } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export const navigationConfig = {
@@ -36,6 +36,7 @@ export const navigationConfig = {
       { label: 'Bingo', path: createPageUrl('Bingo'), icon: Grid3x3 },
       { label: 'Tournoi', path: createPageUrl('BookTournament'), icon: Trophy },
       { label: 'Reading tracker', path: createPageUrl('ReadingTracker'), icon: Target },
+      { label: 'Objectifs', path: createPageUrl('Objectifs'), icon: Flag },
     ]
   },
   social: {
