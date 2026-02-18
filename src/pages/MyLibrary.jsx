@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft, TrendingUp, CheckCircle2, Target, Sparkles, Shuffle } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
@@ -31,6 +32,8 @@ export default function MyLibrary() {
   const [showPALs, setShowPALs] = useState(false);
   const [selectedPAL, setSelectedPAL] = useState(null);
   const [initialTab, setInitialTab] = useState(null);
+  const [randomGenre, setRandomGenre] = useState("");
+  const [randomLength, setRandomLength] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -55,6 +58,15 @@ export default function MyLibrary() {
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list(),
   });
+
+  const availableGenres = useMemo(() => {
+    const s = new Set();
+    allBooks.forEach(b => {
+      if (b.genre) s.add(b.genre);
+      (b.custom_genres || []).forEach(g => s.add(g));
+    });
+    return Array.from(s);
+  }, [allBooks]);
 
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
@@ -243,6 +255,13 @@ export default function MyLibrary() {
     };
   }, [readingLists, myBooks, currentMonth, currentYear]);
 
+  const servicePressCandidate = useMemo(() => {
+    return myBooks.find(ub => {
+      const b = allBooks.find(x => x.id === ub.book_id);
+      return b && (b.tags || []).includes('Service Press') && ub.status !== 'Lu';
+    }) || null;
+  }, [myBooks, allBooks]);
+
   const palsByCategory = useMemo(() => {
     const thematic = readingLists.filter(pal => pal.is_thematic);
     const monthly = readingLists.filter(pal => !pal.is_thematic);
@@ -330,9 +349,23 @@ export default function MyLibrary() {
   };
 
   const pickRandomToRead = () => {
-    const toRead = myBooks.filter(b => b.status === "À lire");
-    if (toRead.length === 0) { toast.info("Aucun livre dans À lire"); return; }
-    const choice = toRead[Math.floor(Math.random() * toRead.length)];
+    const baseList = myBooks.filter(b => b.status === "À lire");
+    if (baseList.length === 0) { toast.info("Aucun livre dans À lire"); return; }
+
+    const filtered = baseList.filter(ub => {
+      const bk = allBooks.find(b => b.id === ub.book_id);
+      if (!bk) return false;
+      const okGenre = !randomGenre || bk.genre === randomGenre || (bk.custom_genres || []).includes(randomGenre);
+      let okLength = true;
+      const pc = bk.page_count || 0;
+      if (randomLength === 'short') okLength = pc > 0 && pc < 250;
+      else if (randomLength === 'medium') okLength = pc >= 250 && pc <= 400;
+      else if (randomLength === 'long') okLength = pc > 400;
+      return okGenre && okLength;
+    });
+
+    const pool = filtered.length > 0 ? filtered : baseList;
+    const choice = pool[Math.floor(Math.random() * pool.length)];
     setActiveTab("À lire");
     setSelectedUserBook(choice);
     setInitialTab("myinfo");
@@ -357,9 +390,32 @@ export default function MyLibrary() {
           <div className="flex gap-2 md:gap-3 flex-wrap">
             {!selectionMode ? (
               <>
+                <div className="flex gap-2 w-full md:w-auto">
+                  <Select value={randomGenre} onValueChange={setRandomGenre}>
+                    <SelectTrigger className="w-40 rounded-xl bg-white/20 text-white border-white/30">
+                      <SelectValue placeholder="Genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableGenres.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={randomLength} onValueChange={setRandomLength}>
+                    <SelectTrigger className="w-40 rounded-xl bg-white/20 text-white border-white/30">
+                      <SelectValue placeholder="Longueur" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="short">Court (&lt;250)</SelectItem>
+                      <SelectItem value="medium">Moyen (250-400)</SelectItem>
+                      <SelectItem value="long">Long (&gt;400)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button
                   variant="outline"
-                  onClick={() => setShowShelves(true)}
+                  onClick={() => setShowShelves(true)
                   className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
                   style={{ 
                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -431,6 +487,28 @@ export default function MyLibrary() {
           </div>
           </div>
         </div>
+
+        {servicePressCandidate && (() => {
+          const b = allBooks.find(x => x.id === servicePressCandidate.book_id);
+          if (!b) return null;
+          return (
+            <div className="mb-6">
+              <Card className="shadow-xl border-2 border-pink-200 cursor-pointer" onClick={() => setSelectedUserBook(servicePressCandidate)}>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="w-14 h-20 rounded-lg overflow-hidden bg-pink-50">
+                    {b.cover_url && <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-pink-600">Service press à lire en priorité</p>
+                    <p className="text-base font-semibold text-gray-800 line-clamp-1">{b.title}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1">{b.author}</p>
+                  </div>
+                  <Button className="bg-pink-600 text-white">Ouvrir</Button>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })()}
 
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
