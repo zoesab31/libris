@@ -415,7 +415,7 @@ export default function MyLibrary() {
 
                 <Button
                   variant="outline"
-                  onClick={() => setShowShelves(true)
+                  onClick={() => setShowShelves(true)}
                   className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
                   style={{ 
                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
