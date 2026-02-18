@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft, TrendingUp, CheckCircle2, Target, Sparkles } from "lucide-react";
+import { Plus, Library, Calendar, ChevronDown, ChevronUp, ChevronLeft, TrendingUp, CheckCircle2, Target, Sparkles, Shuffle } from "lucide-react";
 import AddBookDialog from "../components/library/AddBookDialog";
 import BookGrid from "../components/library/BookGrid";
 import CustomShelvesManager from "../components/library/CustomShelvesManager";
@@ -329,6 +329,16 @@ export default function MyLibrary() {
     return (sum / shelfBooks.length).toFixed(1);
   };
 
+  const pickRandomToRead = () => {
+    const toRead = myBooks.filter(b => b.status === "À lire");
+    if (toRead.length === 0) { toast.info("Aucun livre dans À lire"); return; }
+    const choice = toRead[Math.floor(Math.random() * toRead.length)];
+    setActiveTab("À lire");
+    setSelectedUserBook(choice);
+    setInitialTab("myinfo");
+    toast.success("Livre choisi pour toi ✨");
+  };
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
@@ -372,6 +382,13 @@ export default function MyLibrary() {
                 >
                   <span className="hidden md:inline">Sélectionner</span>
                   <span className="md:hidden">✓</span>
+                </Button>
+                <Button
+                  onClick={pickRandomToRead}
+                  className="shadow-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform"
+                  style={{ background: 'linear-gradient(135deg, #FFFFFF, #FFE9F0)', color: '#FF1493', border: '1px solid rgba(255,105,180,0.35)' }}>
+                  <Shuffle className="w-5 h-5 mr-1 md:mr-2" />
+                  Choisir pour moi
                 </Button>
                 <Button
                   onClick={() => setShowAddBook(true)}
