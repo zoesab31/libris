@@ -12,6 +12,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, Link as LinkIcon, Check, X, Camera } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 import BarcodeScanner from "./BarcodeScanner";
 
 // Helper function to extract dominant color from image
@@ -596,7 +597,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="search" style={{ color: '#000000' }}>
               <Search className="w-4 h-4 mr-1" />
               Rechercher
@@ -604,6 +605,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
             <TabsTrigger value="manual" style={{ color: '#000000' }}>
               <Plus className="w-4 h-4 mr-1" />
               Manuel
+            </TabsTrigger>
+            <TabsTrigger value="scan" style={{ color: '#000000' }}>
+              <Camera className="w-4 h-4 mr-1" />
+              Scanner
             </TabsTrigger>
           </TabsList>
 
@@ -846,6 +851,46 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
           </TabsContent>
 
 
+
+          <TabsContent value="scan" className="space-y-4">
+            <BarcodeScanner onScanSuccess={handleBarcodeScanned} />
+
+            {loadingScannedBook && (
+              <div className="flex items-center justify-center p-6">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            )}
+
+            {scannedBook && (
+              <Card className="shadow-lg">
+                <CardContent className="p-4 flex gap-4 items-center">
+                  <div className="w-16 h-24 rounded-lg overflow-hidden bg-pink-50">
+                    {scannedBook.coverUrl && (
+                      <img src={scannedBook.coverUrl} alt={scannedBook.title} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold line-clamp-2" style={{ color: 'var(--dark-text)' }}>{scannedBook.title}</p>
+                    <p className="text-sm text-gray-500 line-clamp-1">{scannedBook.author}</p>
+                    <div className="text-xs text-gray-500 mt-1 flex gap-2">
+                      {scannedBook.year && <span>{scannedBook.year}</span>}
+                      {scannedBook.pageCount && <span>{scannedBook.pageCount} pages</span>}
+                    </div>
+                  </div>
+                  <div className="ml-auto flex gap-2">
+                    <Button onClick={handleAddScannedBook} className="bg-[#ff4d87] text-white">Ajouter</Button>
+                    <Button variant="outline" onClick={() => setScannedBook(null)}>Rescanner</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {!loadingScannedBook && !scannedBook && (
+              <div className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                Scannez un code-barres pour afficher le livre détecté.
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="manual" className="space-y-4">
             <DialogTitle className="text-xl mb-4" style={{ color: 'var(--deep-brown)' }}>
