@@ -87,7 +87,7 @@ export default function Dashboard() {
   });
 
   const { data: readingDayToday = [] } = useQuery({
-    queryKey: ['readingDayToday', user?.email],
+    queryKey: ['readingDayToday'],
     queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email, date: format(new Date(), 'yyyy-MM-dd') }),
     enabled: !!user,
     refetchInterval: 5000,
