@@ -95,6 +95,17 @@ export default function Dashboard() {
 
   const hasReadToday = readingDayToday.length > 0;
 
+  // Sync live with ReadingDay changes so the button updates instantly
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = base44.entities.ReadingDay.subscribe((event) => {
+      if (event?.data?.created_by === user.email) {
+        queryClient.invalidateQueries({ queryKey: ['readingDayToday'] });
+      }
+    });
+    return unsubscribe;
+  }, [user]);
+
   const { data: activityFeed = [] } = useQuery({
     queryKey: ['activityFeed'],
     queryFn: async () => {

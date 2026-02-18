@@ -61,6 +61,7 @@ export default function ReadingTracker() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      queryClient.invalidateQueries({ queryKey: ['readingDayToday'] });
       confetti({ particleCount: 60, spread: 45, origin: { y: 0.15 } });
     }
   });
@@ -74,6 +75,7 @@ export default function ReadingTracker() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      queryClient.invalidateQueries({ queryKey: ['readingDayToday'] });
     }
   });
 
