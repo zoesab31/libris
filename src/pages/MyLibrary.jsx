@@ -34,6 +34,7 @@ export default function MyLibrary() {
   const [initialTab, setInitialTab] = useState(null);
   const [randomGenre, setRandomGenre] = useState("");
   const [randomLength, setRandomLength] = useState("");
+  const [randomChoice, setRandomChoice] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -352,23 +353,21 @@ export default function MyLibrary() {
     const baseList = myBooks.filter(b => b.status === "À lire");
     if (baseList.length === 0) { toast.info("Aucun livre dans À lire"); return; }
 
-    const filtered = baseList.filter(ub => {
-      const bk = allBooks.find(b => b.id === ub.book_id);
+    const filtered = baseList.filter((ub) => {
+      const bk = allBooks.find((b) => b.id === ub.book_id);
       if (!bk) return false;
       const okGenre = !randomGenre || bk.genre === randomGenre || (bk.custom_genres || []).includes(randomGenre);
       let okLength = true;
       const pc = bk.page_count || 0;
-      if (randomLength === 'short') okLength = pc > 0 && pc < 250;
-      else if (randomLength === 'medium') okLength = pc >= 250 && pc <= 400;
-      else if (randomLength === 'long') okLength = pc > 400;
+      if (randomLength === 'short') okLength = pc > 0 && pc < 400;
+      else if (randomLength === 'medium') okLength = pc >= 400 && pc < 600;
+      else if (randomLength === 'long') okLength = pc >= 600;
       return okGenre && okLength;
     });
 
     const pool = filtered.length > 0 ? filtered : baseList;
     const choice = pool[Math.floor(Math.random() * pool.length)];
-    setActiveTab("À lire");
-    setSelectedUserBook(choice);
-    setInitialTab("myinfo");
+    setRandomChoice(choice);
     toast.success("Livre choisi pour toi ✨");
   };
 
@@ -390,28 +389,7 @@ export default function MyLibrary() {
           <div className="flex gap-2 md:gap-3 flex-wrap">
             {!selectionMode ? (
               <>
-                <div className="flex gap-2 w-full md:w-auto">
-                  <Select value={randomGenre} onValueChange={setRandomGenre}>
-                    <SelectTrigger className="w-40 rounded-xl bg-white/20 text-white border-white/30">
-                      <SelectValue placeholder="Genre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableGenres.map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={randomLength} onValueChange={setRandomLength}>
-                    <SelectTrigger className="w-40 rounded-xl bg-white/20 text-white border-white/30">
-                      <SelectValue placeholder="Longueur" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="short">Court (&lt;250)</SelectItem>
-                      <SelectItem value="medium">Moyen (250-400)</SelectItem>
-                      <SelectItem value="long">Long (&gt;400)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
 
                 <Button
                   variant="outline"
@@ -439,13 +417,7 @@ export default function MyLibrary() {
                   <span className="hidden md:inline">Sélectionner</span>
                   <span className="md:hidden">✓</span>
                 </Button>
-                <Button
-                  onClick={pickRandomToRead}
-                  className="shadow-xl font-bold px-4 md:px-6 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform"
-                  style={{ background: 'linear-gradient(135deg, #FFFFFF, #FFE9F0)', color: '#FF1493', border: '1px solid rgba(255,105,180,0.35)' }}>
-                  <Shuffle className="w-5 h-5 mr-1 md:mr-2" />
-                  Choisir pour moi
-                </Button>
+
                 <Button
                   onClick={() => setShowAddBook(true)}
                   className="shadow-xl font-bold px-6 md:px-8 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform"
@@ -609,6 +581,17 @@ export default function MyLibrary() {
                 <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden md:inline">Historique ({bookCounts.historique})</span>
                 <span className="md:hidden">{bookCounts.historique}</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="tirage"
+                className="rounded-xl font-bold data-[state=active]:text-white px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm"
+                style={activeTab === "tirage" ? {
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                  color: '#FFFFFF'
+                } : { color: '#2D3748' }}
+              >
+                <Shuffle className="w-4 h-4 mr-1" />
+                Tirage
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -1084,6 +1067,55 @@ export default function MyLibrary() {
                 );
               })
             )}
+          </div>
+        ) : activeTab === "tirage" ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              <Select value={randomGenre} onValueChange={setRandomGenre}>
+                <SelectTrigger className="w-48 rounded-xl">
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableGenres.map((g) => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={randomLength} onValueChange={setRandomLength}>
+                <SelectTrigger className="w-48 rounded-xl">
+                  <SelectValue placeholder="Longueur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="short">Court (&lt;400)</SelectItem>
+                  <SelectItem value="medium">Moyen (400–600)</SelectItem>
+                  <SelectItem value="long">Long (&ge;600)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button onClick={pickRandomToRead} className="font-bold rounded-xl">
+                <Shuffle className="w-4 h-4 mr-2" /> Tirer au sort
+              </Button>
+            </div>
+
+            {randomChoice && (() => {
+              const b = allBooks.find((x) => x.id === randomChoice.book_id);
+              if (!b) return null;
+              return (
+                <Card className="max-w-md shadow-lg">
+                  <CardContent className="p-4 flex gap-4 items-center">
+                    <div className="w-16 h-24 rounded-lg overflow-hidden bg-pink-50">
+                      {b.cover_url && <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold line-clamp-2" style={{ color: 'var(--dark-text)' }}>{b.title}</p>
+                      <p className="text-sm text-gray-500 line-clamp-1">{b.author}</p>
+                    </div>
+                    <Button onClick={() => { setSelectedUserBook(randomChoice); setInitialTab('myinfo'); }} className="ml-auto">Ouvrir</Button>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </div>
         ) : activeTab === "custom" ? (
           <div>
