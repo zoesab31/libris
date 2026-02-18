@@ -43,6 +43,13 @@ export default function Dashboard() {
     ]);
   };
 
+  const handleMarkToday = async () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    await base44.entities.ReadingDay.create({ date: today });
+    queryClient.invalidateQueries({ queryKey: ['readingDayToday'] });
+    toast.success("Jour de lecture enregistré");
+  };
+
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
@@ -78,6 +85,15 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
     enabled: !!user,
   });
+
+  const { data: readingDayToday = [] } = useQuery({
+    queryKey: ['readingDayToday', user?.email],
+    queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email, date: format(new Date(), 'yyyy-MM-dd') }),
+    enabled: !!user,
+    refetchInterval: 5000,
+  });
+
+  const hasReadToday = readingDayToday.length > 0;
 
   const { data: activityFeed = [] } = useQuery({
     queryKey: ['activityFeed'],
@@ -661,6 +677,19 @@ export default function Dashboard() {
                   <option key={year} value={year}>📅 {year}</option>
                 ))}
               </select>
+
+              <Button
+                onClick={handleMarkToday}
+                disabled={hasReadToday}
+                className="w-full md:w-auto font-bold px-6 py-3 rounded-2xl text-base dash-card"
+                style={{ 
+                  background: hasReadToday ? '#E5E7EB' : '#FF69B4',
+                  color: hasReadToday ? '#9CA3AF' : 'white'
+                }}
+              >
+                <Flame className="w-5 h-5 mr-2" />
+                {hasReadToday ? "Déjà lu aujourd'hui" : "J'ai lu aujourd'hui"}
+              </Button>
 
               <Link to={createPageUrl("MyLibrary")} className="flex-1 md:flex-none">
                 <Button
