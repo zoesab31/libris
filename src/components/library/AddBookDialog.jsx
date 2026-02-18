@@ -73,6 +73,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("search");
   const [scannedBook, setScannedBook] = useState(null);
+  const [scannedStatus, setScannedStatus] = useState("À lire");
   const [loadingScannedBook, setLoadingScannedBook] = useState(false);
 
   // Search tab state
@@ -458,6 +459,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
       if (book) {
         setScannedBook(book);
+        setScannedStatus("À lire");
         toast.success("📚 Livre trouvé !");
       } else {
         toast.error("Aucun livre trouvé pour cet ISBN. Essayez avec la recherche manuelle.");
@@ -515,7 +517,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
       await base44.entities.UserBook.create({
         book_id: createdBook.id,
-        status: "À lire",
+        status: scannedStatus,
         book_color: coverColor,
       });
 
@@ -862,27 +864,34 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
             )}
 
             {scannedBook && (
-              <Card className="shadow-lg">
-                <CardContent className="p-4 flex gap-4 items-center">
-                  <div className="w-16 h-24 rounded-lg overflow-hidden bg-pink-50">
-                    {scannedBook.coverUrl && (
-                      <img src={scannedBook.coverUrl} alt={scannedBook.title} className="w-full h-full object-cover" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold line-clamp-2" style={{ color: 'var(--dark-text)' }}>{scannedBook.title}</p>
-                    <p className="text-sm text-gray-500 line-clamp-1">{scannedBook.author}</p>
-                    <div className="text-xs text-gray-500 mt-1 flex gap-2">
-                      {scannedBook.year && <span>{scannedBook.year}</span>}
-                      {scannedBook.pageCount && <span>{scannedBook.pageCount} pages</span>}
-                    </div>
-                  </div>
-                  <div className="ml-auto flex gap-2">
-                    <Button onClick={handleAddScannedBook} className="bg-[#ff4d87] text-white">Ajouter</Button>
-                    <Button variant="outline" onClick={() => setScannedBook(null)}>Rescanner</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center gap-5">
+                <div className="rounded-xl overflow-hidden shadow-2xl" style={{ width: 220, height: 330, backgroundColor: 'var(--beige)' }}>
+                  {scannedBook.coverUrl && (
+                    <img src={scannedBook.coverUrl} alt="Couverture" className="w-full h-full object-cover" />
+                  )}
+                </div>
+
+                <div className="w-full max-w-xs">
+                  <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
+                    Statut
+                  </Label>
+                  <Select value={scannedStatus} onValueChange={setScannedStatus}>
+                    <SelectTrigger className="w-full rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleAddScannedBook} className="bg-[#ff4d87] text-white">Ajouter</Button>
+                  <Button variant="outline" onClick={() => setScannedBook(null)}>Rescanner</Button>
+                </div>
+              </div>
             )}
 
             {!loadingScannedBook && !scannedBook && (
