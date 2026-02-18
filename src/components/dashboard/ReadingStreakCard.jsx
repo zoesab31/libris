@@ -16,6 +16,7 @@ export default function ReadingStreakCard({ user }) {
       return streaks[0] || null;
     },
     enabled: !!user,
+    refetchInterval: 5000,
   });
 
   const updateStreakMutation = useMutation({

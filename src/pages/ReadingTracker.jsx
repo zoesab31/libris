@@ -35,6 +35,7 @@ export default function ReadingTracker() {
     queryKey: ['readingProgress', user?.email],
     queryFn: () => base44.entities.ReadingProgress.filter({ created_by: user?.email }),
     enabled: !!user,
+    refetchInterval: 5000,
   });
 
   // Get unique reading days
