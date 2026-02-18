@@ -18,7 +18,7 @@ import FourBooksSection from '@/components/profile/FourBooksSection';
 import FavoriteCharacters from '@/components/profile/FavoriteCharacters';
 import RecentActivity from '@/components/profile/RecentActivity';
 import EditProfileModal from '@/components/profile/EditProfileModal';
-import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
+
 
 export default function EnrichedProfilePage() {
   const { userId } = useParams();
@@ -90,13 +90,8 @@ export default function EnrichedProfilePage() {
 
   const stats = {
     totalBooksRead: userBooks.filter(b => b.status === 'Lu').length,
-    totalBadges: userBadges.length,
     totalFriends: friends.length,
     currentlyReading: userBooks.filter(b => b.status === 'En cours').length,
-    totalPoints: userBadges.reduce((sum, ub) => {
-      const badge = ALL_BADGES.find(b => b.id === ub.badge_id);
-      return sum + (badge?.points || 0);
-    }, 0)
   };
 
   const handleShare = async () => {

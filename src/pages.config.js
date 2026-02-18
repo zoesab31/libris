@@ -49,7 +49,6 @@
  */
 import AccountSettings from './pages/AccountSettings';
 import Authors from './pages/Authors';
-import Badges from './pages/Badges';
 import Bingo from './pages/Bingo';
 import BookTournament from './pages/BookTournament';
 import Challenges from './pages/Challenges';
@@ -86,7 +85,6 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AccountSettings": AccountSettings,
     "Authors": Authors,
-    "Badges": Badges,
     "Bingo": Bingo,
     "BookTournament": BookTournament,
     "Challenges": Challenges,

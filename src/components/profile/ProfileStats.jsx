@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookOpen, Award, Users, Zap } from 'lucide-react';
+import { BookOpen, Users } from 'lucide-react';
 
 export default function ProfileStats({ stats }) {
   const statItems = [
@@ -10,22 +10,16 @@ export default function ProfileStats({ stats }) {
       color: 'from-blue-500 to-blue-600'
     },
     {
-      icon: Award,
-      label: 'Badges',
-      value: stats.totalBadges,
-      color: 'from-yellow-500 to-orange-500'
+      icon: BookOpen,
+      label: 'En cours',
+      value: stats.currentlyReading,
+      color: 'from-purple-500 to-fuchsia-600'
     },
     {
       icon: Users,
       label: 'Amis',
       value: stats.totalFriends,
       color: 'from-pink-500 to-purple-500'
-    },
-    {
-      icon: Zap,
-      label: 'Points',
-      value: stats.totalPoints,
-      color: 'from-green-500 to-emerald-600'
     }
   ];
 

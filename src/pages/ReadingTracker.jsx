@@ -19,6 +19,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameM
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 export default function ReadingTracker() {
   const [user, setUser] = useState(null);
@@ -49,6 +50,41 @@ export default function ReadingTracker() {
     });
     return days;
   }, [readingProgress]);
+
+  // Toggle mark/unmark a day
+  const markDayMutation = useMutation({
+    mutationFn: async (date) => {
+      const d = new Date(date);
+      d.setHours(12, 0, 0, 0);
+      await base44.entities.ReadingProgress.create({ timestamp: d.toISOString() });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+      confetti({ particleCount: 60, spread: 45, origin: { y: 0.15 } });
+    }
+  });
+
+  const unmarkDayMutation = useMutation({
+    mutationFn: async (date) => {
+      const ids = readingProgress
+        .filter(e => format(new Date(e.timestamp), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
+        .map(e => e.id);
+      await Promise.all(ids.map(id => base44.entities.ReadingProgress.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
+    }
+  });
+
+  const toggleDay = (date) => {
+    if (isReadingDay(date)) {
+      unmarkDayMutation.mutate(date);
+      toast.success('Jour retiré');
+    } else {
+      markDayMutation.mutate(date);
+      toast.success('Jour marqué ✅');
+    }
+  };
 
   // Mutation to reset all reading progress
   const resetProgressMutation = useMutation({
@@ -256,6 +292,7 @@ export default function ReadingTracker() {
                     }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleDay(day)}
                   >
                     <div className="flex flex-col items-center">
                       <span>{format(day, 'd')}</span>
