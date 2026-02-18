@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +35,7 @@ export default function NotificationBell({ user }) {
   const { data: allNotifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => base44.entities.Notification.filter({ 
-      created_by: user?.email 
+      recipient_email: user?.email 
     }, '-created_date', 50),
     enabled: !!user,
     refetchInterval: 30000, // 30 seconds instead of 5
@@ -140,6 +139,9 @@ export default function NotificationBell({ user }) {
         break;
       case 'wishlist':
         navigate(createPageUrl("SharedReadings")); // Assuming 'SharedReadings' is the correct page for wishlist for now
+        break;
+      case 'suggestion':
+        navigate(createPageUrl("SuggestionsWall"));
         break;
       default:
         break;
