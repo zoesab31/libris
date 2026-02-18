@@ -1783,29 +1783,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
                         }
                       </div>
 
-                      {customShelves.length > 0 &&
-                      <div>
-                          <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-sm font-bold mb-2 block" style={{ color: '#666' }}>Service presse
-
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border-2 border-pink-200">
+                        <Label className="text-sm font-bold" style={{ color: '#666' }}>
+                          Service presse
                         </Label>
-                          <Select
-                          value={editedData.custom_shelf || ""}
-                          onValueChange={(value) => setEditedData({ ...editedData, custom_shelf: value || undefined })}>
-
-                            <SelectTrigger className="focus-glow rounded-2xl">
-                              <SelectValue placeholder="Aucune" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={null}>Aucune</SelectItem>
-                              {customShelves.map((s) =>
-                            <SelectItem key={s.id} value={s.name}>
-                                  {s.icon} {s.name}
-                                </SelectItem>
-                            )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      }
+                        <Switch
+                          checked={(book.tags || []).includes('Service Press')}
+                          onCheckedChange={(checked) => {
+                            const currentTags = book.tags || [];
+                            const newTags = checked
+                              ? Array.from(new Set([...currentTags, 'Service Press']))
+                              : currentTags.filter((t) => t !== 'Service Press');
+                            updateBookMutation.mutate({ tags: newTags });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
