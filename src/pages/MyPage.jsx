@@ -10,8 +10,8 @@ import { Plus, Edit2, Trash2, BookOpen, Heart, Frown, Smile } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AnimatedCard from '@/components/animations/AnimatedCard';
-import BadgeShowcase from '@/components/profile/BadgeShowcase';
-import { ALL_BADGES } from '@/components/utils/badgeDefinitions';
+
+
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { BookGridSkeleton } from '@/components/animations/SkeletonLoader';
 
@@ -24,7 +24,7 @@ export default function MyPage() {
   const [collectionTitle, setCollectionTitle] = useState('');
   const [selectedBooks, setSelectedBooks] = useState([]);
   const [bookSearch, setBookSearch] = useState("");
-  const [selectedBadgeId, setSelectedBadgeId] = useState("");
+
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -236,8 +236,7 @@ export default function MyPage() {
           )}
         </AnimatedCard>
 
-        {/* Badges (discret) */}
-        <BadgeShowcase userBadges={userBadges} isOwnProfile={true} />
+
 
 
         {/* Collections */}

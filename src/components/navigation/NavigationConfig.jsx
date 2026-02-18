@@ -1,4 +1,4 @@
-import { BookOpen, Library, Trophy, Users, Sparkles, TrendingUp, Grid3x3, BookUser, MessageSquare, Quote, Image, Palette, Map, Heart, Target, BookMarked, Award } from "lucide-react";
+import { BookOpen, Library, Trophy, Users, Sparkles, TrendingUp, Grid3x3, BookUser, MessageSquare, Quote, Image, Palette, Map, Heart, Target, BookMarked } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export const navigationConfig = {
