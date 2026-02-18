@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 import ProfileBanner from '@/components/profile/ProfileBanner';
 import ProfileStats from '@/components/profile/ProfileStats';
-import BadgeShowcase from '@/components/profile/BadgeShowcase';
+
 import FourBooksSection from '@/components/profile/FourBooksSection';
 import FavoriteCharacters from '@/components/profile/FavoriteCharacters';
 import RecentActivity from '@/components/profile/RecentActivity';
@@ -261,12 +261,7 @@ export default function EnrichedProfilePage() {
 
         <ProfileStats stats={stats} />
 
-        {profileUser.show_badges !== false && (
-          <BadgeShowcase 
-            userBadges={userBadges}
-            isOwnProfile={isOwnProfile}
-          />
-        )}
+
 
         <div className="space-y-6 mt-6">
           <FourBooksSection

@@ -10,7 +10,6 @@ import { createPageUrl } from "@/utils";
 import { BarChart as RechartsBarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Pie } from 'recharts';
 import FriendBookDialog from "../components/library/FriendBookDialog";
 import FourBooksSection from "../components/profile/FourBooksSection";
-import BadgeShowcase from "../components/profile/BadgeShowcase";
 
 const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'];
 
@@ -123,11 +122,7 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'bingo',
   });
 
-  const { data: userBadges = [] } = useQuery({
-    queryKey: ['userBadges', userEmail],
-    queryFn: () => base44.entities.UserBadge.filter({ created_by: userEmail }),
-    enabled: !!userEmail && activeTab === 'mypage',
-  });
+
 
   const { data: userLocations = [] } = useQuery({
     queryKey: ['userLocations', userEmail],
@@ -393,11 +388,13 @@ export default function UserProfile() {
 
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-              {displayName}
+              @{profileUser?.pseudo || profileUser?.display_name || displayName}
             </h1>
-            <p className="text-lg mb-4" style={{ color: 'var(--warm-pink)' }}>
-              {userEmail}
-            </p>
+            {profileUser?.bio && (
+              <p className="text-base mb-4" style={{ color: 'var(--warm-pink)' }}>
+                {profileUser.bio}
+              </p>
+            )}
 
             {!isOwnProfile && (
               <div className="flex gap-3 justify-center md:justify-start flex-wrap">
@@ -441,6 +438,31 @@ export default function UserProfile() {
             </div>
           </div>
         </div>
+
+        {/* 3 livres pour mieux la connaître */}
+        {Array.isArray(profileUser?.books_to_know_me) && profileUser.books_to_know_me.length > 0 && (
+          <div className="px-4 md:px-8 mb-6">
+            <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--dark-text)' }}>
+              3 livres pour mieux la connaître
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {profileUser.books_to_know_me.slice(0,3).map((bookId) => {
+                const b = allBooks.find(x => x.id === bookId);
+                if (!b) return null;
+                return (
+                  <div key={bookId} className="rounded-xl overflow-hidden shadow bg-white">
+                    <div className="aspect-[2/3] bg-pink-50">
+                      {b.cover_url && <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--dark-text)' }}>{b.title}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -555,10 +577,6 @@ export default function UserProfile() {
                   )}
                 </CardContent>
               </Card>
-
-              {userBadges.length > 0 && (
-                <BadgeShowcase userBadges={userBadges} isOwnProfile={false} />
-              )}
 
               <FourBooksSection
                 title="📚 En 4 livres pour la connaître"

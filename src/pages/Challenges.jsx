@@ -40,8 +40,8 @@ export default function Challenges() {
       gradient: "linear-gradient(135deg, #E91E63, #FF1493)"
     },
     {
-      title: "Objectif Annuel",
-      description: "Définis et atteins ton objectif de lecture",
+      title: "Objectifs",
+      description: "Fixe tes objectifs annuels et mensuels et marque si atteints",
       icon: Target,
       path: createPageUrl("Dashboard"),
       color: "#FF69B4",
