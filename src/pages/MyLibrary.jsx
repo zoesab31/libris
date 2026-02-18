@@ -38,12 +38,12 @@ export default function MyLibrary() {
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
-    
+
     // Check URL params for direct book access
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get('bookId');
     const tab = params.get('tab');
-    
+
     if (bookId && tab) {
       setInitialTab(tab);
     }
@@ -52,19 +52,19 @@ export default function MyLibrary() {
   const { data: myBooks = [], isLoading } = useQuery({
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
+    queryFn: () => base44.entities.Book.list()
   });
 
   const availableGenres = useMemo(() => {
     const s = new Set();
-    allBooks.forEach(b => {
+    allBooks.forEach((b) => {
       if (b.genre) s.add(b.genre);
-      (b.custom_genres || []).forEach(g => s.add(g));
+      (b.custom_genres || []).forEach((g) => s.add(g));
     });
     return Array.from(s);
   }, [allBooks]);
@@ -72,28 +72,28 @@ export default function MyLibrary() {
   const { data: customShelves = [] } = useQuery({
     queryKey: ['customShelves'],
     queryFn: () => base44.entities.CustomShelf.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: readingLists = [] } = useQuery({
     queryKey: ['readingLists'],
     queryFn: () => base44.entities.ReadingList.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   // Handle direct book navigation from URL
   useEffect(() => {
     if (!user || !allBooks.length || !myBooks.length) return;
-    
+
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get('bookId');
-    
+
     if (bookId) {
-      const userBook = myBooks.find(ub => ub.book_id === bookId);
+      const userBook = myBooks.find((ub) => ub.book_id === bookId);
       if (userBook) {
         setSelectedUserBook(userBook);
       }
-      
+
       // Clear URL params after opening
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -102,40 +102,40 @@ export default function MyLibrary() {
   // Helper function to check if abandoned book counts (>50%)
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
-    
+
     // Check percentage
     if (userBook.abandon_percentage >= 50) return true;
-    
+
     // Check page count
     if (userBook.abandon_page) {
-      const book = allBooks.find(b => b.id === userBook.book_id);
+      const book = allBooks.find((b) => b.id === userBook.book_id);
       if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
         return true;
       }
     }
-    
+
     return false;
   };
 
   // Organize read books + DNF >50% by year and month
   const readBooksByYearMonth = useMemo(() => {
-    const booksToOrganize = myBooks.filter(b => {
+    const booksToOrganize = myBooks.filter((b) => {
       if (!b.end_date) return false;
-      
+
       // Include "Lu" books
       if (b.status === "Lu") return true;
-      
+
       // Include "Abandonné" books if >50%
       if (b.status === "Abandonné") {
         return abandonedBookCounts(b);
       }
-      
+
       return false;
     });
-    
+
     const organized = {};
 
-    booksToOrganize.forEach(userBook => {
+    booksToOrganize.forEach((userBook) => {
       const endDate = new Date(userBook.end_date);
       const year = endDate.getFullYear();
       const month = endDate.getMonth() + 1; // 1-12
@@ -155,40 +155,40 @@ export default function MyLibrary() {
   const years = Object.keys(readBooksByYearMonth).sort((a, b) => b - a); // Most recent first
 
   const toggleYear = (year) => {
-    setExpandedYears(prev => ({
+    setExpandedYears((prev) => ({
       ...prev,
       [year]: !prev[year]
     }));
   };
 
   const monthNames = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-  ];
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
 
   // Group PALs by year
   const palsByYear = useMemo(() => {
     const grouped = {};
-    readingLists.forEach(pal => {
+    readingLists.forEach((pal) => {
       const year = pal.year || new Date().getFullYear();
       if (!grouped[year]) {
         grouped[year] = [];
       }
       grouped[year].push(pal);
     });
-    
+
     // Sort PALs within each year by month (descending)
-    Object.keys(grouped).forEach(year => {
+    Object.keys(grouped).forEach((year) => {
       grouped[year].sort((a, b) => (b.month || 0) - (a.month || 0));
     });
-    
+
     return grouped;
   }, [readingLists]);
 
   const palYears = Object.keys(palsByYear).sort((a, b) => b - a);
 
   const togglePALYear = (year) => {
-    setExpandedPALYears(prev => ({
+    setExpandedPALYears((prev) => ({
       ...prev,
       [year]: !prev[year]
     }));
@@ -201,10 +201,10 @@ export default function MyLibrary() {
     }
 
     const total = pal.book_ids.length;
-    const completed = myBooks.filter(ub => 
-      pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
+    const completed = myBooks.filter((ub) =>
+    pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
     ).length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const percentage = total > 0 ? Math.round(completed / total * 100) : 0;
 
     return { total, completed, percentage };
   };
@@ -214,33 +214,33 @@ export default function MyLibrary() {
   const currentYear = new Date().getFullYear();
 
   const palStats = useMemo(() => {
-    const thematicPALs = readingLists.filter(pal => pal.is_thematic);
-    const monthlyPALs = readingLists.filter(pal => !pal.is_thematic);
-    const currentMonthPAL = readingLists.find(pal => pal.month === currentMonth && pal.year === currentYear);
+    const thematicPALs = readingLists.filter((pal) => pal.is_thematic);
+    const monthlyPALs = readingLists.filter((pal) => !pal.is_thematic);
+    const currentMonthPAL = readingLists.find((pal) => pal.month === currentMonth && pal.year === currentYear);
 
     const totalBooks = readingLists.reduce((sum, pal) => sum + (pal.book_ids?.length || 0), 0);
     const uniqueBooks = new Set();
-    readingLists.forEach(pal => {
-      pal.book_ids?.forEach(bookId => uniqueBooks.add(bookId));
+    readingLists.forEach((pal) => {
+      pal.book_ids?.forEach((bookId) => uniqueBooks.add(bookId));
     });
 
-    const booksRead = myBooks.filter(ub => {
+    const booksRead = myBooks.filter((ub) => {
       if (ub.status !== "Lu") return false;
       return Array.from(uniqueBooks).includes(ub.book_id);
     }).length;
 
     let monthlyGoalProgress = 0;
     if (currentMonthPAL && currentMonthPAL.monthly_goal) {
-      const readThisMonth = myBooks.filter(ub => {
+      const readThisMonth = myBooks.filter((ub) => {
         if (ub.status !== "Lu" || !ub.end_date) return false;
         const endDate = new Date(ub.end_date);
-        return endDate.getMonth() + 1 === currentMonth && 
-               endDate.getFullYear() === currentYear &&
-               currentMonthPAL.book_ids?.includes(ub.book_id);
+        return endDate.getMonth() + 1 === currentMonth &&
+        endDate.getFullYear() === currentYear &&
+        currentMonthPAL.book_ids?.includes(ub.book_id);
       }).length;
-      monthlyGoalProgress = currentMonthPAL.monthly_goal > 0 
-        ? (readThisMonth / currentMonthPAL.monthly_goal) * 100 
-        : 0;
+      monthlyGoalProgress = currentMonthPAL.monthly_goal > 0 ?
+      readThisMonth / currentMonthPAL.monthly_goal * 100 :
+      0;
     }
 
     return {
@@ -250,44 +250,44 @@ export default function MyLibrary() {
       totalBooks,
       uniqueBooks: uniqueBooks.size,
       booksRead,
-      completionRate: uniqueBooks.size > 0 ? (booksRead / uniqueBooks.size) * 100 : 0,
+      completionRate: uniqueBooks.size > 0 ? booksRead / uniqueBooks.size * 100 : 0,
       currentMonthPAL,
       monthlyGoalProgress
     };
   }, [readingLists, myBooks, currentMonth, currentYear]);
 
   const servicePressCandidate = useMemo(() => {
-    return myBooks.find(ub => {
-      const b = allBooks.find(x => x.id === ub.book_id);
+    return myBooks.find((ub) => {
+      const b = allBooks.find((x) => x.id === ub.book_id);
       return b && (b.tags || []).includes('Service Press') && ub.status !== 'Lu';
     }) || null;
   }, [myBooks, allBooks]);
 
   const palsByCategory = useMemo(() => {
-    const thematic = readingLists.filter(pal => pal.is_thematic);
-    const monthly = readingLists.filter(pal => !pal.is_thematic);
+    const thematic = readingLists.filter((pal) => pal.is_thematic);
+    const monthly = readingLists.filter((pal) => !pal.is_thematic);
 
     const calculateProgress = (pal) => {
       if (!pal.book_ids || pal.book_ids.length === 0) return 0;
-      const read = myBooks.filter(ub => 
-        pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
+      const read = myBooks.filter((ub) =>
+      pal.book_ids.includes(ub.book_id) && ub.status === "Lu"
       ).length;
-      return (read / pal.book_ids.length) * 100;
+      return read / pal.book_ids.length * 100;
     };
 
     return {
-      thematic: thematic.map(pal => ({
+      thematic: thematic.map((pal) => ({
         ...pal,
         progress: calculateProgress(pal),
-        booksToRead: myBooks.filter(ub => 
-          pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+        booksToRead: myBooks.filter((ub) =>
+        pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
         ).length
       })),
-      monthly: monthly.map(pal => ({
+      monthly: monthly.map((pal) => ({
         ...pal,
         progress: calculateProgress(pal),
-        booksToRead: myBooks.filter(ub => 
-          pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
+        booksToRead: myBooks.filter((ub) =>
+        pal.book_ids?.includes(ub.book_id) && ub.status === "À lire"
         ).length
       })).sort((a, b) => {
         if (a.year !== b.year) return b.year - a.year;
@@ -296,33 +296,33 @@ export default function MyLibrary() {
     };
   }, [readingLists, myBooks]);
 
-  const filteredBooks = activeTab === "tous"
-    ? myBooks.filter(b => b.status !== "Wishlist")
-    : activeTab === "custom"
-    ? [] // Don't show individual books in custom tab, only folders
-    : activeTab === "historique"
-    ? [] // No books shown directly in history tab, only organized view
-    : activeTab === "pal"
-    ? [] // No books shown directly in PAL tab, only organized view
-    : myBooks.filter(b => b.status === activeTab);
+  const filteredBooks = activeTab === "tous" ?
+  myBooks.filter((b) => b.status !== "Wishlist") :
+  activeTab === "custom" ?
+  [] // Don't show individual books in custom tab, only folders
+  : activeTab === "historique" ?
+  [] // No books shown directly in history tab, only organized view
+  : activeTab === "pal" ?
+  [] // No books shown directly in PAL tab, only organized view
+  : myBooks.filter((b) => b.status === activeTab);
 
   // Calculate book counts per tab
   const bookCounts = useMemo(() => {
     return {
-      tous: myBooks.filter(b => b.status !== "Wishlist").length,
-      custom: customShelves.reduce((sum, shelf) => 
-        sum + myBooks.filter(b => b.custom_shelf === shelf.name).length, 0
+      tous: myBooks.filter((b) => b.status !== "Wishlist").length,
+      custom: customShelves.reduce((sum, shelf) =>
+      sum + myBooks.filter((b) => b.custom_shelf === shelf.name).length, 0
       ),
-      "En cours": myBooks.filter(b => b.status === "En cours").length,
-      "Lu": myBooks.filter(b => b.status === "Lu").length,
-      "À lire": myBooks.filter(b => b.status === "À lire").length,
-      "Wishlist": myBooks.filter(b => b.status === "Wishlist").length,
-      "Abandonné": myBooks.filter(b => b.status === "Abandonné").length,
+      "En cours": myBooks.filter((b) => b.status === "En cours").length,
+      "Lu": myBooks.filter((b) => b.status === "Lu").length,
+      "À lire": myBooks.filter((b) => b.status === "À lire").length,
+      "Wishlist": myBooks.filter((b) => b.status === "Wishlist").length,
+      "Abandonné": myBooks.filter((b) => b.status === "Abandonné").length,
       "pal": (() => {
         const uniquePalBookIds = new Set();
-        readingLists.forEach(pal => {
-          pal.book_ids?.forEach(bookId => {
-            if (myBooks.some(ub => ub.book_id === bookId && ub.status === "À lire")) {
+        readingLists.forEach((pal) => {
+          pal.book_ids?.forEach((bookId) => {
+            if (myBooks.some((ub) => ub.book_id === bookId && ub.status === "À lire")) {
               uniquePalBookIds.add(bookId);
             }
           });
@@ -338,20 +338,20 @@ export default function MyLibrary() {
 
 
   const getBookDetails = (userBook) => {
-    return allBooks.find(b => b.id === userBook.book_id);
+    return allBooks.find((b) => b.id === userBook.book_id);
   };
 
   // Calculate average rating for each shelf
   const getShelfAverageRating = (shelfName) => {
-    const shelfBooks = myBooks.filter(b => b.custom_shelf === shelfName && b.rating);
+    const shelfBooks = myBooks.filter((b) => b.custom_shelf === shelfName && b.rating);
     if (shelfBooks.length === 0) return 0;
     const sum = shelfBooks.reduce((acc, b) => acc + b.rating, 0);
     return (sum / shelfBooks.length).toFixed(1);
   };
 
   const pickRandomToRead = () => {
-    const baseList = myBooks.filter(b => b.status === "À lire");
-    if (baseList.length === 0) { toast.info("Aucun livre dans À lire"); return; }
+    const baseList = myBooks.filter((b) => b.status === "À lire");
+    if (baseList.length === 0) {toast.info("Aucun livre dans À lire");return;}
 
     const filtered = baseList.filter((ub) => {
       const bk = allBooks.find((b) => b.id === ub.book_id);
@@ -359,9 +359,9 @@ export default function MyLibrary() {
       const okGenre = !randomGenre || bk.genre === randomGenre || (bk.custom_genres || []).includes(randomGenre);
       let okLength = true;
       const pc = bk.page_count || 0;
-      if (randomLength === 'short') okLength = pc > 0 && pc < 400;
-      else if (randomLength === 'medium') okLength = pc >= 400 && pc < 600;
-      else if (randomLength === 'long') okLength = pc >= 600;
+      if (randomLength === 'short') okLength = pc > 0 && pc < 400;else
+      if (randomLength === 'medium') okLength = pc >= 400 && pc < 600;else
+      if (randomLength === 'long') okLength = pc >= 600;
       return okGenre && okLength;
     });
 
@@ -375,8 +375,8 @@ export default function MyLibrary() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         {/* Header rose gradient */}
-        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
-             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
@@ -387,7 +387,7 @@ export default function MyLibrary() {
               </p>
             </div>
           <div className="flex gap-2 md:gap-3 flex-wrap">
-            {!selectionMode ? (
+            {!selectionMode ?
               <>
 
 
@@ -395,12 +395,12 @@ export default function MyLibrary() {
                   variant="outline"
                   onClick={() => setShowShelves(true)}
                   className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
                     color: 'white',
                     borderColor: 'white'
-                  }}
-                >
+                  }}>
+
                   <span className="hidden md:inline">Étagères</span>
                   <span className="md:hidden">📚</span>
                 </Button>
@@ -408,12 +408,12 @@ export default function MyLibrary() {
                   variant="outline"
                   onClick={() => setSelectionMode(true)}
                   className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
                     color: 'white',
                     borderColor: 'white'
-                  }}
-                >
+                  }}>
+
                   <span className="hidden md:inline">Sélectionner</span>
                   <span className="md:hidden">✓</span>
                 </Button>
@@ -425,8 +425,8 @@ export default function MyLibrary() {
                   <Plus className="w-5 h-5 mr-1 md:mr-2" />
                   <span className="hidden md:inline">Livre</span>
                 </Button>
-              </>
-            ) : (
+              </> :
+
               <>
                 <Button
                   variant="outline"
@@ -435,33 +435,33 @@ export default function MyLibrary() {
                     setSelectedBooks([]);
                   }}
                   className="font-bold rounded-xl shadow-lg"
-                  style={{ 
+                  style={{
                     backgroundColor: 'white',
                     color: '#FF1493'
-                  }}
-                >
+                  }}>
+
                   Annuler
                 </Button>
-                {selectedBooks.length > 0 && (
-                  <Button
-                    className="shadow-xl text-white font-bold rounded-xl"
-                    style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
-                    onClick={() => {
-                      if (window.confirm(`Supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
-                      }
-                    }}
-                  >
+                {selectedBooks.length > 0 &&
+                <Button
+                  className="shadow-xl text-white font-bold rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, #FF1744, #F50057)' }}
+                  onClick={() => {
+                    if (window.confirm(`Supprimer ${selectedBooks.length} livre${selectedBooks.length > 1 ? 's' : ''} ?`)) {
+                    }
+                  }}>
+
                     Supprimer {selectedBooks.length}
                   </Button>
-                )}
+                }
               </>
-            )}
+              }
           </div>
           </div>
         </div>
 
         {servicePressCandidate && (() => {
-          const b = allBooks.find(x => x.id === servicePressCandidate.book_id);
+          const b = allBooks.find((x) => x.id === servicePressCandidate.book_id);
           if (!b) return null;
           return (
             <div className="mb-6">
@@ -478,34 +478,34 @@ export default function MyLibrary() {
                   <Button className="bg-pink-600 text-white">Ouvrir</Button>
                 </CardContent>
               </Card>
-            </div>
-          );
+            </div>);
+
         })()}
 
         <div className="mb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-white shadow-xl p-2 rounded-2xl border-0 flex-wrap h-auto gap-1">
-              {customShelves.length > 0 && (
-                <TabsTrigger
-                  value="custom"
-                  className="rounded-xl font-bold data-[state=active]:text-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm"
-                  style={activeTab === "custom" ? {
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#FFFFFF'
-                  } : { color: '#2D3748' }}
-                >
+              {customShelves.length > 0 &&
+              <TabsTrigger
+                value="custom"
+                className="rounded-xl font-bold data-[state=active]:text-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm"
+                style={activeTab === "custom" ? {
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                  color: '#FFFFFF'
+                } : { color: '#2D3748' }}>
+
                   <span className="hidden md:inline">Étagères ({bookCounts.custom})</span>
                   <span className="md:hidden">📚 {bookCounts.custom}</span>
                 </TabsTrigger>
-              )}
+              }
               <TabsTrigger
                 value="tous"
                 className="rounded-xl font-bold data-[state=active]:text-white px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm"
                 style={activeTab === "tous" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 Tous ({bookCounts.tous})
               </TabsTrigger>
               <TabsTrigger
@@ -514,8 +514,8 @@ export default function MyLibrary() {
                 style={activeTab === "En cours" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 En cours ({bookCounts["En cours"]})
               </TabsTrigger>
               <TabsTrigger
@@ -524,8 +524,8 @@ export default function MyLibrary() {
                 style={activeTab === "Lu" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 Lus ({bookCounts.Lu})
               </TabsTrigger>
               <TabsTrigger
@@ -534,8 +534,8 @@ export default function MyLibrary() {
                 style={activeTab === "À lire" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 À lire ({bookCounts["À lire"]})
               </TabsTrigger>
               <TabsTrigger
@@ -544,8 +544,8 @@ export default function MyLibrary() {
                 style={activeTab === "Wishlist" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 <span className="hidden md:inline">Wishlist ({bookCounts.Wishlist})</span>
                 <span className="md:hidden">💝 {bookCounts.Wishlist}</span>
               </TabsTrigger>
@@ -555,8 +555,8 @@ export default function MyLibrary() {
                 style={activeTab === "Abandonné" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 <span className="hidden md:inline">DNF ({bookCounts.Abandonné})</span>
                 <span className="md:hidden">💀 {bookCounts.Abandonné}</span>
               </TabsTrigger>
@@ -566,8 +566,8 @@ export default function MyLibrary() {
                 style={activeTab === "pal" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 PAL ({bookCounts.pal})
               </TabsTrigger>
               <TabsTrigger
@@ -576,8 +576,8 @@ export default function MyLibrary() {
                 style={activeTab === "historique" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden md:inline">Historique ({bookCounts.historique})</span>
                 <span className="md:hidden">{bookCounts.historique}</span>
@@ -588,8 +588,8 @@ export default function MyLibrary() {
                 style={activeTab === "tirage" ? {
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#FFFFFF'
-                } : { color: '#2D3748' }}
-              >
+                } : { color: '#2D3748' }}>
+
                 <Shuffle className="w-4 h-4 mr-1" />
                 Tirage
               </TabsTrigger>
@@ -597,24 +597,24 @@ export default function MyLibrary() {
           </Tabs>
         </div>
 
-        {activeTab === "pal" ? (
-          <div>
+        {activeTab === "pal" ?
+        <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
                 📊 Tableau de bord PAL
               </h2>
               <Button
-                onClick={() => setShowPALs(true)}
-                className="font-medium text-white"
-                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-              >
+              onClick={() => setShowPALs(true)}
+              className="font-medium text-white"
+              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+
                 <Plus className="w-4 h-4 mr-2" />
                 Gérer mes PAL
               </Button>
             </div>
 
-            {readingLists.length === 0 ? (
-              <div className="text-center py-20">
+            {readingLists.length === 0 ?
+          <div className="text-center py-20">
                 <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucune PAL créée
@@ -623,24 +623,24 @@ export default function MyLibrary() {
                   Créez votre première PAL pour organiser vos futures lectures
                 </p>
                 <Button
-                  onClick={() => setShowPALs(true)}
-                  className="font-medium"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                    color: 'white'
-                  }}
-                >
+              onClick={() => setShowPALs(true)}
+              className="font-medium"
+              style={{
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: 'white'
+              }}>
+
                   Créer une PAL
                 </Button>
-              </div>
-            ) : selectedPAL ? (
-              <div>
+              </div> :
+          selectedPAL ?
+          <div>
                 <div className="flex items-center gap-4 mb-6">
                   <Button
-                    variant="ghost"
-                    onClick={() => setSelectedPAL(null)}
-                    className="p-2"
-                  >
+                variant="ghost"
+                onClick={() => setSelectedPAL(null)}
+                className="p-2">
+
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                   <div className="flex-1">
@@ -648,74 +648,74 @@ export default function MyLibrary() {
                       {selectedPAL.icon} {selectedPAL.name}
                     </h2>
                     {(() => {
-                      const progress = calculatePALProgress(selectedPAL);
-                      return (
-                        <div className="flex items-center gap-3 mt-2">
+                  const progress = calculatePALProgress(selectedPAL);
+                  return (
+                    <div className="flex items-center gap-3 mt-2">
                           <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
                             {progress.total} livre{progress.total > 1 ? 's' : ''}
                           </p>
-                          {progress.total > 0 && (
-                            <>
+                          {progress.total > 0 &&
+                      <>
                               <span style={{ color: 'var(--warm-pink)' }}>•</span>
                               <div className="flex items-center gap-2">
                                 <div className="w-32 h-2 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                                  <div 
-                                    className="h-full rounded-full transition-all"
-                                    style={{ 
-                                      width: `${progress.percentage}%`,
-                                      background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                                    }}
-                                  />
+                                  <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${progress.percentage}%`,
+                                background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+                              }} />
+
                                 </div>
                                 <span className="text-sm font-bold" style={{ color: 'var(--deep-pink)' }}>
                                   {progress.completed}/{progress.total}
                                 </span>
                               </div>
                             </>
-                          )}
-                        </div>
-                      );
-                    })()}
+                      }
+                        </div>);
+
+                })()}
                   </div>
                   <Button
-                    variant="outline"
-                    onClick={() => setShowPALs(true)}
-                    className="font-medium"
-                    style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-                  >
+                variant="outline"
+                onClick={() => setShowPALs(true)}
+                className="font-medium"
+                style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+
                     Modifier
                   </Button>
                 </div>
                 
                 <BookGrid
-                  userBooks={myBooks.filter(userBook => 
-                    selectedPAL.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
-                  )}
-                  allBooks={allBooks}
-                  customShelves={customShelves}
-                  isLoading={isLoading}
-                  selectionMode={false}
-                  selectedBooks={[]}
-                  onSelectionChange={() => {}}
-                  onExitSelectionMode={() => {}}
-                  palMode={selectedPAL}
-                  onRemoveFromPAL={(bookIdToRemove) => {
-                    const updatedBookIds = (selectedPAL.book_ids || []).filter(id => id !== bookIdToRemove);
-                    base44.entities.ReadingList.update(selectedPAL.id, { book_ids: updatedBookIds })
-                      .then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['readingLists'] });
-                        setSelectedPAL({ ...selectedPAL, book_ids: updatedBookIds });
-                        toast.success("Livre retiré de la PAL");
-                      })
-                      .catch(error => {
-                        console.error("Failed to remove book from PAL:", error);
-                        toast.error("Échec de la suppression du livre de la PAL.");
-                      });
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="space-y-6">
+              userBooks={myBooks.filter((userBook) =>
+              selectedPAL.book_ids?.includes(userBook.book_id) && userBook.status === "À lire"
+              )}
+              allBooks={allBooks}
+              customShelves={customShelves}
+              isLoading={isLoading}
+              selectionMode={false}
+              selectedBooks={[]}
+              onSelectionChange={() => {}}
+              onExitSelectionMode={() => {}}
+              palMode={selectedPAL}
+              onRemoveFromPAL={(bookIdToRemove) => {
+                const updatedBookIds = (selectedPAL.book_ids || []).filter((id) => id !== bookIdToRemove);
+                base44.entities.ReadingList.update(selectedPAL.id, { book_ids: updatedBookIds }).
+                then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['readingLists'] });
+                  setSelectedPAL({ ...selectedPAL, book_ids: updatedBookIds });
+                  toast.success("Livre retiré de la PAL");
+                }).
+                catch((error) => {
+                  console.error("Failed to remove book from PAL:", error);
+                  toast.error("Échec de la suppression du livre de la PAL.");
+                });
+              }} />
+
+              </div> :
+
+          <div className="space-y-6">
                 {/* Global Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="shadow-lg">
@@ -776,8 +776,8 @@ export default function MyLibrary() {
                 </div>
 
                 {/* Current Month Goal */}
-                {palStats.currentMonthPAL && palStats.currentMonthPAL.monthly_goal && (
-                  <Card className="shadow-lg border-2" style={{ borderColor: 'var(--warm-pink)' }}>
+                {palStats.currentMonthPAL && palStats.currentMonthPAL.monthly_goal &&
+            <Card className="shadow-lg border-2" style={{ borderColor: 'var(--warm-pink)' }}>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                         <Target className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
@@ -801,19 +801,19 @@ export default function MyLibrary() {
                       <Progress value={palStats.monthlyGoalProgress} className="h-3" />
                     </CardContent>
                   </Card>
-                )}
+            }
 
                 {/* Thematic PALs */}
-                {palsByCategory.thematic.length > 0 && (
-                  <div>
+                {palsByCategory.thematic.length > 0 &&
+            <div>
                     <h2 className="text-2xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                       <Sparkles className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                       PAL Thématiques
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {palsByCategory.thematic.map(pal => (
-                        <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                              onClick={() => setSelectedPAL(pal)}>
+                      {palsByCategory.thematic.map((pal) =>
+                <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => setSelectedPAL(pal)}>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                               <span className="text-2xl">{pal.icon}</span>
@@ -821,12 +821,12 @@ export default function MyLibrary() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            {pal.theme && (
-                              <p className="text-sm mb-3 px-3 py-1 rounded-full inline-block" 
-                                 style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+                            {pal.theme &&
+                    <p className="text-sm mb-3 px-3 py-1 rounded-full inline-block"
+                    style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
                                 {pal.theme}
                               </p>
-                            )}
+                    }
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
                                 <span style={{ color: 'var(--warm-pink)' }}>
@@ -837,30 +837,30 @@ export default function MyLibrary() {
                                 </span>
                               </div>
                               <Progress value={pal.progress} className="h-2" />
-                              {pal.description && (
-                                <p className="text-xs" style={{ color: '#666' }}>
+                              {pal.description &&
+                      <p className="text-xs" style={{ color: '#666' }}>
                                   {pal.description}
                                 </p>
-                              )}
+                      }
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                )}
                     </div>
                   </div>
-                )}
+            }
 
                 {/* Monthly PALs */}
-                {palsByCategory.monthly.length > 0 && (
-                  <div>
+                {palsByCategory.monthly.length > 0 &&
+            <div>
                     <h2 className="text-2xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                       <Calendar className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
                       PAL Mensuelles
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {palsByCategory.monthly.map(pal => (
-                        <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                              onClick={() => setSelectedPAL(pal)}>
+                      {palsByCategory.monthly.map((pal) =>
+                <Card key={pal.id} className="shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                onClick={() => setSelectedPAL(pal)}>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
                               <span className="text-2xl">{pal.icon}</span>
@@ -874,8 +874,8 @@ export default function MyLibrary() {
                                 {pal.month ? monthNames[pal.month - 1] : ''} {pal.year}
                               </span>
                             </div>
-                            {pal.monthly_goal && (
-                              <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--beige)' }}>
+                            {pal.monthly_goal &&
+                    <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--beige)' }}>
                                 <div className="flex items-center gap-2">
                                   <Target className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
                                   <span className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
@@ -883,7 +883,7 @@ export default function MyLibrary() {
                                   </span>
                                 </div>
                               </div>
-                            )}
+                    }
                             <div className="space-y-3">
                               <div className="flex justify-between text-sm">
                                 <span style={{ color: 'var(--warm-pink)' }}>
@@ -897,17 +897,17 @@ export default function MyLibrary() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
+                )}
                     </div>
                   </div>
-                )}
+            }
               </div>
-            )}
-          </div>
-        ) : activeTab === "historique" ? (
-          <div className="space-y-6">
-            {years.length === 0 ? (
-              <div className="text-center py-20">
+          }
+          </div> :
+        activeTab === "historique" ?
+        <div className="space-y-6">
+            {years.length === 0 ?
+          <div className="text-center py-20">
                 <Calendar className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucune lecture terminée
@@ -915,24 +915,24 @@ export default function MyLibrary() {
                 <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
                   Vos livres lus apparaîtront ici organisés par année et mois
                 </p>
-              </div>
-            ) : (
-              years.map(year => {
-                const yearData = readBooksByYearMonth[year];
-                const months = Object.keys(yearData).sort((a, b) => b - a);
-                const totalBooksYear = months.reduce((sum, month) => sum + yearData[month].length, 0);
-                const isExpanded = expandedYears[year];
+              </div> :
 
-                return (
-                  <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          years.map((year) => {
+            const yearData = readBooksByYearMonth[year];
+            const months = Object.keys(yearData).sort((a, b) => b - a);
+            const totalBooksYear = months.reduce((sum, month) => sum + yearData[month].length, 0);
+            const isExpanded = expandedYears[year];
+
+            return (
+              <div key={year} className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <button
-                      onClick={() => toggleYear(year)}
-                      className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
-                      style={{ backgroundColor: 'var(--cream)' }}
-                    >
+                  onClick={() => toggleYear(year)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                  style={{ backgroundColor: 'var(--cream)' }}>
+
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                             style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                    style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                           <span className="text-white font-bold text-lg">{year}</span>
                         </div>
                         <div>
@@ -944,24 +944,24 @@ export default function MyLibrary() {
                           </p>
                         </div>
                       </div>
-                      {isExpanded ? (
-                        <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-                      ) : (
-                        <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-                      )}
+                      {isExpanded ?
+                  <ChevronUp className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} /> :
+
+                  <ChevronDown className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+                  }
                     </button>
 
-                    {isExpanded && (
-                      <div className="p-6 space-y-8">
-                        {months.map(month => {
-                          const monthBooks = yearData[month];
-                          const monthName = monthNames[month - 1];
+                    {isExpanded &&
+                <div className="p-6 space-y-8">
+                        {months.map((month) => {
+                    const monthBooks = yearData[month];
+                    const monthName = monthNames[month - 1];
 
-                          return (
-                            <div key={month}>
+                    return (
+                      <div key={month}>
                               <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-                                     style={{ backgroundColor: 'var(--soft-pink)' }}>
+                          style={{ backgroundColor: 'var(--soft-pink)' }}>
                                   <span className="text-white font-bold text-sm">{month}</span>
                                 </div>
                                 <div>
@@ -975,110 +975,111 @@ export default function MyLibrary() {
                               </div>
 
                               <div className="grid grid-cols-2 md::grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {monthBooks.map(userBook => {
-                                  const book = allBooks.find(b => b.id === userBook.book_id);
-                                  if (!book) return null;
-                                  
-                                  const isDNF = userBook.status === "Abandonné";
+                                {monthBooks.map((userBook) => {
+                            const book = allBooks.find((b) => b.id === userBook.book_id);
+                            if (!book) return null;
 
-                                  return (
-                                    <div
-                                      key={userBook.id}
-                                      className="group cursor-pointer relative"
-                                      onClick={() => setSelectedUserBook(userBook)}
-                                    >
-                                      {isDNF && (
-                                        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-black flex items-center justify-center shadow-lg z-10">
+                            const isDNF = userBook.status === "Abandonné";
+
+                            return (
+                              <div
+                                key={userBook.id}
+                                className="group cursor-pointer relative"
+                                onClick={() => setSelectedUserBook(userBook)}>
+
+                                      {isDNF &&
+                                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-black flex items-center justify-center shadow-lg z-10">
                                           <span className="text-lg">💀</span>
                                         </div>
-                                      )}
+                                }
                                       <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
                                                     transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
-                                           style={{ backgroundColor: 'var(--beige)' }}>
-                                        {book.cover_url ? (
-                                          <img 
-                                            src={book.cover_url} 
-                                            alt={book.title}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <div className="w-full h-full flex items-center justify-center">
+
+                                style={{ backgroundColor: 'var(--beige)' }}>
+                                        {book.cover_url ?
+                                  <img
+                                    src={book.cover_url}
+                                    alt={book.title}
+                                    className="w-full h-full object-cover" /> :
+
+
+                                  <div className="w-full h-full flex items-center justify-center">
                                             <Library className="w-12 h-12" style={{ color: 'var(--warm-pink)' }} />
                                           </div>
-                                        )}
+                                  }
                                       </div>
-                                      <h4 
-                                        className="font-bold mt-2 group-hover:underline book-title-display" 
-                                        style={{ 
-                                          color: 'var(--dark-text)',
-                                          display: '-webkit-box',
-                                          WebkitLineClamp: 2,
-                                          WebkitBoxOrient: 'vertical',
-                                          overflow: 'hidden',
-                                          overflowWrap: 'anywhere',
-                                          wordBreak: 'break-word',
-                                          fontSize: 'clamp(13px, 2.2vw, 15px)',
-                                          lineHeight: '1.25',
-                                          minHeight: '2.5em'
-                                        }}
-                                        title={book.title}
-                                      >
+                                      <h4
+                                  className="font-bold mt-2 group-hover:underline book-title-display"
+                                  style={{
+                                    color: 'var(--dark-text)',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'break-word',
+                                    fontSize: 'clamp(13px, 2.2vw, 15px)',
+                                    lineHeight: '1.25',
+                                    minHeight: '2.5em'
+                                  }}
+                                  title={book.title}>
+
                                         {book.title}
                                       </h4>
-                                      <p 
-                                        className="book-author-display" 
-                                        style={{ 
-                                          color: 'var(--warm-pink)',
-                                          overflowWrap: 'anywhere',
-                                          whiteSpace: 'normal',
-                                          fontSize: 'clamp(11px, 1.8vw, 13px)',
-                                          lineHeight: '1.2',
-                                          display: '-webkit-box',
-                                          WebkitLineClamp: 1,
-                                          WebkitBoxOrient: 'vertical',
-                                          overflow: 'hidden'
-                                        }}
-                                        title={book.author}
-                                      >
+                                      <p
+                                  className="book-author-display"
+                                  style={{
+                                    color: 'var(--warm-pink)',
+                                    overflowWrap: 'anywhere',
+                                    whiteSpace: 'normal',
+                                    fontSize: 'clamp(11px, 1.8vw, 13px)',
+                                    lineHeight: '1.2',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 1,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }}
+                                  title={book.author}>
+
                                         {book.author}
                                       </p>
-                                      {userBook.rating && (
-                                        <div className="flex items-center gap-1 mt-1" style={{ minHeight: '20px' }}>
+                                      {userBook.rating &&
+                                <div className="flex items-center gap-1 mt-1" style={{ minHeight: '20px' }}>
                                           <span className="text-xs font-bold" style={{ color: 'var(--gold)' }}>
                                             ⭐ {userBook.rating}/5
                                           </span>
                                         </div>
-                                      )}
-                                      {isDNF && (
-                                        <p className="text-xs mt-1 font-medium" style={{ color: '#666', minHeight: '18px' }}>
+                                }
+                                      {isDNF &&
+                                <p className="text-xs mt-1 font-medium" style={{ color: '#666', minHeight: '18px' }}>
                                           DNF {userBook.abandon_percentage ? `${userBook.abandon_percentage}%` : ''}
                                         </p>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                                }
+                                    </div>);
+
+                          })}
                               </div>
-                            </div>
-                          );
-                        })}
+                            </div>);
+
+                  })}
                       </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        ) : activeTab === "tirage" ? (
-          <div className="space-y-4">
+                }
+                  </div>);
+
+          })
+          }
+          </div> :
+        activeTab === "tirage" ?
+        <div className="space-y-4">
             <div className="flex flex-wrap gap-3 items-center">
               <Select value={randomGenre} onValueChange={setRandomGenre}>
                 <SelectTrigger className="w-48 rounded-xl">
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableGenres.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                  ))}
+                  {availableGenres.map((g) =>
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+                )}
                 </SelectContent>
               </Select>
 
@@ -1093,16 +1094,16 @@ export default function MyLibrary() {
                 </SelectContent>
               </Select>
 
-              <Button onClick={pickRandomToRead} className="font-bold rounded-xl">
+              <Button onClick={pickRandomToRead} className="bg-[#ff4d87] text-primary-foreground px-4 py-2 text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 h-9">
                 <Shuffle className="w-4 h-4 mr-2" /> Tirer au sort
               </Button>
             </div>
 
             {randomChoice && (() => {
-              const b = allBooks.find((x) => x.id === randomChoice.book_id);
-              if (!b) return null;
-              return (
-                <Card className="max-w-md shadow-lg">
+            const b = allBooks.find((x) => x.id === randomChoice.book_id);
+            if (!b) return null;
+            return (
+              <Card className="max-w-md shadow-lg">
                   <CardContent className="p-4 flex gap-4 items-center">
                     <div className="w-16 h-24 rounded-lg overflow-hidden bg-pink-50">
                       {b.cover_url && <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />}
@@ -1111,16 +1112,16 @@ export default function MyLibrary() {
                       <p className="font-semibold line-clamp-2" style={{ color: 'var(--dark-text)' }}>{b.title}</p>
                       <p className="text-sm text-gray-500 line-clamp-1">{b.author}</p>
                     </div>
-                    <Button onClick={() => { setSelectedUserBook(randomChoice); setInitialTab('myinfo'); }} className="ml-auto">Ouvrir</Button>
+                    <Button onClick={() => {setSelectedUserBook(randomChoice);setInitialTab('myinfo');}} className="ml-auto">Ouvrir</Button>
                   </CardContent>
-                </Card>
-              );
-            })()}
-          </div>
-        ) : activeTab === "custom" ? (
-          <div>
-            {customShelves.length === 0 ? (
-              <div className="text-center py-20">
+                </Card>);
+
+          })()}
+          </div> :
+        activeTab === "custom" ?
+        <div>
+            {customShelves.length === 0 ?
+          <div className="text-center py-20">
                 <Library className="w-20 h-20 mx-auto mb-6 opacity-20" style={{ color: 'var(--warm-pink)' }} />
                 <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
                   Aucune étagère personnalisée
@@ -1129,77 +1130,77 @@ export default function MyLibrary() {
                   Créez votre première étagère pour organiser vos livres
                 </p>
                 <Button
-                  onClick={() => setShowShelves(true)}
-                  className="font-medium"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
-                    color: 'white'
-                  }}
-                >
+              onClick={() => setShowShelves(true)}
+              className="font-medium"
+              style={{
+                background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
+                color: 'white'
+              }}>
+
                   Créer une étagère
                 </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {customShelves.map((shelf) => {
-                  const shelfBooks = myBooks.filter(b => b.custom_shelf === shelf.name);
-                  const previewBooks = shelfBooks.slice(0, 3);
-                  const avgRating = getShelfAverageRating(shelf.name);
+              </div> :
 
-                  return (
-                    <div
-                      key={shelf.id}
-                      onClick={() => {
-                        sessionStorage.setItem('currentShelf', JSON.stringify(shelf));
-                        navigate(createPageUrl("ShelfView"));
-                      }}
-                      className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
-                      style={{
-                        backgroundColor: 'white',
-                        border: '2px solid var(--beige)'
-                      }}
-                    >
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {customShelves.map((shelf) => {
+              const shelfBooks = myBooks.filter((b) => b.custom_shelf === shelf.name);
+              const previewBooks = shelfBooks.slice(0, 3);
+              const avgRating = getShelfAverageRating(shelf.name);
+
+              return (
+                <div
+                  key={shelf.id}
+                  onClick={() => {
+                    sessionStorage.setItem('currentShelf', JSON.stringify(shelf));
+                    navigate(createPageUrl("ShelfView"));
+                  }}
+                  className="group cursor-pointer p-6 rounded-xl shadow-lg transition-all hover:shadow-2xl hover:-translate-y-2"
+                  style={{
+                    backgroundColor: 'white',
+                    border: '2px solid var(--beige)'
+                  }}>
+
                       <div className="mb-4 flex items-center justify-center gap-1 h-32">
-                        {previewBooks.length > 0 ? (
-                          <div className="flex gap-1 items-end">
+                        {previewBooks.length > 0 ?
+                    <div className="flex gap-1 items-end">
                             {previewBooks.map((userBook, idx) => {
-                              const book = allBooks.find(b => b.id === userBook.book_id);
-                              return (
-                                <div
-                                  key={userBook.id}
-                                  className="w-8 h-20 rounded-sm shadow-md"
-                                  style={{
-                                    backgroundColor: userBook.book_color || '#FFB3D9',
-                                    transform: `translateY(${idx * 2}px)`
-                                  }}
-                                >
-                                  {book?.cover_url && (
-                                    <img
-                                      src={book.cover_url}
-                                      alt={book.title}
-                                      className="w-full h-full object-cover rounded-sm opacity-40"
-                                    />
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-6xl opacity-20">{shelf.icon}</div>
-                        )}
+                        const book = allBooks.find((b) => b.id === userBook.book_id);
+                        return (
+                          <div
+                            key={userBook.id}
+                            className="w-8 h-20 rounded-sm shadow-md"
+                            style={{
+                              backgroundColor: userBook.book_color || '#FFB3D9',
+                              transform: `translateY(${idx * 2}px)`
+                            }}>
+
+                                  {book?.cover_url &&
+                            <img
+                              src={book.cover_url}
+                              alt={book.title}
+                              className="w-full h-full object-cover rounded-sm opacity-40" />
+
+                            }
+                                </div>);
+
+                      })}
+                          </div> :
+
+                    <div className="text-6xl opacity-20">{shelf.icon}</div>
+                    }
                       </div>
 
                       <div className="text-center">
                         <h3 className="text-lg font-bold mb-1 flex items-center justify-center gap-2"
-                            style={{ color: 'var(--dark-text)' }}>
+                    style={{ color: 'var(--dark-text)' }}>
                           <span className="text-2xl">{shelf.icon}</span>
                           {shelf.name}
                         </h3>
                         <p className="text-sm font-medium" style={{ color: 'var(--warm-pink)' }}>
                           {shelfBooks.length} livre{shelfBooks.length > 1 ? 's' : ''}
                         </p>
-                        {avgRating > 0 && (
-                          <div className="flex items-center justify-center gap-1 mt-2">
+                        {avgRating > 0 &&
+                    <div className="flex items-center justify-center gap-1 mt-2">
                             <span className="text-lg font-bold" style={{ color: 'var(--gold)' }}>
                               ⭐ {avgRating}
                             </span>
@@ -1207,65 +1208,65 @@ export default function MyLibrary() {
                               / 5
                             </span>
                           </div>
-                        )}
-                        {shelf.description && (
-                          <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
+                    }
+                        {shelf.description &&
+                    <p className="text-xs mt-2 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
                             {shelf.description}
                           </p>
-                        )}
+                    }
                       </div>
-                    </div>
-                  );
-                })}
+                    </div>);
+
+            })}
               </div>
-            )}
-          </div>
-        ) : (
-          <BookGrid
-            userBooks={filteredBooks}
-            allBooks={allBooks}
-            customShelves={customShelves}
-            isLoading={isLoading}
-            selectionMode={selectionMode}
-            selectedBooks={selectedBooks}
-            onSelectionChange={setSelectedBooks}
-            onExitSelectionMode={() => {
-              setSelectionMode(false);
-              setSelectedBooks([]);
-            }}
-            showPALSelector={activeTab === "À lire"}
-            readingLists={readingLists}
-          />
-        )}
+          }
+          </div> :
+
+        <BookGrid
+          userBooks={filteredBooks}
+          allBooks={allBooks}
+          customShelves={customShelves}
+          isLoading={isLoading}
+          selectionMode={selectionMode}
+          selectedBooks={selectedBooks}
+          onSelectionChange={setSelectedBooks}
+          onExitSelectionMode={() => {
+            setSelectionMode(false);
+            setSelectedBooks([]);
+          }}
+          showPALSelector={activeTab === "À lire"}
+          readingLists={readingLists} />
+
+        }
 
         <AddBookDialog
           open={showAddBook}
           onOpenChange={setShowAddBook}
-          user={user}
-        />
+          user={user} />
+
 
         <CustomShelvesManager
           open={showShelves}
           onOpenChange={setShowShelves}
-          shelves={customShelves}
-        />
+          shelves={customShelves} />
 
-        {selectedUserBook && (
-          <BookDetailsDialog
-            userBook={selectedUserBook}
-            book={allBooks.find(b => b.id === selectedUserBook.book_id)}
-            open={!!selectedUserBook}
-            onOpenChange={(open) => !open && setSelectedUserBook(null)}
-            initialTab={initialTab || "myinfo"}
-          />
-        )}
+
+        {selectedUserBook &&
+        <BookDetailsDialog
+          userBook={selectedUserBook}
+          book={allBooks.find((b) => b.id === selectedUserBook.book_id)}
+          open={!!selectedUserBook}
+          onOpenChange={(open) => !open && setSelectedUserBook(null)}
+          initialTab={initialTab || "myinfo"} />
+
+        }
 
         <PALManager
           open={showPALs}
           onOpenChange={setShowPALs}
-          pals={readingLists}
-        />
+          pals={readingLists} />
+
       </div>
-    </div>
-  );
+    </div>);
+
 }
