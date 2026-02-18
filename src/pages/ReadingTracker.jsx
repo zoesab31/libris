@@ -34,7 +34,7 @@ export default function ReadingTracker() {
   // Fetch reading progress entries to determine reading days
   const { data: readingProgress = [] } = useQuery({
     queryKey: ['readingProgress', user?.email],
-    queryFn: () => base44.entities.ReadingProgress.filter({ created_by: user?.email }),
+    queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email }),
     enabled: !!user,
     refetchInterval: 5000,
   });
@@ -43,8 +43,8 @@ export default function ReadingTracker() {
   const readingDays = React.useMemo(() => {
     const days = new Set();
     readingProgress.forEach(entry => {
-      if (entry.timestamp) {
-        const date = new Date(entry.timestamp);
+      if (entry.date) {
+        const date = new Date(entry.date);
         days.add(format(date, 'yyyy-MM-dd'));
       }
     });
@@ -56,7 +56,8 @@ export default function ReadingTracker() {
     mutationFn: async (date) => {
       const d = new Date(date);
       d.setHours(12, 0, 0, 0);
-      await base44.entities.ReadingProgress.create({ timestamp: d.toISOString() });
+      const dateStr = format(d, 'yyyy-MM-dd');
+      await base44.entities.ReadingDay.create({ date: dateStr });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
@@ -67,9 +68,9 @@ export default function ReadingTracker() {
   const unmarkDayMutation = useMutation({
     mutationFn: async (date) => {
       const ids = readingProgress
-        .filter(e => format(new Date(e.timestamp), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
+        .filter(e => e.date === format(date, 'yyyy-MM-dd'))
         .map(e => e.id);
-      await Promise.all(ids.map(id => base44.entities.ReadingProgress.delete(id)));
+      await Promise.all(ids.map(id => base44.entities.ReadingDay.delete(id)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
@@ -91,7 +92,7 @@ export default function ReadingTracker() {
     mutationFn: async () => {
       const entriesToDelete = readingProgress.map(entry => entry.id);
       await Promise.all(
-        entriesToDelete.map(id => base44.entities.ReadingProgress.delete(id))
+        entriesToDelete.map(id => base44.entities.ReadingDay.delete(id))
       );
     },
     onSuccess: () => {
