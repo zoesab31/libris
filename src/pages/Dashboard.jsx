@@ -36,11 +36,11 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['currentlyReading'] }),
-      queryClient.invalidateQueries({ queryKey: ['friends'] }),
-      queryClient.invalidateQueries({ queryKey: ['quotes'] }),
-      queryClient.invalidateQueries({ queryKey: ['userBooks'] }),
-    ]);
+    queryClient.invalidateQueries({ queryKey: ['currentlyReading'] }),
+    queryClient.invalidateQueries({ queryKey: ['friends'] }),
+    queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+    queryClient.invalidateQueries({ queryKey: ['userBooks'] })]
+    );
   };
 
   const handleMarkToday = async () => {
@@ -53,44 +53,44 @@ export default function Dashboard() {
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
+    queryFn: () => base44.entities.Book.list()
   });
 
   const { data: myFriends = [] } = useQuery({
     queryKey: ['myFriends'],
     queryFn: () => base44.entities.Friendship.filter({ created_by: user?.email, status: "Acceptée" }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: friendsBooks = [] } = useQuery({
     queryKey: ['friendsBooks'],
     queryFn: async () => {
-      const friendsEmails = myFriends.map(f => f.friend_email);
+      const friendsEmails = myFriends.map((f) => f.friend_email);
       if (friendsEmails.length === 0) return [];
       const allFriendsBooks = await Promise.all(
-        friendsEmails.map(email => base44.entities.UserBook.filter({ created_by: email }))
+        friendsEmails.map((email) => base44.entities.UserBook.filter({ created_by: email }))
       );
       return allFriendsBooks.flat();
     },
-    enabled: myFriends.length > 0,
+    enabled: myFriends.length > 0
   });
 
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: readingDayToday = [] } = useQuery({
     queryKey: ['readingDayToday'],
     queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email, date: format(new Date(), 'yyyy-MM-dd') }),
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 5000
   });
 
   const hasReadToday = readingDayToday.length > 0;
@@ -109,30 +109,30 @@ export default function Dashboard() {
   const { data: activityFeed = [] } = useQuery({
     queryKey: ['activityFeed'],
     queryFn: async () => {
-      const friendsEmails = myFriends.map(f => f.friend_email);
+      const friendsEmails = myFriends.map((f) => f.friend_email);
       if (friendsEmails.length === 0) return [];
-      
+
       const allActivities = await base44.entities.ActivityFeed.list('-created_date', 50);
-      return allActivities.filter(activity => 
-        friendsEmails.includes(activity.created_by) && activity.is_visible
+      return allActivities.filter((activity) =>
+      friendsEmails.includes(activity.created_by) && activity.is_visible
       );
     },
     enabled: myFriends.length > 0,
-    refetchInterval: 30000,
+    refetchInterval: 30000
   });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => base44.entities.User.list()
   });
 
-  const currentlyReading = myBooks.filter(b => b.status === "En cours");
-  const toReadCount = myBooks.filter(b => b.status === "À lire").length;
+  const currentlyReading = myBooks.filter((b) => b.status === "En cours");
+  const toReadCount = myBooks.filter((b) => b.status === "À lire").length;
 
   const { data: allProgressHistory = [] } = useQuery({
     queryKey: ['readingProgress', user?.email],
     queryFn: () => base44.entities.ReadingProgress.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   // Calculate estimated progress based on reading speed
@@ -140,31 +140,31 @@ export default function Dashboard() {
     if (!userBook.current_page || !book.page_count) return null;
 
     // Get progress history for this book
-    const bookProgress = allProgressHistory
-      .filter(p => p.user_book_id === userBook.id)
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const bookProgress = allProgressHistory.
+    filter((p) => p.user_book_id === userBook.id).
+    sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     if (bookProgress.length < 2) return null;
 
     // Calculate average reading speed (pages per hour)
     const firstProgress = bookProgress[0];
     const lastProgress = bookProgress[bookProgress.length - 1];
-    
+
     const pagesRead = lastProgress.page_number - firstProgress.page_number;
     const hoursPassed = (new Date(lastProgress.timestamp) - new Date(firstProgress.timestamp)) / (1000 * 60 * 60);
 
     if (hoursPassed <= 0 || pagesRead <= 0) return null;
 
     const pagesPerHour = pagesRead / hoursPassed;
-    
+
     // Estimate current page based on time since last update
     const lastUpdateTime = new Date(lastProgress.timestamp).getTime();
     const hoursSinceLastUpdate = (Date.now() - lastUpdateTime) / (1000 * 60 * 60);
-    
+
     // Only show estimation if at least 1 hour has passed
     if (hoursSinceLastUpdate < 1) return null;
-    
-    const estimatedPage = Math.round(lastProgress.page_number + (pagesPerHour * hoursSinceLastUpdate));
+
+    const estimatedPage = Math.round(lastProgress.page_number + pagesPerHour * hoursSinceLastUpdate);
     const estimatedPageCapped = Math.min(estimatedPage, book.page_count);
 
     return {
@@ -218,7 +218,7 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['myBooks'] });
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
-      
+
       toast.success("✅ Progression enregistrée !");
       setEditingBookId(null);
     } catch (error) {
@@ -236,7 +236,7 @@ export default function Dashboard() {
     if (userBook.status !== "Abandonné") return false;
     if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
     if (userBook.abandon_page) {
-      const book = allBooks.find(b => b.id === userBook.book_id);
+      const book = allBooks.find((b) => b.id === userBook.book_id);
       if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
         return true;
       }
@@ -252,36 +252,36 @@ export default function Dashboard() {
     return null;
   };
 
-  const booksReadThisYear = myBooks.filter(b => {
+  const booksReadThisYear = myBooks.filter((b) => {
     const effectiveDate = getEffectiveDate(b);
     if (!effectiveDate) return false;
     return new Date(effectiveDate).getFullYear() === selectedYear;
   }).length;
 
-  const totalPagesThisYear = myBooks
-    .filter(b => {
-      const effectiveDate = getEffectiveDate(b);
-      if (!effectiveDate) return false;
-      return new Date(effectiveDate).getFullYear() === selectedYear;
-    })
-    .reduce((sum, userBook) => {
-      const book = allBooks.find(b => b.id === userBook.book_id);
-      if (!book || userBook.status !== "Lu") return sum;
-      return sum + (book.page_count || 0);
-    }, 0);
+  const totalPagesThisYear = myBooks.
+  filter((b) => {
+    const effectiveDate = getEffectiveDate(b);
+    if (!effectiveDate) return false;
+    return new Date(effectiveDate).getFullYear() === selectedYear;
+  }).
+  reduce((sum, userBook) => {
+    const book = allBooks.find((b) => b.id === userBook.book_id);
+    if (!book || userBook.status !== "Lu") return sum;
+    return sum + (book.page_count || 0);
+  }, 0);
 
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
   const randomQuote = allQuotes.length > 0 ? allQuotes[Math.floor(Math.random() * allQuotes.length)] : null;
-  const quoteBook = randomQuote ? allBooks.find(b => b.id === randomQuote.book_id) : null;
+  const quoteBook = randomQuote ? allBooks.find((b) => b.id === randomQuote.book_id) : null;
 
   // Collect music
   const allMusicWithBooks = React.useMemo(() => {
     const musicList = [];
-    myBooks.forEach(userBook => {
-      const book = allBooks.find(b => b.id === userBook.book_id);
+    myBooks.forEach((userBook) => {
+      const book = allBooks.find((b) => b.id === userBook.book_id);
       if (!book) return;
       if (userBook.music_playlist && userBook.music_playlist.length > 0) {
-        userBook.music_playlist.forEach(music => {
+        userBook.music_playlist.forEach((music) => {
           musicList.push({ ...music, book, userBook });
         });
       }
@@ -407,14 +407,14 @@ export default function Dashboard() {
               Bonjour {displayName} ✨
             </h1>
             <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 py-2 rounded-xl font-semibold text-sm"
-              style={{ backgroundColor: 'white', color: '#FF1493', border: '1px solid rgba(255, 105, 180, 0.2)' }}
-            >
-              {years.map(year => (
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="px-3 py-2 rounded-xl font-semibold text-sm"
+                style={{ backgroundColor: 'white', color: '#FF1493', border: '1px solid rgba(255, 105, 180, 0.2)' }}>
+
+              {years.map((year) =>
                 <option key={year} value={year}>📅 {year}</option>
-              ))}
+                )}
             </select>
           </div>
 
@@ -425,30 +425,30 @@ export default function Dashboard() {
 
           {/* Lecture en cours */}
           <Card className="border-2 rounded-3xl overflow-hidden mb-4 dash-card"
-                style={{ borderColor: '#FF1493', backgroundColor: 'white', boxShadow: '0 4px 20px rgba(255, 20, 147, 0.12)' }}>
+            style={{ borderColor: '#FF1493', backgroundColor: 'white', boxShadow: '0 4px 20px rgba(255, 20, 147, 0.12)' }}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                      style={{ backgroundColor: '#FF1493', color: 'white' }}>
+                  style={{ backgroundColor: '#FF1493', color: 'white' }}>
                   Ta lecture en cours
                 </span>
                 {/* Signet décoratif */}
                 <div className="ml-auto w-4 h-8 rounded-b-full" style={{ backgroundColor: '#FF1493' }} />
               </div>
 
-              {currentlyReading.length > 0 ? (
+              {currentlyReading.length > 0 ?
                 currentlyReading.slice(0, 1).map((userBook) => {
-                  const book = allBooks.find(b => b.id === userBook.book_id);
+                  const book = allBooks.find((b) => b.id === userBook.book_id);
                   if (!book) return null;
                   const isEditing = editingBookId === userBook.id;
                   const displayPage = isEditing ? parseInt(editValues.currentPage) || 0 : userBook.current_page || 0;
                   const displayTotal = isEditing ? parseInt(editValues.totalPages) || book.page_count || 0 : book.page_count || 0;
-                  const progress = displayTotal > 0 ? Math.round((displayPage / displayTotal) * 100) : 0;
+                  const progress = displayTotal > 0 ? Math.round(displayPage / displayTotal * 100) : 0;
 
                   return (
                     <div key={userBook.id} className="flex gap-4">
                       <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden flex-shrink-0"
-                           style={{ backgroundColor: '#FFE9F0', boxShadow: '0 4px 12px rgba(255,20,147,0.15)' }}>
+                      style={{ backgroundColor: '#FFE9F0', boxShadow: '0 4px 12px rgba(255,20,147,0.15)' }}>
                         {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -459,23 +459,23 @@ export default function Dashboard() {
                           {book.author}
                         </p>
 
-                        {isEditing ? (
-                          <div className="space-y-2">
+                        {isEditing ?
+                        <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <input type="number" value={editValues.currentPage}
-                                onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProgress(userBook, book); if (e.key === 'Escape') handleCancelEdit(); }}
-                                className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
-                                style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
-                                autoFocus placeholder="Page actuelle"
-                              />
+                            onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
+                            onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
+                            className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
+                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
+                            autoFocus placeholder="Page actuelle" />
+
                               <input type="number" value={editValues.totalPages}
-                                onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProgress(userBook, book); if (e.key === 'Escape') handleCancelEdit(); }}
-                                className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
-                                style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
-                                placeholder="Total"
-                              />
+                            onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
+                            onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
+                            className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
+                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
+                            placeholder="Total" />
+
                             </div>
                             <div className="flex gap-2">
                               <Button size="sm" onClick={() => handleSaveProgress(userBook, book)} className="flex-1 text-white" style={{ backgroundColor: '#FF1493' }}>
@@ -483,9 +483,9 @@ export default function Dashboard() {
                               </Button>
                               <Button size="sm" variant="outline" onClick={handleCancelEdit}><X className="w-3 h-3" /></Button>
                             </div>
-                          </div>
-                        ) : (
-                          <>
+                          </div> :
+
+                        <>
                             <div className="flex items-center justify-between mb-2">
                               <button onClick={() => handleStartEdit(userBook, book)} className="flex items-center gap-1 hover:opacity-80">
                                 <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
@@ -497,18 +497,18 @@ export default function Dashboard() {
                             </div>
                             <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#FFE9F0' }}>
                               <motion.div className="h-full rounded-full"
-                                initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }}
-                              />
+                            initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+
                             </div>
                           </>
-                        )}
+                        }
                       </div>
-                    </div>
-                  );
-                })
-              ) : (
+                    </div>);
+
+                }) :
+
                 <div className="text-center py-6">
                   <BookOpen className="w-12 h-12 mx-auto mb-3" style={{ color: '#FFB6C8' }} />
                   <p className="text-sm font-medium mb-3" style={{ color: '#9CA3AF' }}>Aucune lecture en cours</p>
@@ -518,13 +518,13 @@ export default function Dashboard() {
                     </Button>
                   </Link>
                 </div>
-              )}
+                }
 
-              {currentlyReading.length > 1 && (
+              {currentlyReading.length > 1 &&
                 <Link to={createPageUrl("MyLibrary")} className="mt-3 flex items-center gap-1 text-xs font-semibold no-hover" style={{ color: '#FF1493' }}>
                   +{currentlyReading.length - 1} autre{currentlyReading.length > 2 ? 's' : ''} lecture{currentlyReading.length > 2 ? 's' : ''} <ArrowRight className="w-3 h-3" />
                 </Link>
-              )}
+                }
             </CardContent>
           </Card>
 
@@ -532,36 +532,36 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-3 mb-4">
             {/* Activité des amies */}
             <Card className="border rounded-2xl dash-card"
-                  style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
+              style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
               <CardContent className="p-4">
                 <h3 className="font-bold text-sm mb-3" style={{ color: '#FF1493' }}>Activités des amies</h3>
-                {activityFeed.length > 0 ? (
+                {activityFeed.length > 0 ?
                   <ul className="space-y-2">
                     {activityFeed.slice(0, 3).map((activity, idx) => {
-                      const friendUser = allUsers.find(u => u.email === activity.created_by);
+                      const friendUser = allUsers.find((u) => u.email === activity.created_by);
                       const name = friendUser?.full_name?.split(' ')[0] || 'Une amie';
                       return (
                         <li key={idx} className="text-xs flex gap-1" style={{ color: '#4B5563' }}>
                           <span>•</span>
                           <span><strong>{name}</strong> {activity.action_text || activity.description || 'a eu une activité'}</span>
-                        </li>
-                      );
+                        </li>);
+
                     })}
-                  </ul>
-                ) : (
+                  </ul> :
+
                   <p className="text-xs" style={{ color: '#9CA3AF' }}>Aucune activité récente</p>
-                )}
-                {activityFeed.length > 3 && (
+                  }
+                {activityFeed.length > 3 &&
                   <Link to={createPageUrl('Social')} className="text-xs font-semibold mt-2 block no-hover" style={{ color: '#FF1493' }}>
                     Voir plus →
                   </Link>
-                )}
+                  }
               </CardContent>
             </Card>
 
             {/* Stats */}
             <Card className="border rounded-2xl dash-card"
-                  style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
+              style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
               <CardContent className="p-4">
                 <h3 className="font-bold text-sm mb-3" style={{ color: '#FF1493' }}>Stats {selectedYear}</h3>
                 <ul className="space-y-1.5 text-xs" style={{ color: '#4B5563' }}>
@@ -577,21 +577,21 @@ export default function Dashboard() {
 
           {/* Citation */}
           <Card className="border rounded-2xl dash-card mb-4"
-                style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
+            style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
             <CardContent className="p-4 text-center">
               <Quote className="w-5 h-5 mx-auto mb-2" style={{ color: '#FFD700' }} />
-              {randomQuote && quoteBook ? (
+              {randomQuote && quoteBook ?
                 <>
                   <p className="text-sm italic mb-2 leading-relaxed" style={{ color: '#4B5563' }}>
                     "{randomQuote.quote_text}"
                   </p>
                   <p className="text-xs font-bold" style={{ color: '#FFD700' }}>— {quoteBook.title}</p>
-                </>
-              ) : (
+                </> :
+
                 <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
                   "Lire, c'est vivre mille vies avant de mourir."
                 </p>
-              )}
+                }
             </CardContent>
           </Card>
 
@@ -601,47 +601,47 @@ export default function Dashboard() {
           </div>
 
           {/* Playlist musicale */}
-          {allMusicWithBooks.length > 0 && (
+          {allMusicWithBooks.length > 0 &&
             <Card className="border rounded-2xl overflow-hidden cursor-pointer dash-card mb-4"
-                  onClick={() => navigate(createPageUrl("MusicPlaylist"))}
-                  style={{ borderColor: '#FFD6E4', background: 'linear-gradient(135deg, #FFF5F8 0%, #F9F5FF 100%)' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#E91E63' }}>
-                  <Music className="w-4 h-4" /> Ta Playlist
-                </h3>
-                <div className="space-y-2">
-                  {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: '#FFE9F0' }}>
-                        {musicItem.book.cover_url && <img src={musicItem.book.cover_url} alt="" className="w-full h-full object-cover" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-xs line-clamp-1" style={{ color: '#2D3748' }}>{musicItem.title}</p>
-                        <p className="text-xs line-clamp-1" style={{ color: '#9CA3AF' }}>{musicItem.artist}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
+            onClick={() => navigate(createPageUrl("MusicPlaylist"))}
+            style={{ borderColor: '#FFD6E4', background: 'linear-gradient(135deg, #FFF5F8 0%, #F9F5FF 100%)' }}>
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             </Card>
-          )}
+            }
 
           {/* Amies qui lisent */}
-          {friendsBooks.filter(b => b.status === "En cours").length > 0 && (
+          {friendsBooks.filter((b) => b.status === "En cours").length > 0 &&
             <Card className="border rounded-2xl mb-4"
-                  style={{ borderColor: '#E1BEE7', backgroundColor: 'white' }}>
+            style={{ borderColor: '#E1BEE7', backgroundColor: 'white' }}>
               <CardContent className="p-4">
                 <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#9C27B0' }}>
                   <Users className="w-4 h-4" /> Tes amies lisent
                 </h3>
                 <div className="space-y-3">
-                  {friendsBooks.filter(b => b.status === "En cours").slice(0, 3).map((userBook, idx) => {
-                    const book = allBooks.find(b => b.id === userBook.book_id);
-                    const friend = myFriends.find(f => f.friend_email === userBook.created_by);
-                    const friendUser = allUsers.find(u => u.email === userBook.created_by);
+                  {friendsBooks.filter((b) => b.status === "En cours").slice(0, 3).map((userBook, idx) => {
+                    const book = allBooks.find((b) => b.id === userBook.book_id);
+                    const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
+                    const friendUser = allUsers.find((u) => u.email === userBook.created_by);
                     if (!book || !friend) return null;
-                    const progress = userBook.current_page && book.page_count
-                      ? Math.round((userBook.current_page / book.page_count) * 100) : 0;
+                    const progress = userBook.current_page && book.page_count ?
+                    Math.round(userBook.current_page / book.page_count * 100) : 0;
                     return (
                       <div key={userBook.id} className="flex gap-2 items-center">
                         <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: '#F3E5F5' }}>
@@ -650,35 +650,35 @@ export default function Dashboard() {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold" style={{ color: '#9C27B0' }}>{friendUser?.full_name?.split(' ')[0] || 'Amie'}</p>
                           <p className="text-xs line-clamp-1 font-medium" style={{ color: '#2D3748' }}>{book.title}</p>
-                          {progress > 0 && (
-                            <div className="h-1.5 rounded-full mt-1" style={{ backgroundColor: '#F3E5F5' }}>
+                          {progress > 0 &&
+                          <div className="h-1.5 rounded-full mt-1" style={{ backgroundColor: '#F3E5F5' }}>
                               <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #9C27B0, #BA68C8)' }} />
                             </div>
-                          )}
+                          }
                         </div>
                         <span className="text-xs font-bold flex-shrink-0" style={{ color: '#9C27B0' }}>{progress}%</span>
-                      </div>
-                    );
+                      </div>);
+
                   })}
                 </div>
               </CardContent>
             </Card>
-          )}
+            }
 
         </div>
       </div>
 
       {/* Dialog */}
-      {selectedBookForDetails && (
+      {selectedBookForDetails &&
         <BookDetailsDialog
           userBook={selectedBookForDetails}
-          book={allBooks.find(b => b.id === selectedBookForDetails.book_id)}
+          book={allBooks.find((b) => b.id === selectedBookForDetails.book_id)}
           open={!!selectedBookForDetails}
           onOpenChange={(open) => !open && setSelectedBookForDetails(null)}
-          initialTab="myinfo"
-        />
-      )}
+          initialTab="myinfo" />
+
+        }
     </div>
-    </PullToRefresh>
-  );
+    </PullToRefresh>);
+
 }
