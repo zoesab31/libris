@@ -68,46 +68,32 @@ export default function ReadingStreakCard({ user }) {
   };
 
   return (
-    <Card className="border-0 rounded-3xl overflow-hidden dash-card" style={{
-      backgroundColor: 'white',
-      boxShadow: '0 4px 16px rgba(255, 105, 180, 0.08)'
-    }}>
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    </Card>);
-
+    <div className="flex items-center gap-3 px-1 py-2">
+      <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+           style={{ background: 'linear-gradient(135deg, #FF69B4, #FF1493)' }}>
+        <Flame className="w-5 h-5 text-white" />
+      </div>
+      <div className="flex-1">
+        <p className="font-bold text-sm uppercase tracking-wide" style={{ color: '#FF1493' }}>
+          Streak de {currentStreak} jour{currentStreak > 1 ? 's' : ''} 🔥
+        </p>
+        {longestStreak > 0 && (
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>
+            Record : {longestStreak} jour{longestStreak > 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+      {canLogToday() && (
+        <Button
+          size="sm"
+          onClick={() => updateStreakMutation.mutate()}
+          disabled={updateStreakMutation.isPending}
+          className="font-semibold rounded-xl px-3 py-1 text-xs flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: 'white' }}
+        >
+          ✓ J'ai lu
+        </Button>
+      )}
+    </div>
+  );
 }
