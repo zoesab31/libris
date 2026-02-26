@@ -22,28 +22,28 @@ export default function ReadingGoalManager({ year, compact = false }) {
   const { data: readingGoal } = useQuery({
     queryKey: ['readingGoal', year, user?.email],
     queryFn: async () => {
-      const goals = await base44.entities.ReadingGoal.filter({ 
+      const goals = await base44.entities.ReadingGoal.filter({
         created_by: user?.email,
-        year: year 
+        year: year
       });
       return goals[0] || null;
     },
-    enabled: !!user,
+    enabled: !!user
   });
 
-  const changesRemaining = readingGoal 
-    ? MAX_GOAL_CHANGES_PER_YEAR - (readingGoal.changes_count || 0)
-    : MAX_GOAL_CHANGES_PER_YEAR;
+  const changesRemaining = readingGoal ?
+  MAX_GOAL_CHANGES_PER_YEAR - (readingGoal.changes_count || 0) :
+  MAX_GOAL_CHANGES_PER_YEAR;
 
   const { data: myBooks = [] } = useQuery({
     queryKey: ['myBooks'],
     queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user
   });
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list(),
+    queryFn: () => base44.entities.Book.list()
   });
 
   // Helper function to check if abandoned book counts (>50%)
@@ -51,7 +51,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
     if (userBook.status !== "Abandonné") return false;
     if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
     if (userBook.abandon_page) {
-      const book = allBooks.find(b => b.id === userBook.book_id);
+      const book = allBooks.find((b) => b.id === userBook.book_id);
       if (book && book.page_count && userBook.abandon_page >= book.page_count / 2) {
         return true;
       }
@@ -68,7 +68,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
     }
     return null;
   };
-  
+
   const booksReadThisYear = myBooks.reduce((count, b) => {
     // Compter la lecture initiale
     const effectiveDate = getEffectiveDate(b);
@@ -76,17 +76,17 @@ export default function ReadingGoalManager({ year, compact = false }) {
       const bookYear = new Date(effectiveDate).getFullYear();
       if (bookYear === year) count++;
     }
-    
+
     // Compter chaque relecture
     if (b.rereads && b.rereads.length > 0) {
-      b.rereads.forEach(reread => {
+      b.rereads.forEach((reread) => {
         if (reread.end_date) {
           const rereadYear = new Date(reread.end_date).getFullYear();
           if (rereadYear === year) count++;
         }
       });
     }
-    
+
     return count;
   }, 0);
 
@@ -97,13 +97,13 @@ export default function ReadingGoalManager({ year, compact = false }) {
         if (currentChanges >= MAX_GOAL_CHANGES_PER_YEAR) {
           throw new Error("Vous avez atteint le nombre maximum de modifications pour cette année");
         }
-        await base44.entities.ReadingGoal.update(readingGoal.id, { 
+        await base44.entities.ReadingGoal.update(readingGoal.id, {
           goal_count: goalCount,
           changes_count: currentChanges + 1
         });
       } else {
-        await base44.entities.ReadingGoal.create({ 
-          year, 
+        await base44.entities.ReadingGoal.create({
+          year,
           goal_count: goalCount,
           changes_count: 0,
           created_by: user?.email
@@ -139,7 +139,7 @@ export default function ReadingGoalManager({ year, compact = false }) {
     setIsEditing(true);
   };
 
-  const progress = readingGoal ? Math.round((booksReadThisYear / readingGoal.goal_count) * 100) : 0;
+  const progress = readingGoal ? Math.round(booksReadThisYear / readingGoal.goal_count * 100) : 0;
 
   if (compact) {
     return (
@@ -152,62 +152,62 @@ export default function ReadingGoalManager({ year, compact = false }) {
                 Objectif {year}
               </h3>
             </div>
-            {!isEditing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={startEditing}
-                className="h-7 w-7"
-              >
+            {!isEditing &&
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={startEditing}
+              className="h-7 w-7">
+
                 <Edit className="w-3 h-3" style={{ color: 'var(--deep-pink)' }} />
               </Button>
-            )}
+            }
           </div>
 
-          {isEditing ? (
-            <div className="space-y-2">
-              {readingGoal && changesRemaining > 0 && (
-                <div className="flex items-center gap-1 text-xs p-2 rounded-lg" 
-                     style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
+          {isEditing ?
+          <div className="space-y-2">
+              {readingGoal && changesRemaining > 0 &&
+            <div className="flex items-center gap-1 text-xs p-2 rounded-lg"
+            style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
                   <AlertCircle className="w-3 h-3" />
                   <span>{changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}</span>
                 </div>
-              )}
+            }
               <Input
-                type="number"
-                min="1"
-                value={newGoal}
-                onChange={(e) => setNewGoal(e.target.value)}
-                placeholder="Nombre de livres"
-                className="h-8 text-sm"
-                autoFocus
-              />
+              type="number"
+              min="1"
+              value={newGoal}
+              onChange={(e) => setNewGoal(e.target.value)}
+              placeholder="Nombre de livres"
+              className="h-8 text-sm"
+              autoFocus />
+
               <div className="flex gap-2">
                 <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saveGoalMutation.isPending}
-                  className="flex-1 h-7 text-xs text-white"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                >
+                size="sm"
+                onClick={handleSave}
+                disabled={saveGoalMutation.isPending}
+                className="flex-1 h-7 text-xs text-white"
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+
                   <Check className="w-3 h-3 mr-1" />
                   OK
                 </Button>
                 <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setNewGoal("");
-                  }}
-                  className="h-7 text-xs"
-                >
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  setNewGoal("");
+                }}
+                className="h-7 text-xs">
+
                   <X className="w-3 h-3" />
                 </Button>
               </div>
-            </div>
-          ) : readingGoal ? (
-            <>
+            </div> :
+          readingGoal ?
+          <>
               <div className="text-center mb-2">
                 <p className="text-2xl font-bold" style={{ color: 'var(--dark-text)' }}>
                   {booksReadThisYear} / {readingGoal.goal_count}
@@ -218,140 +218,140 @@ export default function ReadingGoalManager({ year, compact = false }) {
               </div>
               <div className="w-full h-2 rounded-full mb-2" style={{ backgroundColor: 'var(--beige)' }}>
                 <div className="h-full rounded-full transition-all duration-500"
-                     style={{ 
-                       width: `${Math.min(progress, 100)}%`,
-                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                     }} />
+              style={{
+                width: `${Math.min(progress, 100)}%`,
+                background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
+              }} />
               </div>
-              {changesRemaining > 0 && (
-                <p className="text-[10px] text-center" style={{ color: 'var(--warm-pink)' }}>
+              {changesRemaining > 0 &&
+            <p className="text-[10px] text-center" style={{ color: 'var(--warm-pink)' }}>
                   {changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}
                 </p>
-              )}
-            </>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="w-full h-8 text-xs text-white"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-            >
+            }
+            </> :
+
+          <Button
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            className="w-full h-8 text-xs text-white"
+            style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+
               Définir un objectif
             </Button>
-          )}
+          }
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   // Full version (non-compact)
   return (
     <Card className="shadow-lg border-0 overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Target className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
-            <h3 className="font-bold text-xl" style={{ color: 'var(--dark-text)' }}>
-              🎯 Objectif de lecture {year}
-            </h3>
-          </div>
-          {!isEditing && readingGoal && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={startEditing}
-            >
-              <Edit className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
-            </Button>
-          )}
-        </div>
+      
 
-        {isEditing ? (
-          <div className="space-y-4">
-            {readingGoal && changesRemaining > 0 && (
-              <div className="flex items-center gap-2 text-sm p-3 rounded-lg" 
-                   style={{ backgroundColor: 'var(--cream)', color: 'var(--warm-pink)' }}>
-                <AlertCircle className="w-4 h-4" />
-                <span>{changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''} cette année</span>
-              </div>
-            )}
-            <Input
-              type="number"
-              min="1"
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              placeholder="Nombre de livres à lire cette année"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={saveGoalMutation.isPending}
-                className="flex-1 text-white"
-                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Enregistrer
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false);
-                  setNewGoal("");
-                }}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Annuler
-              </Button>
-            </div>
-          </div>
-        ) : readingGoal ? (
-          <>
-            <div className="text-center mb-6">
-              <p className="text-4xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>
-                {booksReadThisYear} / {readingGoal.goal_count}
-              </p>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
-                {progress}% complété
-              </p>
-            </div>
-            <div className="mb-4">
-              <div className="w-full h-4 rounded-full" style={{ backgroundColor: 'var(--beige)' }}>
-                <div className="h-full rounded-full transition-all duration-500"
-                     style={{ 
-                       width: `${Math.min(progress, 100)}%`,
-                       background: 'linear-gradient(90deg, var(--deep-pink), var(--warm-pink))'
-                     }} />
-              </div>
-            </div>
-            <p className="text-center font-medium mb-2" style={{ color: 'var(--dark-text)' }}>
-              {readingGoal.goal_count - booksReadThisYear > 0 
-                ? `Plus que ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} à lire ! 📚`
-                : `Objectif atteint ! 🎉`
-              }
-            </p>
-            {changesRemaining > 0 && (
-              <p className="text-center text-sm" style={{ color: 'var(--warm-pink)' }}>
-                {changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-8">
-            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-            <p className="mb-4" style={{ color: 'var(--warm-pink)' }}>
-              Aucun objectif défini pour {year}
-            </p>
-            <Button
-              onClick={() => setIsEditing(true)}
-              className="text-white"
-              style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-            >
-              Définir mon objectif
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </Card>);
+
 }
