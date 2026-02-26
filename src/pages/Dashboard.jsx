@@ -393,308 +393,236 @@ export default function Dashboard() {
       `}</style>
 
       {/* Header */}
-      <div className="relative p-4 md:p-8">
-        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2">
+      <div className="relative px-4 pt-5 pb-3 md:px-8">
+        <div className="absolute top-4 right-4 md:top-5 md:right-8 z-20 flex items-center gap-2">
           <NotificationBell user={user} />
-          <Link to={createPageUrl('AccountSettings')} className="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-md" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.25)' }}>
-            <Settings className="w-5 h-5" style={{ color: '#FF1493' }} />
+          <Link to={createPageUrl('AccountSettings')} className="inline-flex items-center justify-center w-9 h-9 rounded-full shadow-sm" style={{ backgroundColor: 'white', border: '1px solid rgba(255,105,180,0.2)' }}>
+            <Settings className="w-4 h-4" style={{ color: '#FF1493' }} />
           </Link>
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          {/* Titre + sélecteur année */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: '#FF1493' }}>
-              Bonjour {displayName} ✨
-            </h1>
-            <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-3 py-2 rounded-xl font-semibold text-sm"
-                style={{ backgroundColor: 'white', color: '#FF1493', border: '1px solid rgba(255, 105, 180, 0.2)' }}>
+        <div className="max-w-lg mx-auto space-y-4">
 
-              {years.map((year) =>
-                <option key={year} value={year}>📅 {year}</option>
-                )}
-            </select>
+          {/* Titre */}
+          <div className="pt-1">
+            <h1 className="text-2xl font-bold" style={{ color: '#FF1493' }}>Bonjour {displayName} ✨</h1>
           </div>
 
-          {/* Streak */}
-          <div className="mb-4">
-            <ReadingStreakCard user={user} />
-          </div>
+          {/* Streak inline */}
+          <ReadingStreakCard user={user} />
 
-          {/* Lecture en cours */}
-          <Card className="border-2 rounded-3xl overflow-hidden mb-4 dash-card"
-            style={{ borderColor: '#FF1493', backgroundColor: 'white', boxShadow: '0 4px 20px rgba(255, 20, 147, 0.12)' }}>
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                  style={{ backgroundColor: '#FF1493', color: 'white' }}>
-                  Ta lecture en cours
-                </span>
-                {/* Signet décoratif */}
-                <div className="ml-auto w-4 h-8 rounded-b-full" style={{ backgroundColor: '#FF1493' }} />
+          {/* ── Lecture en cours ── */}
+          <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: '2px solid #FF69B4' }}>
+            {/* label */}
+            <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#FF1493' }}>📖 Ta lecture en cours</span>
+              {currentlyReading.length > 1 && (
+                <Link to={createPageUrl("MyLibrary")} className="text-xs font-semibold no-hover flex items-center gap-0.5" style={{ color: '#FF69B4' }}>
+                  +{currentlyReading.length - 1} <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
+
+            {currentlyReading.length > 0 ? (() => {
+              const userBook = currentlyReading[0];
+              const book = allBooks.find((b) => b.id === userBook.book_id);
+              if (!book) return null;
+              const isEditing = editingBookId === userBook.id;
+              const displayPage = isEditing ? parseInt(editValues.currentPage) || 0 : userBook.current_page || 0;
+              const displayTotal = isEditing ? parseInt(editValues.totalPages) || book.page_count || 0 : book.page_count || 0;
+              const progress = displayTotal > 0 ? Math.round(displayPage / displayTotal * 100) : 0;
+              return (
+                <div className="px-4 pb-4 flex gap-3">
+                  {/* Cover */}
+                  <div className="w-16 h-24 rounded-xl overflow-hidden flex-shrink-0 shadow-md" style={{ backgroundColor: '#FFE9F0' }}>
+                    {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm leading-tight line-clamp-2 mb-0.5" style={{ color: '#1a1a1a' }}>{book.title}</h3>
+                      <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>{book.author}</p>
+                    </div>
+                    {isEditing ? (
+                      <div className="space-y-1.5">
+                        <div className="flex gap-1.5">
+                          <input type="number" value={editValues.currentPage}
+                            onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProgress(userBook, book); if (e.key === 'Escape') handleCancelEdit(); }}
+                            className="flex-1 px-2 py-1 rounded-lg text-xs font-bold"
+                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '1.5px solid #FF69B4' }}
+                            autoFocus placeholder="Page" />
+                          <input type="number" value={editValues.totalPages}
+                            onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProgress(userBook, book); if (e.key === 'Escape') handleCancelEdit(); }}
+                            className="flex-1 px-2 py-1 rounded-lg text-xs font-bold"
+                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '1.5px solid #FF69B4' }}
+                            placeholder="Total" />
+                        </div>
+                        <div className="flex gap-1.5">
+                          <Button size="sm" onClick={() => handleSaveProgress(userBook, book)} className="flex-1 h-7 text-xs text-white" style={{ backgroundColor: '#FF1493' }}>
+                            <Check className="w-3 h-3 mr-1" /> OK
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit} className="h-7 text-xs"><X className="w-3 h-3" /></Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <button onClick={() => handleStartEdit(userBook, book)} className="flex items-center gap-1 hover:opacity-70">
+                            <span className="text-xs" style={{ color: '#9CA3AF' }}>{displayPage}/{displayTotal || '?'} pages</span>
+                            <Edit2 className="w-3 h-3" style={{ color: '#FFB6C8' }} />
+                          </button>
+                          <span className="text-sm font-black" style={{ color: '#FF1493' }}>{progress}%</span>
+                        </div>
+                        <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#FFE9F0' }}>
+                          <motion.div className="h-full rounded-full"
+                            initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })() : (
+              <div className="px-4 pb-5 flex flex-col items-center gap-2">
+                <BookOpen className="w-10 h-10" style={{ color: '#FFD6E4' }} />
+                <p className="text-xs text-center" style={{ color: '#9CA3AF' }}>Aucune lecture en cours</p>
+                <Link to={createPageUrl("MyLibrary")}>
+                  <Button size="sm" className="font-bold text-white rounded-xl" style={{ backgroundColor: '#FF1493' }}>
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Choisir un livre
+                  </Button>
+                </Link>
               </div>
+            )}
+          </div>
 
-              {currentlyReading.length > 0 ?
-                currentlyReading.slice(0, 1).map((userBook) => {
-                  const book = allBooks.find((b) => b.id === userBook.book_id);
-                  if (!book) return null;
-                  const isEditing = editingBookId === userBook.id;
-                  const displayPage = isEditing ? parseInt(editValues.currentPage) || 0 : userBook.current_page || 0;
-                  const displayTotal = isEditing ? parseInt(editValues.totalPages) || book.page_count || 0 : book.page_count || 0;
-                  const progress = displayTotal > 0 ? Math.round(displayPage / displayTotal * 100) : 0;
+          {/* ── Stats 4 tuiles ── */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { value: booksReadThisYear, label: 'Livres lus', emoji: '📚', color: '#FF1493', bg: '#FFE9F0', to: 'MyLibrary' },
+              { value: totalPagesThisYear.toLocaleString(), label: 'Pages', emoji: '📖', color: '#FF69B4', bg: '#FFE9F0', to: 'Statistics' },
+              { value: myFriends.length, label: 'LC', emoji: '👯', color: '#9C27B0', bg: '#F3E5F5', to: 'SharedReadings' },
+              { value: toReadCount, label: 'PAL', emoji: '📋', color: '#FF69B4', bg: '#FFE9F0', to: 'MyLibrary' },
+            ].map(({ value, label, emoji, color, bg, to }) => (
+              <button key={label} onClick={() => navigate(createPageUrl(to))}
+                className="rounded-2xl p-3 flex flex-col items-center gap-0.5 transition-transform active:scale-95"
+                style={{ backgroundColor: bg }}>
+                <span className="text-base">{emoji}</span>
+                <span className="text-lg font-black leading-none" style={{ color }}>{value}</span>
+                <span className="text-[10px] font-semibold leading-tight text-center" style={{ color }}>{label}</span>
+              </button>
+            ))}
+          </div>
 
+          {/* ── Objectif de lecture ── */}
+          <ReadingGoalManager year={selectedYear} compact={false} />
+
+          {/* ── Activité des amies ── */}
+          {activityFeed.length > 0 && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm" style={{ border: '1px solid #FFE4EF' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#FF1493' }}>
+                  <Sparkles className="w-4 h-4" /> Activité des amies
+                </h3>
+                <Link to={createPageUrl('Social')} className="text-xs font-semibold no-hover" style={{ color: '#FF69B4' }}>Tout voir →</Link>
+              </div>
+              <div className="space-y-2">
+                {activityFeed.slice(0, 4).map((activity, idx) => {
+                  const friendUser = allUsers.find((u) => u.email === activity.created_by);
+                  const name = friendUser?.full_name?.split(' ')[0] || 'Une amie';
                   return (
-                    <div key={userBook.id} className="flex gap-4">
-                      <div className="w-20 h-28 md:w-24 md:h-36 rounded-xl overflow-hidden flex-shrink-0"
-                      style={{ backgroundColor: '#FFE9F0', boxShadow: '0 4px 12px rgba(255,20,147,0.15)' }}>
+                    <div key={idx} className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                        style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                        {name[0]}
+                      </div>
+                      <p className="text-xs leading-snug flex-1" style={{ color: '#4B5563' }}>
+                        <span className="font-bold" style={{ color: '#FF1493' }}>{name}</span>{' '}
+                        {activity.action_text || activity.description || 'a eu une activité'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Tes amies lisent ── */}
+          {friendsBooks.filter((b) => b.status === "En cours").length > 0 && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm" style={{ border: '1px solid #E8D5F5' }}>
+              <h3 className="font-bold text-sm mb-3 flex items-center gap-1.5" style={{ color: '#9C27B0' }}>
+                <Users className="w-4 h-4" /> Tes amies lisent
+              </h3>
+              <div className="space-y-3">
+                {friendsBooks.filter((b) => b.status === "En cours").slice(0, 3).map((userBook) => {
+                  const book = allBooks.find((b) => b.id === userBook.book_id);
+                  const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
+                  const friendUser = allUsers.find((u) => u.email === userBook.created_by);
+                  if (!book || !friend) return null;
+                  const pct = userBook.current_page && book.page_count
+                    ? Math.round(userBook.current_page / book.page_count * 100) : 0;
+                  return (
+                    <div key={userBook.id} className="flex items-center gap-3">
+                      <div className="w-9 h-12 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: '#F3E5F5' }}>
                         {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-black text-base md:text-xl uppercase mb-1 line-clamp-2" style={{ color: '#FF1493' }}>
-                          {book.title}
-                        </h3>
-                        <p className="text-xs mb-4 uppercase tracking-wide" style={{ color: '#9CA3AF' }}>
-                          {book.author}
-                        </p>
-
-                        {isEditing ?
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <input type="number" value={editValues.currentPage}
-                            onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
-                            onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
-                            className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
-                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
-                            autoFocus placeholder="Page actuelle" />
-
-                              <input type="number" value={editValues.totalPages}
-                            onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
-                            onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
-                            className="flex-1 px-2 py-1 rounded-lg text-sm font-bold"
-                            style={{ backgroundColor: '#FFF5F8', color: '#FF1493', border: '2px solid #FF69B4' }}
-                            placeholder="Total" />
-
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleSaveProgress(userBook, book)} className="flex-1 text-white" style={{ backgroundColor: '#FF1493' }}>
-                                <Check className="w-3 h-3 mr-1" /> OK
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={handleCancelEdit}><X className="w-3 h-3" /></Button>
-                            </div>
-                          </div> :
-
-                        <>
-                            <div className="flex items-center justify-between mb-2">
-                              <button onClick={() => handleStartEdit(userBook, book)} className="flex items-center gap-1 hover:opacity-80">
-                                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
-                                  {userBook.current_page || 0}/{book.page_count || '?'} PAGES
-                                </span>
-                                <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
-                              </button>
-                              <span className="text-lg font-black" style={{ color: '#FF1493' }}>{progress}%</span>
-                            </div>
-                            <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#FFE9F0' }}>
-                              <motion.div className="h-full rounded-full"
-                            initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
-
-                            </div>
-                          </>
-                        }
-                      </div>
-                    </div>);
-
-                }) :
-
-                <div className="text-center py-6">
-                  <BookOpen className="w-12 h-12 mx-auto mb-3" style={{ color: '#FFB6C8' }} />
-                  <p className="text-sm font-medium mb-3" style={{ color: '#9CA3AF' }}>Aucune lecture en cours</p>
-                  <Link to={createPageUrl("MyLibrary")}>
-                    <Button size="sm" className="font-bold rounded-xl" style={{ backgroundColor: '#FF1493', color: 'white' }}>
-                      <Plus className="w-4 h-4 mr-1" /> Choisir un livre
-                    </Button>
-                  </Link>
-                </div>
-                }
-
-              {currentlyReading.length > 1 &&
-                <Link to={createPageUrl("MyLibrary")} className="mt-3 flex items-center gap-1 text-xs font-semibold no-hover" style={{ color: '#FF1493' }}>
-                  +{currentlyReading.length - 1} autre{currentlyReading.length > 2 ? 's' : ''} lecture{currentlyReading.length > 2 ? 's' : ''} <ArrowRight className="w-3 h-3" />
-                </Link>
-                }
-            </CardContent>
-          </Card>
-
-          {/* Stats visuelles */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
-              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
-              onClick={() => navigate(createPageUrl("MyLibrary"))}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            >
-              <span className="text-3xl font-black" style={{ color: '#FF1493' }}>{booksReadThisYear}</span>
-              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📚 Livres lus en {selectedYear}</span>
-            </motion.div>
-
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
-              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
-              onClick={() => navigate(createPageUrl("Statistics"))}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            >
-              <span className="text-3xl font-black" style={{ color: '#FF1493' }}>{totalPagesThisYear.toLocaleString()}</span>
-              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📖 Pages lues</span>
-            </motion.div>
-
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
-              style={{ background: 'linear-gradient(135deg, #F3E5F5, #E1BEE7)', border: '1px solid rgba(156,39,176,0.15)' }}
-              onClick={() => navigate(createPageUrl("SharedReadings"))}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            >
-              <span className="text-3xl font-black" style={{ color: '#9C27B0' }}>{myFriends.length}</span>
-              <span className="text-xs font-semibold" style={{ color: '#9C27B0' }}>👯 Lectures communes</span>
-            </motion.div>
-
-            <motion.div
-              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
-              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
-              onClick={() => navigate(createPageUrl("MyLibrary"))}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            >
-              <span className="text-3xl font-black" style={{ color: '#FF69B4' }}>{toReadCount}</span>
-              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📋 Dans la PAL</span>
-            </motion.div>
-          </div>
-
-          {/* Activité des amies */}
-          {activityFeed.length > 0 && (
-            <Card className="border rounded-2xl dash-card mb-4" style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#FF1493' }}>
-                  <Sparkles className="w-4 h-4" /> Activité des amies
-                </h3>
-                <div className="space-y-2">
-                  {activityFeed.slice(0, 3).map((activity, idx) => {
-                    const friendUser = allUsers.find((u) => u.email === activity.created_by);
-                    const name = friendUser?.full_name?.split(' ')[0] || 'Une amie';
-                    return (
-                      <div key={idx} className="flex items-start gap-2 p-2 rounded-xl" style={{ backgroundColor: '#FFF5F8' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
-                          {name[0]}
+                        <p className="text-xs font-bold" style={{ color: '#9C27B0' }}>{friendUser?.full_name?.split(' ')[0] || 'Amie'}</p>
+                        <p className="text-xs font-medium line-clamp-1" style={{ color: '#1a1a1a' }}>{book.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#F3E5F5' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #9C27B0, #CE93D8)' }} />
+                          </div>
+                          <span className="text-[10px] font-bold flex-shrink-0" style={{ color: '#9C27B0' }}>{pct}%</span>
                         </div>
-                        <p className="text-xs leading-snug" style={{ color: '#4B5563' }}>
-                          <strong>{name}</strong> {activity.action_text || activity.description || 'a eu une activité'}
-                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-                {activityFeed.length > 3 && (
-                  <Link to={createPageUrl('Social')} className="text-xs font-semibold mt-3 block no-hover" style={{ color: '#FF1493' }}>
-                    Voir toute l'activité →
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
-          {/* Citation */}
-          <Card className="border rounded-2xl dash-card mb-4"
-            style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
-            <CardContent className="p-4 text-center">
-              <Quote className="w-5 h-5 mx-auto mb-2" style={{ color: '#FFD700' }} />
-              {randomQuote && quoteBook ?
-                <>
-                  <p className="text-sm italic mb-2 leading-relaxed" style={{ color: '#4B5563' }}>
-                    "{randomQuote.quote_text}"
-                  </p>
-                  <p className="text-xs font-bold" style={{ color: '#FFD700' }}>— {quoteBook.title}</p>
-                </> :
-
-                <p className="text-sm italic" style={{ color: '#9CA3AF' }}>
-                  "Lire, c'est vivre mille vies avant de mourir."
-                </p>
-                }
-            </CardContent>
-          </Card>
-
-          {/* Objectif de lecture */}
-          <div className="mb-4">
-            <ReadingGoalManager year={selectedYear} compact={false} />
+          {/* ── Citation ── */}
+          <div className="bg-white rounded-2xl p-4 text-center shadow-sm" style={{ border: '1px solid #FFE4EF' }}>
+            <Quote className="w-5 h-5 mx-auto mb-2" style={{ color: '#FFD700' }} />
+            {randomQuote && quoteBook ? (
+              <>
+                <p className="text-sm italic leading-relaxed mb-1" style={{ color: '#4B5563' }}>"{randomQuote.quote_text}"</p>
+                <p className="text-xs font-bold" style={{ color: '#FFD700' }}>— {quoteBook.title}</p>
+              </>
+            ) : (
+              <p className="text-sm italic" style={{ color: '#9CA3AF' }}>"Lire, c'est vivre mille vies avant de mourir."</p>
+            )}
           </div>
 
-          {/* Playlist musicale */}
-          {allMusicWithBooks.length > 0 &&
-            <Card className="border rounded-2xl overflow-hidden cursor-pointer dash-card mb-4"
-            onClick={() => navigate(createPageUrl("MusicPlaylist"))}
-            style={{ borderColor: '#FFD6E4', background: 'linear-gradient(135deg, #FFF5F8 0%, #F9F5FF 100%)' }}>
-              
+          {/* ── Playlist musicale ── */}
+          {allMusicWithBooks.length > 0 && (
+            <button onClick={() => navigate(createPageUrl("MusicPlaylist"))} className="w-full text-left bg-white rounded-2xl p-4 shadow-sm transition-transform active:scale-98" style={{ border: '1px solid #F3E5F5' }}>
+              <h3 className="font-bold text-sm mb-3 flex items-center gap-1.5" style={{ color: '#E91E63' }}>
+                <Music className="w-4 h-4" /> Ta Playlist
+              </h3>
+              <div className="space-y-2">
+                {allMusicWithBooks.slice(0, 3).map((musicItem, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: '#FFE9F0' }}>
+                      {musicItem.book.cover_url && <img src={musicItem.book.cover_url} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold line-clamp-1" style={{ color: '#1a1a1a' }}>{musicItem.title}</p>
+                      <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{musicItem.artist}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </button>
+          )}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            </Card>
-            }
-
-          {/* Amies qui lisent */}
-          {friendsBooks.filter((b) => b.status === "En cours").length > 0 &&
-            <Card className="border rounded-2xl mb-4"
-            style={{ borderColor: '#E1BEE7', backgroundColor: 'white' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#9C27B0' }}>
-                  <Users className="w-4 h-4" /> Tes amies lisent
-                </h3>
-                <div className="space-y-3">
-                  {friendsBooks.filter((b) => b.status === "En cours").slice(0, 3).map((userBook, idx) => {
-                    const book = allBooks.find((b) => b.id === userBook.book_id);
-                    const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
-                    const friendUser = allUsers.find((u) => u.email === userBook.created_by);
-                    if (!book || !friend) return null;
-                    const progress = userBook.current_page && book.page_count ?
-                    Math.round(userBook.current_page / book.page_count * 100) : 0;
-                    return (
-                      <div key={userBook.id} className="flex gap-2 items-center">
-                        <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: '#F3E5F5' }}>
-                          {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold" style={{ color: '#9C27B0' }}>{friendUser?.full_name?.split(' ')[0] || 'Amie'}</p>
-                          <p className="text-xs line-clamp-1 font-medium" style={{ color: '#2D3748' }}>{book.title}</p>
-                          {progress > 0 &&
-                          <div className="h-1.5 rounded-full mt-1" style={{ backgroundColor: '#F3E5F5' }}>
-                              <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #9C27B0, #BA68C8)' }} />
-                            </div>
-                          }
-                        </div>
-                        <span className="text-xs font-bold flex-shrink-0" style={{ color: '#9C27B0' }}>{progress}%</span>
-                      </div>);
-
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-            }
-
+          {/* bottom padding */}
+          <div className="h-4" />
         </div>
       </div>
 
