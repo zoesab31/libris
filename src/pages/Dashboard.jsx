@@ -528,52 +528,81 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Grille : Activité amies + Stats */}
+          {/* Stats visuelles */}
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {/* Activité des amies */}
-            <Card className="border rounded-2xl dash-card"
-              style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#FF1493' }}>Activités des amies</h3>
-                {activityFeed.length > 0 ?
-                  <ul className="space-y-2">
-                    {activityFeed.slice(0, 3).map((activity, idx) => {
-                      const friendUser = allUsers.find((u) => u.email === activity.created_by);
-                      const name = friendUser?.full_name?.split(' ')[0] || 'Une amie';
-                      return (
-                        <li key={idx} className="text-xs flex gap-1" style={{ color: '#4B5563' }}>
-                          <span>•</span>
-                          <span><strong>{name}</strong> {activity.action_text || activity.description || 'a eu une activité'}</span>
-                        </li>);
+            <motion.div
+              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
+              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            >
+              <span className="text-3xl font-black" style={{ color: '#FF1493' }}>{booksReadThisYear}</span>
+              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📚 Livres lus en {selectedYear}</span>
+            </motion.div>
 
-                    })}
-                  </ul> :
+            <motion.div
+              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
+              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
+              onClick={() => navigate(createPageUrl("Statistics"))}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            >
+              <span className="text-3xl font-black" style={{ color: '#FF1493' }}>{totalPagesThisYear.toLocaleString()}</span>
+              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📖 Pages lues</span>
+            </motion.div>
 
-                  <p className="text-xs" style={{ color: '#9CA3AF' }}>Aucune activité récente</p>
-                  }
-                {activityFeed.length > 3 &&
-                  <Link to={createPageUrl('Social')} className="text-xs font-semibold mt-2 block no-hover" style={{ color: '#FF1493' }}>
-                    Voir plus →
-                  </Link>
-                  }
-              </CardContent>
-            </Card>
+            <motion.div
+              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
+              style={{ background: 'linear-gradient(135deg, #F3E5F5, #E1BEE7)', border: '1px solid rgba(156,39,176,0.15)' }}
+              onClick={() => navigate(createPageUrl("SharedReadings"))}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            >
+              <span className="text-3xl font-black" style={{ color: '#9C27B0' }}>{myFriends.length}</span>
+              <span className="text-xs font-semibold" style={{ color: '#9C27B0' }}>👯 Lectures communes</span>
+            </motion.div>
 
-            {/* Stats */}
-            <Card className="border rounded-2xl dash-card"
-              style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-sm mb-3" style={{ color: '#FF1493' }}>Stats {selectedYear}</h3>
-                <ul className="space-y-1.5 text-xs" style={{ color: '#4B5563' }}>
-                  <li>📚 <strong>{booksReadThisYear}</strong> livres lus</li>
-                  <li>📖 <strong>{totalPagesThisYear.toLocaleString()}</strong> pages</li>
-                  <li>👯 <strong>{myFriends.length}</strong> lecture{myFriends.length > 1 ? 's' : ''} commune{myFriends.length > 1 ? 's' : ''}</li>
-                  <li>📋 <strong>{toReadCount}</strong> dans la PAL</li>
-                  <li>⏳ <strong>{currentlyReading.length}</strong> en cours</li>
-                </ul>
-              </CardContent>
-            </Card>
+            <motion.div
+              className="rounded-2xl p-4 flex flex-col gap-1 cursor-pointer dash-card"
+              style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)', border: '1px solid rgba(255,105,180,0.15)' }}
+              onClick={() => navigate(createPageUrl("MyLibrary"))}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            >
+              <span className="text-3xl font-black" style={{ color: '#FF69B4' }}>{toReadCount}</span>
+              <span className="text-xs font-semibold" style={{ color: '#FF69B4' }}>📋 Dans la PAL</span>
+            </motion.div>
           </div>
+
+          {/* Activité des amies */}
+          {activityFeed.length > 0 && (
+            <Card className="border rounded-2xl dash-card mb-4" style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
+              <CardContent className="p-4">
+                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#FF1493' }}>
+                  <Sparkles className="w-4 h-4" /> Activité des amies
+                </h3>
+                <div className="space-y-2">
+                  {activityFeed.slice(0, 3).map((activity, idx) => {
+                    const friendUser = allUsers.find((u) => u.email === activity.created_by);
+                    const name = friendUser?.full_name?.split(' ')[0] || 'Une amie';
+                    return (
+                      <div key={idx} className="flex items-start gap-2 p-2 rounded-xl" style={{ backgroundColor: '#FFF5F8' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                          {name[0]}
+                        </div>
+                        <p className="text-xs leading-snug" style={{ color: '#4B5563' }}>
+                          <strong>{name}</strong> {activity.action_text || activity.description || 'a eu une activité'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {activityFeed.length > 3 && (
+                  <Link to={createPageUrl('Social')} className="text-xs font-semibold mt-3 block no-hover" style={{ color: '#FF1493' }}>
+                    Voir toute l'activité →
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Citation */}
           <Card className="border rounded-2xl dash-card mb-4"

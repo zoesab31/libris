@@ -246,112 +246,69 @@ export default function ReadingGoalManager({ year, compact = false }) {
 
   // Full version (non-compact)
   return (
-    <Card className="shadow-lg border-0 overflow-hidden">
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    </Card>);
-
+    <Card className="border rounded-2xl overflow-hidden" style={{ borderColor: '#FFD6E4', backgroundColor: 'white' }}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎯</span>
+            <h3 className="font-bold text-sm" style={{ color: '#FF1493' }}>
+              Objectif {year}
+            </h3>
+          </div>
+          {!isEditing && readingGoal && (
+            <Button variant="ghost" size="icon" onClick={startEditing} className="h-7 w-7">
+              <Edit className="w-3 h-3" style={{ color: '#FF1493' }} />
+            </Button>
+          )}
+        </div>
+
+        {isEditing ? (
+          <div className="space-y-2">
+            {readingGoal && changesRemaining > 0 && (
+              <p className="text-xs" style={{ color: '#9CA3AF' }}>
+                {changesRemaining} modification{changesRemaining > 1 ? 's' : ''} restante{changesRemaining > 1 ? 's' : ''}
+              </p>
+            )}
+            <Input type="number" min="1" value={newGoal} onChange={(e) => setNewGoal(e.target.value)}
+              placeholder="Nombre de livres" className="h-8 text-sm" autoFocus />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={saveGoalMutation.isPending}
+                className="flex-1 h-7 text-xs text-white" style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+                <Check className="w-3 h-3 mr-1" /> OK
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setIsEditing(false); setNewGoal(""); }} className="h-7 text-xs">
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        ) : readingGoal ? (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-black" style={{ color: '#FF1493' }}>
+                {booksReadThisYear}<span className="text-sm font-normal text-gray-400">/{readingGoal.goal_count}</span>
+              </span>
+              <span className="text-sm font-bold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: progress >= 100 ? '#D1FAE5' : '#FFE9F0', color: progress >= 100 ? '#059669' : '#FF1493' }}>
+                {Math.min(progress, 100)}%
+              </span>
+            </div>
+            <div className="w-full h-2.5 rounded-full" style={{ backgroundColor: '#FFE9F0' }}>
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(progress, 100)}%`, background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }} />
+            </div>
+            <p className="text-xs mt-1.5" style={{ color: '#9CA3AF' }}>
+              {readingGoal.goal_count - booksReadThisYear > 0
+                ? `Encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear > 1 ? 's' : ''} à lire`
+                : '🎉 Objectif atteint !'}
+            </p>
+          </>
+        ) : (
+          <Button size="sm" onClick={() => setIsEditing(true)}
+            className="w-full h-8 text-xs text-white" style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+            Définir un objectif
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
