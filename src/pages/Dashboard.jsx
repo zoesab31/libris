@@ -6,6 +6,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { BookOpen, TrendingUp, Users, Star, Plus, Music, Heart, MessageCircle, Quote, Trophy, Library, ArrowRight, Sparkles, Flame, Zap, Clock, Target, Edit2, Check, X, Home, Settings, User } from "lucide-react";
+
 import NotificationBell from "../components/notifications/NotificationBell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
