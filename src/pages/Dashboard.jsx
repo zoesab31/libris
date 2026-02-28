@@ -621,7 +621,7 @@ export default function Dashboard() {
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ duration: 0.4, delay: idx * 0.1 }}
                               className="p-4 md:p-5 rounded-2xl"
-                              style={{ background: 'linear-gradient(135deg, #FFF5F9 0%, #FDE8F5 100%)', border: '1px solid rgba(255,105,180,0.1)' }}
+                              style={{ background: '#FEF5FB', border: '1px solid #F8D6EE' }}
                             >
                               <div className="flex gap-4">
                                 <div className="relative flex-shrink-0">
