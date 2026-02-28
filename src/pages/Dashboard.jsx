@@ -645,25 +645,25 @@ export default function Dashboard() {
 
                         return (
                           <motion.div
-                           key={userBook.id}
-                           initial={{ opacity: 0, x: -20 }}
-                           animate={{ opacity: 1, x: 0 }}
-                           transition={{ duration: 0.4, delay: idx * 0.1 }}
-                           className="p-3 rounded-2xl"
-                           style={{ background: '#FEF5FB', border: '1px solid #F8D6EE' }}>
+                            key={userBook.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: idx * 0.1 }}
+                            className="p-3 rounded-2xl"
+                            style={{ background: '#FEF5FB', border: '1px solid #F8D6EE' }}>
 
                              <div className="flex gap-3">
                                <div className="relative flex-shrink-0">
                                  <div className="w-16 h-24 rounded-xl overflow-hidden shadow-md"
-                               style={{ backgroundColor: '#FDE8F4' }}>
+                                style={{ backgroundColor: '#FDE8F4' }}>
                                     {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
                                   </div>
                                   {progress > 0 &&
-                               <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full flex items-center justify-center font-extrabold shadow-md"
-                               style={{ background: '#FBB9DC', color: '#C0176A', fontSize: '9px' }}>
+                                <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full flex items-center justify-center font-extrabold shadow-md"
+                                style={{ background: '#FBB9DC', color: '#C0176A', fontSize: '9px' }}>
                                       {progress}%
                                     </div>
-                               }
+                                }
                                </div>
 
                                <div className="flex-1 min-w-0">
@@ -671,60 +671,60 @@ export default function Dashboard() {
                                  <p className="text-xs mb-2" style={{ color: '#A78BBA' }}>{book.author}</p>
 
                                  {isEditing ?
-                               <div className="space-y-2">
+                                <div className="space-y-2">
                                      <div className="flex gap-2">
                                        <input type="number" value={editValues.currentPage}
-                                   onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
-                                   onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
-                                   placeholder="Page" autoFocus
-                                   className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
-                                   style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
+                                    onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
+                                    onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
+                                    placeholder="Page" autoFocus
+                                    className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
+                                    style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
 
                                        <input type="number" value={editValues.totalPages}
-                                   onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
-                                   placeholder="Total"
-                                   className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
-                                   style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
+                                    onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
+                                    placeholder="Total"
+                                    className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
+                                    style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
 
                                      </div>
                                      <div className="flex gap-2">
                                        <button onClick={() => handleSaveProgress(userBook, book)}
-                                   className="flex-1 py-2 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1"
-                                   style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
+                                    className="flex-1 py-2 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1"
+                                    style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
                                          <Check className="w-3.5 h-3.5" /> Valider
                                        </button>
                                        <button onClick={handleCancelEdit}
-                                   className="px-3 py-2 rounded-xl text-sm font-bold"
-                                   style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
+                                    className="px-3 py-2 rounded-xl text-sm font-bold"
+                                    style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
                                          <X className="w-3.5 h-3.5" />
                                        </button>
                                      </div>
                                    </div> :
 
-                               <>
+                                <>
                                      <button onClick={() => handleStartEdit(userBook, book)}
-                                 className="flex items-center gap-1.5 mb-1.5 hover:opacity-75 transition-opacity">
+                                  className="flex items-center gap-1.5 mb-1.5 hover:opacity-75 transition-opacity">
                                        <span className="text-xs font-semibold" style={{ color: '#FF1493' }}>
                                          📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
                                        </span>
                                        <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
                                      </button>
                                      {estimation &&
-                                 <p className="text-xs mb-1.5 italic" style={{ color: '#9C27B0' }}>
+                                  <p className="text-xs mb-1.5 italic" style={{ color: '#9C27B0' }}>
                                          ⏱ Est. ~{estimation.estimatedPage} pages
                                        </p>
-                                 }
+                                  }
                                      <div className="relative h-2 rounded-full overflow-hidden progress-bar-shine" style={{ background: '#FFE9F0' }}>
                                        <motion.div
-                                     className="h-full rounded-full"
-                                     initial={{ width: 0 }}
-                                     animate={{ width: `${progress}%` }}
-                                     transition={{ duration: 1.2, ease: "easeOut", delay: idx * 0.1 }}
-                                     style={{ background: 'linear-gradient(90deg, #E91E8C, #F472B6)' }} />
+                                      className="h-full rounded-full"
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${progress}%` }}
+                                      transition={{ duration: 1.2, ease: "easeOut", delay: idx * 0.1 }}
+                                      style={{ background: 'linear-gradient(90deg, #E91E8C, #F472B6)' }} />
 
                                      </div>
                                    </>
-                               }
+                                }
                                </div>
                              </div>
                            </motion.div>);
@@ -912,31 +912,31 @@ export default function Dashboard() {
                   className="rounded-3xl shadow-sm card-hover overflow-hidden cursor-pointer"
                   style={{ background: 'linear-gradient(135deg,#F4A7CE 0%,#C990E8 100%)' }}
                   onClick={() => {setNewGoalValue(readingGoal?.goal_count?.toString() || "");setShowGoalDialog(true);}}>
-                    <div className="p-5 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(30%, -30%)' }} />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Target className="w-4 h-4 opacity-70" style={{ color: '#4A1060' }} />
-                          <span className="text-xs font-bold opacity-70" style={{ color: '#4A1060' }}>Objectif {selectedYear}</span>
-                        </div>
-                        <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-3xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
-                          <span className="text-base font-semibold opacity-60" style={{ color: '#3A0050' }}>/ {readingGoal.goal_count}</span>
-                        </div>
-                        <div className="relative h-2.5 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.4)' }}>
-                          <motion.div
-                            className="h-full rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${goalProgress}%` }}
-                            transition={{ duration: 1.4, ease: "easeOut" }}
-                            style={{ background: 'rgba(58,0,80,0.4)' }}
-                          />
-                        </div>
-                        <p className="text-xs opacity-80" style={{ color: '#4A1060' }}>
-                          {goalProgress >= 100 ? "🎉 Objectif atteint !" : `${goalProgress}% · encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear !== 1 ? 's' : ''}`}
-                        </p>
-                      </div>
-                    </div>
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
