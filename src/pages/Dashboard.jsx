@@ -890,13 +890,13 @@ export default function Dashboard() {
                           <span className="text-4xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
                           <span className="text-xl font-semibold opacity-60" style={{ color: '#3A0050' }}>/ {readingGoal.goal_count}</span>
                         </div>
-                        <div className="relative h-3 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.25)' }}>
+                        <div className="relative h-3 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.4)' }}>
                           <motion.div
                             className="h-full rounded-full"
                             initial={{ width: 0 }}
                             animate={{ width: `${goalProgress}%` }}
                             transition={{ duration: 1.4, ease: "easeOut" }}
-                            style={{ background: 'rgba(255,255,255,0.85)' }}
+                            style={{ background: 'rgba(58,0,80,0.4)' }}
                           />
                         </div>
                         <p className="text-xs opacity-80" style={{ color: '#4A1060' }}>
