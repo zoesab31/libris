@@ -304,6 +304,51 @@ export default function Dashboard() {
         <OnboardingTrigger />
         <FloatingParticles count={25} />
 
+        {/* Animated background lines */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+          {[
+            { top: '8%',  w: '28vw', dur: 9,  delay: 0,   color: 'rgba(212,160,200,0.35)' },
+            { top: '22%', w: '35vw', dur: 12, delay: 2.5, color: 'rgba(180,120,220,0.28)' },
+            { top: '38%', w: '22vw', dur: 8,  delay: 1,   color: 'rgba(244,167,206,0.32)' },
+            { top: '55%', w: '40vw', dur: 14, delay: 4,   color: 'rgba(201,144,232,0.3)' },
+            { top: '70%', w: '26vw', dur: 10, delay: 0.5, color: 'rgba(212,160,200,0.25)' },
+            { top: '85%', w: '32vw', dur: 11, delay: 3,   color: 'rgba(244,167,206,0.28)' },
+          ].map((l, i) => (
+            <div
+              key={`h-${i}`}
+              className="bg-line"
+              style={{
+                top: l.top,
+                left: 0,
+                width: l.w,
+                background: `linear-gradient(90deg, transparent, ${l.color}, transparent)`,
+                animationDuration: `${l.dur}s`,
+                animationDelay: `${l.delay}s`,
+              }}
+            />
+          ))}
+          {[
+            { left: '10%',  h: '22vh', dur: 13, delay: 1,   color: 'rgba(212,160,200,0.22)' },
+            { left: '30%',  h: '30vh', dur: 16, delay: 0,   color: 'rgba(180,120,220,0.18)' },
+            { left: '55%',  h: '18vh', dur: 10, delay: 2,   color: 'rgba(244,167,206,0.2)' },
+            { left: '75%',  h: '25vh', dur: 14, delay: 3.5, color: 'rgba(201,144,232,0.18)' },
+            { left: '90%',  h: '20vh', dur: 11, delay: 1.5, color: 'rgba(212,160,200,0.2)' },
+          ].map((l, i) => (
+            <div
+              key={`v-${i}`}
+              className="bg-line-v"
+              style={{
+                left: l.left,
+                top: 0,
+                height: l.h,
+                background: `linear-gradient(180deg, transparent, ${l.color}, transparent)`,
+                animationDuration: `${l.dur}s`,
+                animationDelay: `${l.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
         <style>{`
           @keyframes flow-line {
             0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
