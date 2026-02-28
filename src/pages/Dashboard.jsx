@@ -367,7 +367,7 @@ export default function Dashboard() {
             animation: float-gentle 3s ease-in-out infinite;
           }
           .gradient-text-pink {
-            background: linear-gradient(135deg, #FF1493, #FF69B4, #E91E63);
+          background: linear-gradient(135deg, #D4288C, #E880BB, #9B3EC8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
