@@ -911,31 +911,31 @@ export default function Dashboard() {
                   className="rounded-3xl shadow-sm card-hover overflow-hidden cursor-pointer"
                   style={{ background: 'linear-gradient(135deg,#F4A7CE 0%,#C990E8 100%)' }}
                   onClick={() => {setNewGoalValue(readingGoal?.goal_count?.toString() || "");setShowGoalDialog(true);}}>
-                    <div className="p-6 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(30%, -30%)' }} />
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Target className="w-5 h-5 opacity-70" style={{ color: '#4A1060' }} />
-                          <span className="text-sm font-bold opacity-70" style={{ color: '#4A1060' }}>Objectif {selectedYear}</span>
-                        </div>
-                        <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-4xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
-                          <span className="text-xl font-semibold opacity-60" style={{ color: '#3A0050' }}>/ {readingGoal.goal_count}</span>
-                        </div>
-                        <div className="relative h-3 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.4)' }}>
-                          <motion.div
-                            className="h-full rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${goalProgress}%` }}
-                            transition={{ duration: 1.4, ease: "easeOut" }}
-                            style={{ background: 'rgba(58,0,80,0.4)' }}
-                          />
-                        </div>
-                        <p className="text-xs opacity-80" style={{ color: '#4A1060' }}>
-                          {goalProgress >= 100 ? "🎉 Objectif atteint !" : `${goalProgress}% complété · encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear !== 1 ? 's' : ''}`}
-                        </p>
-                      </div>
-                    </div>
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
