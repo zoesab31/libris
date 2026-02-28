@@ -19,6 +19,7 @@ import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import BestFriendCard from "../components/dashboard/BestFriendCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
+import MiniReadingCalendar from "../components/dashboard/MiniReadingCalendar";
 import FloatingParticles from "../components/effects/FloatingParticles";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 
