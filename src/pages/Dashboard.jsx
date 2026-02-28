@@ -110,6 +110,39 @@ export default function Dashboard() {
     return unsubscribe;
   }, [user]);
 
+  const MAX_GOAL_CHANGES = 3;
+
+  const { data: readingGoal } = useQuery({
+    queryKey: ['readingGoal', selectedYear, user?.email],
+    queryFn: async () => {
+      const goals = await base44.entities.ReadingGoal.filter({ created_by: user?.email, year: selectedYear });
+      return goals[0] || null;
+    },
+    enabled: !!user,
+  });
+
+  const changesRemaining = readingGoal
+    ? MAX_GOAL_CHANGES - (readingGoal.changes_count || 0)
+    : MAX_GOAL_CHANGES;
+
+  const handleSaveGoal = async () => {
+    const goal = parseInt(newGoalValue);
+    if (isNaN(goal) || goal < 1) { toast.error("Veuillez entrer un nombre valide"); return; }
+    if (readingGoal) {
+      if ((readingGoal.changes_count || 0) >= MAX_GOAL_CHANGES) {
+        toast.error(`Maximum ${MAX_GOAL_CHANGES} modifications par an`);
+        return;
+      }
+      await base44.entities.ReadingGoal.update(readingGoal.id, { goal_count: goal, changes_count: (readingGoal.changes_count || 0) + 1 });
+    } else {
+      await base44.entities.ReadingGoal.create({ year: selectedYear, goal_count: goal, changes_count: 0 });
+    }
+    queryClient.invalidateQueries({ queryKey: ['readingGoal'] });
+    toast.success("Objectif mis à jour !");
+    setShowGoalDialog(false);
+    setNewGoalValue("");
+  };
+
   const { data: activityFeed = [] } = useQuery({
     queryKey: ['activityFeed'],
     queryFn: async () => {
