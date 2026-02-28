@@ -887,8 +887,8 @@ export default function Dashboard() {
                           <span className="text-sm font-bold text-white opacity-80">Objectif {selectedYear}</span>
                         </div>
                         <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-4xl font-extrabold text-white">{booksReadThisYear}</span>
-                          <span className="text-xl font-semibold text-white opacity-60">/ {readingGoal.goal_count}</span>
+                          <span className="text-4xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
+                          <span className="text-xl font-semibold opacity-60" style={{ color: '#3A0050' }}>/ {readingGoal.goal_count}</span>
                         </div>
                         <div className="relative h-3 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.25)' }}>
                           <motion.div
