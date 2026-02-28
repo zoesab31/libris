@@ -559,7 +559,7 @@ export default function Dashboard() {
                   transition: { duration: 0.3 }
                 }}
                 whileTap={{ scale: 0.95 }}
-                   onClick={() => navigate(createPageUrl("MyLibrary"))}
+                   onClick={() => { setNewGoalValue(readingGoal?.goal_count?.toString() || ""); setShowGoalDialog(true); }}
                    style={{ 
                      background: 'linear-gradient(135deg, #FFE9F0 0%, #FFD6E4 100%)',
                      border: '1px solid rgba(255, 105, 180, 0.15)'
