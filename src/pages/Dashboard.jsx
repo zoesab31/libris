@@ -617,8 +617,8 @@ export default function Dashboard() {
               {/* Lectures en cours */}
               <motion.div variants={itemVariants}>
                 <div className="glass-card rounded-3xl shadow-sm overflow-hidden card-hover">
-                  <div className="p-6 md:p-8">
-                    <div className="flex items-center justify-between mb-6">
+                  <div className="p-4 md:p-6">
+                    <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg md:text-xl font-bold flex items-center gap-3" style={{ color: '#2D1F3F' }}>
                         <span className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#FF69B4,#FF1493)' }}>
                           <BookOpen className="w-4 h-4 text-white" />
@@ -912,7 +912,31 @@ export default function Dashboard() {
                   className="rounded-3xl shadow-sm card-hover overflow-hidden cursor-pointer"
                   style={{ background: 'linear-gradient(135deg,#F4A7CE 0%,#C990E8 100%)' }}
                   onClick={() => {setNewGoalValue(readingGoal?.goal_count?.toString() || "");setShowGoalDialog(true);}}>
-                    
+                    <div className="p-5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(30%, -30%)' }} />
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Target className="w-4 h-4 opacity-70" style={{ color: '#4A1060' }} />
+                          <span className="text-xs font-bold opacity-70" style={{ color: '#4A1060' }}>Objectif {selectedYear}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-3xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
+                          <span className="text-base font-semibold opacity-60" style={{ color: '#3A0050' }}>/ {readingGoal.goal_count}</span>
+                        </div>
+                        <div className="relative h-2.5 rounded-full overflow-hidden mb-2 progress-bar-shine" style={{ background: 'rgba(255,255,255,0.4)' }}>
+                          <motion.div
+                            className="h-full rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${goalProgress}%` }}
+                            transition={{ duration: 1.4, ease: "easeOut" }}
+                            style={{ background: 'rgba(58,0,80,0.4)' }}
+                          />
+                        </div>
+                        <p className="text-xs opacity-80" style={{ color: '#4A1060' }}>
+                          {goalProgress >= 100 ? "🎉 Objectif atteint !" : `${goalProgress}% · encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear !== 1 ? 's' : ''}`}
+                        </p>
+                      </div>
+                    </div>
 
 
 
