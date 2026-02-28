@@ -623,7 +623,7 @@ export default function Dashboard() {
         </div>
 
         {/* ─── CONTENU PRINCIPAL ─── */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8" style={{ position: 'relative', zIndex: 1 }}>
           <div className="grid lg:grid-cols-3 gap-5 md:gap-7">
 
             {/* ── Colonne gauche (2/3) ── */}
