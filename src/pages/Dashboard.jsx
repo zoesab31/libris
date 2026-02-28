@@ -1054,6 +1054,8 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
+        <AddBookDialog open={showAddBookDialog} onOpenChange={setShowAddBookDialog} user={user} />
+
         {selectedBookForDetails &&
         <BookDetailsDialog
           userBook={selectedBookForDetails}
