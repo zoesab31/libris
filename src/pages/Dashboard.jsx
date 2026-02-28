@@ -399,11 +399,11 @@ export default function Dashboard() {
           {/* Icônes flottantes */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             {[
-              { icon: <BookOpen className="w-7 h-7" />, color: '#FF69B4', x: 'right-16', y: 'top-12', delay: 0, dur: 4 },
-              { icon: <Heart className="w-5 h-5" />, color: '#FF1493', x: 'left-20', y: 'top-28', delay: 1, dur: 5 },
-              { icon: <Sparkles className="w-6 h-6" />, color: '#FFD700', x: 'right-1/3', y: 'top-8', delay: 2, dur: 3.5 },
-              { icon: <Star className="w-4 h-4" />, color: '#FFB6C1', x: 'left-1/3', y: 'bottom-12', delay: 0.5, dur: 4.5 },
-              { icon: <Music className="w-5 h-5" />, color: '#E91E63', x: 'right-8', y: 'bottom-16', delay: 1.5, dur: 6 },
+              { icon: <BookOpen className="w-7 h-7" />, color: '#F4A7CE', x: 'right-16', y: 'top-12', delay: 0, dur: 4 },
+              { icon: <Heart className="w-5 h-5" />, color: '#D4A0E8', x: 'left-20', y: 'top-28', delay: 1, dur: 5 },
+              { icon: <Sparkles className="w-6 h-6" />, color: '#F8D6EE', x: 'right-1/3', y: 'top-8', delay: 2, dur: 3.5 },
+              { icon: <Star className="w-4 h-4" />, color: '#EAC8E8', x: 'left-1/3', y: 'bottom-12', delay: 0.5, dur: 4.5 },
+              { icon: <Music className="w-5 h-5" />, color: '#C990E8', x: 'right-8', y: 'bottom-16', delay: 1.5, dur: 6 },
             ].map((el, i) => (
               <motion.div
                 key={i}
