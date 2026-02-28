@@ -392,9 +392,9 @@ export default function Dashboard() {
         {/* ─── HERO HEADER ─── */}
         <div className="relative overflow-hidden">
           {/* Blobs décoratifs */}
-          <div className="hero-bg-blob w-72 h-72 -top-20 -right-20" style={{ background: '#FFB6C1' }} />
-          <div className="hero-bg-blob w-96 h-96 top-10 -left-32" style={{ background: '#F8BBD0' }} />
-          <div className="hero-bg-blob w-48 h-48 bottom-0 right-1/3" style={{ background: '#E1BEE7' }} />
+          <div className="hero-bg-blob w-72 h-72 -top-20 -right-20" style={{ background: '#FADADD' }} />
+          <div className="hero-bg-blob w-96 h-96 top-10 -left-32" style={{ background: '#FDE8F0' }} />
+          <div className="hero-bg-blob w-48 h-48 bottom-0 right-1/3" style={{ background: '#EDD9F5' }} />
 
           {/* Icônes flottantes */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
