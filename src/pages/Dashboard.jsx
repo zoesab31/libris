@@ -164,7 +164,7 @@ export default function Dashboard() {
   });
 
   const currentlyReading = myBooks.filter(b => b.status === "En cours");
-  const toReadCount = myBooks.filter(b => b.status === "À lire").length;
+  const toReadCount = myBooks.filter(b => b.status === "À lire" || b.status === "En cours").length;
 
   const { data: allProgressHistory = [] } = useQuery({
     queryKey: ['readingProgress', user?.email],
@@ -1148,6 +1148,20 @@ export default function Dashboard() {
                               </div>
                             </div>
                           )}
+
+                          {/* Citation du livre de l'amie */}
+                          {(() => {
+                            const friendQuotes = allQuotes.filter(q => q.book_id === book.id && q.created_by === userBook.created_by);
+                            if (friendQuotes.length === 0) return null;
+                            const q = friendQuotes[Math.floor(Math.random() * friendQuotes.length)];
+                            return (
+                              <div className="mt-3 px-3 py-2 rounded-xl" style={{ backgroundColor: '#F3E5F5' }}>
+                                <p className="text-xs italic leading-relaxed" style={{ color: '#7B1FA2' }}>
+                                  "{q.quote_text}"
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </motion.div>
                       );
                     })}
