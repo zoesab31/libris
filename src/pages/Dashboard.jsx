@@ -1162,7 +1162,7 @@ export default function Dashboard() {
 
                           {/* Citation du livre de l'amie */}
                           {(() => {
-                            const friendQuotes = allQuotes.filter(q => q.book_id === book.id && q.created_by === userBook.created_by);
+                            const friendQuotes = friendsQuotes.filter(q => q.book_id === book.id && q.created_by === userBook.created_by);
                             if (friendQuotes.length === 0) return null;
                             const q = friendQuotes[Math.floor(Math.random() * friendQuotes.length)];
                             return (
