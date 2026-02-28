@@ -876,7 +876,7 @@ export default function Dashboard() {
                 <motion.div variants={itemVariants}>
                   <div
                     className="rounded-3xl shadow-sm card-hover overflow-hidden cursor-pointer"
-                    style={{ background: 'linear-gradient(135deg,#FF1493 0%,#9C27B0 100%)' }}
+                    style={{ background: 'linear-gradient(135deg,#F4A7CE 0%,#C990E8 100%)' }}
                     onClick={() => { setNewGoalValue(readingGoal?.goal_count?.toString() || ""); setShowGoalDialog(true); }}
                   >
                     <div className="p-6 relative overflow-hidden">
