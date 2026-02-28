@@ -654,7 +654,7 @@ export default function Dashboard() {
 
                              <div className="flex gap-3">
                                <div className="relative flex-shrink-0">
-                                 <div className="w-24 h-36 rounded-xl overflow-hidden shadow-md"
+                                 <div className="w-16 h-24 rounded-xl overflow-hidden shadow-md"
                                style={{ backgroundColor: '#FDE8F4' }}>
                                     {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
                                   </div>
