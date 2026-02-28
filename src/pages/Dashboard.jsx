@@ -300,9 +300,62 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative overflow-x-hidden" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
+      <div className="min-h-screen relative overflow-x-hidden" style={{ background: 'linear-gradient(160deg, #FEF0FA 0%, #F5EEFF 50%, #EEF4FF 100%)' }}>
         <OnboardingTrigger />
-        <FloatingParticles count={25} />
+
+        {/* Animated SVG background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', inset: 0 }}>
+            <defs>
+              <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FDE8F8" />
+                <stop offset="50%" stopColor="#EDE0FF" />
+                <stop offset="100%" stopColor="#D8EEFF" />
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#bg-grad)" />
+          </svg>
+          {/* Animated wavy lines */}
+          <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.35 }}>
+            <defs>
+              <style>{`
+                @keyframes wave1 { 0%,100%{ d: path("M0,200 C200,150 400,250 600,200 S1000,100 1200,180 1440,220 1440,220 L1440,0 L0,0 Z"); } 50%{ d: path("M0,220 C200,270 400,170 600,220 S1000,300 1200,240 1440,200 1440,200 L1440,0 L0,0 Z"); } }
+                @keyframes wave2 { 0%,100%{ d: path("M0,400 C300,360 500,440 800,390 S1100,430 1440,400 L1440,0 L0,0 Z"); } 50%{ d: path("M0,380 C300,420 500,360 800,410 S1100,370 1440,420 L1440,0 L0,0 Z"); } }
+                @keyframes wave3 { 0%,100%{ d: path("M0,600 C250,560 500,640 750,590 S1150,630 1440,600 L1440,0 L0,0 Z"); } 50%{ d: path("M0,620 C250,660 500,580 750,630 S1150,590 1440,620 L1440,0 L0,0 Z"); } }
+                @keyframes wave4 { 0%,100%{ d: path("M0,800 C350,760 600,840 900,790 S1200,830 1440,800 L1440,0 L0,0 Z"); } 50%{ d: path("M0,820 C350,860 600,780 900,830 S1200,790 1440,820 L1440,0 L0,0 Z"); } }
+                @keyframes lineFloat { 0%,100%{ transform: translateY(0px); } 50%{ transform: translateY(-18px); } }
+              `}</style>
+            </defs>
+            {/* Wave bands */}
+            <path style={{ animation: 'wave1 8s ease-in-out infinite' }} fill="#F4A7CE" opacity="0.18"
+              d="M0,200 C200,150 400,250 600,200 S1000,100 1200,180 1440,220 1440,220 L1440,0 L0,0 Z" />
+            <path style={{ animation: 'wave2 11s ease-in-out infinite' }} fill="#D4A0E8" opacity="0.14"
+              d="M0,400 C300,360 500,440 800,390 S1100,430 1440,400 L1440,0 L0,0 Z" />
+            <path style={{ animation: 'wave3 9s ease-in-out infinite' }} fill="#A0C4F8" opacity="0.10"
+              d="M0,600 C250,560 500,640 750,590 S1150,630 1440,600 L1440,0 L0,0 Z" />
+            <path style={{ animation: 'wave4 13s ease-in-out infinite' }} fill="#C8A0E8" opacity="0.08"
+              d="M0,800 C350,760 600,840 900,790 S1200,830 1440,800 L1440,0 L0,0 Z" />
+            {/* Diagonal floating lines */}
+            {[
+              { x1: 0, y1: 300, x2: 400, y2: 0, delay: '0s' },
+              { x1: 300, y1: 900, x2: 900, y2: 200, delay: '1.5s' },
+              { x1: 800, y1: 900, x2: 1440, y2: 400, delay: '3s' },
+              { x1: 1100, y1: 700, x2: 1440, y2: 200, delay: '0.8s' },
+              { x1: 0, y1: 700, x2: 600, y2: 300, delay: '2.2s' },
+            ].map((l, i) => (
+              <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                stroke="#E0A8D8" strokeWidth="0.8" opacity="0.25"
+                style={{ animation: `lineFloat ${7 + i * 1.3}s ease-in-out infinite`, animationDelay: l.delay }} />
+            ))}
+          </svg>
+          {/* Soft blobs */}
+          <div style={{ position:'absolute', top:'-80px', right:'-80px', width:'340px', height:'340px', borderRadius:'50%', background:'radial-gradient(circle, #F9C8EC 0%, transparent 70%)', opacity:0.5 }} />
+          <div style={{ position:'absolute', bottom:'10%', left:'-60px', width:'280px', height:'280px', borderRadius:'50%', background:'radial-gradient(circle, #C8B0F4 0%, transparent 70%)', opacity:0.35 }} />
+          <div style={{ position:'absolute', top:'40%', right:'5%', width:'200px', height:'200px', borderRadius:'50%', background:'radial-gradient(circle, #A8D0F8 0%, transparent 70%)', opacity:0.25 }} />
+        </div>
+
+        <FloatingParticles count={18} />
 
         <style>{`
           @keyframes shimmer {
