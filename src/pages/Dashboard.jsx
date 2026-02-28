@@ -443,7 +443,7 @@ export default function Dashboard() {
         `}</style>
 
         {/* ─── HERO HEADER ─── */}
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden" style={{ zIndex: 1 }}>
           {/* Blobs décoratifs */}
           <div className="hero-bg-blob w-72 h-72 -top-20 -right-20" style={{ background: '#FADADD' }} />
           <div className="hero-bg-blob w-96 h-96 top-10 -left-32" style={{ background: '#FDE8F0' }} />
