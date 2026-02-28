@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [selectedBookForDetails, setSelectedBookForDetails] = useState(null);
   const [editingBookId, setEditingBookId] = useState(null);
   const [editValues, setEditValues] = useState({ currentPage: '', totalPages: '' });
+  const [showGoalDialog, setShowGoalDialog] = useState(false);
+  const [newGoalValue, setNewGoalValue] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
