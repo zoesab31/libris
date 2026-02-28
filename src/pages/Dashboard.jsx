@@ -305,6 +305,34 @@ export default function Dashboard() {
         <FloatingParticles count={25} />
 
         <style>{`
+          @keyframes flow-line {
+            0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(200vw) skewX(-15deg); opacity: 0; }
+          }
+          @keyframes flow-line-v {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(200vh); opacity: 0; }
+          }
+          .bg-line {
+            position: absolute;
+            height: 1.5px;
+            width: 30vw;
+            border-radius: 999px;
+            animation: flow-line linear infinite;
+            pointer-events: none;
+          }
+          .bg-line-v {
+            position: absolute;
+            width: 1.5px;
+            height: 20vh;
+            border-radius: 999px;
+            animation: flow-line-v linear infinite;
+            pointer-events: none;
+          }
           @keyframes shimmer {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(200%); }
