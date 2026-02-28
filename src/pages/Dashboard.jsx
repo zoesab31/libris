@@ -899,7 +899,7 @@ export default function Dashboard() {
                             style={{ background: 'rgba(255,255,255,0.85)' }}
                           />
                         </div>
-                        <p className="text-xs text-white opacity-70">
+                        <p className="text-xs opacity-80" style={{ color: '#4A1060' }}>
                           {goalProgress >= 100 ? "🎉 Objectif atteint !" : `${goalProgress}% complété · encore ${readingGoal.goal_count - booksReadThisYear} livre${readingGoal.goal_count - booksReadThisYear !== 1 ? 's' : ''}`}
                         </p>
                       </div>
