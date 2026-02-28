@@ -20,7 +20,6 @@ import BestFriendCard from "../components/dashboard/BestFriendCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import FloatingParticles from "../components/effects/FloatingParticles";
-import AnimatedLines from "../components/effects/AnimatedLines";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
 
 const containerVariants = {
