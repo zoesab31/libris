@@ -289,11 +289,16 @@ export default function Dashboard() {
     return null;
   };
 
-  const booksReadThisYear = myBooks.filter(b => {
+  const booksReadThisYear = myBooks.reduce((count, b) => {
     const effectiveDate = getEffectiveDate(b);
-    if (!effectiveDate) return false;
-    return new Date(effectiveDate).getFullYear() === selectedYear;
-  }).length;
+    if (effectiveDate && new Date(effectiveDate).getFullYear() === selectedYear) count++;
+    if (b.rereads && b.rereads.length > 0) {
+      b.rereads.forEach(reread => {
+        if (reread.end_date && new Date(reread.end_date).getFullYear() === selectedYear) count++;
+      });
+    }
+    return count;
+  }, 0);
 
   const totalPagesThisYear = myBooks
     .filter(b => {
