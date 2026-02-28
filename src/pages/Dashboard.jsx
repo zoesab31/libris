@@ -427,7 +427,7 @@ export default function Dashboard() {
                 <h1 className="text-2xl md:text-4xl font-bold gradient-text-pink leading-tight">
                   Bonjour {displayName} ✨
                 </h1>
-                <p className="text-sm mt-1" style={{ color: '#C06090' }}>
+                <p className="text-sm mt-1" style={{ color: '#B090B0' }}>
                   Ton univers littéraire t'attend
                 </p>
               </motion.div>
