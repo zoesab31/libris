@@ -777,14 +777,7 @@ export default function Dashboard() {
               <ReadingStreakCard user={user} />
             </motion.div>
 
-            {/* Objectif de lecture */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <ReadingGoalManager year={selectedYear} compact={false} />
-            </motion.div>
+
 
             {/* Lectures en cours */}
             <motion.div
