@@ -98,7 +98,7 @@ export default function ReadingStreakCard({ user }) {
               onClick={() => updateStreakMutation.mutate()}
               disabled={updateStreakMutation.isPending}
               className="font-semibold rounded-xl px-4 py-2 text-xs md:text-sm flex-shrink-0"
-              style={{ 
+              style={{
                 background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                 color: 'white'
               }}
@@ -108,42 +108,6 @@ export default function ReadingStreakCard({ user }) {
           )}
         </div>
       </CardContent>
-    </Card>);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    </Card>);
-
+    </Card>
+  );
 }
