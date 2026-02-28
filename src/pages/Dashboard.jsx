@@ -13,6 +13,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion } from "framer-motion";
 import ReadingGoalManager from "../components/dashboard/ReadingGoalManager";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import BestFriendCard from "../components/dashboard/BestFriendCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
