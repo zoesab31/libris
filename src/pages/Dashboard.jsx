@@ -495,21 +495,19 @@ export default function Dashboard() {
                   key={i}
                   variants={scaleVariants}
                   className="stat-card rounded-3xl p-4 md:p-5 cursor-pointer relative overflow-hidden"
-                  style={{ background: s.bg }}
+                  style={{ background: s.bg, border: `1px solid ${s.iconBg}` }}
                   onClick={s.onClick}
                   whileTap={{ scale: 0.96 }}
                 >
-                  {/* Shine overlay */}
-                  <div className="absolute inset-0 opacity-20" style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.5) 0%, transparent 60%)' }} />
                   <div className="relative z-10">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: s.iconBg }}>
                       {s.icon}
                     </div>
                     <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-2xl md:text-3xl font-extrabold text-white">{s.value}</span>
-                      {s.suffix && <span className="text-base font-semibold text-white opacity-75">{s.suffix}</span>}
+                      <span className="text-2xl md:text-3xl font-extrabold" style={{ color: s.valueColor }}>{s.value}</span>
+                      {s.suffix && <span className="text-base font-semibold opacity-60" style={{ color: s.valueColor }}>{s.suffix}</span>}
                     </div>
-                    <p className="text-xs md:text-sm font-medium text-white opacity-85">{s.label}</p>
+                    <p className="text-xs md:text-sm font-medium" style={{ color: s.labelColor }}>{s.label}</p>
                   </div>
                   {s.sparkle && (
                     <motion.div
@@ -517,7 +515,7 @@ export default function Dashboard() {
                       animate={{ rotate: [0, 20, -10, 15, 0], scale: [1, 1.3, 0.9, 1.2, 1] }}
                       transition={{ duration: 3, repeat: Infinity, delay: i * 0.4 }}
                     >
-                      <Sparkles className="w-4 h-4 text-white opacity-60" />
+                      <Sparkles className="w-4 h-4 opacity-40" style={{ color: s.valueColor }} />
                     </motion.div>
                   )}
                 </motion.div>
