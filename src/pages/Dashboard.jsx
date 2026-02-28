@@ -543,8 +543,8 @@ export default function Dashboard() {
                 disabled={hasReadToday}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm transition-all"
                 style={{
-                  background: hasReadToday ? 'rgba(255,255,255,0.6)' : 'linear-gradient(135deg, #FF69B4, #FF1493)',
-                  color: hasReadToday ? '#C0C0C0' : 'white',
+                  background: hasReadToday ? 'rgba(255,255,255,0.7)' : '#F4A7CE',
+                  color: hasReadToday ? '#C0C0C0' : '#7A1050',
                   border: hasReadToday ? '1px solid rgba(200,200,200,0.4)' : 'none'
                 }}
                 whileTap={{ scale: 0.95 }}
