@@ -883,8 +883,8 @@ export default function Dashboard() {
                       <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(30%, -30%)' }} />
                       <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-4">
-                          <Target className="w-5 h-5 text-white opacity-80" />
-                          <span className="text-sm font-bold text-white opacity-80">Objectif {selectedYear}</span>
+                          <Target className="w-5 h-5 opacity-70" style={{ color: '#4A1060' }} />
+                          <span className="text-sm font-bold opacity-70" style={{ color: '#4A1060' }}>Objectif {selectedYear}</span>
                         </div>
                         <div className="flex items-baseline gap-2 mb-3">
                           <span className="text-4xl font-extrabold" style={{ color: '#3A0050' }}>{booksReadThisYear}</span>
