@@ -90,6 +90,17 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  const { data: friendsQuotes = [] } = useQuery({
+    queryKey: ['friendsQuotes'],
+    queryFn: async () => {
+      const friendsEmails = myFriends.map(f => f.friend_email);
+      if (friendsEmails.length === 0) return [];
+      const results = await Promise.all(friendsEmails.map(email => base44.entities.Quote.filter({ created_by: email })));
+      return results.flat();
+    },
+    enabled: myFriends.length > 0,
+  });
+
   const { data: readingDayToday = [] } = useQuery({
     queryKey: ['readingDayToday'],
     queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email, date: format(new Date(), 'yyyy-MM-dd') }),
