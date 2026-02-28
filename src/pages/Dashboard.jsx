@@ -945,6 +945,11 @@ export default function Dashboard() {
                 <BestFriendCard user={user} />
               </motion.div>
 
+              {/* Calendrier de lecture */}
+              <motion.div variants={itemVariants}>
+                <MiniReadingCalendar user={user} />
+              </motion.div>
+
               {/* Objectif de lecture */}
               {readingGoal && (
                 <motion.div variants={itemVariants}>
