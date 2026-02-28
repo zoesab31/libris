@@ -22,6 +22,7 @@ import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import MiniReadingCalendar from "../components/dashboard/MiniReadingCalendar";
 import FloatingParticles from "../components/effects/FloatingParticles";
 import OnboardingTrigger from "../components/onboarding/OnboardingTrigger";
+import AddBookDialog from "../components/library/AddBookDialog";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -49,6 +50,7 @@ export default function Dashboard() {
   const [editValues, setEditValues] = useState({ currentPage: '', totalPages: '' });
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [newGoalValue, setNewGoalValue] = useState("");
+  const [showAddBookDialog, setShowAddBookDialog] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
