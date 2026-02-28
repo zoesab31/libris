@@ -1194,42 +1194,7 @@ export default function Dashboard() {
               <BestFriendCard user={user} />
             </motion.div>
 
-            {/* Citation du jour */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-            <Card className="border-0 rounded-3xl overflow-hidden dash-card"
-                  style={{ 
-                    backgroundColor: 'white',
-                    boxShadow: '0 4px 16px rgba(255, 215, 0, 0.08)'
-                  }}>
-              <CardContent className="p-6 md:p-8 text-center">
-                <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center"
-                     style={{ backgroundColor: '#FFF9E6' }}>
-                  <Quote className="w-6 h-6" style={{ color: '#FFD700' }} />
-                </div>
-                <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3748' }}>
-                  Citation du jour
-                </h2>
-                {randomQuote && quoteBook ? (
-                  <>
-                    <p className="text-sm md:text-base italic mb-3 leading-relaxed" style={{ color: '#4B5563' }}>
-                      "{randomQuote.quote_text}"
-                    </p>
-                    <p className="text-xs font-bold" style={{ color: '#FFD700' }}>
-                      — {quoteBook.title}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-base italic" style={{ color: '#9CA3AF' }}>
-                    "Lire, c'est vivre mille vies avant de mourir."
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-            </motion.div>
+
 
             {/* Playlist musicale */}
             {allMusicWithBooks.length > 0 && (
