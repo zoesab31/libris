@@ -1283,6 +1283,52 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Goal Dialog */}
+      <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle style={{ color: '#FF1493' }}>
+              🎯 Objectif de lecture {selectedYear}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {readingGoal && changesRemaining > 0 && (
+              <p className="text-sm px-3 py-2 rounded-xl" style={{ backgroundColor: '#FFE9F0', color: '#FF1493' }}>
+                ⚠️ {changesRemaining} modification{changesRemaining !== 1 ? 's' : ''} restante{changesRemaining !== 1 ? 's' : ''} cette année
+              </p>
+            )}
+            {readingGoal && changesRemaining <= 0 && (
+              <p className="text-sm px-3 py-2 rounded-xl" style={{ backgroundColor: '#FFE9F0', color: '#FF1493' }}>
+                🔒 Maximum de modifications atteint pour {selectedYear}
+              </p>
+            )}
+            <Input
+              type="number"
+              min="1"
+              value={newGoalValue}
+              onChange={(e) => setNewGoalValue(e.target.value)}
+              placeholder="Nombre de livres à lire"
+              disabled={readingGoal && changesRemaining <= 0}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveGoal()}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveGoal}
+                disabled={readingGoal && changesRemaining <= 0}
+                className="flex-1 text-white font-bold rounded-xl"
+                style={{ background: '#FF1493' }}
+              >
+                Enregistrer
+              </Button>
+              <Button variant="outline" onClick={() => setShowGoalDialog(false)} className="rounded-xl">
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog */}
       {selectedBookForDetails && (
         <BookDetailsDialog
