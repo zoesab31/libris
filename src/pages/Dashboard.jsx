@@ -584,17 +584,16 @@ export default function Dashboard() {
                 {hasReadToday ? "Lu aujourd'hui ✓" : "J'ai lu aujourd'hui"}
               </motion.button>
 
-              <Link to={createPageUrl("MyLibrary")}>
-                <motion.button
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm"
-                  style={{ background: '#D4A0E8', color: '#4A1060' }}
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ scale: 1.04 }}>
+              <motion.button
+                onClick={() => setShowAddBookDialog(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm"
+                style={{ background: '#D4A0E8', color: '#4A1060' }}
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.04 }}>
 
-                  <Plus className="w-4 h-4" />
-                  Ajouter un livre
-                </motion.button>
-              </Link>
+                <Plus className="w-4 h-4" />
+                Ajouter un livre
+              </motion.button>
             </motion.div>
           </div>
         </div>
