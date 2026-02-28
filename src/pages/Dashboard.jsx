@@ -860,7 +860,7 @@ export default function Dashboard() {
               <motion.div variants={itemVariants}>
                 <div className="rounded-3xl overflow-hidden shadow-sm card-hover"
                 style={{ background: 'linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%)', border: '1px solid rgba(255,215,0,0.25)' }}>
-                  <div className="p-6 md:p-8 text-center">
+                  <div className="bg-[#fffee5] p-6 text-center md:p-8">
                     <motion.div
                       animate={{ rotate: [0, 10, -8, 5, 0], scale: [1, 1.1, 0.95, 1.05, 1] }}
                       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
