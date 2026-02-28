@@ -580,13 +580,20 @@ export default function Dashboard() {
                     <Sparkles className="w-4 h-4" style={{ color: '#FFD700' }} />
                   </motion.div>
                 </div>
-                <p className="text-3xl md:text-4xl font-bold mb-1" style={{ color: '#FF1493' }}>
-                  {booksReadThisYear}
-                </p>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <p className="text-3xl md:text-4xl font-bold" style={{ color: '#FF1493' }}>
+                    {booksReadThisYear}
+                  </p>
+                  {readingGoal && (
+                    <p className="text-base font-semibold" style={{ color: '#FF69B4' }}>
+                      /{readingGoal.goal_count}
+                    </p>
+                  )}
+                </div>
                 <p className="text-sm font-medium" style={{ color: '#2c2c2cff' }}>
                   Livres lus en {selectedYear}
                 </p>
-              </motion.div>
+                </motion.div>
 
               <motion.div 
                 className="stat-bubble p-5 md:p-6 rounded-3xl cursor-pointer gradient-animate"
