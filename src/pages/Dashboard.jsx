@@ -421,7 +421,7 @@ export default function Dashboard() {
             {/* Top bar */}
             <div className="flex items-center justify-between mb-8">
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-                <p className="text-sm font-medium mb-0.5" style={{ color: '#FF69B4' }}>
+                <p className="text-sm font-medium mb-0.5" style={{ color: '#D4A0C8' }}>
                   {format(new Date(), "EEEE d MMMM", { locale: fr })}
                 </p>
                 <h1 className="text-2xl md:text-4xl font-bold gradient-text-pink leading-tight">
