@@ -691,7 +691,7 @@ export default function Dashboard() {
                                           initial={{ width: 0 }}
                                           animate={{ width: `${progress}%` }}
                                           transition={{ duration: 1.2, ease: "easeOut", delay: idx * 0.1 }}
-                                          style={{ background: 'linear-gradient(90deg, #FF1493, #FF69B4)' }}
+                                          style={{ background: 'linear-gradient(90deg, #E91E8C, #F472B6)' }}
                                         />
                                       </div>
                                     </>
