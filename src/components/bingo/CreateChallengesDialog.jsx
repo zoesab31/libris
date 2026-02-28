@@ -16,7 +16,7 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
   useEffect(() => {
     if (existingChallenges.length > 0) {
       const sorted = [...existingChallenges].sort((a, b) => a.position - b.position);
-      setChallenges(sorted.map(c => c.title));
+      setChallenges(sorted.map((c) => c.title));
       setMode('custom'); // If existing challenges, user is editing, so default to custom tab
     } else {
       // Ensure we have exactly 25 challenges
@@ -30,17 +30,17 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
     mutationFn: async () => {
       // If existingChallenges are present, delete them first to update them.
       if (existingChallenges.length > 0) {
-        await Promise.all(existingChallenges.map(c => base44.entities.BingoChallenge.delete(c.id)));
+        await Promise.all(existingChallenges.map((c) => base44.entities.BingoChallenge.delete(c.id)));
       }
-      
-      const createPromises = challenges.map((title, index) => 
-        base44.entities.BingoChallenge.create({
-          title: title || `Défi ${index + 1}`,
-          position: index,
-          year: selectedYear || new Date().getFullYear(),
-          grid_size: 25, // Always 25
-          is_completed: false,
-        })
+
+      const createPromises = challenges.map((title, index) =>
+      base44.entities.BingoChallenge.create({
+        title: title || `Défi ${index + 1}`,
+        position: index,
+        year: selectedYear || new Date().getFullYear(),
+        grid_size: 25, // Always 25
+        is_completed: false
+      })
       );
       await Promise.all(createPromises);
     },
@@ -81,22 +81,22 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
                 Voici les défis du modèle par défaut. Cliquez sur "Personnalisé" pour les modifier ou créer les vôtres.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {defaultChallenges.map((challenge, index) => (
-                  <div key={index}>
+                {defaultChallenges.map((challenge, index) =>
+                <div key={index}>
                     <Input
-                      value={challenge}
-                      readOnly
-                      placeholder={`Défi ${index + 1}`}
-                      className={index === 12 ? "border-yellow-400 bg-yellow-50" : ""}
-                    />
+                    value={challenge}
+                    readOnly
+                    placeholder={`Défi ${index + 1}`}
+                    className={index === 12 ? "border-yellow-400 bg-yellow-50" : ""} />
+
                   </div>
-                ))}
+                )}
               </div>
               <Button
                 onClick={() => setMode("custom")} // Switch to custom mode to edit
                 className="w-full font-medium py-6 text-lg mt-4"
-                style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
-              >
+                style={{ backgroundColor: '#000000', color: '#FFFFFF' }}>
+
                 <Wand2 className="w-5 h-5 mr-2" />
                 Commencer la personnalisation
               </Button>
@@ -107,50 +107,50 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
           <TabsContent value="custom">
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                {challenges.map((challenge, index) => (
-                  <div key={index}>
+                {challenges.map((challenge, index) =>
+                <div key={index}>
                     <Input
-                      value={challenge}
-                      onChange={(e) => {
-                        const newChallenges = [...challenges];
-                        newChallenges[index] = e.target.value;
-                        setChallenges(newChallenges);
-                      }}
-                      placeholder={`Défi ${index + 1}`}
-                      className={`text-sm md:text-base ${index === 12 ? "border-pink-400 bg-pink-50 font-bold text-center" : ""}`}
-                      disabled={index === 12}
-                    />
-                    {index === 12 && (
-                      <p className="text-xs mt-1 text-center" style={{ color: 'var(--warm-pink)' }}>
+                    value={challenge}
+                    onChange={(e) => {
+                      const newChallenges = [...challenges];
+                      newChallenges[index] = e.target.value;
+                      setChallenges(newChallenges);
+                    }}
+                    placeholder={`Défi ${index + 1}`}
+                    className={`text-sm md:text-base ${index === 12 ? "border-pink-400 bg-pink-50 font-bold text-center" : ""}`}
+                    disabled={index === 12} />
+
+                    {index === 12 &&
+                  <p className="text-xs mt-1 text-center" style={{ color: 'var(--warm-pink)' }}>
                         Case centrale (année)
                       </p>
-                    )}
+                  }
                   </div>
-                ))}
+                )}
               </div>
 
               <Button
                 onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending || challenges.filter(c => c.trim()).length < 10}
-                className="w-full text-white font-medium py-4 md:py-6 text-base md:text-lg"
-                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}
-              >
-                {createMutation.isPending ? (
-                  <>
+                disabled={createMutation.isPending || challenges.filter((c) => c.trim()).length < 10} className="bg-primary text-slate-950 px-4 py-4 text-base font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 h-9 w-full md:py-6 md:text-lg"
+
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-brown))' }}>
+
+                {createMutation.isPending ?
+                <>
                     <Loader2 className="w-4 md:w-5 h-4 md:h-5 mr-2 animate-spin" />
                     <span className="text-sm md:text-base">Création...</span>
-                  </>
-                ) : (
-                  <>
+                  </> :
+
+                <>
                     <Wand2 className="w-4 md:w-5 h-4 md:h-5 mr-2" />
                     <span className="text-sm md:text-base">{existingChallenges.length > 0 ? "Mettre à jour" : "Créer"}</span>
                   </>
-                )}
+                }
               </Button>
             </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
