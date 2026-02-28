@@ -625,16 +625,16 @@ export default function Dashboard() {
                             >
                               <div className="flex gap-4">
                                 <div className="relative flex-shrink-0">
-                                  <div className="w-20 h-28 md:w-22 md:h-32 rounded-2xl overflow-hidden shadow-md"
-                                    style={{ backgroundColor: '#FFE9F0' }}>
-                                    {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
-                                  </div>
-                                  {progress > 0 && (
-                                    <div className="absolute -bottom-1.5 -right-1.5 w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white shadow-lg"
-                                      style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)', fontSize: '10px' }}>
-                                      {progress}%
-                                    </div>
-                                  )}
+                                  <div className="w-28 h-40 md:w-32 md:h-48 rounded-2xl overflow-hidden shadow-md"
+                                      style={{ backgroundColor: '#FDE8F4' }}>
+                                     {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
+                                   </div>
+                                   {progress > 0 && (
+                                     <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center font-extrabold shadow-md"
+                                       style={{ background: '#FBB9DC', color: '#C0176A', fontSize: '10px' }}>
+                                       {progress}%
+                                     </div>
+                                   )}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
