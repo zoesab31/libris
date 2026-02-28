@@ -556,8 +556,8 @@ export default function Dashboard() {
 
               <Link to={createPageUrl("MyLibrary")}>
                 <motion.button
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm text-white shadow-sm"
-                  style={{ background: 'linear-gradient(135deg, #9C27B0, #E91E63)' }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm"
+                  style={{ background: '#D4A0E8', color: '#4A1060' }}
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.04 }}
                 >
