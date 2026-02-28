@@ -894,14 +894,14 @@ export default function Dashboard() {
               animate="visible"
               className="space-y-5 md:space-y-6">
 
-              {/* Meilleure amie */}
-              <motion.div variants={itemVariants}>
-                <BestFriendCard user={user} />
-              </motion.div>
-
               {/* Calendrier de lecture */}
               <motion.div variants={itemVariants}>
                 <MiniReadingCalendar user={user} />
+              </motion.div>
+
+              {/* Meilleure amie */}
+              <motion.div variants={itemVariants}>
+                <BestFriendCard user={user} />
               </motion.div>
 
               {/* Objectif de lecture */}
