@@ -300,7 +300,7 @@ export default function Dashboard() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen relative overflow-x-hidden" style={{ background: 'linear-gradient(160deg, #FFF0F8 0%, #FDE7F1 40%, #F8E1F4 70%, #F3E4FF 100%)' }}>
+      <div className="min-h-screen relative overflow-x-hidden" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
         <OnboardingTrigger />
         <FloatingParticles count={25} />
 
