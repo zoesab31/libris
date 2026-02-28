@@ -950,7 +950,7 @@ export default function Dashboard() {
                         ))}
                       </div>
                       <button className="w-full mt-4 py-2.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2"
-                        style={{ background: 'linear-gradient(135deg,#E91E63,#FF69B4)' }}>
+                        style={{ background: '#F4A7CE', color: '#7A1050' }}>
                         Voir toute la playlist <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
