@@ -129,17 +129,31 @@ export default function ReadingTracker() {
     return null;
   };
 
-  const getCoverForDay = (dateStr) => {
-    if (bookOverrides[dateStr]) {
-      const book = allBooks.find(b => b.id === bookOverrides[dateStr]);
-      if (book?.cover_url) return book.cover_url;
+  // Returns array of book_ids for a day (supports multi-book)
+  const getBookIdsForDay = (dateStr) => {
+    const override = bookOverrides[dateStr];
+    if (override) {
+      // Support both old format (string) and new format (array)
+      return Array.isArray(override) ? override : [override];
     }
-    return autoDetectBookForDay(dateStr)?.cover_url || null;
+    const auto = autoDetectBookForDay(dateStr);
+    return auto ? [auto.id] : [];
+  };
+
+  const getBooksForDay = (dateStr) => {
+    return getBookIdsForDay(dateStr)
+      .map(id => allBooks.find(b => b.id === id))
+      .filter(Boolean);
+  };
+
+  const getCoverForDay = (dateStr) => {
+    const books = getBooksForDay(dateStr);
+    return books[0]?.cover_url || null;
   };
 
   const getBookForDay = (dateStr) => {
-    if (bookOverrides[dateStr]) return allBooks.find(b => b.id === bookOverrides[dateStr]) || null;
-    return autoDetectBookForDay(dateStr);
+    const books = getBooksForDay(dateStr);
+    return books[0] || null;
   };
 
   const markDayMutation = useMutation({
