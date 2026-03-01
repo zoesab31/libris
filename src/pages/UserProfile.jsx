@@ -95,13 +95,7 @@ export default function UserProfile() {
   const { data: userCharacters = [] } = useQuery({
     queryKey: ['userCharacters', userEmail],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: userEmail }, 'rank'),
-    enabled: !!userEmail && (activeTab === 'characters' || activeTab === 'friend')
-  });
-
-  const { data: userCouples = [] } = useQuery({
-    queryKey: ['userCouples', userEmail],
-    queryFn: () => base44.entities.FavoriteCouple.filter({ created_by: userEmail }, 'rank'),
-    enabled: !!userEmail && activeTab === 'friend'
+    enabled: !!userEmail && activeTab === 'characters'
   });
 
   const { data: userBooksWithMusic = [] } = useQuery({
@@ -1616,68 +1610,6 @@ export default function UserProfile() {
                 bookIds={profileUser.favorite_books_2024 || []}
                 allBooks={allBooks}
                 isOwnProfile={false} />
-
-                {userCharacters.length > 0 && (
-                  <div>
-                    <h3 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>💕 Personnages Préférés</h3>
-                    <div className="space-y-4">
-                      {userCharacters.map((char) => {
-                        const book = allBooks.find((b) => b.id === char.book_id);
-                        return (
-                          <Card key={char.id} className="p-6 bg-white">
-                            <CardContent>
-                              <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
-                                style={{ backgroundColor: accentColor }}>
-                                  #{char.rank}
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                                    {char.character_name}
-                                  </h3>
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {book?.title || 'Livre inconnu'}
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {userCouples.length > 0 && (
-                  <div>
-                    <h3 className="text-2xl font-bold mb-6" style={{ color: 'var(--dark-text)' }}>💑 Couples Préférés</h3>
-                    <div className="space-y-4">
-                      {userCouples.map((couple) => {
-                        const book = allBooks.find((b) => b.id === couple.book_id);
-                        return (
-                          <Card key={couple.id} className="p-6 bg-white">
-                            <CardContent>
-                              <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
-                                style={{ backgroundColor: accentColor }}>
-                                  #{couple.rank}
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-xl font-bold" style={{ color: 'var(--dark-text)' }}>
-                                    {couple.couple_name}
-                                  </h3>
-                                  <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                                    {book?.title || 'Livre inconnu'}
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             }
           </TabsContent>
