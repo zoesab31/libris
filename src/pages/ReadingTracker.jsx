@@ -379,6 +379,7 @@ export default function ReadingTracker() {
               const todayDay = isToday(day);
               const cover = hasRead ? getCoverForDay(dateStr) : null;
               const isFuture = day > new Date();
+              const isSelected = editMode && selectedDays.has(dateStr);
 
               return (
                 <motion.button
@@ -391,37 +392,39 @@ export default function ReadingTracker() {
                   className="relative flex flex-col items-center justify-start rounded-xl overflow-hidden transition-all"
                   style={{
                     aspectRatio: '1 / 1.35',
-                    background: hasRead
+                    background: isSelected
+                      ? '#7C3AED'
+                      : hasRead
                       ? 'linear-gradient(135deg, #FF1493, #FF69B4)'
                       : todayDay ? '#FFF0F8' : isFuture ? '#FAFAFA' : '#F8F5FF',
-                    boxShadow: todayDay && !hasRead ? 'inset 0 0 0 2px #FF69B4' : hasRead ? '0 2px 8px rgba(255,20,147,0.25)' : 'none',
+                    boxShadow: isSelected ? '0 0 0 2.5px #7C3AED, 0 2px 8px rgba(124,58,237,0.4)'
+                      : todayDay && !hasRead ? 'inset 0 0 0 2px #FF69B4'
+                      : hasRead ? '0 2px 8px rgba(255,20,147,0.25)' : 'none',
                     cursor: isFuture ? 'default' : 'pointer',
                     opacity: isFuture ? 0.3 : 1,
                   }}
                 >
                   <span className="text-[10px] font-bold pt-1 z-10 relative leading-none"
-                    style={{ color: hasRead ? 'white' : todayDay ? '#FF1493' : '#6B5B7B' }}>
+                    style={{ color: isSelected || hasRead ? 'white' : todayDay ? '#FF1493' : '#6B5B7B' }}>
                     {format(day, 'd')}
                   </span>
 
-                  {cover && (
+                  {cover && !isSelected && (
                     <div className="absolute inset-0 top-4">
                       <img src={cover} alt="" className="w-full h-full object-cover" style={{ opacity: 0.82 }} />
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(255,20,147,0.2) 0%, transparent 50%)' }} />
                     </div>
                   )}
 
-                  {hasRead && !cover && (
+                  {hasRead && !cover && !isSelected && (
                     <div className="absolute inset-0 top-4 flex items-center justify-center">
                       <span className="text-xs">📖</span>
                     </div>
                   )}
 
-                  {/* Edit mode pencil indicator */}
-                  {editMode && hasRead && (
-                    <div className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full flex items-center justify-center z-20"
-                      style={{ background: 'rgba(255,255,255,0.9)' }}>
-                      <Pencil style={{ width: 6, height: 6, color: '#FF1493' }} />
+                  {isSelected && (
+                    <div className="absolute inset-0 top-4 flex items-center justify-center">
+                      <Check style={{ width: 14, height: 14, color: 'white' }} />
                     </div>
                   )}
                 </motion.button>
