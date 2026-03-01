@@ -109,6 +109,12 @@ export default function FourBooksSection({
           </Button>
         </div>
       )}
+
+      {books.length === 0 && !isOwnProfile && (
+        <div className="text-center py-6">
+          <p className="text-sm text-gray-400 italic">Pas encore renseigné 📚</p>
+        </div>
+      )}
     </motion.div>
   );
 }
