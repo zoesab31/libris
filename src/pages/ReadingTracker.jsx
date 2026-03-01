@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, BookOpen, Flame, Calendar as CalendarIcon, RotateCcw } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, getDay, isToday, getYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { Share2, Info, Sparkles, RotateCcw } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+const WEEK_DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 export default function ReadingTracker() {
   const [user, setUser] = useState(null);
@@ -31,32 +26,85 @@ export default function ReadingTracker() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Fetch reading progress entries to determine reading days
   const { data: readingProgress = [] } = useQuery({
     queryKey: ['readingProgress', user?.email],
     queryFn: () => base44.entities.ReadingDay.filter({ created_by: user?.email }),
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 
-  // Get unique reading days
-  const readingDays = React.useMemo(() => {
+  const { data: userBooks = [] } = useQuery({
+    queryKey: ['userBooksTracker', user?.email],
+    queryFn: () => base44.entities.UserBook.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: allBooks = [] } = useQuery({
+    queryKey: ['allBooksTracker'],
+    queryFn: () => base44.entities.Book.list(),
+  });
+
+  // Map date -> cover_url (from books "En cours" or "Lu" around that date)
+  const dateToCover = useMemo(() => {
+    const map = {};
+    // Build a map of book covers by user_book_id
+    userBooks.forEach(ub => {
+      const book = allBooks.find(b => b.id === ub.book_id);
+      if (!book?.cover_url) return;
+      // Use end_date for "Lu", or updated_date for "En cours"
+      const relevantDate = ub.end_date || ub.updated_date;
+      if (relevantDate) {
+        const d = relevantDate.slice(0, 10);
+        if (!map[d]) map[d] = book.cover_url;
+      }
+    });
+    return map;
+  }, [userBooks, allBooks]);
+
+  const readingDays = useMemo(() => {
     const days = new Set();
     readingProgress.forEach(entry => {
-      if (entry.date) {
-        const date = new Date(entry.date);
-        days.add(format(date, 'yyyy-MM-dd'));
-      }
+      if (entry.date) days.add(entry.date.slice(0, 10));
     });
     return days;
   }, [readingProgress]);
 
-  // Toggle mark/unmark a day
+  // Calculate best streak (consecutive days)
+  const bestStreak = useMemo(() => {
+    if (readingDays.size === 0) return 0;
+    const sorted = [...readingDays].sort();
+    let max = 1, cur = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = new Date(sorted[i - 1]);
+      const curr = new Date(sorted[i]);
+      const diff = (curr - prev) / (1000 * 60 * 60 * 24);
+      if (diff === 1) { cur++; max = Math.max(max, cur); }
+      else cur = 1;
+    }
+    return max;
+  }, [readingDays]);
+
+  // Current streak (from today backwards)
+  const currentStreak = useMemo(() => {
+    let streak = 0;
+    let d = new Date();
+    while (true) {
+      const s = format(d, 'yyyy-MM-dd');
+      if (readingDays.has(s)) { streak++; d = new Date(d); d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    return streak;
+  }, [readingDays]);
+
+  const totalReadingDaysYear = useMemo(() => {
+    const year = getYear(new Date());
+    return [...readingDays].filter(d => d.startsWith(String(year))).length;
+  }, [readingDays]);
+
+  // Toggle day
   const markDayMutation = useMutation({
     mutationFn: async (date) => {
-      const d = new Date(date);
-      d.setHours(12, 0, 0, 0);
-      const dateStr = format(d, 'yyyy-MM-dd');
+      const dateStr = format(date, 'yyyy-MM-dd');
       await base44.entities.ReadingDay.create({ date: dateStr });
     },
     onSuccess: () => {
@@ -68,9 +116,8 @@ export default function ReadingTracker() {
 
   const unmarkDayMutation = useMutation({
     mutationFn: async (date) => {
-      const ids = readingProgress
-        .filter(e => e.date === format(date, 'yyyy-MM-dd'))
-        .map(e => e.id);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const ids = readingProgress.filter(e => e.date?.slice(0, 10) === dateStr).map(e => e.id);
       await Promise.all(ids.map(id => base44.entities.ReadingDay.delete(id)));
     },
     onSuccess: () => {
@@ -80,7 +127,8 @@ export default function ReadingTracker() {
   });
 
   const toggleDay = (date) => {
-    if (isReadingDay(date)) {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    if (readingDays.has(dateStr)) {
       unmarkDayMutation.mutate(date);
       toast.success('Jour retiré');
     } else {
@@ -89,88 +137,69 @@ export default function ReadingTracker() {
     }
   };
 
-  // Mutation to reset all reading progress
   const resetProgressMutation = useMutation({
     mutationFn: async () => {
-      const entriesToDelete = readingProgress.map(entry => entry.id);
-      await Promise.all(
-        entriesToDelete.map(id => base44.entities.ReadingDay.delete(id))
-      );
+      await Promise.all(readingProgress.map(e => base44.entities.ReadingDay.delete(e.id)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingProgress'] });
-      toast.success('Tous les jours de lecture ont été réinitialisés');
+      toast.success('Réinitialisé');
       setIsResetDialogOpen(false);
-    },
-    onError: () => {
-      toast.error('Erreur lors de la réinitialisation');
     }
   });
 
-  // Calculate calendar days
+  // Calendar grid: start on Sunday
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { locale: fr });
-  const calendarEnd = endOfWeek(monthEnd, { locale: fr });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const startOffset = getDay(monthStart); // 0 = Sunday
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  const isToday = (date) => isSameDay(date, new Date());
-  const isReadingDay = (date) => readingDays.has(format(date, 'yyyy-MM-dd'));
+  const selectedMonthIdx = currentMonth.getMonth();
 
-  // Calculate stats
-  const totalReadingDays = readingDays.size;
-  const thisMonthReadingDays = [...readingDays].filter(day => {
-    const date = new Date(day);
-    return isSameMonth(date, currentMonth);
-  }).length;
-
-  const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  // Get a cover for a reading day - pick any book that was being read around that time
+  const getCoverForDay = (dateStr) => {
+    // First try exact match
+    if (dateToCover[dateStr]) return dateToCover[dateStr];
+    // Fallback: find a book "En cours" with start_date <= dateStr
+    const reading = userBooks
+      .filter(ub => ub.start_date && ub.start_date.slice(0, 10) <= dateStr && (ub.status === 'En cours' || (ub.end_date && ub.end_date.slice(0, 10) >= dateStr)))
+      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
+    if (reading.length > 0) {
+      const book = allBooks.find(b => b.id === reading[0].book_id);
+      return book?.cover_url || null;
+    }
+    return null;
+  };
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: 'linear-gradient(to bottom, #FFF5F8 0%, #FFE9F0 50%, #FFDCE5 100%)' }}>
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                 style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
-              <CalendarIcon className="w-8 h-8 text-white" />
-            </div>
-              <div>
-                <h1 className="text-3xl md:text-5xl font-bold" style={{ color: '#FF1493' }}>
-                  Reading Tracker
-                </h1>
-                <p className="text-base md:text-xl" style={{ color: '#2c2c2c' }}>
-                  Visualise tes jours de lecture
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen" style={{ background: '#F5F0EE' }}>
+      <div className="max-w-lg mx-auto px-4 pt-6 pb-10">
 
-            {/* Reset button */}
+        {/* Header */}
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <p className="text-sm font-semibold text-gray-500 mb-0.5">Best reading streak</p>
+            <p className="text-6xl font-extrabold leading-none" style={{ color: '#E91E8C' }}>{bestStreak}</p>
+            <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+              <span>days so far this year</span>
+              <Info className="w-3.5 h-3.5 text-gray-400" />
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <button className="p-2 rounded-full bg-white shadow-sm text-gray-500">
+              <Share2 className="w-5 h-5" />
+            </button>
             <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-xl shadow-lg"
-                  style={{ borderColor: '#FF1493', color: '#FF1493' }}
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </Button>
+                <button className="p-2 rounded-full bg-white shadow-sm text-gray-500">
+                  <RotateCcw className="w-4 h-4" />
+                </button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle style={{ color: '#FF1493' }}>
-                    Réinitialiser les jours de lecture ?
-                  </AlertDialogTitle>
+                  <AlertDialogTitle style={{ color: '#FF1493' }}>Réinitialiser ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action supprimera tous les jours de lecture enregistrés. Cette action est irréversible.
+                    Cette action supprimera tous les jours de lecture. Irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -178,156 +207,164 @@ export default function ReadingTracker() {
                   <AlertDialogAction
                     onClick={() => resetProgressMutation.mutate()}
                     disabled={resetProgressMutation.isPending}
-                    style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}
+                    style={{ background: '#FF1493' }}
                   >
-                    {resetProgressMutation.isPending ? 'Réinitialisation...' : 'Réinitialiser'}
+                    Réinitialiser
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card className="border-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #FFE9F0, #FFD6E4)' }}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: '#FF1493' }}>
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold" style={{ color: '#FF1493' }}>
-                      {totalReadingDays}
-                    </p>
-                    <p className="text-sm font-medium" style={{ color: '#2c2c2c' }}>
-                      Jours total
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, #F3E5F5, #E1BEE7)' }}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                       style={{ backgroundColor: '#9C27B0' }}>
-                    <Flame className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold" style={{ color: '#9C27B0' }}>
-                      {thisMonthReadingDays}
-                    </p>
-                    <p className="text-sm font-medium" style={{ color: '#2c2c2c' }}>
-                      Ce mois-ci
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </motion.div>
+        {/* Month selector pills */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+          {MONTHS.map((m, i) => {
+            const isSelected = i === selectedMonthIdx;
+            return (
+              <button
+                key={m}
+                onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), i, 1))}
+                className="flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all"
+                style={{
+                  background: isSelected ? '#E91E8C' : '#E8E0DC',
+                  color: isSelected ? 'white' : '#4A4A4A',
+                }}
+              >
+                {m}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Calendar */}
-        <Card className="border-0 rounded-3xl shadow-xl" style={{ backgroundColor: 'white' }}>
-          <CardContent className="p-6 md:p-8">
-            {/* Month Navigation */}
-            <div className="flex items-center justify-between mb-6">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                className="rounded-xl"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
+        <div className="rounded-3xl overflow-hidden" style={{ background: '#EDE6E1' }}>
+          {/* Week days header */}
+          <div className="grid grid-cols-7 px-2 pt-3 pb-1">
+            {WEEK_DAYS.map((d, i) => (
+              <div key={i} className="text-center text-xs font-bold text-gray-400">{d}</div>
+            ))}
+          </div>
 
-              <h2 className="text-2xl font-bold" style={{ color: '#FF1493' }}>
-                {format(currentMonth, 'MMMM yyyy', { locale: fr })}
-              </h2>
+          {/* Grid */}
+          <div className="grid grid-cols-7 gap-1.5 p-2">
+            {/* Empty cells for offset */}
+            {Array.from({ length: startOffset }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
 
-              <Button
-                variant="outline"
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                className="rounded-xl"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
+            {days.map((day, idx) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const hasRead = readingDays.has(dateStr);
+              const todayDay = isToday(day);
+              const cover = hasRead ? getCoverForDay(dateStr) : null;
 
-            {/* Week days header */}
-            <div className="grid grid-cols-7 gap-2 mb-3">
-              {weekDays.map(day => (
-                <div key={day} className="text-center font-semibold text-sm py-2"
-                     style={{ color: '#9CA3AF' }}>
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-2">
-              {calendarDays.map((day, idx) => {
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const hasRead = isReadingDay(day);
-                const isTodayDay = isToday(day);
-
-                return (
-                  <motion.div
-                    key={day.toISOString()}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.2, delay: idx * 0.01 }}
-                    className={`aspect-square rounded-xl flex items-center justify-center text-sm md:text-base font-semibold transition-all cursor-pointer ${
-                      !isCurrentMonth ? 'opacity-30' : ''
-                    } ${
-                      isTodayDay ? 'ring-2 ring-offset-2' : ''
-                    }`}
-                    style={{
-                      background: hasRead 
-                        ? 'linear-gradient(135deg, #FF1493, #FF69B4)' 
-                        : isCurrentMonth 
-                          ? '#F9FAFB' 
-                          : 'transparent',
-                      color: hasRead ? 'white' : '#2D3748',
-                      ringColor: '#FF1493',
-                      boxShadow: hasRead ? '0 4px 12px rgba(255, 20, 147, 0.3)' : 'none'
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => toggleDay(day)}
+              return (
+                <motion.button
+                  key={dateStr}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.15, delay: idx * 0.008 }}
+                  onClick={() => toggleDay(day)}
+                  whileTap={{ scale: 0.92 }}
+                  className="relative flex flex-col items-center justify-start rounded-xl overflow-hidden transition-all"
+                  style={{
+                    aspectRatio: '1 / 1.3',
+                    background: hasRead ? '#E91E8C' : 'white',
+                    boxShadow: todayDay ? '0 0 0 2px #E91E8C' : 'none',
+                  }}
+                >
+                  {/* Day number */}
+                  <span
+                    className="text-xs font-bold pt-1 z-10 relative"
+                    style={{ color: hasRead ? 'rgba(255,255,255,0.9)' : '#555' }}
                   >
-                    <div className="flex flex-col items-center">
-                      <span>{format(day, 'd')}</span>
-                      {hasRead && (
-                        <BookOpen className="w-3 h-3 md:w-4 md:h-4 mt-1" />
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                    {format(day, 'd')}
+                  </span>
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-6 mt-8 pt-6 border-t"
-                 style={{ borderColor: 'rgba(255, 105, 180, 0.15)' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg"
-                     style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }} />
-                <span className="text-sm font-medium" style={{ color: '#4A5568' }}>
-                  Jour de lecture
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg border-2"
-                     style={{ borderColor: '#FF1493', backgroundColor: 'white' }} />
-                <span className="text-sm font-medium" style={{ color: '#4A5568' }}>
-                  Aujourd'hui
-                </span>
-              </div>
+                  {/* Book cover */}
+                  {cover && (
+                    <div className="absolute inset-0 top-5">
+                      <img
+                        src={cover}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ opacity: 0.85 }}
+                      />
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(233,30,140,0.3) 0%, transparent 40%)' }} />
+                    </div>
+                  )}
+
+                  {/* Pink overlay if read but no cover */}
+                  {hasRead && !cover && (
+                    <div className="absolute inset-0 top-5 flex items-center justify-center">
+                      <span className="text-white text-lg">📖</span>
+                    </div>
+                  )}
+                </motion.button>
+              );
+            })}
+
+            {/* Fill remaining cells to complete last row */}
+            {(() => {
+              const totalCells = startOffset + days.length;
+              const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+              return Array.from({ length: remaining }).map((_, i) => (
+                <div key={`end-${i}`} />
+              ));
+            })()}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-around px-4 py-3 border-t border-black/5">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-md" style={{ background: '#E91E8C' }} />
+              <span className="text-xs text-gray-500">Best {new Date().getFullYear()} streak</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-md bg-white border border-gray-200" />
+              <span className="text-xs text-gray-500">Days read</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-md" style={{ background: '#D4C8C2' }} />
+              <span className="text-xs text-gray-500">No reading</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {[
+            { label: 'Streak actuel', value: currentStreak, suffix: ' j.' },
+            { label: 'Jours cette année', value: totalReadingDaysYear, suffix: '' },
+            { label: 'Meilleur streak', value: bestStreak, suffix: ' j.' },
+          ].map((s, i) => (
+            <div key={i} className="rounded-2xl p-3 text-center" style={{ background: 'white' }}>
+              <p className="text-2xl font-extrabold" style={{ color: '#E91E8C' }}>{s.value}<span className="text-base">{s.suffix}</span></p>
+              <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Reader insight */}
+        {currentStreak > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 rounded-2xl p-4"
+            style={{ background: 'white' }}
+          >
+            <p className="text-sm font-bold flex items-center gap-1.5 mb-1" style={{ color: '#E91E8C' }}>
+              <Sparkles className="w-4 h-4" />
+              Reader insight
+            </p>
+            <p className="text-sm text-gray-600">
+              {currentStreak >= bestStreak
+                ? "You're currently on your longest reading streak! 🎉"
+                : `Continue encore ${bestStreak - currentStreak} jour${bestStreak - currentStreak > 1 ? 's' : ''} pour battre ton record !`}
+            </p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
