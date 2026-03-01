@@ -782,51 +782,80 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
           {/* ── SCAN TAB ── */}
           {activeTab === 'scan' && (
             <div className="space-y-4">
-            <BarcodeScanner onScanSuccess={handleBarcodeScanned} />
+              {/* Book found card */}
+              {(loadingScannedBook || scannedBook) ? (
+                <div>
+                  {loadingScannedBook && (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                      <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#FF1493' }} />
+                      <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>Recherche du livre...</p>
+                    </div>
+                  )}
 
-            {loadingScannedBook && (
-              <div className="flex items-center justify-center p-6">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            )}
+                  {scannedBook && (
+                    <div className="rounded-2xl p-4 space-y-4" style={{ background: 'rgba(255,255,255,0.9)', border: '2px solid rgba(255,105,180,0.2)' }}>
+                      {/* Book info */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 rounded-xl overflow-hidden shadow-md" style={{ width: 72, height: 104 }}>
+                          {scannedBook.coverUrl ? (
+                            <img src={scannedBook.coverUrl} alt="Couverture" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center" style={{ background: '#FFE9F0' }}>
+                              <BookOpen className="w-6 h-6" style={{ color: '#FF69B4' }} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-extrabold text-base leading-tight mb-1" style={{ color: '#2D1F3F' }}>{scannedBook.title}</p>
+                          <p className="text-sm font-medium mb-2" style={{ color: '#FF69B4' }}>{scannedBook.author}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {scannedBook.year && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3E5F5', color: '#9C27B0' }}>{scannedBook.year}</span>}
+                            {scannedBook.pageCount && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#FCE4EC', color: '#E91E63' }}>{scannedBook.pageCount} p.</span>}
+                          </div>
+                        </div>
+                      </div>
 
-            {scannedBook && (
-              <div className="flex flex-col items-center gap-5">
-                <div className="rounded-xl overflow-hidden shadow-2xl" style={{ width: 220, height: 330, backgroundColor: 'var(--beige)' }}>
-                  {scannedBook.coverUrl && (
-                    <img src={scannedBook.coverUrl} alt="Couverture" className="w-full h-full object-cover" />
+                      {/* Status pills */}
+                      <div>
+                        <p className="text-xs font-semibold mb-2" style={{ color: '#A78BBA' }}>Ajouter comme...</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {STATUSES.map(s => (
+                            <button key={s} onClick={() => setScannedStatus(s)}
+                              className="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                              style={{
+                                background: scannedStatus === s ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : '#F3E5F5',
+                                color: scannedStatus === s ? 'white' : '#9B3EC8',
+                              }}>
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => { setScannedBook(null); }}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                          style={{ background: '#F3E5F5', color: '#9B3EC8' }}
+                        >
+                          Rescanner
+                        </button>
+                        <button
+                          onClick={handleAddScannedBook}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                          style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}
+                        >
+                          Ajouter ✨
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                <div className="w-full max-w-xs">
-                  <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                    Statut
-                  </Label>
-                  <Select value={scannedStatus} onValueChange={setScannedStatus}>
-                    <SelectTrigger className="w-full rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={handleAddScannedBook} className="bg-[#ff4d87] text-white">Ajouter</Button>
-                  <Button variant="outline" onClick={() => setScannedBook(null)}>Rescanner</Button>
-                </div>
-              </div>
-            )}
-
-            {!loadingScannedBook && !scannedBook && (
-              <div className="text-center py-6">
-                <p className="text-sm" style={{ color: '#A78BBA' }}>Scannez un code-barres pour afficher le livre détecté.</p>
-              </div>
-            )}
-          </div>
+              ) : (
+                <BarcodeScanner onScanSuccess={handleBarcodeScanned} />
+              )}
+            </div>
           )}
 
           {/* ── MANUAL TAB ── */}
