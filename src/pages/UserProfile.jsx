@@ -16,7 +16,7 @@ const COLORS = ['#FF0080', '#FF1493', '#FF69B4', '#FFB6C8', '#E6B3E8', '#FFCCCB'
 export default function UserProfile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState(userEmail && userEmail !== currentUser?.email ? "mypage" : "mypage");
+  const [activeTab, setActiveTab] = useState("mypage");
   const [libraryView, setLibraryView] = useState("shelves"); // "shelves", "read", "toread", "wishlist", "abandoned", "history", "pal"
   const [selectedShelf, setSelectedShelf] = useState(null);
   const [expandedYears, setExpandedYears] = useState({});
@@ -29,6 +29,13 @@ export default function UserProfile() {
   useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const isOwnProfile = currentUser?.email === userEmail;
+    if (!isOwnProfile) {
+      setActiveTab("mypage");
+    }
+  }, [currentUser, userEmail]);
 
   useEffect(() => {
     if (!userEmail) {
