@@ -646,87 +646,95 @@ export default function Dashboard() {
                         return (
                           <motion.div
                             key={userBook.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: idx * 0.1 }}
-                            className="p-3 rounded-2xl"
+                            className="rounded-2xl overflow-hidden relative"
                             style={{ background: '#FEF5FB', border: '1px solid #F8D6EE' }}>
 
-                             <div className="flex gap-3">
-                               <div className="relative flex-shrink-0">
-                                 <div className="w-16 h-24 rounded-xl overflow-hidden shadow-md"
-                                style={{ backgroundColor: '#FDE8F4' }}>
-                                    {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
-                                  </div>
-                                  {progress > 0 &&
-                                <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full flex items-center justify-center font-extrabold shadow-md"
-                                style={{ background: '#FBB9DC', color: '#C0176A', fontSize: '9px' }}>
-                                      {progress}%
+                            {/* Header bandeau */}
+                            <div className="px-4 py-2 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
+                              <span className="text-xs font-extrabold tracking-wide text-white uppercase">Ta lecture en cours</span>
+                              {/* Bookmark icon */}
+                              <svg width="18" height="22" viewBox="0 0 18 22" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1h16v20l-8-5-8 5V1z"/>
+                              </svg>
+                            </div>
+
+                            <div className="flex gap-4 p-4">
+                              {/* Couverture grande */}
+                              <div className="relative flex-shrink-0">
+                                <div className="w-28 h-40 rounded-xl overflow-hidden shadow-lg"
+                                     style={{ backgroundColor: '#FDE8F4' }}>
+                                  {book.cover_url && <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />}
+                                </div>
+                              </div>
+
+                              {/* Infos droite */}
+                              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                <h3 className="font-extrabold text-lg leading-tight mb-1 line-clamp-2" style={{ color: '#2D1F3F' }}>{book.title}</h3>
+                                <p className="text-sm mb-3" style={{ color: '#A78BBA' }}>{book.author}</p>
+
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                      <input type="number" value={editValues.currentPage}
+                                        onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
+                                        onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
+                                        placeholder="Page" autoFocus
+                                        className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
+                                        style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
+                                      <input type="number" value={editValues.totalPages}
+                                        onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
+                                        placeholder="Total"
+                                        className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
+                                        style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
                                     </div>
-                                }
-                               </div>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => handleSaveProgress(userBook, book)}
+                                        className="flex-1 py-2 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1"
+                                        style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
+                                        <Check className="w-3.5 h-3.5" /> Valider
+                                      </button>
+                                      <button onClick={handleCancelEdit}
+                                        className="px-3 py-2 rounded-xl text-sm font-bold"
+                                        style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button onClick={() => handleStartEdit(userBook, book)}
+                                      className="flex items-center gap-1.5 mb-3 hover:opacity-75 transition-opacity">
+                                      <span className="text-sm font-bold" style={{ color: '#7B1FA2' }}>
+                                        📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
+                                      </span>
+                                      <Edit2 className="w-3.5 h-3.5" style={{ color: '#BA68C8' }} />
+                                    </button>
 
-                               <div className="flex-1 min-w-0">
-                                 <h3 className="font-bold text-sm mb-0.5 line-clamp-2" style={{ color: '#2D1F3F' }}>{book.title}</h3>
-                                 <p className="text-xs mb-2" style={{ color: '#A78BBA' }}>{book.author}</p>
+                                    {/* Barre de progression + % */}
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 relative h-3.5 rounded-full overflow-hidden" style={{ background: '#FFE9F0' }}>
+                                        <motion.div
+                                          className="h-full rounded-full"
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${progress}%` }}
+                                          transition={{ duration: 1.2, ease: "easeOut", delay: idx * 0.1 }}
+                                          style={{ background: 'linear-gradient(90deg, #E91E8C, #F472B6)' }} />
+                                      </div>
+                                      <span className="text-base font-extrabold flex-shrink-0" style={{ color: '#FF1493' }}>{progress}%</span>
+                                    </div>
 
-                                 {isEditing ?
-                                <div className="space-y-2">
-                                     <div className="flex gap-2">
-                                       <input type="number" value={editValues.currentPage}
-                                    onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
-                                    onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
-                                    placeholder="Page" autoFocus
-                                    className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
-                                    style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
-
-                                       <input type="number" value={editValues.totalPages}
-                                    onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
-                                    placeholder="Total"
-                                    className="flex-1 px-3 py-2 rounded-xl text-sm font-bold text-center"
-                                    style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
-
-                                     </div>
-                                     <div className="flex gap-2">
-                                       <button onClick={() => handleSaveProgress(userBook, book)}
-                                    className="flex-1 py-2 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1"
-                                    style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
-                                         <Check className="w-3.5 h-3.5" /> Valider
-                                       </button>
-                                       <button onClick={handleCancelEdit}
-                                    className="px-3 py-2 rounded-xl text-sm font-bold"
-                                    style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
-                                         <X className="w-3.5 h-3.5" />
-                                       </button>
-                                     </div>
-                                   </div> :
-
-                                <>
-                                     <button onClick={() => handleStartEdit(userBook, book)}
-                                  className="flex items-center gap-1.5 mb-1.5 hover:opacity-75 transition-opacity">
-                                       <span className="text-xs font-semibold" style={{ color: '#FF1493' }}>
-                                         📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
-                                       </span>
-                                       <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
-                                     </button>
-                                     {estimation &&
-                                  <p className="text-xs mb-1.5 italic" style={{ color: '#9C27B0' }}>
-                                         ⏱ Est. ~{estimation.estimatedPage} pages
-                                       </p>
-                                  }
-                                     <div className="relative h-2 rounded-full overflow-hidden progress-bar-shine" style={{ background: '#FFE9F0' }}>
-                                       <motion.div
-                                      className="h-full rounded-full"
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${progress}%` }}
-                                      transition={{ duration: 1.2, ease: "easeOut", delay: idx * 0.1 }}
-                                      style={{ background: 'linear-gradient(90deg, #E91E8C, #F472B6)' }} />
-
-                                     </div>
-                                   </>
-                                }
-                               </div>
-                             </div>
+                                    {estimation &&
+                                      <p className="text-xs mt-1.5 italic" style={{ color: '#9C27B0' }}>
+                                        ⏱ Est. ~{estimation.estimatedPage} pages
+                                      </p>
+                                    }
+                                  </>
+                                )}
+                              </div>
+                            </div>
                            </motion.div>);
 
                       }) :
