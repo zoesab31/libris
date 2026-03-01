@@ -10,7 +10,7 @@ import { Plus, Edit2, Trash2, BookOpen, Heart, Frown, Smile } from 'lucide-react
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import AnimatedCard from '@/components/animations/AnimatedCard';
-import FourBooksSection from '@/components/profile/FourBooksSection';
+
 
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { BookGridSkeleton } from '@/components/animations/SkeletonLoader';
@@ -140,19 +140,6 @@ export default function MyPage() {
 
   const getBookById = (bookId) => books.find(b => b.id === bookId);
 
-  // Get books by rating (favorites vs disappointments)
-  const favoriteBookIds = userBooks
-    .filter(ub => ub.rating && ub.rating >= 4)
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 4)
-    .map(ub => ub.book_id);
-
-  const disappointmentBookIds = userBooks
-    .filter(ub => ub.rating && ub.rating <= 2)
-    .sort((a, b) => (a.rating || 0) - (b.rating || 0))
-    .slice(0, 4)
-    .map(ub => ub.book_id);
-
   const availableBooks = books.filter(book => 
     userBooks.some(ub => ub.book_id === book.id)
   );
@@ -251,28 +238,6 @@ export default function MyPage() {
 
 
 
-
-        {/* Favorites and Disappointments Sections */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <FourBooksSection
-            title="❤️ Mes coups de cœur"
-            description="Mes livres préférés (note 4-5 stars)"
-            bookIds={favoriteBookIds}
-            allBooks={books}
-            isOwnProfile={true}
-            emptyMessage="Aucun coup de cœur pour le moment"
-            onEdit={() => {}}
-          />
-          <FourBooksSection
-            title="💔 Mes déceptions"
-            description="Livres qui ne m'ont pas convaincue (note 1-2 stars)"
-            bookIds={disappointmentBookIds}
-            allBooks={books}
-            isOwnProfile={true}
-            emptyMessage="Aucune déception (tant mieux !)"
-            onEdit={() => {}}
-          />
-        </div>
 
         {/* Collections */}
         <div className="flex items-center justify-between">
