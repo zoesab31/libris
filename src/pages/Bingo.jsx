@@ -162,7 +162,7 @@ export default function Bingo() {
             </Button>
           </div>
         ) : (
-          <>
+          <div>
             {completedCount === totalCount && (
               <div className="mb-6 md:mb-8 p-4 md:p-6 rounded-2xl text-center shadow-lg animate-pulse"
                    style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
@@ -174,7 +174,6 @@ export default function Bingo() {
                 </p>
               </div>
             )}
-            
             <BingoGrid 
               challenges={challenges}
               books={books}
@@ -183,7 +182,7 @@ export default function Bingo() {
               gridSize={selectedGridSize}
               year={selectedYear}
             />
-          </>
+          </div>
         )}
 
         <CreateChallengesDialog 
