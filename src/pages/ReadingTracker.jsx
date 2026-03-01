@@ -327,7 +327,7 @@ export default function ReadingTracker() {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                 <div className="px-4 py-2 text-xs font-semibold text-center"
                   style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)', color: 'white' }}>
-                  ✏️ Clique sur un jour lu pour modifier le livre associé, ou sur un jour vide pour l'ajouter
+                  ✏️ Sélectionne un ou plusieurs jours puis choisis le livre ou l'action
                 </div>
               </motion.div>
             )}
