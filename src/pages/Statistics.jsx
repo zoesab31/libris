@@ -666,7 +666,27 @@ export default function Statistics() {
                     <p className="text-xs md:text-sm font-bold" style={{ color: '#666' }}>Par mois</p>
                   </div>
                   <p className="text-3xl md:text-4xl font-bold" style={{ color: '#9B59B6' }}>
-                    {(booksThisYear.length / 12).toFixed(1)}
+                    {(() => {
+                      const now = new Date();
+                      const currentYear = now.getFullYear();
+                      const currentMonth = now.getMonth(); // 0-indexed
+                      let monthsToCount;
+                      if (viewMode === 'single' && selectedYear === currentYear) {
+                        // Count months up to and including current month,
+                        // but only include current month if at least 1 book was read in it
+                        const booksThisMonth = booksThisYear.filter(b => {
+                          const d = getEffectiveDate(b);
+                          if (!d) return false;
+                          const bd = new Date(d);
+                          return bd.getFullYear() === currentYear && bd.getMonth() === currentMonth;
+                        }).length;
+                        monthsToCount = currentMonth + (booksThisMonth > 0 ? 1 : 0);
+                        if (monthsToCount === 0) monthsToCount = 1;
+                      } else {
+                        monthsToCount = 12;
+                      }
+                      return (booksThisYear.length / monthsToCount).toFixed(1);
+                    })()}
                   </p>
                 </CardContent>
               </Card>
