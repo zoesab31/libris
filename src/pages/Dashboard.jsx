@@ -656,7 +656,7 @@ export default function Dashboard() {
                             <div className="flex">
                               {/* Couverture grande */}
                               <div className="flex-shrink-0 w-32">
-                                <div className="w-32 h-44 overflow-hidden" style={{ backgroundColor: '#FDE8F4' }}>
+                                <div className="w-32 h-44 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" style={{ backgroundColor: '#FDE8F4' }} onClick={() => setFullscreenBook(book)}>
                                   {book.cover_url ?
                                   <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" /> :
                                   <div className="w-full h-full flex items-center justify-center"><BookOpen className="w-10 h-10" style={{ color: '#FF69B4' }} /></div>
