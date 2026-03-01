@@ -481,8 +481,18 @@ export default function UserProfile() {
 
 
 
-<TabsTrigger
-  value="library"
+{!isOwnProfile && (
+              <TabsTrigger
+                value="mypage"
+                className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
+                style={activeTab === "mypage" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
+
+                <Heart className="w-5 h-5 mr-2" />
+                Profil
+              </TabsTrigger>
+            )}
+            <TabsTrigger
+              value="library"
               className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
               style={activeTab === "library" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
 
