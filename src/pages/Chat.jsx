@@ -606,7 +606,7 @@ export default function Chat() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col" style={{ backgroundColor: '#FDFBFE' }}>
+      <div className="flex-1 flex flex-col" style={{ background: 'rgba(255,255,255,0.6)' }}>
         {selectedChat ? (
           <>
             {/* Chat header */}
