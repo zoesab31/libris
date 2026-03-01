@@ -127,11 +127,18 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setCropImageUrl(localUrl);
+    e.target.value = "";
+  };
 
+  const handleCropComplete = async (blob) => {
+    setCropImageUrl(null);
     setUploading(true);
     try {
+      const file = new File([blob], "character.jpg", { type: "image/jpeg" });
       const result = await base44.integrations.Core.UploadFile({ file });
-      setCharacterData({ ...characterData, image_url: result.file_url });
+      setCharacterData(prev => ({ ...prev, image_url: result.file_url }));
       toast.success("Image uploadée !");
     } catch (error) {
       toast.error("Erreur lors de l'upload");
