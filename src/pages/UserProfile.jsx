@@ -95,7 +95,13 @@ export default function UserProfile() {
   const { data: userCharacters = [] } = useQuery({
     queryKey: ['userCharacters', userEmail],
     queryFn: () => base44.entities.BookBoyfriend.filter({ created_by: userEmail }, 'rank'),
-    enabled: !!userEmail && activeTab === 'characters'
+    enabled: !!userEmail && (activeTab === 'characters' || activeTab === 'friend')
+  });
+
+  const { data: userCouples = [] } = useQuery({
+    queryKey: ['userCouples', userEmail],
+    queryFn: () => base44.entities.FavoriteCouple.filter({ created_by: userEmail }, 'rank'),
+    enabled: !!userEmail && activeTab === 'friend'
   });
 
   const { data: userBooksWithMusic = [] } = useQuery({
