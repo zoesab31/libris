@@ -1084,6 +1084,33 @@ export default function Dashboard() {
           initialTab="myinfo" />
 
         }
+
+        {/* Fullscreen Book Cover Dialog */}
+        <Dialog open={!!fullscreenBook} onOpenChange={(open) => !open && setFullscreenBook(null)}>
+          <DialogContent className="max-w-2xl p-0 border-0 bg-black/90 backdrop-blur-md">
+            <button 
+              onClick={() => setFullscreenBook(null)}
+              className="absolute top-4 right-4 z-50 p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            {fullscreenBook?.cover_url ? (
+              <img 
+                src={fullscreenBook.cover_url} 
+                alt={fullscreenBook.title} 
+                className="w-full h-auto rounded-lg"
+              />
+            ) : (
+              <div className="w-full aspect-[2/3] flex items-center justify-center bg-gradient-to-br from-pink-200 to-purple-200 rounded-lg">
+                <BookOpen className="w-24 h-24 text-gray-400" />
+              </div>
+            )}
+            <div className="p-6 bg-black/50 text-white">
+              <h2 className="text-2xl font-bold mb-2">{fullscreenBook?.title}</h2>
+              <p className="text-sm text-gray-300">{fullscreenBook?.author}</p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PullToRefresh>);
 
