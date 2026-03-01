@@ -1167,7 +1167,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 </div>
               </div>
             )}
-          </div>}
+          </div>
+          )}
 
         </div>
       </DialogContent>
