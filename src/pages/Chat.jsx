@@ -401,7 +401,7 @@ export default function Chat() {
   );
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex" style={{ backgroundColor: '#FDFBFE' }}>
+    <div className="h-[calc(100vh-4rem)] flex" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
