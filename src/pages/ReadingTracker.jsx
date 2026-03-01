@@ -111,33 +111,35 @@ export default function ReadingTracker() {
     return [...readingDays].filter(d => d.startsWith(prefix)).length;
   }, [readingDays, currentMonth]);
 
-  // Get cover for a day (with manual override support)
+  // Auto-detect book being read on a given date
+  const autoDetectBookForDay = (dateStr) => {
+    // "En cours" with no end_date: include today
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const reading = userBooks
+      .filter(ub => {
+        if (!ub.start_date) return false;
+        const start = ub.start_date.slice(0, 10);
+        if (start > dateStr) return false;
+        if (ub.status === 'En cours') return true; // reading right now, include all past days from start
+        if (ub.end_date && ub.end_date.slice(0, 10) >= dateStr) return true;
+        return false;
+      })
+      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
+    if (reading.length > 0) return allBooks.find(b => b.id === reading[0].book_id) || null;
+    return null;
+  };
+
   const getCoverForDay = (dateStr) => {
-    // Check manual override first
     if (bookOverrides[dateStr]) {
       const book = allBooks.find(b => b.id === bookOverrides[dateStr]);
       if (book?.cover_url) return book.cover_url;
     }
-    // Auto-detect: book being read on that date
-    const reading = userBooks
-      .filter(ub => ub.start_date && ub.start_date.slice(0, 10) <= dateStr &&
-        (ub.status === 'En cours' || (ub.end_date && ub.end_date.slice(0, 10) >= dateStr)))
-      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
-    if (reading.length > 0) {
-      const book = allBooks.find(b => b.id === reading[0].book_id);
-      return book?.cover_url || null;
-    }
-    return null;
+    return autoDetectBookForDay(dateStr)?.cover_url || null;
   };
 
   const getBookForDay = (dateStr) => {
     if (bookOverrides[dateStr]) return allBooks.find(b => b.id === bookOverrides[dateStr]) || null;
-    const reading = userBooks
-      .filter(ub => ub.start_date && ub.start_date.slice(0, 10) <= dateStr &&
-        (ub.status === 'En cours' || (ub.end_date && ub.end_date.slice(0, 10) >= dateStr)))
-      .sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
-    if (reading.length > 0) return allBooks.find(b => b.id === reading[0].book_id) || null;
-    return null;
+    return autoDetectBookForDay(dateStr);
   };
 
   const markDayMutation = useMutation({
