@@ -224,17 +224,18 @@ export default function SharedReadings() {
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 p-5 rounded-3xl shadow-lg"
+             style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
-              <Users className="w-7 h-7 text-white" />
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-md"
+                 style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+              <Users className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-2xl md:text-3xl font-extrabold" style={{ color: '#2D1F3F' }}>
                 Lectures Communes
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
                 {sharedReadings.length} lecture{sharedReadings.length > 1 ? 's' : ''} partagée{sharedReadings.length > 1 ? 's' : ''}
               </p>
             </div>
