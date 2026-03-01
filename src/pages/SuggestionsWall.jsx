@@ -221,120 +221,121 @@ export default function SuggestionsWall() {
         </div>
 
         {/* Liste des suggestions */}
-        <div className="grid gap-4">
-          {filteredSuggestions.length === 0 ? (
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-12 text-center">
-                <Lightbulb className="w-16 h-16 mx-auto mb-4 opacity-20" 
-                          style={{ color: 'var(--warm-pink)' }} />
-                <p style={{ color: '#6B7280' }}>
-                  Aucune suggestion pour ces filtres
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredSuggestions.map(suggestion => {
-              const statusConfig = statusColors[suggestion.status] || statusColors.en_attente;
-              const StatusIcon = statusConfig.icon;
-              const likesCount = suggestion.likes?.length || 0;
-              const hasLiked = suggestion.likes?.includes(user?.email);
+        {(() => {
+          const activeSuggestions = filteredSuggestions.filter(s => s.status !== 'réalisée');
+          const doneSuggestions = filteredSuggestions.filter(s => s.status === 'réalisée');
 
-              return (
-                <Card key={suggestion.id} className="border-0 shadow-lg hover:shadow-xl transition-all">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="text-2xl">{categoryIcons[suggestion.category]}</span>
-                          <Badge variant="outline" style={{ borderColor: 'var(--warm-pink)', color: 'var(--warm-pink)' }}>
-                            {suggestion.category.replace('_', ' ')}
-                          </Badge>
-                          <Badge style={{ backgroundColor: statusConfig.bg, color: statusConfig.text }}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {suggestion.status.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        <CardTitle className="text-xl mb-2" style={{ color: 'var(--dark-text)' }}>
-                          {suggestion.title}
-                        </CardTitle>
-                        <p className="text-sm" style={{ color: '#6B7280' }}>
-                          Par {getUserInfo(suggestion.created_by)} • {new Date(suggestion.created_date).toLocaleDateString('fr-FR')}
-                        </p>
+          const renderCard = (suggestion, grayed = false) => {
+            const statusConfig = statusColors[suggestion.status] || statusColors.en_attente;
+            const StatusIcon = statusConfig.icon;
+            const likesCount = suggestion.likes?.length || 0;
+            const hasLiked = suggestion.likes?.includes(user?.email);
+
+            return (
+              <Card key={suggestion.id} className={`border-0 shadow-md transition-all ${grayed ? 'opacity-50' : 'hover:shadow-xl'}`}
+                style={grayed ? { filter: 'grayscale(1)' } : {}}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-2xl">{categoryIcons[suggestion.category]}</span>
+                        <Badge variant="outline" style={{ borderColor: 'var(--warm-pink)', color: 'var(--warm-pink)' }}>
+                          {suggestion.category.replace('_', ' ')}
+                        </Badge>
+                        <Badge style={{ backgroundColor: statusConfig.bg, color: statusConfig.text }}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {suggestion.status.replace('_', ' ')}
+                        </Badge>
                       </div>
-
-                      {/* Like button */}
-                      <Button
-                        onClick={() => toggleLikeMutation.mutate({ 
-                          id: suggestion.id, 
-                          likes: suggestion.likes || [] 
-                        })}
-                        variant="outline"
-                        className={`flex items-center gap-2 ${hasLiked ? 'border-red-500' : ''}`}
-                      >
-                        <Heart 
-                          className={`w-5 h-5 ${hasLiked ? 'fill-red-500' : ''}`}
-                          style={{ color: hasLiked ? '#EF4444' : '#9CA3AF' }}
-                        />
-                        <span className="font-bold">{likesCount}</span>
+                      <CardTitle className="text-xl mb-2" style={{ color: 'var(--dark-text)' }}>
+                        {suggestion.title}
+                      </CardTitle>
+                      <p className="text-sm" style={{ color: '#6B7280' }}>
+                        Par {getUserInfo(suggestion.created_by)} • {new Date(suggestion.created_date).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => toggleLikeMutation.mutate({ id: suggestion.id, likes: suggestion.likes || [] })}
+                      variant="outline"
+                      className={`flex items-center gap-2 ${hasLiked ? 'border-red-500' : ''}`}
+                    >
+                      <Heart className={`w-5 h-5 ${hasLiked ? 'fill-red-500' : ''}`}
+                        style={{ color: hasLiked ? '#EF4444' : '#9CA3AF' }} />
+                      <span className="font-bold">{likesCount}</span>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-base mb-4 whitespace-pre-wrap" style={{ color: '#374151' }}>
+                    {suggestion.description}
+                  </p>
+                  {user?.role === 'admin' && (
+                    <div className="flex gap-2 flex-wrap pt-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+                      <Button onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "en_cours" })}
+                        disabled={suggestion.status === "en_cours"} variant="outline" size="sm"
+                        className="border-blue-500 text-blue-600 hover:bg-blue-50">
+                        <Sparkles className="w-4 h-4 mr-1" /> En cours
+                      </Button>
+                      <Button onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "réalisée" })}
+                        disabled={suggestion.status === "réalisée"} variant="outline" size="sm"
+                        className="border-green-500 text-green-600 hover:bg-green-50">
+                        <Check className="w-4 h-4 mr-1" /> Réalisée
+                      </Button>
+                      <Button onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "refusée" })}
+                        disabled={suggestion.status === "refusée"} variant="outline" size="sm"
+                        className="border-red-500 text-red-600 hover:bg-red-50">
+                        <X className="w-4 h-4 mr-1" /> Refusée
+                      </Button>
+                      <Button onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "en_attente" })}
+                        disabled={suggestion.status === "en_attente"} variant="outline" size="sm"
+                        className="border-yellow-500 text-yellow-600 hover:bg-yellow-50">
+                        <Clock className="w-4 h-4 mr-1" /> En attente
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-base mb-4 whitespace-pre-wrap" style={{ color: '#374151' }}>
-                      {suggestion.description}
-                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          };
 
-                    {/* Admin controls */}
-                    {user?.role === 'admin' && (
-                      <div className="flex gap-2 flex-wrap pt-4 border-t" style={{ borderColor: '#E5E7EB' }}>
-                        <Button
-                          onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "en_cours" })}
-                          disabled={suggestion.status === "en_cours"}
-                          variant="outline"
-                          size="sm"
-                          className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                        >
-                          <Sparkles className="w-4 h-4 mr-1" />
-                          En cours
-                        </Button>
-                        <Button
-                          onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "réalisée" })}
-                          disabled={suggestion.status === "réalisée"}
-                          variant="outline"
-                          size="sm"
-                          className="border-green-500 text-green-600 hover:bg-green-50"
-                        >
-                          <Check className="w-4 h-4 mr-1" />
-                          Réalisée
-                        </Button>
-                        <Button
-                          onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "refusée" })}
-                          disabled={suggestion.status === "refusée"}
-                          variant="outline"
-                          size="sm"
-                          className="border-red-500 text-red-600 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4 mr-1" />
-                          Refusée
-                        </Button>
-                        <Button
-                          onClick={() => updateStatusMutation.mutate({ id: suggestion.id, status: "en_attente" })}
-                          disabled={suggestion.status === "en_attente"}
-                          variant="outline"
-                          size="sm"
-                          className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                        >
-                          <Clock className="w-4 h-4 mr-1" />
-                          En attente
-                        </Button>
-                      </div>
-                    )}
+          return (
+            <div className="space-y-4">
+              {activeSuggestions.length === 0 && doneSuggestions.length === 0 ? (
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <Lightbulb className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                    <p style={{ color: '#6B7280' }}>Aucune suggestion pour ces filtres</p>
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
-        </div>
+              ) : (
+                <>
+                  <div className="grid gap-4">
+                    {activeSuggestions.map(s => renderCard(s, false))}
+                  </div>
+
+                  {doneSuggestions.length > 0 && (
+                    <div className="mt-6">
+                      <button
+                        onClick={() => setShowDone(v => !v)}
+                        className="flex items-center gap-2 text-sm font-semibold mb-3 px-3 py-2 rounded-xl transition-all"
+                        style={{ color: '#6B7280', background: '#F3F4F6' }}
+                      >
+                        <Check className="w-4 h-4 text-green-500" />
+                        {doneSuggestions.length} idée{doneSuggestions.length > 1 ? 's' : ''} réalisée{doneSuggestions.length > 1 ? 's' : ''}
+                        <ChevronDown className={`w-4 h-4 transition-transform ${showDone ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showDone && (
+                        <div className="grid gap-4">
+                          {doneSuggestions.map(s => renderCard(s, true))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Success Dialog */}
