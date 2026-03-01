@@ -467,14 +467,14 @@ export default function UserProfile() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-white shadow-sm p-1 rounded-xl border-0 mb-8 flex-wrap gap-2 h-auto">
-            <TabsTrigger
-              value="mypage"
-              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
-              style={activeTab === "mypage" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
+            
 
-              <Heart className="w-5 h-5 mr-2" />
-              Ma Page
-            </TabsTrigger>
+
+
+
+
+
+
             <TabsTrigger
               value="library"
               className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
@@ -563,16 +563,16 @@ export default function UserProfile() {
               <Map className="w-5 h-5 mr-2" />
               Map
             </TabsTrigger>
-            {!isOwnProfile && (
-              <TabsTrigger
-                value="friend"
-                className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
-                style={activeTab === "friend" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
+            {!isOwnProfile &&
+            <TabsTrigger
+              value="friend"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
+              style={activeTab === "friend" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
 
                 <UsersRound className="w-5 h-5 mr-2" />
                 Profil amie
               </TabsTrigger>
-            )}
+            }
           </TabsList>
 
           <TabsContent value="mypage">
@@ -1348,6 +1348,7 @@ export default function UserProfile() {
                                          transition-all hover:shadow-2xl hover:-translate-y-1">
 
 
+
                     <div className="aspect-square relative">
                       <img
                         src={inspo.image_url}
@@ -1358,6 +1359,7 @@ export default function UserProfile() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
                                    opacity-0 group-hover:opacity-100 transition-opacity">
+
 
 
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
@@ -1499,6 +1501,7 @@ export default function UserProfile() {
                                          transition-all hover:shadow-2xl hover:-translate-y-1">
 
 
+
                     <div className="aspect-square relative">
                       <img
                         src={fanart.image_url}
@@ -1509,6 +1512,7 @@ export default function UserProfile() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
                                    opacity-0 group-hover:opacity-100 transition-opacity">
+
 
 
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
@@ -1569,7 +1573,7 @@ export default function UserProfile() {
                     </CardContent>
                   </Card>);
 
-               })}
+              })}
             </div>
             {userLocations.length === 0 &&
             <div className="text-center py-12">
@@ -1580,34 +1584,34 @@ export default function UserProfile() {
           </TabsContent>
 
           <TabsContent value="friend">
-            {!isOwnProfile && (
-              <div className="space-y-6">
+            {!isOwnProfile &&
+            <div className="space-y-6">
                 <Card className="border-0 shadow-lg bg-white">
                   <CardContent className="p-6">
                     <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>Bio</h3>
                     {profileUser.bio ?
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-pink)' }}>{profileUser.bio}</p> :
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-pink)' }}>{profileUser.bio}</p> :
 
-                    <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Pas de bio pour le moment.</p>
-                    }
+                  <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Pas de bio pour le moment.</p>
+                  }
                   </CardContent>
                 </Card>
 
                 <FourBooksSection
-                  title="📚 En 4 livres pour la connaître"
-                  description="Ces livres la définissent en tant que lectrice"
-                  bookIds={profileUser.books_to_know_me || []}
-                  allBooks={allBooks}
-                  isOwnProfile={false} />
+                title="📚 En 4 livres pour la connaître"
+                description="Ces livres la définissent en tant que lectrice"
+                bookIds={profileUser.books_to_know_me || []}
+                allBooks={allBooks}
+                isOwnProfile={false} />
 
                 <FourBooksSection
-                  title="⭐ Ses 4 coups de cœur de l'année"
-                  description="Ses lectures préférées de cette année"
-                  bookIds={profileUser.favorite_books_2024 || []}
-                  allBooks={allBooks}
-                  isOwnProfile={false} />
+                title="⭐ Ses 4 coups de cœur de l'année"
+                description="Ses lectures préférées de cette année"
+                bookIds={profileUser.favorite_books_2024 || []}
+                allBooks={allBooks}
+                isOwnProfile={false} />
               </div>
-            )}
+            }
           </TabsContent>
           </Tabs>
       </div>
