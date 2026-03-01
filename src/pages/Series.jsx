@@ -120,22 +120,22 @@ export default function Series() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
-        {/* Header moderne */}
-        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
-             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+        {/* Header pastel */}
+        <div className="mb-8 p-5 md:p-7 rounded-3xl shadow-lg"
+             style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+              <h1 className="text-2xl md:text-4xl font-extrabold mb-1" style={{ color: '#2D1F3F' }}>
                📚 Mes sagas
               </h1>
-              <p className="text-lg md:text-xl text-white text-opacity-90">
+              <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
                 Suivez vos sagas, tomes lus et à venir
               </p>
             </div>
             <Button 
               onClick={() => { setShowAddDialog(true); setEditingSeries(null); }}
-              className="shadow-xl font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform text-pink-600"
-              style={{ backgroundColor: 'white' }}>
+              className="shadow-md font-bold px-6 py-3 rounded-xl hover:scale-105 transition-transform text-white"
+              style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
               <Plus className="w-5 h-5 mr-2" />
               Ajouter
             </Button>
