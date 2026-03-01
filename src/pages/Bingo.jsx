@@ -83,69 +83,65 @@ export default function Bingo() {
     <div className="p-3 md:p-8 min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-6 md:mb-8 p-5 rounded-3xl shadow-lg" style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
-        <div className="flex flex-col gap-3 md:gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, #FFB6C1, #FF69B4)' }}>
-              <Trophy className="w-5 h-5 md:w-7 md:h-7 text-white" />
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
+                   style={{ background: 'linear-gradient(135deg, #FFB6C1, #FF69B4)' }}>
+                <Trophy className="w-5 h-5 md:w-7 md:h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-3xl font-extrabold" style={{ color: '#2D1F3F' }}>
+                  Bingo {selectedYear}
+                </h1>
+                <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
+                  {completedCount} / {totalCount} défis
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl md:text-3xl font-extrabold" style={{ color: '#2D1F3F' }}>
-                Bingo {selectedYear}
-              </h1>
-              <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
-                {completedCount} / {totalCount} défis
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2 md:gap-3 flex-wrap">
-            {/* Year Selector */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base"
-              style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-            >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-
-            {/* Grid Size Selector - Always 5x5 */}
-            <select
-              value={25}
-              disabled
-              className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base opacity-50"
-              style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
-            >
-              <option value={25}>5x5</option>
-            </select>
-
-            <Button 
-              onClick={() => setShowCreate(true)}
-              className="shadow-lg text-white font-medium px-4 md:px-6 py-2 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
-              <Sparkles className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
-              <span className="text-sm md:text-base">{challenges.length === 0 ? "Créer" : "Modifier"}</span>
-            </Button>
-            {challenges.length > 0 && (
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  if (window.confirm("Êtes-vous sûre de vouloir réinitialiser tout le Bingo ?")) {
-                    resetMutation.mutate();
-                  }
-                }}
-                disabled={resetMutation.isPending}
-                className="px-4 md:px-6 py-2"
+            <div className="flex gap-2 md:gap-3 flex-wrap">
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base"
                 style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
               >
-                <RefreshCw className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
-                <span className="text-sm md:text-base">Réinitialiser</span>
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              <select
+                value={25}
+                disabled
+                className="px-3 md:px-4 py-2 rounded-lg border-2 font-medium text-sm md:text-base opacity-50"
+                style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+              >
+                <option value={25}>5x5</option>
+              </select>
+              <Button 
+                onClick={() => setShowCreate(true)}
+                className="shadow-lg text-white font-medium px-4 md:px-6 py-2 rounded-xl"
+                style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
+                <Sparkles className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
+                <span className="text-sm md:text-base">{challenges.length === 0 ? "Créer" : "Modifier"}</span>
               </Button>
-            )}
+              {challenges.length > 0 && (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (window.confirm("Êtes-vous sûre de vouloir réinitialiser tout le Bingo ?")) {
+                      resetMutation.mutate();
+                    }
+                  }}
+                  disabled={resetMutation.isPending}
+                  className="px-4 md:px-6 py-2"
+                  style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
+                >
+                  <RefreshCw className="w-4 md:w-5 h-4 md:h-5 mr-1 md:mr-2" />
+                  <span className="text-sm md:text-base">Réinitialiser</span>
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
         </div>
 
         {challenges.length === 0 ? (
