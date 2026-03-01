@@ -28,21 +28,41 @@ export default function CreateChallengesDialog({ open, onOpenChange, existingCha
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      // If existingChallenges are present, delete them first to update them.
       if (existingChallenges.length > 0) {
-        await Promise.all(existingChallenges.map((c) => base44.entities.BingoChallenge.delete(c.id)));
+        // UPDATE mode: preserve is_completed, just update titles
+        const sorted = [...existingChallenges].sort((a, b) => a.position - b.position);
+        const updatePromises = challenges.map((title, index) => {
+          const existing = sorted[index];
+          if (existing) {
+            // Update only the title, preserve completion state
+            return base44.entities.BingoChallenge.update(existing.id, {
+              title: title || `Défi ${index + 1}`,
+            });
+          } else {
+            // New position that didn't exist before
+            return base44.entities.BingoChallenge.create({
+              title: title || `Défi ${index + 1}`,
+              position: index,
+              year: selectedYear || new Date().getFullYear(),
+              grid_size: 25,
+              is_completed: false
+            });
+          }
+        });
+        await Promise.all(updatePromises);
+      } else {
+        // CREATE mode: create all from scratch
+        const createPromises = challenges.map((title, index) =>
+          base44.entities.BingoChallenge.create({
+            title: title || `Défi ${index + 1}`,
+            position: index,
+            year: selectedYear || new Date().getFullYear(),
+            grid_size: 25,
+            is_completed: false
+          })
+        );
+        await Promise.all(createPromises);
       }
-
-      const createPromises = challenges.map((title, index) =>
-      base44.entities.BingoChallenge.create({
-        title: title || `Défi ${index + 1}`,
-        position: index,
-        year: selectedYear || new Date().getFullYear(),
-        grid_size: 25, // Always 25
-        is_completed: false
-      })
-      );
-      await Promise.all(createPromises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bingoChallenges'] });
