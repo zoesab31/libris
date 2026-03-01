@@ -435,7 +435,7 @@ export default function ReadingTracker() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-5 mx-3 mb-4 py-3 rounded-2xl"
+          <div className="flex items-center justify-center gap-5 mx-3 mb-3 py-3 rounded-2xl"
             style={{ background: '#F8F4FE' }}>
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded-md" style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }} />
@@ -446,10 +446,61 @@ export default function ReadingTracker() {
               <span className="text-xs" style={{ color: '#6B5B7B' }}>Aujourd'hui</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-md" style={{ background: '#F8F5FF' }} />
-              <span className="text-xs" style={{ color: '#6B5B7B' }}>Non lu</span>
+              <div className="w-4 h-4 rounded-md" style={{ background: '#7C3AED' }} />
+              <span className="text-xs" style={{ color: '#6B5B7B' }}>Sélectionné</span>
             </div>
           </div>
+
+          {/* Edit mode action bar */}
+          <AnimatePresence>
+            {editMode && selectedDays.size > 0 && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                className="mx-3 mb-4 p-3 rounded-2xl flex items-center gap-2 flex-wrap"
+                style={{ background: '#F0EAFF', border: '1.5px solid #7C3AED' }}>
+                <span className="text-xs font-bold" style={{ color: '#7C3AED' }}>
+                  {selectedDays.size} jour{selectedDays.size > 1 ? 's' : ''} sélectionné{selectedDays.size > 1 ? 's' : ''}
+                </span>
+                <div className="flex gap-2 ml-auto flex-wrap">
+                  {/* Mark as read */}
+                  <button
+                    onClick={() => {
+                      const unmarked = [...selectedDays].filter(d => !readingDays.has(d));
+                      unmarked.forEach(d => markDayMutation.mutate(new Date(d + 'T12:00:00')));
+                      if (unmarked.length) toast.success(`${unmarked.length} jour${unmarked.length > 1 ? 's' : ''} marqué${unmarked.length > 1 ? 's' : ''} ✅`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+                    style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
+                    Marquer comme lu
+                  </button>
+                  {/* Change book */}
+                  <button
+                    onClick={() => setShowBookPicker(true)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+                    style={{ background: '#7C3AED' }}>
+                    Changer le livre
+                  </button>
+                  {/* Unmark */}
+                  <button
+                    onClick={() => {
+                      const marked = [...selectedDays].filter(d => readingDays.has(d));
+                      marked.forEach(d => unmarkDayMutation.mutate(new Date(d + 'T12:00:00')));
+                      setSelectedDays(new Set());
+                      if (marked.length) toast.success(`${marked.length} jour${marked.length > 1 ? 's' : ''} retiré${marked.length > 1 ? 's' : ''}`);
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold"
+                    style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                    Retirer
+                  </button>
+                  {/* Clear selection */}
+                  <button onClick={() => setSelectedDays(new Set())}
+                    className="px-2 py-1.5 rounded-xl text-xs font-bold"
+                    style={{ background: '#F3F4F6', color: '#6B7280' }}>
+                    <X style={{ width: 12, height: 12 }} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* ── READER INSIGHT ── */}
