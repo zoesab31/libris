@@ -64,22 +64,22 @@ export default function Profile() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
-        {/* Header avec background rose gradient */}
-        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-xl" 
-             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+        {/* Header pastel */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-lg" 
+             style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+              <h1 className="text-3xl md:text-5xl font-bold mb-2" style={{ color: '#A81F8C' }}>
                 💕 Mes Personnages Préférés
               </h1>
-              <p className="text-lg md:text-xl text-white text-opacity-90">
+              <p className="text-lg md:text-xl" style={{ color: '#C24FAE' }}>
                 {bookBoyfriends.length} personnage{bookBoyfriends.length > 1 ? 's' : ''} • {favoriteCouples.length} couple{favoriteCouples.length > 1 ? 's' : ''}
               </p>
             </div>
             <Button 
               onClick={() => selectedTab === "couples" ? setShowAddCoupleDialog(true) : setShowAddDialog(true)}
-              className="shadow-xl text-pink-600 font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform"
-              style={{ backgroundColor: 'white' }}>
+              className="shadow-lg font-bold px-8 py-6 rounded-2xl hover:scale-105 transition-transform text-white"
+              style={{ background: 'linear-gradient(135deg, #A81F8C, #E06AC4)' }}>
               <Plus className="w-5 h-5 mr-2" />
               {selectedTab === "couples" ? "Couple" : "Personnage"}
             </Button>
