@@ -210,13 +210,20 @@ export default function ReadingTracker() {
   const totalCells = startOffset + days.length;
   const trailingEmpty = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
 
-  // Books for the book picker (sorted by most recent)
-  const booksWithCovers = useMemo(() => {
+  // Books read this year, sorted by start_date ascending (reading order)
+  const thisYear = String(getYear(new Date()));
+  const booksForPicker = useMemo(() => {
     return userBooks
+      .filter(ub => {
+        if (ub.status === 'En cours') return true; // include currently reading
+        const date = ub.end_date || ub.start_date;
+        return date && date.slice(0, 4) === thisYear;
+      })
+      .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       .map(ub => allBooks.find(b => b.id === ub.book_id))
       .filter(Boolean)
       .filter((b, i, arr) => arr.findIndex(x => x.id === b.id) === i);
-  }, [userBooks, allBooks]);
+  }, [userBooks, allBooks, thisYear]);
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
