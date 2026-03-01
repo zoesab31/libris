@@ -80,7 +80,7 @@ export default function Bingo() {
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   return (
-    <div className="p-3 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
+    <div className="p-3 md:p-8 min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="flex items-center gap-2 md:gap-3">
