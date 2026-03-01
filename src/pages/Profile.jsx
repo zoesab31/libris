@@ -62,7 +62,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         {/* Header avec background rose gradient */}
         <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-xl" 
