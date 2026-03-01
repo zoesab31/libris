@@ -45,7 +45,8 @@ export default function UserProfile() {
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: () => base44.entities.User.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const profileUser = allUsers.find((u) => u.email === userEmail);
