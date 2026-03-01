@@ -20,6 +20,7 @@ export default function SuggestionsWall() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
