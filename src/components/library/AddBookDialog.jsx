@@ -596,266 +596,187 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-neutral-200 rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-neutral-900">
-            Ajouter un livre
-          </DialogTitle>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="search" style={{ color: '#000000' }}>
-              <Search className="w-4 h-4 mr-1" />
-              Rechercher
-            </TabsTrigger>
-            <TabsTrigger value="manual" style={{ color: '#000000' }}>
-              <Plus className="w-4 h-4 mr-1" />
-              Manuel
-            </TabsTrigger>
-            <TabsTrigger value="scan" style={{ color: '#000000' }}>
-              <Camera className="w-4 h-4 mr-1" />
-              Scanner
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="search" className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
-                      style={{ color: 'var(--warm-pink)' }} />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un livre par titre ou auteur..."
-                className="pl-12 py-6 text-lg border-2"
-                style={{ borderColor: 'var(--soft-pink)' }}
-              />
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-3xl border-0 shadow-2xl overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 100%)' }}>
+        
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b" style={{ borderColor: 'rgba(255,105,180,0.15)' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md"
+              style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h2 className="text-xl font-extrabold" style={{ color: '#2D1F3F' }}>Ajouter un livre</h2>
+              <p className="text-xs" style={{ color: '#A78BBA' }}>Recherche, scan ou ajout manuel</p>
+            </div>
+          </div>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Left: Search Results */}
-              <div className={`space-y-3 ${selectedBooks.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-                {isSearching && (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--deep-pink)' }} />
-                  </div>
-                )}
+          {/* Tabs */}
+          <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'rgba(255,255,255,0.7)' }}>
+            {[
+              { value: 'search', icon: <Search className="w-3.5 h-3.5" />, label: 'Rechercher' },
+              { value: 'manual', icon: <Plus className="w-3.5 h-3.5" />, label: 'Manuel' },
+              { value: 'scan', icon: <Camera className="w-3.5 h-3.5" />, label: 'Scanner' },
+            ].map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all"
+                style={{
+                  background: activeTab === tab.value ? 'linear-gradient(135deg, #FF1493, #FF69B4)' : 'transparent',
+                  color: activeTab === tab.value ? 'white' : '#A78BBA',
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                {!isSearching && searchQuery && searchResults.length === 0 && (
-                  <div className="text-center p-8" style={{ color: 'var(--warm-pink)' }}>
-                    Aucun résultat trouvé pour "{searchQuery}"
-                  </div>
-                )}
+        <div className="px-6 py-4">
 
-                {!isSearching && searchResults.length > 0 && (
-                  <div className="max-h-[500px] overflow-y-auto space-y-3 pr-2">
-                    {searchResults.map((book) => {
-                      const isSelected = selectedBooks.find(b => b.id === book.id);
-
-                      return (
-                        <button
-                          key={book.id}
-                          onClick={() => toggleBookSelection(book)}
-                          className={`w-full flex gap-4 p-4 rounded-xl transition-all hover:shadow-lg text-left relative ${
-                            isSelected ? 'shadow-xl' : 'shadow-md'
-                          }`}
-                          style={{
-                            backgroundColor: 'white',
-                            borderWidth: '2px',
-                            borderStyle: 'solid',
-                            borderColor: isSelected ? 'var(--deep-pink)' : 'transparent'
-                          }}
-                        >
-                          {/* Checkbox for multiple selection */}
-                          <div className="flex-shrink-0 pt-1">
-                            <Checkbox checked={isSelected} className={`w-5 h-5 rounded-full border-2 ${
-                              isSelected ? 'bg-gradient-to-br from-pink-500 to-pink-600 border-pink-500' : 'border-gray-300'
-                            }`}
-                              style={isSelected ? { borderColor: 'var(--deep-pink)', backgroundColor: 'var(--deep-pink)' } : {}}
-                            />
-                          </div>
-
-                          {/* Book Cover */}
-                          <div className="w-16 h-24 rounded-lg overflow-hidden shadow-md flex-shrink-0"
-                               style={{ backgroundColor: 'var(--beige)' }}>
-                            {book.coverUrl ? (
-                              <img
-                                src={book.coverUrl}
-                                alt={book.title}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                onError={(e) => {
-                                  e.target.src = 'https://placehold.co/120x180/FFE1F0/FF1493?text=?';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <BookOpen className="w-6 h-6" style={{ color: 'var(--warm-pink)' }} />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Book Info */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-sm mb-1 line-clamp-2" style={{ color: 'var(--dark-text)' }}>
-                              {book.title}
-                            </h4>
-                            <p className="text-xs mb-1" style={{ color: 'var(--warm-pink)' }}>
-                              {book.author}
-                            </p>
-                            <div className="flex gap-2 text-xs" style={{ color: 'var(--dark-text)' }}>
-                              {book.year && <span>📅 {book.year}</span>}
-                              {book.pageCount && <span>📄 {book.pageCount} pages</span>}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+          {/* ── SEARCH TAB ── */}
+          {activeTab === 'search' && (
+            <div className="space-y-4">
+              {/* Search input */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#FF69B4' }} />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Titre, auteur, ISBN..."
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl text-sm font-medium outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.9)',
+                    border: '2px solid',
+                    borderColor: searchQuery ? '#FF69B4' : 'rgba(255,105,180,0.2)',
+                    color: '#2D1F3F',
+                  }}
+                />
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <X className="w-4 h-4" style={{ color: '#A78BBA' }} />
+                  </button>
                 )}
               </div>
 
-              {/* Right: Summary / Actions for Selected Books */}
+              {/* Loading */}
+              {isSearching && (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#FF1493' }} />
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!isSearching && searchQuery && searchResults.length === 0 && (
+                <div className="text-center py-10">
+                  <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>Aucun résultat pour « {searchQuery} »</p>
+                </div>
+              )}
+
+              {/* No search yet */}
+              {!searchQuery && (
+                <div className="text-center py-10">
+                  <Search className="w-10 h-10 mx-auto mb-3 opacity-20" style={{ color: '#FF1493' }} />
+                  <p className="text-sm" style={{ color: '#A78BBA' }}>Tape le titre ou l'auteur pour commencer</p>
+                </div>
+              )}
+
+              {/* Results */}
+              {!isSearching && searchResults.length > 0 && (
+                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                  {searchResults.map((book) => {
+                    const isSelected = !!selectedBooks.find(b => b.id === book.id);
+                    return (
+                      <button
+                        key={book.id}
+                        onClick={() => toggleBookSelection(book)}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
+                        style={{
+                          background: isSelected ? 'linear-gradient(135deg, #FDF2FE, #FDE8F8)' : 'rgba(255,255,255,0.8)',
+                          border: '2px solid',
+                          borderColor: isSelected ? '#E91E63' : 'rgba(255,105,180,0.1)',
+                        }}
+                      >
+                        {/* Cover */}
+                        <div className="w-12 h-17 rounded-xl overflow-hidden flex-shrink-0 shadow-sm" style={{ width: 44, height: 62 }}>
+                          {book.coverUrl ? (
+                            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover"
+                              onError={(e) => { e.target.src = 'https://placehold.co/88x124/FFE1F0/FF1493?text=?'; }} />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center" style={{ background: '#FFE9F0' }}>
+                              <BookOpen className="w-4 h-4" style={{ color: '#FF69B4' }} />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm line-clamp-1" style={{ color: '#2D1F3F' }}>{book.title}</p>
+                          <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#FF69B4' }}>{book.author}</p>
+                          <div className="flex gap-2 mt-1">
+                            {book.year && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3E5F5', color: '#9C27B0' }}>{book.year}</span>}
+                            {book.pageCount && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#FCE4EC', color: '#E91E63' }}>{book.pageCount} p.</span>}
+                          </div>
+                        </div>
+
+                        {/* Check */}
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ background: isSelected ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : 'rgba(255,105,180,0.1)' }}>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Selected books bar */}
               {selectedBooks.length > 0 && (
-                <div className="lg:col-span-1">
-                  <div className="sticky top-0 p-6 rounded-xl shadow-lg"
-                       style={{ backgroundColor: 'white', borderWidth: '2px', borderStyle: 'solid', borderColor: 'var(--soft-pink)' }}>
-                    <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.9)', border: '2px solid rgba(255,105,180,0.2)' }}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold" style={{ color: '#2D1F3F' }}>
                       📖 {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
-                    </h3>
-
-                    {/* Status for all books */}
-                    <div className="mb-4">
-                      <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                        Statut par défaut
-                      </Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {STATUSES.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => setDefaultStatus(s)}
-                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
-                              defaultStatus === s ? 'shadow-md scale-105' : 'hover:shadow-md'
-                            }`}
-                            style={{
-                              backgroundColor: defaultStatus === s ? 'var(--soft-pink)' : 'white',
-                              color: defaultStatus === s ? 'white' : '#000000',
-                              border: '2px solid',
-                              borderColor: defaultStatus === s ? 'var(--deep-pink)' : 'var(--beige)'
-                            }}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Individual statuses override */}
-                    <div className="mb-4 pt-4 border-t" style={{ borderColor: 'var(--beige)' }}>
-                      <Label className="text-sm font-bold mb-2 block" style={{ color: 'var(--dark-text)' }}>
-                        Statut individuel (optionnel)
-                      </Label>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                        {selectedBooks.map((book) => (
-                          <div key={book.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--cream)' }}>
-                            <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0"
-                                 style={{ backgroundColor: 'white' }}>
-                              {book.coverUrl ? (
-                                <img
-                                  src={book.coverUrl}
-                                  alt={book.title}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs">?</div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate" style={{ color: 'var(--dark-text)' }}>
-                                {book.title}
-                              </p>
-                            </div>
-                            <Select
-                              value={individualStatuses[book.id] || defaultStatus}
-                              onValueChange={(value) => setIndividualStatuses({
-                                ...individualStatuses,
-                                [book.id]: value
-                              })}
-                            >
-                              <SelectTrigger className="w-[100px] text-sm h-auto py-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {STATUSES.map(s => (
-                                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
-                      className="w-full text-white font-medium mt-4"
-                      style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                      disabled={selectedBooks.length === 0 || addBooksMutation.isPending}
-                    >
-                      {addBooksMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Ajout en cours...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
-                        </>
-                      )}
-                    </Button>
+                    </p>
+                    <button onClick={() => setSelectedBooks([])} className="text-xs" style={{ color: '#A78BBA' }}>Tout effacer</button>
                   </div>
-                </div>
-              )}
 
-              {/* Placeholder when no books are selected */}
-              {!selectedBooks.length && !isSearching && searchResults.length > 0 && (
-                <div className="hidden lg:block lg:col-span-1 sticky top-0 p-8 rounded-xl text-center"
-                     style={{ backgroundColor: 'var(--cream)' }}>
-                  <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: 'var(--warm-pink)' }} />
-                  <p className="text-sm" style={{ color: 'var(--dark-text)' }}>
-                    Sélectionnez un ou plusieurs livres
-                  </p>
+                  {/* Status selector */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2" style={{ color: '#A78BBA' }}>Statut</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {STATUSES.map(s => (
+                        <button key={s} onClick={() => setDefaultStatus(s)}
+                          className="px-3 py-1 rounded-full text-xs font-bold transition-all"
+                          style={{
+                            background: defaultStatus === s ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : '#F3E5F5',
+                            color: defaultStatus === s ? 'white' : '#9B3EC8',
+                          }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
+                    disabled={addBooksMutation.isPending}
+                    className="w-full py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}
+                  >
+                    {addBooksMutation.isPending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Ajout en cours...</>
+                    ) : (
+                      <><Plus className="w-4 h-4" /> Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}</>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
-
-            {/* Mobile sticky footer with add button */}
-            {selectedBooks.length > 0 && (
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 shadow-lg z-50"
-                   style={{ borderColor: 'var(--soft-pink)' }}>
-                <Button
-                  onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
-                  className="w-full text-white font-medium py-6"
-                  style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
-                  disabled={selectedBooks.length === 0 || addBooksMutation.isPending}
-                >
-                  {addBooksMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Ajout en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-5 h-5 mr-2" />
-                      Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </TabsContent>
+          )}
 
 
 
