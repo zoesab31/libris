@@ -72,28 +72,46 @@ export default function Statistics() {
     return null;
   };
 
+  // Expand books with rereads as separate virtual entries
+  const expandedBooks = useMemo(() => {
+    const entries = [];
+    myBooks.forEach(b => {
+      // Main reading
+      entries.push(b);
+      // Rereads
+      if (b.rereads && b.rereads.length > 0) {
+        b.rereads.forEach(reread => {
+          if (reread.end_date) {
+            entries.push({ ...b, _reread: true, end_date: reread.end_date, start_date: reread.start_date });
+          }
+        });
+      }
+    });
+    return entries;
+  }, [myBooks]);
+
   const booksThisYear = useMemo(() => {
     if (viewMode === 'all') {
-      return myBooks.filter(b => {
+      return expandedBooks.filter(b => {
         const effectiveDate = getEffectiveDate(b);
         return effectiveDate !== null;
       });
     } else if (viewMode === 'compare') {
-      return myBooks.filter(b => {
+      return expandedBooks.filter(b => {
         const effectiveDate = getEffectiveDate(b);
         if (!effectiveDate) return false;
         const year = new Date(effectiveDate).getFullYear();
         return selectedYears.includes(year);
       });
     } else { // 'single' or 'friends' mode
-      return myBooks.filter(b => {
+      return expandedBooks.filter(b => {
         const effectiveDate = getEffectiveDate(b);
         if (!effectiveDate) return false;
         const year = new Date(effectiveDate).getFullYear();
         return year === selectedYear;
       });
     }
-  }, [myBooks, selectedYear, viewMode, selectedYears, allBooks]);
+  }, [expandedBooks, selectedYear, viewMode, selectedYears, allBooks]);
 
   const genreStats = useMemo(() => {
     const stats = {};
