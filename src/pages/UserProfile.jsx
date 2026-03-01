@@ -562,16 +562,7 @@ export default function UserProfile() {
               <Map className="w-5 h-5 mr-2" />
               Map
             </TabsTrigger>
-            {!isOwnProfile &&
-            <TabsTrigger
-              value="friend"
-              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
-              style={activeTab === "friend" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
 
-                <UsersRound className="w-5 h-5 mr-2" />
-                Profil amie
-              </TabsTrigger>
-            }
           </TabsList>
 
           <TabsContent value="library">
@@ -1551,36 +1542,7 @@ export default function UserProfile() {
             }
           </TabsContent>
 
-          <TabsContent value="friend">
-            {!isOwnProfile &&
-            <div className="space-y-6">
-                <Card className="border-0 shadow-lg bg-white">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>Bio</h3>
-                    {profileUser.bio ?
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-pink)' }}>{profileUser.bio}</p> :
 
-                  <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Pas de bio pour le moment.</p>
-                  }
-                  </CardContent>
-                </Card>
-
-                <FourBooksSection
-                title="📚 En 4 livres pour la connaître"
-                description="Ces livres la définissent en tant que lectrice"
-                bookIds={profileUser.books_to_know_me || []}
-                allBooks={allBooks}
-                isOwnProfile={false} />
-
-                <FourBooksSection
-                title="⭐ Ses 4 coups de cœur de l'année"
-                description="Ses lectures préférées de cette année"
-                bookIds={profileUser.favorite_books_2024 || []}
-                allBooks={allBooks}
-                isOwnProfile={false} />
-              </div>
-            }
-          </TabsContent>
           </Tabs>
       </div>
 
