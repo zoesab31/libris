@@ -372,17 +372,17 @@ export default function MyLibrary() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFF0F6 0%, #FFE4EC 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
-        {/* Header rose gradient */}
-        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl"
-        style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+        {/* Header pastel */}
+        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-lg"
+        style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+              <h1 className="text-3xl md:text-4xl font-extrabold mb-1" style={{ color: '#2D1F3F' }}>
                 📚 Ma Bibliothèque
               </h1>
-              <p className="text-lg md:text-xl text-white text-opacity-90">
+              <p className="text-sm md:text-base font-medium" style={{ color: '#A78BBA' }}>
                 {myBooks.length} livre{myBooks.length > 1 ? 's' : ''} dans votre collection
               </p>
             </div>
@@ -394,11 +394,11 @@ export default function MyLibrary() {
                 <Button
                   variant="outline"
                   onClick={() => setShowShelves(true)}
-                  className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
+                  className="font-bold rounded-xl shadow-sm px-4 md:px-6 py-2 md:py-3"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    borderColor: 'white'
+                    backgroundColor: 'rgba(255,255,255,0.8)',
+                    color: '#9C27B0',
+                    borderColor: 'rgba(156,39,176,0.25)'
                   }}>
 
                   <span className="hidden md:inline">Étagères</span>
@@ -407,11 +407,11 @@ export default function MyLibrary() {
                 <Button
                   variant="outline"
                   onClick={() => setSelectionMode(true)}
-                  className="font-bold rounded-xl shadow-lg px-4 md:px-6 py-2 md:py-3"
+                  className="font-bold rounded-xl shadow-sm px-4 md:px-6 py-2 md:py-3"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
-                    borderColor: 'white'
+                    backgroundColor: 'rgba(255,255,255,0.8)',
+                    color: '#9C27B0',
+                    borderColor: 'rgba(156,39,176,0.25)'
                   }}>
 
                   <span className="hidden md:inline">Sélectionner</span>
@@ -420,8 +420,8 @@ export default function MyLibrary() {
 
                 <Button
                   onClick={() => setShowAddBook(true)}
-                  className="shadow-xl font-bold px-6 md:px-8 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform"
-                  style={{ backgroundColor: 'white', color: '#FF1493' }}>
+                  className="shadow-md font-bold px-6 md:px-8 py-2 md:py-3 rounded-xl hover:scale-105 transition-transform text-white"
+                  style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}>
                   <Plus className="w-5 h-5 mr-1 md:mr-2" />
                   <span className="hidden md:inline">Livre</span>
                 </Button>
