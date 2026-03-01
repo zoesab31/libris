@@ -32,13 +32,17 @@ export default function ReadingTracker() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Load saved overrides from user data
   useEffect(() => {
     if (!user) return;
     if (user.reading_day_book_overrides) {
       try { setBookOverrides(JSON.parse(user.reading_day_book_overrides)); } catch {}
     }
   }, [user]);
+
+  // Exit edit mode clears selection
+  useEffect(() => {
+    if (!editMode) { setSelectedDays(new Set()); setShowBookPicker(false); }
+  }, [editMode]);
 
   const saveOverrides = async (overrides) => {
     setBookOverrides(overrides);
