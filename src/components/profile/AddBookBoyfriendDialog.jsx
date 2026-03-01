@@ -318,9 +318,30 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
             </div>
           </div>
 
-          {characterData.image_url && (
-            <div className="rounded-xl overflow-hidden">
+          {cropImageUrl && (
+            <div className="rounded-xl border-2 p-4" style={{ borderColor: 'var(--beige)' }}>
+              <p className="text-sm font-medium mb-3 text-center" style={{ color: 'var(--dark-text)' }}>
+                Recadre l'image comme tu le souhaites
+              </p>
+              <ImageCropper
+                imageUrl={cropImageUrl}
+                aspectRatio="portrait"
+                onCropComplete={handleCropComplete}
+                onCancel={() => setCropImageUrl(null)}
+              />
+            </div>
+          )}
+
+          {characterData.image_url && !cropImageUrl && (
+            <div className="rounded-xl overflow-hidden relative group">
               <img src={characterData.image_url} alt="Preview" className="w-full h-64 object-cover" />
+              <button
+                type="button"
+                onClick={() => setCropImageUrl(characterData.image_url)}
+                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium gap-2 text-sm"
+              >
+                <Crop className="w-4 h-4" /> Recadrer
+              </button>
             </div>
           )}
 
