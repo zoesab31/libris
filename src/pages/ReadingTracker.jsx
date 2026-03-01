@@ -172,14 +172,13 @@ export default function ReadingTracker() {
     if (isFuture) return;
 
     if (editMode) {
-      // In edit mode: show options (toggle + change book)
-      if (readingDays.has(dateStr)) {
-        setSelectedDayForBook({ dateStr, hasRead: true });
-      } else {
-        // Just mark it
-        markDayMutation.mutate(day);
-        toast.success('Jour marqué ✅');
-      }
+      // In edit mode: toggle day selection for multi-day editing
+      setSelectedDays(prev => {
+        const next = new Set(prev);
+        if (next.has(dateStr)) next.delete(dateStr);
+        else next.add(dateStr);
+        return next;
+      });
     } else {
       // Normal mode: toggle
       if (readingDays.has(dateStr)) {
