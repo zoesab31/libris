@@ -618,6 +618,37 @@ export default function UserProfile() {
                   allBooks={allBooks}
                   isOwnProfile={false}
                   emptyMessage="Pas encore renseigné" />
+
+                {userCollections.length > 0 && (
+                  <div className="space-y-4">
+                    {userCollections.map((collection) => (
+                      <Card key={collection.id} className="border-0 shadow-lg bg-white">
+                        <CardContent className="p-6">
+                          <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--dark-text)' }}>
+                            {collection.title}
+                          </h3>
+                          <div className="grid grid-cols-3 gap-4">
+                            {collection.book_ids?.map((bookId) => {
+                              const book = allBooks.find(b => b.id === bookId);
+                              if (!book) return null;
+                              return (
+                                <div key={bookId} className="rounded-lg overflow-hidden">
+                                  {book.cover_url ? (
+                                    <img src={book.cover_url} alt={book.title} className="w-full aspect-[2/3] object-cover rounded-lg" />
+                                  ) : (
+                                    <div className="w-full aspect-[2/3] bg-gradient-to-br from-pink-200 to-purple-200 rounded-lg flex items-center justify-center">
+                                      <BookOpen className="w-8 h-8 text-gray-400" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabsContent>
           )}
