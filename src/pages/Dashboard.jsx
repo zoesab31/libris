@@ -454,7 +454,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium mb-0.5" style={{ color: '#D4A0C8' }}>
                   {format(new Date(), "EEEE d MMMM", { locale: fr })}
                 </p>
-                <h1 className="text-2xl md:text-4xl font-bold gradient-text-pink leading-tight">
+                <h1 className="px-1 py-2 text-2xl font-bold leading-tight md:text-4xl gradient-text-pink">
                   Bonjour {displayName} ✨
                 </h1>
                 <p className="text-sm mt-1" style={{ color: '#B090B0' }}>
