@@ -145,51 +145,56 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=12&langRestrict=fr`
+          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=20&orderBy=relevance`
         );
         const data = await response.json();
 
         if (data.items) {
-          const books = data.items.map(item => {
-            // Get highest quality image available
-            let coverUrl = "";
-            if (item.volumeInfo.imageLinks) {
-              // Priority: extraLarge > large > medium > thumbnail > smallThumbnail
-              coverUrl = item.volumeInfo.imageLinks.extraLarge ||
-                        item.volumeInfo.imageLinks.large ||
-                        item.volumeInfo.imageLinks.medium ||
-                        item.volumeInfo.imageLinks.thumbnail ||
-                        item.volumeInfo.imageLinks.smallThumbnail ||
-                        "";
-
-              // Force HTTPS and increase zoom level for better quality
-              if (coverUrl) {
-                coverUrl = coverUrl.replace('http:', 'https:');
-                // Increase zoom level if it's a Google Books image URL
-                if (coverUrl.includes('books.google.com')) {
+          const books = data.items
+            .filter(item => {
+              // Exclude items without proper book info
+              const info = item.volumeInfo;
+              if (!info.title) return false;
+              // Exclude very old publications (before 1900) unless it's a classic search
+              const year = info.publishedDate ? parseInt(info.publishedDate) : null;
+              if (year && year < 1900) return false;
+              // Exclude items with no cover and no author
+              if (!info.authors && !info.imageLinks) return false;
+              return true;
+            })
+            .map(item => {
+              let coverUrl = "";
+              if (item.volumeInfo.imageLinks) {
+                coverUrl = item.volumeInfo.imageLinks.extraLarge ||
+                          item.volumeInfo.imageLinks.large ||
+                          item.volumeInfo.imageLinks.medium ||
+                          item.volumeInfo.imageLinks.thumbnail ||
+                          item.volumeInfo.imageLinks.smallThumbnail || "";
+                if (coverUrl) {
+                  coverUrl = coverUrl.replace('http:', 'https:');
+                  if (coverUrl.includes('books.google.com')) {
                     coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
-                    // If no zoom parameter, add it
                     if (!coverUrl.includes('zoom=')) {
-                        coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
+                      coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
                     }
+                  }
                 }
               }
-            }
-
-            return {
-              id: item.id,
-              title: item.volumeInfo.title || "Titre inconnu",
-              authors: item.volumeInfo.authors || ["Auteur inconnu"],
-              author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
-              publishedDate: item.volumeInfo.publishedDate || "",
-              year: item.volumeInfo.publishedDate ? new Date(item.volumeInfo.publishedDate).getFullYear() : null,
-              pageCount: item.volumeInfo.pageCount || null,
-              description: item.volumeInfo.description || "",
-              coverUrl: coverUrl,
-              categories: item.volumeInfo.categories || [],
-              isbn: item.volumeInfo.industryIdentifiers?.[0]?.identifier || ""
-            };
-          });
+              return {
+                id: item.id,
+                title: item.volumeInfo.title || "Titre inconnu",
+                authors: item.volumeInfo.authors || ["Auteur inconnu"],
+                author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
+                publishedDate: item.volumeInfo.publishedDate || "",
+                year: item.volumeInfo.publishedDate ? parseInt(item.volumeInfo.publishedDate) : null,
+                pageCount: item.volumeInfo.pageCount || null,
+                description: item.volumeInfo.description || "",
+                coverUrl: coverUrl,
+                categories: item.volumeInfo.categories || [],
+                isbn: item.volumeInfo.industryIdentifiers?.[0]?.identifier || ""
+              };
+            })
+            .slice(0, 12);
           setSearchResults(books);
         } else {
           setSearchResults([]);
