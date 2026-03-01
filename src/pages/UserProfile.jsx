@@ -398,14 +398,14 @@ export default function UserProfile() {
 
             {!isOwnProfile &&
             <div className="flex gap-3 justify-center md:justify-start flex-wrap">
-                <Button
-                onClick={handleChat}
-                className="text-white font-medium px-6 py-3"
-                style={{ backgroundColor: accentColor }}>
+                
 
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Chat
-                </Button>
+
+
+
+
+
+
                 <Button
                 variant="outline"
                 className="px-6 py-3"
@@ -1337,6 +1337,7 @@ export default function UserProfile() {
                   <div key={inspo.id} className="group relative rounded-xl overflow-hidden shadow-lg 
                                          transition-all hover:shadow-2xl hover:-translate-y-1">
 
+
                     <div className="aspect-square relative">
                       <img
                         src={inspo.image_url}
@@ -1347,6 +1348,7 @@ export default function UserProfile() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
                                    opacity-0 group-hover:opacity-100 transition-opacity">
+
 
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
                         {inspo.title &&
@@ -1486,6 +1488,7 @@ export default function UserProfile() {
                   <div key={fanart.id} className="group relative rounded-xl overflow-hidden shadow-lg 
                                          transition-all hover:shadow-2xl hover:-translate-y-1">
 
+
                     <div className="aspect-square relative">
                       <img
                         src={fanart.image_url}
@@ -1496,6 +1499,7 @@ export default function UserProfile() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent 
                                    opacity-0 group-hover:opacity-100 transition-opacity">
+
 
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
                         {fanart.folder_path &&
