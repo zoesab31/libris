@@ -50,7 +50,7 @@ export default function Social() {
   ];
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: 'linear-gradient(to bottom, #F3E5F5 0%, #F8BBD0 50%, #FFE9F0 100%)' }}>
+    <div className="min-h-screen p-4 md:p-8" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div 
