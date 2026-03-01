@@ -525,97 +525,59 @@ export default function ReadingTracker() {
         </motion.div>
       </div>
 
-      {/* ── BOOK PICKER DIALOG ── */}
-      <Dialog open={!!selectedDayForBook} onOpenChange={(open) => !open && setSelectedDayForBook(null)}>
+      {/* ── BOOK PICKER DIALOG (multi-day) ── */}
+      <Dialog open={showBookPicker} onOpenChange={(open) => { if (!open) setShowBookPicker(false); }}>
         <DialogContent className="max-w-sm rounded-3xl">
           <DialogHeader>
-            <DialogTitle style={{ color: '#FF1493' }}>
-              📖 Modifier le livre — {selectedDayForBook && format(new Date(selectedDayForBook.dateStr + 'T12:00:00'), 'd MMMM', { locale: fr })}
+            <DialogTitle style={{ color: '#7C3AED' }}>
+              📖 Quel livre pour ces {selectedDays.size} jour{selectedDays.size > 1 ? 's' : ''} ?
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <p className="text-sm text-gray-500">Quel livre lisais-tu ce jour-là ?</p>
+          <div className="space-y-2 pt-2">
+            <p className="text-xs text-gray-400 mb-2">Livres lus cette année, dans l'ordre de lecture</p>
 
-            {/* Current book */}
-            {selectedDayForBook && (() => {
-              const current = getBookForDay(selectedDayForBook.dateStr);
-              return current ? (
-                <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ background: '#FFF0F8', border: '2px solid #FF69B4' }}>
-                  {current.cover_url && <img src={current.cover_url} alt="" className="w-10 h-14 object-cover rounded-lg flex-shrink-0" />}
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Actuellement</p>
-                    <p className="font-bold text-sm" style={{ color: '#2D1F3F' }}>{current.title}</p>
-                    <p className="text-xs text-gray-500">{current.author}</p>
-                  </div>
-                </div>
-              ) : null;
-            })()}
-
-            {/* Remove override option */}
-            {selectedDayForBook && bookOverrides[selectedDayForBook.dateStr] && (
-              <button
-                onClick={() => {
-                  const newOverrides = { ...bookOverrides };
-                  delete newOverrides[selectedDayForBook.dateStr];
-                  saveOverrides(newOverrides);
-                  toast.success('Livre par défaut restauré');
-                  setSelectedDayForBook(null);
-                }}
-                className="w-full py-2 rounded-xl text-sm font-semibold"
-                style={{ background: '#F3F4F6', color: '#6B7280' }}
-              >
-                Restaurer la détection automatique
-              </button>
-            )}
-
-            {/* Book list */}
-            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-              {booksWithCovers.map(book => {
-                const isSelected = selectedDayForBook && bookOverrides[selectedDayForBook.dateStr] === book.id;
-                return (
-                  <button
-                    key={book.id}
-                    onClick={() => {
-                      if (!selectedDayForBook) return;
-                      const newOverrides = { ...bookOverrides, [selectedDayForBook.dateStr]: book.id };
-                      saveOverrides(newOverrides);
-                      toast.success(`Livre mis à jour : ${book.title}`);
-                      setSelectedDayForBook(null);
-                    }}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all"
-                    style={{
-                      background: isSelected ? '#FFE9F6' : '#F8F5FF',
-                      border: isSelected ? '2px solid #FF69B4' : '2px solid transparent',
-                    }}
-                  >
-                    {book.cover_url
-                      ? <img src={book.cover_url} alt="" className="w-8 h-11 object-cover rounded-lg flex-shrink-0" />
-                      : <div className="w-8 h-11 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: '#FFE9F0' }}><BookOpen className="w-4 h-4" style={{ color: '#FF69B4' }} /></div>
-                    }
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm line-clamp-1" style={{ color: '#2D1F3F' }}>{book.title}</p>
-                      <p className="text-xs text-gray-500 line-clamp-1">{book.author}</p>
-                    </div>
-                    {isSelected && <Check className="w-4 h-4 ml-auto flex-shrink-0" style={{ color: '#FF1493' }} />}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Unmark day option */}
+            {/* Reset overrides for selected days */}
             <button
               onClick={() => {
-                if (!selectedDayForBook) return;
-                const date = new Date(selectedDayForBook.dateStr + 'T12:00:00');
-                unmarkDayMutation.mutate(date);
-                toast.success('Jour retiré');
-                setSelectedDayForBook(null);
+                const newOverrides = { ...bookOverrides };
+                selectedDays.forEach(d => delete newOverrides[d]);
+                saveOverrides(newOverrides);
+                toast.success('Détection automatique restaurée');
+                setShowBookPicker(false);
+                setSelectedDays(new Set());
               }}
               className="w-full py-2 rounded-xl text-sm font-semibold"
-              style={{ background: '#FEE2E2', color: '#DC2626' }}
+              style={{ background: '#F3F4F6', color: '#6B7280' }}
             >
-              Supprimer ce jour de lecture
+              ↩ Détection automatique
             </button>
+
+            <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+              {booksForPicker.map(book => (
+                <button
+                  key={book.id}
+                  onClick={() => {
+                    const newOverrides = { ...bookOverrides };
+                    selectedDays.forEach(d => { newOverrides[d] = book.id; });
+                    saveOverrides(newOverrides);
+                    toast.success(`Livre assigné : ${book.title}`);
+                    setShowBookPicker(false);
+                    setSelectedDays(new Set());
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all"
+                  style={{ background: '#F8F5FF', border: '2px solid transparent' }}
+                >
+                  {book.cover_url
+                    ? <img src={book.cover_url} alt="" className="w-8 h-11 object-cover rounded-lg flex-shrink-0" />
+                    : <div className="w-8 h-11 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: '#FFE9F0' }}><BookOpen className="w-4 h-4" style={{ color: '#FF69B4' }} /></div>
+                  }
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm line-clamp-1" style={{ color: '#2D1F3F' }}>{book.title}</p>
+                    <p className="text-xs text-gray-500 line-clamp-1">{book.author}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
