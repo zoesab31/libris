@@ -114,14 +114,18 @@ export default function ReadingTracker() {
 
   // Auto-detect book being read on a given date
   const autoDetectBookForDay = (dateStr) => {
-    // "En cours" with no end_date: include today
-    const today = format(new Date(), 'yyyy-MM-dd');
     const reading = userBooks
       .filter(ub => {
+        // Livres "En cours" : toujours affichés peu importe la date (même sans start_date)
+        if (ub.status === 'En cours') {
+          if (!ub.start_date) return true; // pas de date de début → on l'inclut quand même
+          const start = ub.start_date.slice(0, 10);
+          return start <= dateStr;
+        }
+        // Livres terminés : on vérifie que la date est dans la plage
         if (!ub.start_date) return false;
         const start = ub.start_date.slice(0, 10);
         if (start > dateStr) return false;
-        if (ub.status === 'En cours') return true; // reading right now, include all past days from start
         if (ub.end_date && ub.end_date.slice(0, 10) >= dateStr) return true;
         return false;
       })
