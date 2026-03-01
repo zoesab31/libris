@@ -108,16 +108,22 @@ export default function Layout({ children, currentPageName }) {
         }
         
         :root {
-          --cream: #FFF0F6;
-          --beige: #FFD6E8;
+          --cream: #FFF8FC;
+          --beige: #FEF3F9;
           --soft-pink: #FF69B4;
           --warm-pink: #FF1493;
           --deep-pink: #E91E63;
           --gold: #FFB6C1;
-          --rose-gold: #FFB3D9;
-          --dark-text: #C2185B;
-          --lavender: #F8BBD0;
-          --peach: #FFCCE5;
+          --rose-gold: #F4A7CE;
+          --dark-text: #2D1F3F;
+          --lavender: #F5F0FF;
+          --peach: #FDE8F4;
+          --page-bg: linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%);
+          --card-bg: rgba(255,255,255,0.72);
+          --card-border: rgba(255,255,255,0.85);
+          --accent-purple: #9C27B0;
+          --accent-purple-light: #F3E5F5;
+          --text-muted: #A78BBA;
         }
 
         .dark-theme {
