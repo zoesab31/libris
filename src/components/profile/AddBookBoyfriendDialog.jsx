@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Loader2, Upload, Search, BookOpen } from "lucide-react";
+import { Loader2, Upload, Search, BookOpen, Crop } from "lucide-react";
+import ImageCropper from "@/components/profile/ImageCropper";
 import { toast } from "sonner";
 
 export default function AddBookBoyfriendDialog({ open, onOpenChange, books, existingCharacters, editingCharacter = null }) {
