@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -240,7 +239,8 @@ export default function MusicPlaylist() {
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-8 p-5 rounded-3xl shadow-lg"
+             style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
           {selectedSeries && (
             <Button
               variant="ghost"
@@ -251,20 +251,20 @@ export default function MusicPlaylist() {
               }}
               className="rounded-full"
             >
-              <ArrowLeft className="w-6 h-6" style={{ color: 'var(--deep-pink)' }} />
+              <ArrowLeft className="w-6 h-6" style={{ color: '#A81F8C' }} />
             </Button>
           )}
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, #E6B3E8, #FFB6C8)' }}>
+               style={{ background: 'linear-gradient(135deg, #E06AC4, #F4BDE9)' }}>
             <Music className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#A81F8C' }}>
               {selectedSeries
                 ? (selectedSeries.type === 'series' ? selectedSeries.series.series_name : selectedSeries.book.title)
                 : '🎵 Ma Playlist Littéraire'}
             </h1>
-            <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+            <p className="text-lg" style={{ color: '#C24FAE' }}>
               {selectedSeries
                 ? `${selectedSeries.musicList.length} musique${selectedSeries.musicList.length > 1 ? 's' : ''}${selectedSeries.type !== 'standalone' ? ` • ${selectedSeries.books.length} tome${selectedSeries.books.length > 1 ? 's' : ''}` : ''}`
                 : `${totalMusicCount} musique${totalMusicCount > 1 ? 's' : ''} • ${sortedEntries.filter(e => e.type === 'series').length} saga${sortedEntries.filter(e => e.type === 'series').length > 1 ? 's' : ''} et ${sortedEntries.filter(e => e.type === 'standalone').length} livre${sortedEntries.filter(e => e.type === 'standalone').length > 1 ? 's' : ''}`

@@ -98,8 +98,9 @@ export default function Objectifs() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Objectifs</h1>
+        <div className="flex items-center justify-between p-5 rounded-3xl shadow-lg mb-6"
+             style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
+          <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#A81F8C' }}>📌 Objectifs</h1>
           <div className="flex items-center gap-2">
             <Select value={String(form.year)} onValueChange={(v) => setForm((f) => ({ ...f, year: Number(v) }))}>
               <SelectTrigger className="w-28"><SelectValue placeholder="Année" /></SelectTrigger>

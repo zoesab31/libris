@@ -39,16 +39,17 @@ export default function Discover() {
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-8 p-5 rounded-3xl shadow-lg"
+             style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
           <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-               style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+               style={{ background: 'linear-gradient(135deg, #E06AC4, #F4BDE9)' }}>
             <Sparkles className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+            <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#A81F8C' }}>
               Découvrir de nouveaux livres
             </h1>
-            <p className="text-lg font-medium" style={{ color: 'var(--deep-pink)' }}>
+            <p className="text-lg font-medium" style={{ color: '#C24FAE' }}>
               Vos ressources préférées pour trouver votre prochaine lecture ✨
             </p>
           </div>

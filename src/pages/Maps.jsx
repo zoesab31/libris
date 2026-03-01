@@ -79,17 +79,18 @@ export default function Maps() {
   return (
     <div className="p-4 md:p-8 min-h-screen" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 p-5 rounded-3xl shadow-lg"
+             style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
+                 style={{ background: 'linear-gradient(135deg, #E06AC4, #F4BDE9)' }}>
               <Map className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#A81F8C' }}>
                 Lieux de Lecture 📍
               </h1>
-              <p className="text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-lg" style={{ color: '#C24FAE' }}>
                 {filteredLocations.length} lieu{filteredLocations.length > 1 ? 'x' : ''} • {locations.length} toi + {friendsLocations.length} amies
               </p>
             </div>
