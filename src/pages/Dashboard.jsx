@@ -905,8 +905,8 @@ export default function Dashboard() {
                 <BestFriendCard user={user} />
               </motion.div>
 
-              {/* Objectif de lecture */}
-              {readingGoal &&
+              {/* Objectif de lecture - masqué */}
+              {false && readingGoal &&
               <motion.div variants={itemVariants}>
                   <div
                   className="rounded-3xl shadow-sm card-hover overflow-hidden cursor-pointer"
