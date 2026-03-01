@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [showGoalDialog, setShowGoalDialog] = useState(false);
   const [newGoalValue, setNewGoalValue] = useState("");
   const [showAddBookDialog, setShowAddBookDialog] = useState(false);
+  const [fullscreenBook, setFullscreenBook] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
