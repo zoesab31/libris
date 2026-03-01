@@ -376,13 +376,13 @@ export default function MyLibrary() {
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         {/* Header pastel */}
         <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-lg"
-        style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
+        style={{ background: '#FCE8F8', border: '1px solid #F4BDE9' }}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold mb-1" style={{ color: '#2D1F3F' }}>
+              <h1 className="text-3xl md:text-4xl font-extrabold mb-1" style={{ color: '#A81F8C' }}>
                 📚 Ma Bibliothèque
               </h1>
-              <p className="text-sm md:text-base font-medium" style={{ color: '#A78BBA' }}>
+              <p className="text-sm md:text-base font-medium" style={{ color: '#C24FAE' }}>
                 {myBooks.length} livre{myBooks.length > 1 ? 's' : ''} dans votre collection
               </p>
             </div>
