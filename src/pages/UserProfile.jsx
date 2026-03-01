@@ -144,6 +144,12 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'library' && libraryView === 'pal'
   });
 
+  const { data: userCollections = [] } = useQuery({
+    queryKey: ['userCollections', userEmail],
+    queryFn: () => base44.entities.BookCollection.filter({ created_by: userEmail }, 'order'),
+    enabled: !!userEmail && activeTab === 'mypage'
+  });
+
   const readBooks = userBooks.filter((b) => b.status === "Lu");
   const toReadBooks = userBooks.filter((b) => b.status === "À lire");
   const wishlistBooks = userBooks.filter((b) => b.status === "Wishlist");
