@@ -780,7 +780,8 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
 
 
 
-          <TabsContent value="scan" className="space-y-4">
+          {/* ── SCAN TAB ── */}
+          {activeTab === 'scan' && <div className="space-y-4">
             <BarcodeScanner onScanSuccess={handleBarcodeScanned} />
 
             {loadingScannedBook && (
