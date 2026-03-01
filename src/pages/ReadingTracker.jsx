@@ -24,7 +24,7 @@ export default function ReadingTracker() {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   // Multi-day edit selection
   const [selectedDays, setSelectedDays] = useState(new Set()); // Set of dateStr
-  const [bookOverrides, setBookOverrides] = useState({}); // { dateStr: book_id }
+  const [bookOverrides, setBookOverrides] = useState({}); // { dateStr: book_id[] }
   const [showBookPicker, setShowBookPicker] = useState(false);
   const queryClient = useQueryClient();
 
