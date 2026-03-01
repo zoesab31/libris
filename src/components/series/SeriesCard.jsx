@@ -265,27 +265,7 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick, onEdit 
               </span>
             )}
 
-            {/* Single actions menu */}
-            <div className="mt-auto self-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-8 px-2">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleEdit(e); }}>
-                    <Edit className="w-4 h-4 mr-2"/> Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleToggleAbandon(e); }}>
-                    <Ban className="w-4 h-4 mr-2"/> {series.is_abandoned ? 'Réactiver' : 'Abandonner'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleDelete(e); }} className="text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2"/> Supprimer
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+
           </div>
         </div>
       </CardContent>
