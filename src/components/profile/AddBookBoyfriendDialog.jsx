@@ -15,6 +15,7 @@ export default function AddBookBoyfriendDialog({ open, onOpenChange, books, exis
   const queryClient = useQueryClient();
   const [user, setUser] = React.useState(null);
   const [uploading, setUploading] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [characterData, setCharacterData] = useState({
