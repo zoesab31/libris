@@ -163,12 +163,13 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick, onEdit 
             {/* Title and Author */}
             <div className="mb-2">
               <div className="flex items-start justify-between gap-2">
-                <h3 className={`text-lg font-bold truncate flex-1 ${series.is_abandoned ? 'line-through' : ''}`} 
-                    style={{ color: 'var(--dark-text)' }}>
-                  {series.series_name}
-                </h3>
+              <h3 className={`text-lg font-bold truncate flex-1 ${series.is_abandoned ? 'line-through' : ''}`} 
+                  style={{ color: 'var(--dark-text)' }}>
+                {series.series_name}
+              </h3>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {!series.is_abandoned && (
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right">
                     <div className="text-sm font-bold" style={{ color: progressPercent === 100 ? '#4ADE80' : '#A8D5E5' }}>
                       {booksRead}/{totalBooks}
                     </div>
@@ -177,6 +178,26 @@ export default function SeriesCard({ series, myBooks, allBooks, onClick, onEdit 
                     </div>
                   </div>
                 )}
+                {/* Actions menu moved to top-right */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={e => e.stopPropagation()}>
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleEdit(e); }}>
+                      <Edit className="w-4 h-4 mr-2"/> Modifier
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleToggleAbandon(e); }}>
+                      <Ban className="w-4 h-4 mr-2"/> {series.is_abandoned ? 'Réactiver' : 'Abandonner'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e)=>{ e.stopPropagation(); handleDelete(e); }} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2"/> Supprimer
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               </div>
               {series.author && (
                 <p className="text-sm truncate" style={{ color: 'var(--warm-pink)' }}>
