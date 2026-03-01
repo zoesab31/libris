@@ -98,8 +98,7 @@ export default function Profile() {
                 color: '#000000'
               }}
             >
-              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
-              Masculins ({maleCharacters.length})
+              <span className="flex items-center justify-center gap-1.5"><User className="w-4 h-4" />Masculins ({maleCharacters.length})</span>
             </TabsTrigger>
             <TabsTrigger 
               value="female" 
@@ -111,8 +110,7 @@ export default function Profile() {
                 color: '#000000'
               }}
             >
-              <User className="w-4 h-4 mr-1 md:mr-2 inline" />
-              Féminins ({femaleCharacters.length})
+              <span className="flex items-center justify-center gap-1.5"><User className="w-4 h-4" />Féminins ({femaleCharacters.length})</span>
             </TabsTrigger>
             <TabsTrigger 
               value="couples" 
@@ -124,8 +122,7 @@ export default function Profile() {
                 color: '#000000'
               }}
             >
-              <Users className="w-4 h-4 mr-1 md:mr-2 inline" />
-              Couples ({favoriteCouples.length})
+              <span className="flex items-center justify-center gap-1.5"><Users className="w-4 h-4" />Couples ({favoriteCouples.length})</span>
             </TabsTrigger>
           </TabsList>
 
