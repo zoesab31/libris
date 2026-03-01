@@ -1379,9 +1379,113 @@ export default function UserProfile() {
           </TabsContent>
 
           <TabsContent value="tournament">
-            <div className="text-center py-12">
-              <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
-              <p style={{ color: 'var(--warm-pink)' }}>Tournois à venir...</p>
+            <div className="space-y-6">
+              {/* Best book section */}
+              <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                        ⭐ Meilleur livre de l'année
+                      </h3>
+                      <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                        Votre lecture préférée de {currentYear}
+                      </p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const bestVote = userBooks.find(b => b.status === "Lu");
+                    const allReadBooks = userBooks.filter(b => b.status === "Lu");
+                    const bestBook = allReadBooks.length > 0 ? allBooks.find(book => book.id === allReadBooks[0].book_id) : null;
+                    
+                    return bestBook ? (
+                      <div className="flex gap-6 items-start">
+                        <div className="w-32 h-48 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {bestBook.cover_url ? (
+                            <img src={bestBook.cover_url} alt={bestBook.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">📚</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-3xl font-bold mb-2" style={{ color: accentColor }}>✨</p>
+                          <h4 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                            {bestBook.title}
+                          </h4>
+                          <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                            {bestBook.author}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold px-3 py-1 rounded-full"
+                                  style={{ backgroundColor: 'var(--gold)', color: 'white' }}>
+                              👑 Coup de cœur
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Trophy className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                        <p style={{ color: 'var(--warm-pink)' }}>Aucun livre lu cette année</p>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Worst book section */}
+              <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                        😬 Pire livre de l'année
+                      </h3>
+                      <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                        La lecture la plus décevante
+                      </p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const allReadBooks = userBooks.filter(b => b.status === "Lu");
+                    const worstBook = allReadBooks.length > 0 ? allBooks.find(book => book.id === allReadBooks[allReadBooks.length - 1].book_id) : null;
+                    
+                    return worstBook ? (
+                      <div className="flex gap-6 items-start">
+                        <div className="w-32 h-48 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
+                             style={{ backgroundColor: 'var(--beige)' }}>
+                          {worstBook.cover_url ? (
+                            <img src={worstBook.cover_url} alt={worstBook.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">📚</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-3xl font-bold mb-2" style={{ color: 'var(--warm-pink)' }}>💔</p>
+                          <h4 className="text-xl font-bold mb-1" style={{ color: 'var(--dark-text)' }}>
+                            {worstBook.title}
+                          </h4>
+                          <p className="text-sm mb-4" style={{ color: 'var(--warm-pink)' }}>
+                            {worstBook.author}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold px-3 py-1 rounded-full"
+                                  style={{ backgroundColor: '#EF4444', color: 'white' }}>
+                              ⚠️ Décevant
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Frown className="w-12 h-12 mx-auto mb-3 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                        <p style={{ color: 'var(--warm-pink)' }}>Aucun livre lu cette année</p>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
