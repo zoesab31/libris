@@ -96,7 +96,7 @@ export default function Objectifs() {
   const markDone = (obj) => updateMutation.mutate({ id: obj.id, data: { status: "Terminé", progress_count: obj.target_count || obj.progress_count || 0 } });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Objectifs</h1>
