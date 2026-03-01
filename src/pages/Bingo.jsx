@@ -146,6 +146,7 @@ export default function Bingo() {
             )}
           </div>
         </div>
+        </div>
 
         {challenges.length === 0 ? (
           <div className="text-center py-12 md:py-20">
