@@ -231,8 +231,15 @@ export default function ReadingTracker() {
     return userBooks
       .filter(ub => {
         if (ub.status === 'En cours') return true; // include currently reading
+        // Include if main reading date is this year
         const date = ub.end_date || ub.start_date;
-        return date && date.slice(0, 4) === thisYear;
+        if (date && date.slice(0, 4) === thisYear) return true;
+        // Include if has a reread this year
+        if (ub.rereads && ub.rereads.some(r => {
+          const rd = r.end_date || r.start_date;
+          return rd && rd.slice(0, 4) === thisYear;
+        })) return true;
+        return false;
       })
       .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       .map(ub => allBooks.find(b => b.id === ub.book_id))
