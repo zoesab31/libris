@@ -826,10 +826,12 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 <p className="text-sm" style={{ color: '#A78BBA' }}>Scannez un code-barres pour afficher le livre détecté.</p>
               </div>
             )}
-          </div>}
+          </div>
+          )}
 
           {/* ── MANUAL TAB ── */}
-          {activeTab === 'manual' && <div className="space-y-4">
+          {activeTab === 'manual' && (
+            <div className="space-y-4">
             <p className="text-sm font-bold" style={{ color: '#FF1493' }}>
               {step === 1 ? "📚 Informations du livre" : "✨ Vos impressions"}
             </p>
