@@ -1,0 +1,58 @@
+/* MOBILE RESPONSIVE FIX - Global Styles */
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: clamp(1.25rem, 4vw, 2rem) !important;
+  }
+  h2 {
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem) !important;
+  }
+  h3 {
+    font-size: clamp(1rem, 3vw, 1.25rem) !important;
+  }
+  h4, h5, h6 {
+    font-size: clamp(0.875rem, 2.5vw, 1rem) !important;
+  }
+  
+  /* Prevent text overflow */
+  p, span, div, button, a {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  
+  /* Reduce excessive padding */
+  .px-8, .px-10 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-8, .py-10 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .p-8 { padding: 1rem !important; }
+  .gap-6, .gap-8 { gap: 0.75rem !important; }
+  
+  /* Compact spacing */
+  .md\:px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .md\:py-8 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  
+  /* Make cards more mobile-friendly */
+  [role="button"], button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Extra small devices */
+  body {
+    font-size: 15px;
+  }
+  
+  .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-6 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .p-6 { padding: 0.75rem !important; }
+  
+  /* Grid adjustments */
+  .grid { gap: 0.5rem !important; }
+  
+  /* Hide on small screens if needed */
+  .hidden-mobile {
+    display: none !important;
+  }
+}
