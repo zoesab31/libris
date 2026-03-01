@@ -601,14 +601,16 @@ export default function UserProfile() {
                   description="Ces livres la définissent en tant que lectrice"
                   bookIds={profileUser.books_to_know_me || []}
                   allBooks={allBooks}
-                  isOwnProfile={false} />
+                  isOwnProfile={false}
+                  emptyMessage="Pas encore renseigné" />
 
                 <FourBooksSection
                   title="⭐ Ses 4 coups de cœur de l'année"
                   description="Ses lectures préférées de cette année"
                   bookIds={profileUser.favorite_books_2024 || []}
                   allBooks={allBooks}
-                  isOwnProfile={false} />
+                  isOwnProfile={false}
+                  emptyMessage="Pas encore renseigné" />
               </div>
             </TabsContent>
           )}
