@@ -822,16 +822,17 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
             )}
 
             {!loadingScannedBook && !scannedBook && (
-              <div className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                Scannez un code-barres pour afficher le livre détecté.
+              <div className="text-center py-6">
+                <p className="text-sm" style={{ color: '#A78BBA' }}>Scannez un code-barres pour afficher le livre détecté.</p>
               </div>
             )}
-          </TabsContent>
+          </div>}
 
-          <TabsContent value="manual" className="space-y-4">
-            <DialogTitle className="text-xl mb-4" style={{ color: 'var(--deep-brown)' }}>
-              {step === 1 ? "📚 Informations du livre" : "✨ Vos impressions sur le livre"}
-            </DialogTitle>
+          {/* ── MANUAL TAB ── */}
+          {activeTab === 'manual' && <div className="space-y-4">
+            <p className="text-sm font-bold" style={{ color: '#FF1493' }}>
+              {step === 1 ? "📚 Informations du livre" : "✨ Vos impressions"}
+            </p>
             {step === 1 ? (
               <div className="space-y-4 py-4">
                 <div>
