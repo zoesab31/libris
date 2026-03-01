@@ -82,17 +82,18 @@ export default function Bingo() {
   return (
     <div className="p-3 md:p-8 min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-8">
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="mb-6 md:mb-8 p-5 rounded-3xl shadow-lg" style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-md"
-                 style={{ background: 'linear-gradient(135deg, var(--gold), var(--warm-pink))' }}>
+                 style={{ background: 'linear-gradient(135deg, #FFB6C1, #FF69B4)' }}>
               <Trophy className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl md:text-4xl font-bold" style={{ color: 'var(--dark-text)' }}>
+              <h1 className="text-xl md:text-3xl font-extrabold" style={{ color: '#2D1F3F' }}>
                 Bingo {selectedYear}
               </h1>
-              <p className="text-sm md:text-lg" style={{ color: 'var(--warm-pink)' }}>
+              <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
                 {completedCount} / {totalCount} défis
               </p>
             </div>
