@@ -282,15 +282,15 @@ export default function Statistics() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF8FC 0%, #FEF3F9 40%, #F9F0FA 70%, #F5F0FF 100%)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
-        {/* Header moderne */}
-        <div className="mb-8 p-6 md:p-8 rounded-3xl shadow-2xl" 
-             style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4, #FFB6C8)' }}>
+        {/* Header pastel */}
+        <div className="mb-8 p-5 md:p-7 rounded-3xl shadow-lg"
+             style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,105,180,0.15)' }}>
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
+              <h1 className="text-2xl md:text-4xl font-extrabold mb-1" style={{ color: '#2D1F3F' }}>
                 📊 Statistiques {viewMode === 'single' ? selectedYear : viewMode === 'all' ? 'Globales' : viewMode === 'friends' && selectedFriend ? `vs ${friendName}` : ''}
               </h1>
-              <p className="text-lg md:text-xl text-white text-opacity-90">
+              <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>
                 {viewMode === 'friends' && selectedFriend 
                   ? `Comparaison avec ${friendName}`
                   : `${booksThisYear.length} livre${booksThisYear.length > 1 ? 's' : ''} analysé${booksThisYear.length > 1 ? 's' : ''}`
@@ -300,69 +300,29 @@ export default function Statistics() {
 
           {/* View Mode Selector */}
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={viewMode === 'single' ? 'default' : 'outline'}
-              onClick={() => setViewMode('single')}
-              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
-              style={viewMode === 'single' ? {
-                backgroundColor: 'white',
-                color: '#FF1493'
-              } : { 
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                borderColor: 'white'
-              }}
-            >
-              Année
-            </Button>
-            <Button
-              variant={viewMode === 'all' ? 'default' : 'outline'}
-              onClick={() => setViewMode('all')}
-              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
-              style={viewMode === 'all' ? {
-                backgroundColor: 'white',
-                color: '#FF1493'
-              } : { 
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                borderColor: 'white'
-              }}
-            >
-              Toutes
-            </Button>
-            <Button
-              variant={viewMode === 'compare' ? 'default' : 'outline'}
-              onClick={() => setViewMode('compare')}
-              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
-              style={viewMode === 'compare' ? {
-                backgroundColor: 'white',
-                color: '#FF1493'
-              } : { 
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                borderColor: 'white'
-              }}
-            >
-              Comparer
-            </Button>
-            <Button
-              variant={viewMode === 'friends' ? 'default' : 'outline'}
-              onClick={() => {
-                setViewMode('friends');
-                setSelectedYear(new Date().getFullYear());
-              }}
-              className="shadow-lg font-bold rounded-xl px-4 md:px-6 py-2 md:py-3"
-              style={viewMode === 'friends' ? {
-                backgroundColor: 'white',
-                color: '#FF1493'
-              } : { 
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                borderColor: 'white'
-              }}
-            >
-              👭 Amies
-            </Button>
+            {[
+              { mode: 'single', label: 'Année' },
+              { mode: 'all', label: 'Toutes' },
+              { mode: 'compare', label: 'Comparer' },
+              { mode: 'friends', label: '👭 Amies' },
+            ].map(({ mode, label }) => (
+              <Button
+                key={mode}
+                onClick={() => { if (mode === 'friends') { setViewMode('friends'); setSelectedYear(new Date().getFullYear()); } else setViewMode(mode); }}
+                className="font-bold rounded-xl px-4 md:px-5 py-2 text-sm transition-all"
+                style={viewMode === mode ? {
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(255,20,147,0.3)'
+                } : {
+                  backgroundColor: '#F5F0FF',
+                  color: '#9C27B0',
+                  border: 'none'
+                }}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
           </div>
         </div>
