@@ -391,9 +391,10 @@ export default function ReadingTracker() {
               const dateStr = format(day, 'yyyy-MM-dd');
               const hasRead = readingDays.has(dateStr);
               const todayDay = isToday(day);
-              const cover = hasRead ? getCoverForDay(dateStr) : null;
               const isFuture = day > new Date();
               const isSelected = editMode && selectedDays.has(dateStr);
+              const dayBooks = hasRead ? getBooksForDay(dateStr) : [];
+              const covers = dayBooks.map(b => b.cover_url).filter(Boolean);
 
               return (
                 <motion.button
@@ -423,14 +424,26 @@ export default function ReadingTracker() {
                     {format(day, 'd')}
                   </span>
 
-                  {cover && !isSelected && (
-                    <div className="absolute inset-0 top-4">
-                      <img src={cover} alt="" className="w-full h-full object-cover" style={{ opacity: 0.82 }} />
+                  {/* Multi-book covers: split vertically */}
+                  {covers.length > 0 && !isSelected && (
+                    <div className="absolute inset-0 top-4 flex">
+                      {covers.slice(0, 2).map((c, ci) => (
+                        <div key={ci} className="relative flex-1 overflow-hidden">
+                          <img src={c} alt="" className="w-full h-full object-cover" style={{ opacity: 0.82 }} />
+                        </div>
+                      ))}
                       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(255,20,147,0.2) 0%, transparent 50%)' }} />
+                      {/* Badge if 3+ books */}
+                      {covers.length > 2 && (
+                        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full flex items-center justify-center z-10 text-[8px] font-bold text-white"
+                          style={{ background: '#FF1493' }}>
+                          +{covers.length - 2}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {hasRead && !cover && !isSelected && (
+                  {hasRead && covers.length === 0 && !isSelected && (
                     <div className="absolute inset-0 top-4 flex items-center justify-center">
                       <span className="text-xs">📖</span>
                     </div>
