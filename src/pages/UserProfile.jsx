@@ -572,6 +572,37 @@ export default function UserProfile() {
 
           </TabsList>
 
+          {!isOwnProfile && (
+            <TabsContent value="mypage">
+              <div className="space-y-6">
+                <Card className="border-0 shadow-lg bg-white">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--dark-text)' }}>Bio</h3>
+                    {profileUser.bio ?
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--warm-pink)' }}>{profileUser.bio}</p> :
+
+                    <p className="text-sm italic" style={{ color: 'var(--warm-pink)' }}>Pas de bio pour le moment.</p>
+                    }
+                  </CardContent>
+                </Card>
+
+                <FourBooksSection
+                  title="📚 En 4 livres pour la connaître"
+                  description="Ces livres la définissent en tant que lectrice"
+                  bookIds={profileUser.books_to_know_me || []}
+                  allBooks={allBooks}
+                  isOwnProfile={false} />
+
+                <FourBooksSection
+                  title="⭐ Ses 4 coups de cœur de l'année"
+                  description="Ses lectures préférées de cette année"
+                  bookIds={profileUser.favorite_books_2024 || []}
+                  allBooks={allBooks}
+                  isOwnProfile={false} />
+              </div>
+            </TabsContent>
+          )}
+
           <TabsContent value="library">
             {/* Library sub-navigation - MOBILE OPTIMIZED WITH LARGER TOUCH TARGETS */}
             <div className="mb-6 library-filters-mobile">
