@@ -637,58 +637,82 @@ function WishlistCard({ wishlist, books, onEdit, userEmail }) {
   const wishlistBooks = books.filter(b => wishlist.book_ids?.includes(b.id));
   const totalCollaborators = (wishlist.shared_with?.length || 0) + (wishlist.pending_invitations?.length || 0);
   const isOwner = wishlist.created_by === userEmail;
+  const previewBooks = wishlistBooks.slice(0, 5);
   
   return (
-    <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+    <Card className="shadow-lg border-0 transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer overflow-hidden"
           style={{ backgroundColor: 'white' }}
           onClick={() => onEdit(wishlist)}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl">{wishlist.icon || '📚'}</span>
-            <div>
-              <h3 className="font-bold text-lg" style={{ color: 'var(--dark-text)' }}>
-                {wishlist.title}
-              </h3>
-              {wishlist.description && (
-                <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-                  {wishlist.description}
-                </p>
+      <CardContent className="p-0">
+        {/* Book covers strip */}
+        <div className="relative h-28 overflow-hidden" style={{ background: 'linear-gradient(135deg, #FEF3F9, #F5F0FF)' }}>
+          {previewBooks.length > 0 ? (
+            <div className="flex h-full items-stretch gap-0.5 px-0.5 pt-0.5">
+              {previewBooks.map((book, i) => (
+                <div key={book.id} className="flex-1 overflow-hidden rounded-t-sm"
+                     style={{ opacity: 1 - i * 0.08 }}>
+                  {book.cover_url ? (
+                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl"
+                         style={{ background: 'linear-gradient(135deg, #FFE9F4, #EDD9F5)' }}>
+                      📚
+                    </div>
+                  )}
+                </div>
+              ))}
+              {wishlistBooks.length > 5 && (
+                <div className="flex-1 flex items-center justify-center rounded-t-sm font-bold text-sm"
+                     style={{ background: 'rgba(255,20,147,0.15)', color: 'var(--deep-pink)' }}>
+                  +{wishlistBooks.length - 5}
+                </div>
               )}
             </div>
-          </div>
-          <div className="flex flex-col gap-1 items-end">
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-4xl opacity-30">📚</div>
+          )}
+          {/* Badges overlay */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
             {wishlist.is_public && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: 'var(--beige)', color: 'var(--deep-pink)' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium shadow-sm"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--deep-pink)' }}>
                 Publique
               </span>
             )}
             {!isOwner && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: '#E6B3E8', color: 'white' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium shadow-sm"
+                    style={{ backgroundColor: 'rgba(230,179,232,0.95)', color: 'white' }}>
                 Partagée
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-          <p className="text-sm font-medium" style={{ color: 'var(--dark-text)' }}>
-            {wishlistBooks.length} livre{wishlistBooks.length > 1 ? 's' : ''}
-          </p>
-        </div>
-
-        {totalCollaborators > 0 && (
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" style={{ color: 'var(--warm-pink)' }} />
-            <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
-              {wishlist.shared_with?.length || 0} collaborat{(wishlist.shared_with?.length || 0) > 1 ? 'rices' : 'rice'}
-              {(wishlist.pending_invitations?.length || 0) > 0 && ` • ${wishlist.pending_invitations.length} en attente`}
-            </p>
+        {/* Info section */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{wishlist.icon || '📚'}</span>
+            <h3 className="font-bold text-base leading-tight line-clamp-1" style={{ color: 'var(--dark-text)' }}>
+              {wishlist.title}
+            </h3>
           </div>
-        )}
+          {wishlist.description && (
+            <p className="text-xs mb-2 line-clamp-1" style={{ color: 'var(--warm-pink)' }}>
+              {wishlist.description}
+            </p>
+          )}
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs font-medium" style={{ color: 'var(--warm-pink)' }}>
+              {wishlistBooks.length} livre{wishlistBooks.length !== 1 ? 's' : ''}
+            </span>
+            {totalCollaborators > 0 && (
+              <span className="text-xs flex items-center gap-1" style={{ color: 'var(--warm-pink)' }}>
+                <Users className="w-3 h-3" />
+                {totalCollaborators} collab.
+              </span>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
