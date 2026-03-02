@@ -701,19 +701,20 @@ export default function Dashboard() {
                                   </div>
                                 </div> :
 
-                                <div className="mx-5 px-1 py-5">
+                                <div className="px-1 py-2">
                                   <button onClick={() => handleStartEdit(userBook, book)}
-                                  className="flex items-center gap-1.5 mb-1.5 hover:opacity-75 transition-opacity">
-                                    <span className="text-sm font-semibold" style={{ color: '#FF1493' }}>
+                                  className="flex items-center gap-1.5 mb-2 hover:opacity-75 transition-opacity w-full"
+                                  style={{ minHeight: '36px' }}>
+                                    <span className="text-xs md:text-sm font-semibold" style={{ color: '#FF1493' }}>
                                       📖 {userBook.current_page || 0} / {book.page_count || '?'} pages
                                     </span>
-                                    <Edit2 className="w-3 h-3" style={{ color: '#FF69B4' }} />
+                                    <Edit2 className="w-3 h-3 ml-1 flex-shrink-0" style={{ color: '#FF69B4' }} />
                                   </button>
                                   {estimation &&
                                   <p className="text-xs mb-2 italic" style={{ color: '#9C27B0' }}>⏱ ~{estimation.estimatedPage} pages estimées</p>
                                   }
                                   <div className="flex items-center gap-2">
-                                    <div className="flex-1 relative h-1 rounded-full overflow-hidden" style={{ background: '#FFE9F0' }}>
+                                    <div className="flex-1 relative h-2 rounded-full overflow-hidden" style={{ background: '#FFE9F0' }}>
                                       <motion.div
                                         className="h-full rounded-full"
                                         initial={{ width: 0 }}
