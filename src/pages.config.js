@@ -64,7 +64,6 @@ import Lifestyle from './pages/Lifestyle';
 import Maps from './pages/Maps';
 import MusicPlaylist from './pages/MusicPlaylist';
 import MyLibrary from './pages/MyLibrary';
-import MyPage from './pages/MyPage';
 import NailInspo from './pages/NailInspo';
 import Objectifs from './pages/Objectifs';
 import OneSignalGuide from './pages/OneSignalGuide';
@@ -80,6 +79,7 @@ import Statistics from './pages/Statistics';
 import SuggestionsWall from './pages/SuggestionsWall';
 import UserProfile from './pages/UserProfile';
 import VirtualLibrary from './pages/VirtualLibrary';
+import MyPage from './pages/MyPage';
 import __Layout from './Layout.jsx';
 
 
@@ -101,7 +101,6 @@ export const PAGES = {
     "Maps": Maps,
     "MusicPlaylist": MusicPlaylist,
     "MyLibrary": MyLibrary,
-    "MyPage": MyPage,
     "NailInspo": NailInspo,
     "Objectifs": Objectifs,
     "OneSignalGuide": OneSignalGuide,
@@ -117,6 +116,7 @@ export const PAGES = {
     "SuggestionsWall": SuggestionsWall,
     "UserProfile": UserProfile,
     "VirtualLibrary": VirtualLibrary,
+    "MyPage": MyPage,
 }
 
 export const pagesConfig = {
