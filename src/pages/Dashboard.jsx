@@ -531,14 +531,14 @@ export default function Dashboard() {
                 whileTap={{ scale: 0.96 }}>
 
                   <div className="relative z-10">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: s.iconBg }}>
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl flex items-center justify-center mb-2 md:mb-3" style={{ background: s.iconBg }}>
                       {s.icon}
                     </div>
-                    <div className="flex items-baseline gap-1 mb-1">
-                      <span className="text-2xl md:text-3xl font-extrabold" style={{ color: s.valueColor }}>{s.value}</span>
-                      {s.suffix && <span className="text-base font-semibold opacity-60" style={{ color: s.valueColor }}>{s.suffix}</span>}
+                    <div className="flex items-baseline gap-1 mb-0.5 md:mb-1">
+                      <span className="text-xl md:text-3xl font-extrabold" style={{ color: s.valueColor }}>{s.value}</span>
+                      {s.suffix && <span className="text-sm font-semibold opacity-60" style={{ color: s.valueColor }}>{s.suffix}</span>}
                     </div>
-                    <p className="text-xs md:text-sm font-medium" style={{ color: s.labelColor }}>{s.label}</p>
+                    <p className="text-xs font-medium leading-tight" style={{ color: s.labelColor }}>{s.label}</p>
                   </div>
                   {s.sparkle &&
                 <motion.div
