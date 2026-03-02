@@ -579,33 +579,42 @@ export default function BookTournament() {
           <TabsList className="bg-white shadow-md p-1 rounded-xl border-0 w-full mb-8">
             <TabsTrigger
               value="monthly"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-[11px] sm:text-sm px-1"
               style={activeTab === "monthly" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: '#FFFFFF'
               } : { color: '#000000' }}
             >
-              📅 Votes mensuels
+              <span className="flex flex-col items-center gap-0.5 sm:flex-row sm:gap-1">
+                <span>📅</span>
+                <span className="leading-tight text-center">Votes mensuels</span>
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="best"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-[11px] sm:text-sm px-1"
               style={activeTab === "best" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: '#FFFFFF'
               } : { color: '#000000' }}
             >
-              👑 Meilleure lecture
+              <span className="flex flex-col items-center gap-0.5 sm:flex-row sm:gap-1">
+                <span>👑</span>
+                <span className="leading-tight text-center">Meilleure lecture</span>
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="worst"
-              className="flex-1 rounded-lg font-bold data-[state=active]:text-white"
+              className="flex-1 rounded-lg font-bold data-[state=active]:text-white text-[11px] sm:text-sm px-1"
               style={activeTab === "worst" ? {
                 background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))',
                 color: '#FFFFFF'
               } : { color: '#000000' }}
             >
-              💀 Pire lecture
+              <span className="flex flex-col items-center gap-0.5 sm:flex-row sm:gap-1">
+                <span>💀</span>
+                <span className="leading-tight text-center">Pire lecture</span>
+              </span>
             </TabsTrigger>
           </TabsList>
 
