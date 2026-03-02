@@ -1393,41 +1393,21 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
             <div className="px-4 md:px-8 pt-6 pb-2 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm">
               <TabsList className="bg-white shadow-2xl p-1.5 rounded-2xl border-0 w-full overflow-x-auto">
                 <div className="flex md:grid md:grid-cols-5 gap-1.5 min-w-max md:min-w-0 w-full">
-                  <TabsTrigger
-                    value="myinfo"
-                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
-                    style={activeTab === "myinfo" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
-
-                    📝 Ma lecture
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="journal"
-                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
-                    style={activeTab === "journal" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
-
-                    📖 Journal
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="quotes"
-                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
-                    style={activeTab === "quotes" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
-
-                    ✨ Citations
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="synopsis"
-                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
-                    style={activeTab === "synopsis" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
-
-                    📘 Synopsis
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="bookinfo"
-                    className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
-                    style={activeTab === "bookinfo" ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
-
-                    📚 Le livre
-                  </TabsTrigger>
+                  {[
+                    { value: "myinfo", label: "Ma lecture", emoji: "📝" },
+                    { value: "journal", label: "Journal", emoji: "📖" },
+                    { value: "quotes", label: "Citations", emoji: "✨" },
+                    { value: "synopsis", label: "Synopsis", emoji: "📘" },
+                    { value: "bookinfo", label: "Le livre", emoji: "📚" },
+                  ].map((tab) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className="flex-shrink-0 flex-1 rounded-xl font-bold data-[state=active]:text-white py-2 px-2 text-xs md:text-sm transition-all whitespace-nowrap"
+                      style={activeTab === tab.value ? { background: 'linear-gradient(135deg, #FF1493, #FF69B4)', color: '#FFFFFF' } : { color: '#2D3748' }}>
+                      <span className="hidden sm:inline">{tab.emoji} </span>{tab.label}
+                    </TabsTrigger>
+                  ))}
                 </div>
               </TabsList>
             </div>
