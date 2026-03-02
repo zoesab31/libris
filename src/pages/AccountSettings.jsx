@@ -367,6 +367,39 @@ export default function AccountSettings() {
             </CardContent>
           </Card>
 
+          {/* Export Data */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2" style={{ color: 'var(--dark-text)' }}>
+                <Download className="w-5 h-5" style={{ color: 'var(--deep-pink)' }} />
+                Sauvegarder mes données
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm" style={{ color: 'var(--warm-pink)' }}>
+                Téléchargez toutes vos données en un fichier JSON : bibliothèque, PAL, étagères, bingo, citations, lectures communes, et bien plus.
+              </p>
+              <Button
+                onClick={handleExportData}
+                disabled={exportLoading}
+                className="w-full text-white"
+                style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}
+              >
+                {exportLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Export en cours...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger mes données
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Delete Account - DANGER ZONE */}
           <Card className="border-0 shadow-lg" style={{ borderLeft: '4px solid #DC2626' }}>
             <CardHeader>
