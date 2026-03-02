@@ -620,8 +620,8 @@ export default function Dashboard() {
               <motion.div variants={itemVariants}>
                 <div className="glass-card rounded-3xl shadow-sm overflow-hidden card-hover">
                   <div className="p-4 md:p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg md:text-xl font-bold flex items-center gap-3" style={{ color: '#2D1F3F' }}>
+                  <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-base md:text-xl font-bold flex items-center gap-2 md:gap-3" style={{ color: '#2D1F3F' }}>
                         <span className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#FF69B4,#FF1493)' }}>
                           <BookOpen className="w-4 h-4 text-white" />
                         </span>
