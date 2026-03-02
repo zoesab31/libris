@@ -894,7 +894,7 @@ export default function Dashboard() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-5 md:space-y-6">
+              className="space-y-4 md:space-y-6">
 
               {/* Calendrier de lecture */}
               <motion.div variants={itemVariants}>
