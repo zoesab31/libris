@@ -525,7 +525,7 @@ export default function Dashboard() {
               <motion.div
                 key={i}
                 variants={scaleVariants}
-                className="stat-card rounded-3xl p-4 md:p-5 cursor-pointer relative overflow-hidden"
+                className="stat-card rounded-2xl md:rounded-3xl p-3 md:p-5 cursor-pointer relative overflow-hidden"
                 style={{ background: s.bg, border: `1px solid ${s.iconBg}` }}
                 onClick={s.onClick}
                 whileTap={{ scale: 0.96 }}>
