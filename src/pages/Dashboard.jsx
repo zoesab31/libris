@@ -448,9 +448,9 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="relative px-5 pt-6 pb-8 md:px-10 md:pt-10 md:pb-10">
+          <div className="relative px-4 pt-5 pb-6 md:px-10 md:pt-10 md:pb-10">
             {/* Top bar */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-5 md:mb-8">
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
                 <p className="text-sm font-medium mb-0.5" style={{ color: '#D4A0C8' }}>
                   {format(new Date(), "EEEE d MMMM", { locale: fr })}
