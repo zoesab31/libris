@@ -601,8 +601,8 @@ export default function Dashboard() {
         </div>
 
         {/* ─── CONTENU PRINCIPAL ─── */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4">
-          <div className="grid lg:grid-cols-3 gap-5 md:gap-7">
+        <div className="max-w-7xl mx-auto px-3 md:px-8 py-3 md:py-4">
+          <div className="grid lg:grid-cols-3 gap-4 md:gap-7">
 
             {/* ── Colonne gauche (2/3) ── */}
             <motion.div
