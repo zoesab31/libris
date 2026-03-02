@@ -241,13 +241,14 @@ export default function SharedReadings() {
             </div>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {!selectionMode ? (
               <>
                 {sharedReadings.length > 0 && (
                   <Button
                     variant="outline"
                     onClick={() => setSelectionMode(true)}
+                    className="w-full sm:w-auto"
                     style={{ borderColor: 'var(--beige)', color: 'var(--deep-pink)' }}
                   >
                     Sélectionner
@@ -255,7 +256,7 @@ export default function SharedReadings() {
                 )}
                 <Button 
                   onClick={() => setShowAddDialog(true)}
-                  className="shadow-lg text-white font-medium px-6 rounded-xl"
+                  className="shadow-lg text-white font-medium px-4 rounded-xl w-full sm:w-auto"
                   style={{ background: 'linear-gradient(135deg, var(--deep-pink), var(--warm-pink))' }}>
                   <Plus className="w-5 h-5 mr-2" />
                   Nouvelle lecture commune
