@@ -760,11 +760,11 @@ export default function Dashboard() {
               {activityFeed.length > 0 &&
               <motion.div variants={itemVariants}>
                   <div className="glass-card rounded-3xl shadow-sm overflow-hidden card-hover">
-                    <div className="p-6 md:p-8">
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg md:text-xl font-bold flex items-center gap-3" style={{ color: '#2D1F3F' }}>
-                          <span className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#E91E63,#FF69B4)' }}>
-                            <Sparkles className="w-4 h-4 text-white" />
+                    <div className="p-4 md:p-8">
+                      <div className="flex items-center justify-between mb-4 md:mb-6">
+                        <h2 className="text-base md:text-xl font-bold flex items-center gap-2 md:gap-3" style={{ color: '#2D1F3F' }}>
+                          <span className="w-8 h-8 md:w-9 md:h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#E91E63,#FF69B4)' }}>
+                            <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                           </span>
                           Activité de tes amies
                         </h2>
