@@ -1391,8 +1391,8 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
           {/* Tabs modernes */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4 md:px-8 pt-6 pb-2 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm">
-              <TabsList className="bg-white shadow-2xl p-1.5 rounded-2xl border-0 w-full">
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+              <TabsList className="bg-white shadow-2xl p-1.5 rounded-2xl border-0 w-full overflow-x-auto">
+                <div className="flex md:grid md:grid-cols-5 gap-1.5 min-w-max md:min-w-0 w-full">
                   <TabsTrigger
                     value="myinfo"
                     className="rounded-xl font-bold data-[state=active]:text-white py-2 text-[11px] md:text-sm transition-all"
