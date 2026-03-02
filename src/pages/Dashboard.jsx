@@ -666,11 +666,11 @@ export default function Dashboard() {
                               </div>
 
                               {/* Contenu */}
-                              <div className="flex-1 min-w-0 p-4 flex flex-col justify-between">
-                                <div>
-                                  <h3 className="font-bold text-base leading-snug line-clamp-3 mb-1" style={{ color: '#2D1F3F' }}>{book.title}</h3>
-                                  <p className="text-sm mb-3" style={{ color: '#A78BBA' }}>{book.author}</p>
-                                </div>
+                              <div className="flex-1 min-w-0 p-3 md:p-4 flex flex-col justify-between">
+                              <div>
+                                <h3 className="font-bold text-sm md:text-base leading-snug line-clamp-2 mb-1" style={{ color: '#2D1F3F' }}>{book.title}</h3>
+                                <p className="text-xs md:text-sm mb-2" style={{ color: '#A78BBA' }}>{book.author}</p>
+                              </div>
 
                                 {isEditing ?
                                 <div className="space-y-2">
