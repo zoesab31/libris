@@ -788,14 +788,14 @@ export default function Dashboard() {
               {friendsBooks.filter((b) => b.status === "En cours").length > 0 &&
               <motion.div variants={itemVariants}>
                   <div className="glass-card-purple rounded-3xl shadow-sm overflow-hidden card-hover">
-                    <div className="p-6 md:p-8">
-                      <h2 className="text-lg md:text-xl font-bold mb-6 flex items-center gap-3" style={{ color: '#2D1F3F' }}>
-                        <span className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#9C27B0,#BA68C8)' }}>
-                          <Users className="w-4 h-4 text-white" />
+                    <div className="p-4 md:p-8">
+                      <h2 className="text-base md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 md:gap-3" style={{ color: '#2D1F3F' }}>
+                        <span className="w-8 h-8 md:w-9 md:h-9 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#9C27B0,#BA68C8)' }}>
+                          <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                         </span>
                         Tes amies lisent
                       </h2>
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                         {friendsBooks.filter((b) => b.status === "En cours").slice(0, 4).map((userBook, idx) => {
                         const book = allBooks.find((b) => b.id === userBook.book_id);
                         const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
