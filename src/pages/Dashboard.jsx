@@ -558,13 +558,13 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="flex flex-wrap items-center gap-3">
+              className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
 
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-4 py-2.5 rounded-2xl font-semibold text-sm glass-card shadow-sm cursor-pointer"
-                style={{ color: '#FF1493', outline: 'none' }}>
+                className="px-4 py-3 sm:py-2.5 rounded-2xl font-semibold text-sm glass-card shadow-sm cursor-pointer w-full sm:w-auto"
+                style={{ color: '#FF1493', outline: 'none', minHeight: '48px' }}>
 
                 {years.map((year) => <option key={year} value={year}>📅 {year}</option>)}
               </select>
@@ -572,11 +572,12 @@ export default function Dashboard() {
               <motion.button
                 onClick={handleMarkToday}
                 disabled={hasReadToday}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm transition-all"
+                className="flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-2xl font-bold text-sm shadow-sm transition-all w-full sm:w-auto"
                 style={{
                   background: hasReadToday ? 'rgba(255,255,255,0.7)' : '#F4A7CE',
                   color: hasReadToday ? '#C0C0C0' : '#7A1050',
-                  border: hasReadToday ? '1px solid rgba(200,200,200,0.4)' : 'none'
+                  border: hasReadToday ? '1px solid rgba(200,200,200,0.4)' : 'none',
+                  minHeight: '48px'
                 }}
                 whileTap={{ scale: 0.95 }}
                 whileHover={!hasReadToday ? { scale: 1.04 } : {}}>
@@ -587,8 +588,8 @@ export default function Dashboard() {
 
               <motion.button
                 onClick={() => setShowAddBookDialog(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm shadow-sm"
-                style={{ background: '#D4A0E8', color: '#4A1060' }}
+                className="flex items-center justify-center gap-2 px-5 py-3 sm:py-2.5 rounded-2xl font-bold text-sm shadow-sm w-full sm:w-auto"
+                style={{ background: '#D4A0E8', color: '#4A1060', minHeight: '48px' }}
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ scale: 1.04 }}>
 
