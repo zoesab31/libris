@@ -609,7 +609,7 @@ export default function Dashboard() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="lg:col-span-2 space-y-5 md:space-y-6">
+              className="lg:col-span-2 space-y-4 md:space-y-6">
 
               {/* Streak */}
               <motion.div variants={itemVariants}>
