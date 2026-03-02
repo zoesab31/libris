@@ -146,6 +146,101 @@ export default function AccountSettings() {
     }
   });
 
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const handleExportData = async () => {
+    setExportLoading(true);
+    try {
+      const email = user?.email;
+      const [
+        userBooks, customShelves, bingoChallenges, readingGoals,
+        bookBoyfriends, quotes, readingComments, readingLocations,
+        fanArts, nailInspos, bookOfTheYear, bookSeries,
+        readingLists, sharedReadings, sharedReadingWishlists,
+        friendships, readingProgress, readingNotes, readingObjectives,
+        bookCollections, badges, userBadges, suggestions,
+        monthlyVotes, tournaments, favoriteCharacters, favoriteCouples
+      ] = await Promise.all([
+        base44.entities.UserBook.filter({ created_by: email }),
+        base44.entities.CustomShelf.filter({ created_by: email }),
+        base44.entities.BingoChallenge.filter({ created_by: email }),
+        base44.entities.ReadingGoal.filter({ created_by: email }),
+        base44.entities.BookBoyfriend.filter({ created_by: email }),
+        base44.entities.Quote.filter({ created_by: email }),
+        base44.entities.ReadingComment.filter({ created_by: email }),
+        base44.entities.ReadingLocation.filter({ created_by: email }),
+        base44.entities.FanArt.filter({ created_by: email }),
+        base44.entities.NailInspo.filter({ created_by: email }),
+        base44.entities.BookOfTheYear.filter({ created_by: email }),
+        base44.entities.BookSeries.filter({ created_by: email }),
+        base44.entities.ReadingList.filter({ created_by: email }),
+        base44.entities.SharedReading.filter({ created_by: email }),
+        base44.entities.SharedReadingWishlist.filter({ created_by: email }),
+        base44.entities.Friendship.filter({ created_by: email }),
+        base44.entities.ReadingProgress.filter({ created_by: email }),
+        base44.entities.ReadingNote.filter({ created_by: email }),
+        base44.entities.ReadingObjective.filter({ created_by: email }),
+        base44.entities.BookCollection.filter({ created_by: email }),
+        base44.entities.Badge.filter({ created_by: email }),
+        base44.entities.UserBadge.filter({ created_by: email }),
+        base44.entities.Suggestion.filter({ created_by: email }),
+        base44.entities.MonthlyBookVote.filter({ created_by: email }),
+        base44.entities.Tournament.filter({ created_by: email }),
+        base44.entities.FavoriteCharacter.filter({ created_by: email }),
+        base44.entities.FavoriteCouple.filter({ created_by: email }),
+      ]);
+
+      const exportData = {
+        export_date: new Date().toISOString(),
+        user: { email: user.email, full_name: user.full_name, display_name: user.display_name },
+        bibliotheque: userBooks,
+        etageres_personnalisees: customShelves,
+        sagas: bookSeries,
+        listes_lecture: readingLists,
+        collections: bookCollections,
+        bingo: bingoChallenges,
+        objectifs_lecture: readingGoals,
+        objectifs: readingObjectives,
+        progression_lecture: readingProgress,
+        notes_lecture: readingNotes,
+        citations: quotes,
+        commentaires: readingComments,
+        book_boyfriends: bookBoyfriends,
+        personnages_favoris: favoriteCharacters,
+        couples_favoris: favoriteCouples,
+        lieux_lecture: readingLocations,
+        fan_arts: fanArts,
+        nail_inspos: nailInspos,
+        livres_de_lannee: bookOfTheYear,
+        votes_mensuels: monthlyVotes,
+        tournaments,
+        lectures_communes: sharedReadings,
+        listes_souhaits_communes: sharedReadingWishlists,
+        amities: friendships,
+        badges,
+        badges_utilisateur: userBadges,
+        suggestions,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `libris_sauvegarde_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+
+      toast.success("✅ Données exportées avec succès !");
+    } catch (error) {
+      console.error("Erreur export:", error);
+      toast.error("Erreur lors de l'export des données");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const handleDeleteAccount = () => {
     if (deleteConfirmText.toLowerCase() === "supprimer mon compte") {
       deleteAccountMutation.mutate();
