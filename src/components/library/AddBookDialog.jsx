@@ -684,94 +684,101 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                 </div>
               )}
 
-              {/* Results */}
+              {/* Results + Side panel layout */}
               {!isSearching && searchResults.length > 0 && (
-                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                  {searchResults.map((book) => {
-                    const isSelected = !!selectedBooks.find(b => b.id === book.id);
-                    return (
-                      <button
-                        key={book.id}
-                        onClick={() => toggleBookSelection(book)}
-                        className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
-                        style={{
-                          background: isSelected ? 'linear-gradient(135deg, #FDF2FE, #FDE8F8)' : 'rgba(255,255,255,0.8)',
-                          border: '2px solid',
-                          borderColor: isSelected ? '#E91E63' : 'rgba(255,105,180,0.1)',
-                        }}
-                      >
-                        {/* Cover */}
-                        <div className="w-12 h-17 rounded-xl overflow-hidden flex-shrink-0 shadow-sm" style={{ width: 44, height: 62 }}>
-                          {book.coverUrl ? (
-                            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover"
-                              onError={(e) => { e.target.src = 'https://placehold.co/88x124/FFE1F0/FF1493?text=?'; }} />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center" style={{ background: '#FFE9F0' }}>
-                              <BookOpen className="w-4 h-4" style={{ color: '#FF69B4' }} />
-                            </div>
-                          )}
-                        </div>
+                <div className="flex gap-3">
+                  {/* Results list */}
+                  <div className="space-y-2 overflow-y-auto pr-1 flex-1" style={{ maxHeight: 380 }}>
+                    {searchResults.map((book) => {
+                      const isSelected = !!selectedBooks.find(b => b.id === book.id);
+                      return (
+                        <button
+                          key={book.id}
+                          onClick={() => toggleBookSelection(book)}
+                          className="w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
+                          style={{
+                            background: isSelected ? 'linear-gradient(135deg, #FDF2FE, #FDE8F8)' : 'rgba(255,255,255,0.8)',
+                            border: '2px solid',
+                            borderColor: isSelected ? '#E91E63' : 'rgba(255,105,180,0.1)',
+                          }}
+                        >
+                          {/* Cover */}
+                          <div className="rounded-xl overflow-hidden flex-shrink-0 shadow-sm" style={{ width: 44, height: 62 }}>
+                            {book.coverUrl ? (
+                              <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover"
+                                onError={(e) => { e.target.src = 'https://placehold.co/88x124/FFE1F0/FF1493?text=?'; }} />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center" style={{ background: '#FFE9F0' }}>
+                                <BookOpen className="w-4 h-4" style={{ color: '#FF69B4' }} />
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm line-clamp-1" style={{ color: '#2D1F3F' }}>{book.title}</p>
-                          <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#FF69B4' }}>{book.author}</p>
-                          <div className="flex gap-2 mt-1">
-                            {book.year && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3E5F5', color: '#9C27B0' }}>{book.year}</span>}
-                            {book.pageCount && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#FCE4EC', color: '#E91E63' }}>{book.pageCount} p.</span>}
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm line-clamp-1" style={{ color: '#2D1F3F' }}>{book.title}</p>
+                            <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#FF69B4' }}>{book.author}</p>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {book.year && <span className="text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ background: '#F3E5F5', color: '#9C27B0' }}>{book.year}</span>}
+                              {book.pageCount && <span className="text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ background: '#FCE4EC', color: '#E91E63' }}>{book.pageCount} p.</span>}
+                            </div>
+                          </div>
+
+                          {/* Check */}
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ background: isSelected ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : 'rgba(255,105,180,0.1)' }}>
+                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right side panel - always visible when there are results */}
+                  <div className="w-40 flex-shrink-0 rounded-2xl p-3 space-y-3 flex flex-col" 
+                       style={{ background: 'rgba(255,255,255,0.9)', border: '2px solid rgba(255,105,180,0.2)', alignSelf: 'flex-start' }}>
+                    {selectedBooks.length > 0 ? (
+                      <>
+                        <div>
+                          <p className="text-xs font-bold mb-1" style={{ color: '#2D1F3F' }}>
+                            📖 {selectedBooks.length} sélectionné{selectedBooks.length > 1 ? 's' : ''}
+                          </p>
+                          <button onClick={() => setSelectedBooks([])} className="text-xs" style={{ color: '#A78BBA' }}>Tout effacer</button>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold mb-1.5" style={{ color: '#A78BBA' }}>Statut</p>
+                          <div className="flex flex-col gap-1">
+                            {STATUSES.map(s => (
+                              <button key={s} onClick={() => setDefaultStatus(s)}
+                                className="px-2 py-1 rounded-full text-xs font-bold transition-all text-left"
+                                style={{
+                                  background: defaultStatus === s ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : '#F3E5F5',
+                                  color: defaultStatus === s ? 'white' : '#9B3EC8',
+                                }}>
+                                {s}
+                              </button>
+                            ))}
                           </div>
                         </div>
-
-                        {/* Check */}
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ background: isSelected ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : 'rgba(255,105,180,0.1)' }}>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Selected books bar */}
-              {selectedBooks.length > 0 && (
-                <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.9)', border: '2px solid rgba(255,105,180,0.2)' }}>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold" style={{ color: '#2D1F3F' }}>
-                      📖 {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''} sélectionné{selectedBooks.length > 1 ? 's' : ''}
-                    </p>
-                    <button onClick={() => setSelectedBooks([])} className="text-xs" style={{ color: '#A78BBA' }}>Tout effacer</button>
-                  </div>
-
-                  {/* Status selector */}
-                  <div>
-                    <p className="text-xs font-semibold mb-2" style={{ color: '#A78BBA' }}>Statut</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {STATUSES.map(s => (
-                        <button key={s} onClick={() => setDefaultStatus(s)}
-                          className="px-3 py-1 rounded-full text-xs font-bold transition-all"
-                          style={{
-                            background: defaultStatus === s ? 'linear-gradient(135deg,#FF1493,#FF69B4)' : '#F3E5F5',
-                            color: defaultStatus === s ? 'white' : '#9B3EC8',
-                          }}>
-                          {s}
+                        <button
+                          onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
+                          disabled={addBooksMutation.isPending}
+                          className="w-full py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1"
+                          style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}
+                        >
+                          {addBooksMutation.isPending ? (
+                            <><Loader2 className="w-3 h-3 animate-spin" /> Ajout...</>
+                          ) : (
+                            <><Plus className="w-3 h-3" /> Ajouter</>
+                          )}
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => addBooksMutation.mutate({ books: selectedBooks, statuses: individualStatuses })}
-                    disabled={addBooksMutation.isPending}
-                    className="w-full py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg, #FF1493, #FF69B4)' }}
-                  >
-                    {addBooksMutation.isPending ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Ajout en cours...</>
+                      </>
                     ) : (
-                      <><Plus className="w-4 h-4" /> Ajouter {selectedBooks.length} livre{selectedBooks.length > 1 ? 's' : ''}</>
+                      <div className="text-center py-2">
+                        <p className="text-xs" style={{ color: '#A78BBA' }}>← Sélectionne un livre</p>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 </div>
               )}
             </div>
