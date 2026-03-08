@@ -117,36 +117,40 @@ export default function MyLibrary() {
     return false;
   };
 
-  // Organize read books + DNF >50% by year and month
+  // Organize read books + DNF >50% + rereads by year and month
   const readBooksByYearMonth = useMemo(() => {
-    const booksToOrganize = myBooks.filter((b) => {
-      if (!b.end_date) return false;
-
-      // Include "Lu" books
-      if (b.status === "Lu") return true;
-
-      // Include "Abandonné" books if >50%
-      if (b.status === "Abandonné") {
-        return abandonedBookCounts(b);
-      }
-
-      return false;
-    });
-
     const organized = {};
 
-    booksToOrganize.forEach((userBook) => {
-      const endDate = new Date(userBook.end_date);
-      const year = endDate.getFullYear();
-      const month = endDate.getMonth() + 1; // 1-12
+    const addEntry = (userBook, endDate, isReread = false, rereadIndex = null) => {
+      const date = new Date(endDate);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1; // 1-12
 
-      if (!organized[year]) {
-        organized[year] = {};
+      if (!organized[year]) organized[year] = {};
+      if (!organized[year][month]) organized[year][month] = [];
+
+      organized[year][month].push({ ...userBook, _isReread: isReread, _rereadIndex: rereadIndex });
+    };
+
+    myBooks.forEach((userBook) => {
+      // Include "Lu" books with end_date
+      if (userBook.status === "Lu" && userBook.end_date) {
+        addEntry(userBook, userBook.end_date);
       }
-      if (!organized[year][month]) {
-        organized[year][month] = [];
+
+      // Include "Abandonné" books if >50%
+      if (userBook.status === "Abandonné" && userBook.end_date && abandonedBookCounts(userBook)) {
+        addEntry(userBook, userBook.end_date);
       }
-      organized[year][month].push(userBook);
+
+      // Include rereads with end_date
+      if (userBook.rereads && userBook.rereads.length > 0) {
+        userBook.rereads.forEach((reread, idx) => {
+          if (reread.end_date) {
+            addEntry(userBook, reread.end_date, true, idx);
+          }
+        });
+      }
     });
 
     return organized;
