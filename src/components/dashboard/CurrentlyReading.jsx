@@ -241,30 +241,32 @@ export default function CurrentlyReading({ books, allBooks, isLoading, user, fri
                         {userBook.isYou && (
                           <div className="mt-2">
                             {editingBookId === userBook.id ? (
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  ref={inputRef}
-                                  type="number"
-                                  min="0"
-                                  max={book.page_count || 9999}
-                                  value={inlineCurrentPage}
-                                  onChange={(e) => setInlineCurrentPage(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleInlineSave(userBook, book);
-                                    if (e.key === 'Escape') setEditingBookId(null);
-                                  }}
-                                  className="h-8 text-sm flex-1"
-                                  placeholder="Page actuelle"
-                                />
-                                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--dark-text)' }}>
-                                  / {book.page_count || '?'}
-                                </span>
-                                <button
-                                  onClick={() => handleInlineSave(userBook, book)}
-                                  className="p-1.5 rounded-md hover:bg-green-50 transition-colors"
-                                >
-                                  <Check className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
-                                </button>
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    ref={inputRef}
+                                    type="number"
+                                    min="0"
+                                    max={book.page_count || 9999}
+                                    value={inlineCurrentPage}
+                                    onChange={(e) => setInlineCurrentPage(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleInlineSave(userBook, book);
+                                      if (e.key === 'Escape') setEditingBookId(null);
+                                    }}
+                                    className="h-8 text-sm flex-1"
+                                    placeholder="Page actuelle"
+                                  />
+                                  <button
+                                    onClick={() => handleInlineSave(userBook, book)}
+                                    className="p-1.5 rounded-md hover:bg-green-50 transition-colors flex-shrink-0"
+                                  >
+                                    <Check className="w-4 h-4" style={{ color: 'var(--deep-pink)' }} />
+                                  </button>
+                                </div>
+                                <p className="text-xs" style={{ color: 'var(--dark-text)' }}>
+                                  sur {book.page_count || '?'} pages au total
+                                </p>
                               </div>
                             ) : (
                               <>
