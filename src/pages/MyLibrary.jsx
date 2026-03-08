@@ -996,6 +996,12 @@ export default function MyLibrary() {
                                           <span className="text-lg">💀</span>
                                         </div>
                                 }
+                                      {userBook._isReread &&
+                                <div className="absolute -top-2 -left-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg z-10"
+                                     style={{ background: 'linear-gradient(135deg, #9C27B0, #E1BEE7)' }}>
+                                          <span className="text-sm">🔁</span>
+                                        </div>
+                                }
                                       <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg 
                                                     transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2"
 
