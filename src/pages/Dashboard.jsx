@@ -674,29 +674,29 @@ export default function Dashboard() {
 
                                 {isEditing ?
                                 <div className="space-y-2">
-                                  <div className="flex gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     <input type="number" value={editValues.currentPage}
                                     onChange={(e) => setEditValues({ ...editValues, currentPage: e.target.value })}
                                     onKeyDown={(e) => {if (e.key === 'Enter') handleSaveProgress(userBook, book);if (e.key === 'Escape') handleCancelEdit();}}
                                     placeholder="Page" autoFocus
-                                    className="flex-1 px-2 py-1.5 rounded-lg text-sm font-bold text-center"
+                                    className="w-16 px-1.5 py-1.5 rounded-lg text-sm font-bold text-center"
                                     style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
+                                    <span className="text-xs font-semibold" style={{ color: '#A78BBA' }}>/</span>
                                     <input type="number" value={editValues.totalPages}
                                     onChange={(e) => setEditValues({ ...editValues, totalPages: e.target.value })}
-                                    placeholder="Total"
-                                    className="flex-1 px-2 py-1.5 rounded-lg text-sm font-bold text-center"
+                                    placeholder={String(book.page_count || '?')}
+                                    className="w-16 px-1.5 py-1.5 rounded-lg text-sm font-bold text-center"
                                     style={{ border: '2px solid #FF69B4', color: '#FF1493', background: 'white' }} />
-                                  </div>
-                                  <div className="flex gap-2">
+                                    <span className="text-xs" style={{ color: '#A78BBA' }}>p.</span>
                                     <button onClick={() => handleSaveProgress(userBook, book)}
-                                    className="flex-1 py-2 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-1"
+                                    className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1"
                                     style={{ background: 'linear-gradient(135deg,#FF1493,#FF69B4)' }}>
-                                      <Check className="w-3.5 h-3.5" /> Valider
+                                      <Check className="w-3 h-3" /> OK
                                     </button>
                                     <button onClick={handleCancelEdit}
-                                    className="px-3 py-2 rounded-lg text-sm font-bold"
+                                    className="px-2 py-1.5 rounded-lg text-xs font-bold"
                                     style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
-                                      <X className="w-3.5 h-3.5" />
+                                      <X className="w-3 h-3" />
                                     </button>
                                   </div>
                                 </div> :
