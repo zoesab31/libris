@@ -604,7 +604,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
             </div>
           ) : (
             <>
-              {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
+              {Object.keys(groupedMessages).sort((a, b) => a - b).filter(day => parseInt(day) === selectedDay).map(day => (
             <div key={day}>
               {/* Day separator */}
               <div className="flex items-center gap-3 my-4">
