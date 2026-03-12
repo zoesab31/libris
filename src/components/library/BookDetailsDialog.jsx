@@ -68,42 +68,8 @@ const getDominantColor = (imageUrl) => new Promise((resolve) => {
   img.onerror = () => resolve(null);
 });
 
-// Replaced by AddToSeriesDialog external component - body removed
-function _AddToSeriesDialogOLD_BODY_START() {
-
-  // Filter series based on search query
-  const filteredSeries = useMemo(() => {
-    if (!searchQuery.trim()) return allSeries;
-
-    const query = searchQuery.toLowerCase();
-    return allSeries.filter((series) =>
-    series.series_name.toLowerCase().includes(query) ||
-    series.author?.toLowerCase().includes(query)
-    );
-  }, [allSeries, searchQuery]);
-
-  // Get selected series info
-  const selectedSeries = useMemo(() => {
-    return allSeries.find((s) => s.id === selectedSeriesId);
-  }, [allSeries, selectedSeriesId]);
-
-  useEffect(() => {
-    if (open) {// Only reset when dialog opens
-      if (currentSeries) {
-        setSearchQuery(currentSeries.series_name);
-        setSelectedSeriesId(currentSeries.id);
-      } else {
-        setSearchQuery("");
-        setSelectedSeriesId("");
-      }
-      setCreatingNew(false);
-      setNewSeriesName("");
-      setNewSeriesAuthor(book?.author || "");
-      setShowSuggestions(false); // Hide suggestions on dialog open
-    }
-  }, [open, currentSeries, book]);
-
-
+// Replaced by AddToSeriesDialog external component
+function _REMOVED() {
   const addToSeriesMutation = useMutation({
     mutationFn: async (seriesId) => {
       if (!user) throw new Error("User not loaded.");
