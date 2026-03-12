@@ -844,8 +844,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
           )}
         </div>
 
-        {/* Input bar - only show if not on recap page */}
-        {selectedDay !== 0 && (
+        {/* Input bar - only show if not on recap page and not in "all" mode */}
+        {selectedDay !== 0 && selectedDay !== -1 && (
           <div className="border-t px-3 py-3" style={{ 
             backgroundColor: 'white',
             borderColor: '#FFD6E8'
