@@ -103,8 +103,11 @@ export default function MyLibrary() {
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
 
-    // Check percentage
-    if (userBook.abandon_percentage >= 50) return true;
+    // Check percentage (handles both 0-100 scale and 0-1 decimal scale)
+    if (userBook.abandon_percentage != null) {
+      const pct = userBook.abandon_percentage > 1 ? userBook.abandon_percentage : userBook.abandon_percentage * 100;
+      if (pct >= 50) return true;
+    }
 
     // Check page count
     if (userBook.abandon_page) {
