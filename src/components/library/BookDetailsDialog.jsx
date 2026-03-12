@@ -69,8 +69,7 @@ const getDominantColor = (imageUrl) => new Promise((resolve) => {
 });
 
 export default function BookDetailsDialog({ userBook, book, open, onOpenChange, initialTab = "myinfo" }) {
-  const _DEAD_CODE_START = null; // {
-    const addToSeriesMutation_OLD = () => {
+  // real component below
     mutationFn: async (seriesId) => {
       if (!user) throw new Error("User not loaded.");
 
