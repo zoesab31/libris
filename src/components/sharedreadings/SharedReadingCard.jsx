@@ -8,7 +8,7 @@ export default function SharedReadingCard({ reading, book, onClick }) {
   const statusColors = {
     "En cours": "var(--gold)",
     "À venir": "var(--soft-pink)",
-    "Terminée": "var(--beige)"
+    "Terminée": "#9C27B0"
   };
 
   return (
