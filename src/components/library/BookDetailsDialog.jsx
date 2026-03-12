@@ -68,9 +68,9 @@ const getDominantColor = (imageUrl) => new Promise((resolve) => {
   img.onerror = () => resolve(null);
 });
 
-// Replaced by AddToSeriesDialog external component
-function _REMOVED() {
-  const addToSeriesMutation = useMutation({
+export default function BookDetailsDialog({ userBook, book, open, onOpenChange, initialTab = "myinfo" }) {
+  const _dummy = () => {
+    const addToSeriesMutation = useMutation({
     mutationFn: async (seriesId) => {
       if (!user) throw new Error("User not loaded.");
 
