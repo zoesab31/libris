@@ -68,20 +68,9 @@ const getDominantColor = (imageUrl) => new Promise((resolve) => {
   img.onerror = () => resolve(null);
 });
 
-// PLACEHOLDER - replaced by external component
-function _AddToSeriesDialogOLD({ open, onOpenChange, book, currentSeries, allSeries }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSeriesId, setSelectedSeriesId] = useState(currentSeries?.id || ""); // Initialized with currentSeries ID
-  const [creatingNew, setCreatingNew] = useState(false);
-  const [newSeriesName, setNewSeriesName] = useState("");
-  const [newSeriesAuthor, setNewSeriesAuthor] = useState(book?.author || "");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: user } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => base44.auth.me()
-  });
+// Replaced by AddToSeriesDialog external component
+function _AddToSeriesDialogOLD() { return null;
+  const _unused = () => {
 
   // Filter series based on search query
   const filteredSeries = useMemo(() => {
