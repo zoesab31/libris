@@ -138,9 +138,10 @@ export default function MyLibrary() {
         addEntry(userBook, userBook.end_date);
       }
 
-      // Include "Abandonné" books if >50%
-      if (userBook.status === "Abandonné" && userBook.end_date && abandonedBookCounts(userBook)) {
-        addEntry(userBook, userBook.end_date);
+      // Include "Abandonné" books if >50% (use end_date or fallback to updated_date)
+      if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+        const dnfDate = userBook.end_date || userBook.updated_date;
+        if (dnfDate) addEntry(userBook, dnfDate);
       }
 
       // Include rereads with end_date
