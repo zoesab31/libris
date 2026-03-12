@@ -123,8 +123,8 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
   useEffect(() => {
     if (open && messagesEndRef.current && selectedDay !== 0) {
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+        messagesEndRef.current?.scrollIntoView({ behavior: selectedDay === -1 ? 'instant' : 'smooth' });
+      }, 150);
     }
   }, [messages, open, selectedDay]);
 
