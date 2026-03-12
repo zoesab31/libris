@@ -41,6 +41,8 @@ import { fr } from "date-fns/locale";
 import GenreTagInput from "./GenreTagInput";
 import CommentSection from "./CommentSection";
 import ReadingJournal from "./ReadingJournal";
+import FriendReviewsList from "./FriendReviewsList";
+import AddToSeriesDialog from "./AddToSeriesDialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -48,57 +50,26 @@ const STATUSES = ["Lu", "En cours", "À lire", "Abandonné", "Wishlist"];
 const LANGUAGES = ["Français", "Anglais", "Espagnol", "Italien", "Allemand", "Portugais", "Japonais", "Coréen", "Chinois", "Autre"];
 
 const LANGUAGE_FLAGS = {
-  "Français": "🇫🇷",
-  "Anglais": "🇬🇧",
-  "Espagnol": "🇪🇸",
-  "Italien": "🇮🇹",
-  "Allemand": "🇩🇪",
-  "Portugais": "🇵🇹",
-  "Japonais": "🇯🇵",
-  "Coréen": "🇰🇷",
-  "Chinois": "🇨🇳",
-  "Autre": "🌍"
+  "Français": "🇫🇷", "Anglais": "🇬🇧", "Espagnol": "🇪🇸", "Italien": "🇮🇹",
+  "Allemand": "🇩🇪", "Portugais": "🇵🇹", "Japonais": "🇯🇵", "Coréen": "🇰🇷",
+  "Chinois": "🇨🇳", "Autre": "🌍"
 };
 
-// Helper function to extract dominant color from image
-const getDominantColor = (imageUrl) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = imageUrl;
+const getDominantColor = (imageUrl) => new Promise((resolve) => {
+  const img = new Image(); img.crossOrigin = "Anonymous"; img.src = imageUrl;
+  img.onload = () => {
+    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+    canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let r = 0, g = 0, b = 0; const pixelCount = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
+    resolve(`rgb(${Math.floor(r/pixelCount)}, ${Math.floor(g/pixelCount)}, ${Math.floor(b/pixelCount)})`);
+  };
+  img.onerror = () => resolve(null);
+});
 
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      let r = 0,g = 0,b = 0;
-      const pixelCount = data.length / 4;
-
-      for (let i = 0; i < data.length; i += 4) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-      }
-
-      r = Math.floor(r / pixelCount);
-      g = Math.floor(g / pixelCount);
-      b = Math.floor(b / pixelCount);
-
-      resolve(`rgb(${r}, ${g}, ${b})`);
-    };
-
-    img.onerror = () => resolve(null);
-  });
-};
-
-// New component for adding book to series
-function AddToSeriesDialog({ open, onOpenChange, book, currentSeries, allSeries }) {
+// PLACEHOLDER - replaced by external component
+function _AddToSeriesDialogOLD({ open, onOpenChange, book, currentSeries, allSeries }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSeriesId, setSelectedSeriesId] = useState(currentSeries?.id || ""); // Initialized with currentSeries ID
   const [creatingNew, setCreatingNew] = useState(false);
