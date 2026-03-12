@@ -167,9 +167,15 @@ export default function Statistics() {
       const book = allBooks.find(b => b.id === userBook.book_id);
       if (!book) return sum;
 
-      // Only count full pages for "Lu" books (Option A)
       if (userBook.status === "Lu") {
         return sum + (book.page_count || 0);
+      }
+
+      // Count partial pages for DNF ≥50%
+      if (userBook.status === "Abandonné" && abandonedBookCounts(userBook)) {
+        if (userBook.abandon_page) return sum + userBook.abandon_page;
+        if (userBook.abandon_percentage) return sum + Math.round((book.page_count || 0) * userBook.abandon_percentage / 100);
+        return sum + Math.round((book.page_count || 0) / 2);
       }
       
       return sum;
