@@ -53,7 +53,7 @@ export default function SharedReadingCard({ reading, book, onClick }) {
                 </div>
               )}
 
-              {reading.chapters_per_day && (
+              {reading.chapters_per_day > 0 && (
                 <div className="flex items-center gap-2" style={{ color: 'var(--warm-pink)' }}>
                   <BookOpen className="w-4 h-4" />
                   <span>{reading.chapters_per_day} chapitre{reading.chapters_per_day > 1 ? 's' : ''} / jour</span>
