@@ -48,8 +48,12 @@ export default function Statistics() {
   // Helper function to check if abandoned book counts (>50%)
   const abandonedBookCounts = (userBook) => {
     if (userBook.status !== "Abandonné") return false;
-    
-    if (userBook.abandon_percentage && userBook.abandon_percentage >= 50) return true;
+
+    // Check percentage (handles both 0-100 scale and 0-1 decimal scale)
+    if (userBook.abandon_percentage != null) {
+      const pct = userBook.abandon_percentage > 1 ? userBook.abandon_percentage : userBook.abandon_percentage * 100;
+      if (pct >= 50) return true;
+    }
     
     if (userBook.abandon_page) {
       const book = allBooks.find(b => b.id === userBook.book_id);
