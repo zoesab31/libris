@@ -68,9 +68,8 @@ const getDominantColor = (imageUrl) => new Promise((resolve) => {
   img.onerror = () => resolve(null);
 });
 
-// Replaced by AddToSeriesDialog external component
-function _AddToSeriesDialogOLD() { return null;
-  const _unused = () => {
+// Replaced by AddToSeriesDialog external component - body removed
+function _AddToSeriesDialogOLD_BODY_START() {
 
   // Filter series based on search query
   const filteredSeries = useMemo(() => {
