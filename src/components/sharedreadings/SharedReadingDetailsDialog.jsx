@@ -365,7 +365,86 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               );
             })()
           )}
-          {selectedDay === 0 ? (
+          {selectedDay === -1 ? (
+            <>
+              {Object.keys(groupedMessages).sort((a, b) => a - b).map(day => (
+                <div key={day}>
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px" style={{ backgroundColor: '#FFB6C8' }} />
+                    <span className="text-sm font-bold px-3 py-1 rounded-full"
+                          style={{ backgroundColor: '#FFE4EC', color: '#C2185B' }}>
+                      Jour {day}
+                    </span>
+                    <div className="flex-1 h-px" style={{ backgroundColor: '#FFB6C8' }} />
+                  </div>
+                  {groupedMessages[day].map((msg) => {
+                    const isMyMessage = msg.created_by === user?.email;
+                    const userInfo = getUserInfo(msg.created_by);
+                    const allReactions = msg.reactions || {};
+                    const reactionCounts = {};
+                    Object.values(allReactions).flat().forEach(emoji => {
+                      reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+                    });
+                    return (
+                      <div key={msg.id} className={`flex gap-3 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                        {!isMyMessage && (
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden" style={{ backgroundColor: '#9C27B0' }}>
+                            {userInfo.picture ? (
+                              <img src={userInfo.picture} alt={userInfo.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white font-bold">{userInfo.name[0]?.toUpperCase()}</div>
+                            )}
+                          </div>
+                        )}
+                        <div className={`max-w-[70%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
+                          {!isMyMessage && (
+                            <span className="text-xs font-bold mb-1 px-2" style={{ color: '#C2185B' }}>{userInfo.name}</span>
+                          )}
+                          <div className="rounded-3xl px-5 py-4"
+                            style={{
+                              backgroundColor: isMyMessage ? '#FF1493' : 'white',
+                              color: isMyMessage ? 'white' : '#1a1a1a',
+                              borderRadius: isMyMessage ? '24px 24px 6px 24px' : '24px 24px 24px 6px',
+                              boxShadow: isMyMessage ? '0 8px 24px rgba(255, 20, 147, 0.35)' : '0 8px 24px rgba(0, 0, 0, 0.1)',
+                              border: isMyMessage ? 'none' : '2px solid #FFE4EC'
+                            }}>
+                            {msg.photo_url && (
+                              <div className="mb-3 rounded-lg overflow-hidden cursor-pointer" onClick={() => window.open(msg.photo_url, '_blank')}>
+                                <img src={msg.photo_url} alt="Photo" className="w-full max-h-64 object-cover" />
+                              </div>
+                            )}
+                            {msg.chapter && (
+                              <div className="px-3 py-1 rounded-full inline-block mb-2 text-xs font-bold"
+                                style={{ backgroundColor: isMyMessage ? 'rgba(255,255,255,0.25)' : '#FFE4EC', color: isMyMessage ? 'white' : '#C2185B' }}>
+                                📖 {msg.chapter}
+                              </div>
+                            )}
+                            <p className="text-base leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                            <p className="text-xs mt-2 opacity-50">{format(new Date(msg.created_date), 'HH:mm', { locale: fr })}</p>
+                          </div>
+                          {Object.keys(reactionCounts).length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-2 px-1 flex-wrap">
+                              {Object.entries(reactionCounts).map(([emoji, count]) => (
+                                <span key={emoji} className="px-2 py-1 rounded-full text-sm" style={{ backgroundColor: '#FFE4EC' }}>
+                                  {emoji} <span className="text-xs font-bold" style={{ color: '#9C27B0' }}>{count}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              {messages.length === 0 && (
+                <div className="text-center py-20">
+                  <p className="text-base italic" style={{ color: '#9CA3AF' }}>Aucun message.</p>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </>
+          ) : selectedDay === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-6">
               <div className="text-center">
                 <h3 className="text-2xl font-bold mb-2" style={{ color: '#9C27B0' }}>
