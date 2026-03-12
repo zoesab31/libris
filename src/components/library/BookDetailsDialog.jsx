@@ -436,7 +436,7 @@ export default function BookDetailsDialog({ userBook, book, open, onOpenChange, 
 
 }
 
-export default function BookDetailsDialog({ userBook, book, open, onOpenChange, initialTab = "myinfo" }) {
+// Real component starts here:
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(initialTab);
