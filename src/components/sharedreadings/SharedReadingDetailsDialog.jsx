@@ -74,10 +74,15 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
   useEffect(() => {
     if (numberOfDays > 0 && selectedDay === null) {
-      const currentDay = getCurrentDay();
-      setSelectedDay(currentDay);
+      if (reading.status === 'Terminée') {
+        // LC terminée : afficher tous les messages (on met un flag spécial -1)
+        setSelectedDay(-1);
+      } else {
+        const currentDay = getCurrentDay();
+        setSelectedDay(currentDay);
+      }
     }
-  }, [numberOfDays]);
+  }, [numberOfDays, reading.status]);
 
   // Auto-select day based on chapter number
   useEffect(() => {
