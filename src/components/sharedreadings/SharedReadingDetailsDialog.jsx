@@ -353,7 +353,7 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {selectedDay > 0 && reading.use_custom_plan && (
+          {selectedDay > 0 && selectedDay !== -1 && reading.use_custom_plan && (
             (() => {
               const plan = (reading.custom_plan || []).find(p => p.day_number === selectedDay);
               if (!plan) return null;
