@@ -526,7 +526,7 @@ export default function Dashboard() {
                 icon: <Users className="w-5 h-5" style={{ color: '#E06AC4' }} />,
                 bg: '#FCE8F8',
                 iconBg: '#F4BDE9',
-                value: myFriends.length,
+                value: sharedReadingsCount,
                 label: 'Lectures communes',
                 valueColor: '#A81F8C',
                 labelColor: '#C24FAE',
