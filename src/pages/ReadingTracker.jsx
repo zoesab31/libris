@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import BookPickerDialog from "@/components/tracker/BookPickerDialog.jsx";
 
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-const WEEK_DAYS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 export default function ReadingTracker() {
   const [user, setUser] = useState(null);
