@@ -275,12 +275,23 @@ export default function Dashboard() {
     return count;
   }, 0);
 
-  const totalPagesThisYear = myBooks.
-  filter((b) => {const d = getEffectiveDate(b);return d && new Date(d).getFullYear() === selectedYear;}).
-  reduce((sum, userBook) => {
+  const totalPagesThisYear = myBooks.reduce((sum, userBook) => {
     const book = allBooks.find((b) => b.id === userBook.book_id);
-    if (!book || userBook.status !== "Lu") return sum;
-    return sum + (book.page_count || 0);
+    if (!book) return sum;
+    // Lecture principale
+    const d = getEffectiveDate(userBook);
+    if (d && new Date(d).getFullYear() === selectedYear && userBook.status === "Lu") {
+      sum += (book.page_count || 0);
+    }
+    // Relectures
+    if (userBook.rereads && userBook.rereads.length > 0) {
+      userBook.rereads.forEach((reread) => {
+        if (reread.end_date && new Date(reread.end_date).getFullYear() === selectedYear) {
+          sum += (book.page_count || 0);
+        }
+      });
+    }
+    return sum;
   }, 0);
 
   const displayName = user?.display_name || user?.full_name?.split(' ')[0] || 'Lectrice';
