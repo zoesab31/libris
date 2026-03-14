@@ -199,9 +199,11 @@ export default function Dashboard() {
     enabled: !!user
   });
 
-  const sharedReadingsCount = sharedReadings.filter(sr =>
-    sr.participants?.includes(user?.email) || sr.created_by === user?.email
-  ).length;
+  const sharedReadingsCount = sharedReadings.filter(sr => {
+    const isParticipant = sr.participants?.includes(user?.email) || sr.created_by === user?.email;
+    const endYear = sr.end_date ? new Date(sr.end_date).getFullYear() : null;
+    return isParticipant && endYear === selectedYear && sr.status === "Terminée";
+  }).length;
 
   const currentlyReading = myBooks.filter((b) => b.status === "En cours");
   const toReadCount = myBooks.filter((b) => b.status === "À lire" || b.status === "En cours").length;
