@@ -223,7 +223,7 @@ export default function ReadingTracker() {
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const startOffset = getDay(monthStart);
+  const startOffset = (getDay(monthStart) + 6) % 7;
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const selectedMonthIdx = currentMonth.getMonth();
   const totalCells = startOffset + days.length;
