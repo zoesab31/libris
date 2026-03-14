@@ -193,6 +193,16 @@ export default function Dashboard() {
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: sharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadings', user?.email],
+    queryFn: () => base44.entities.SharedReading.list(),
+    enabled: !!user
+  });
+
+  const sharedReadingsCount = sharedReadings.filter(sr =>
+    sr.participants?.includes(user?.email) || sr.created_by === user?.email
+  ).length;
+
   const currentlyReading = myBooks.filter((b) => b.status === "En cours");
   const toReadCount = myBooks.filter((b) => b.status === "À lire" || b.status === "En cours").length;
 
