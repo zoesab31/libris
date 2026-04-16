@@ -146,19 +146,16 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
         const response = await fetch(
           `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=20&orderBy=relevance`
         );
+        if (!response.ok) {
+          throw new Error(`Google Books API error: ${response.status}`);
+        }
         const data = await response.json();
 
         if (data.items) {
           const books = data.items
             .filter(item => {
-              // Exclude items without proper book info
               const info = item.volumeInfo;
               if (!info.title) return false;
-              // Exclude very old publications (before 1900) unless it's a classic search
-              const year = info.publishedDate ? parseInt(info.publishedDate) : null;
-              if (year && year < 1900) return false;
-              // Exclude items with no cover and no author
-              if (!info.authors && !info.imageLinks) return false;
               return true;
             })
             .map(item => {
