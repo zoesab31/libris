@@ -132,7 +132,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     ? customGenresData.map(g => g.name)
     : GENRES;
 
-  // Debounced search with Google Books API - IMPROVED IMAGE QUALITY
+  // Debounced search with Open Library API (no rate limits)
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
@@ -144,50 +144,32 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     const timeoutId = setTimeout(async () => {
       try {
         const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=20&orderBy=relevance`
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i,ia`
         );
         if (!response.ok) {
-          throw new Error(`Google Books API error: ${response.status}`);
+          throw new Error(`Open Library API error: ${response.status}`);
         }
         const data = await response.json();
 
-        if (data.items) {
-          const books = data.items
-            .filter(item => {
-              const info = item.volumeInfo;
-              if (!info.title) return false;
-              return true;
-            })
-            .map(item => {
-              let coverUrl = "";
-              if (item.volumeInfo.imageLinks) {
-                coverUrl = item.volumeInfo.imageLinks.extraLarge ||
-                          item.volumeInfo.imageLinks.large ||
-                          item.volumeInfo.imageLinks.medium ||
-                          item.volumeInfo.imageLinks.thumbnail ||
-                          item.volumeInfo.imageLinks.smallThumbnail || "";
-                if (coverUrl) {
-                  coverUrl = coverUrl.replace('http:', 'https:');
-                  if (coverUrl.includes('books.google.com')) {
-                    coverUrl = coverUrl.replace(/zoom=\d+/, 'zoom=3');
-                    if (!coverUrl.includes('zoom=')) {
-                      coverUrl += coverUrl.includes('?') ? '&zoom=3' : '?zoom=3';
-                    }
-                  }
-                }
-              }
+        if (data.docs && data.docs.length > 0) {
+          const books = data.docs
+            .filter(doc => doc.title)
+            .map((doc, idx) => {
+              const coverId = doc.cover_i;
+              const coverUrl = coverId
+                ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+                : "";
               return {
-                id: item.id,
-                title: item.volumeInfo.title || "Titre inconnu",
-                authors: item.volumeInfo.authors || ["Auteur inconnu"],
-                author: (item.volumeInfo.authors || ["Auteur inconnu"]).join(", "),
-                publishedDate: item.volumeInfo.publishedDate || "",
-                year: item.volumeInfo.publishedDate ? parseInt(item.volumeInfo.publishedDate) : null,
-                pageCount: item.volumeInfo.pageCount || null,
-                description: item.volumeInfo.description || "",
-                coverUrl: coverUrl,
-                categories: item.volumeInfo.categories || [],
-                isbn: item.volumeInfo.industryIdentifiers?.[0]?.identifier || ""
+                id: doc.key || `ol-${idx}`,
+                title: doc.title,
+                authors: doc.author_name || ["Auteur inconnu"],
+                author: (doc.author_name || ["Auteur inconnu"]).join(", "),
+                year: doc.first_publish_year || null,
+                pageCount: doc.number_of_pages_median || null,
+                description: "",
+                coverUrl,
+                categories: doc.subject ? doc.subject.slice(0, 3) : [],
+                isbn: doc.isbn?.[0] || ""
               };
             })
             .slice(0, 12);
@@ -202,7 +184,7 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 600);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
