@@ -649,9 +649,10 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
               )}
 
               {/* Empty state */}
-              {!isSearching && searchQuery && searchResults.length === 0 && (
+              {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
                 <div className="text-center py-10">
                   <p className="text-sm font-medium" style={{ color: '#A78BBA' }}>Aucun résultat pour « {searchQuery} »</p>
+                  <p className="text-xs mt-1" style={{ color: '#A78BBA' }}>Essayez avec le titre exact ou le nom de l'auteur</p>
                 </div>
               )}
 
