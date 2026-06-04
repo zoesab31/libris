@@ -136,49 +136,11 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     if (query.trim().length < 2) return;
     setIsSearching(true);
     setSearchResults([]);
-    try {
-      // Try Google Books first (better results for French books)
-      const gbResponse = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&langRestrict=fr`
-      );
-      if (gbResponse.ok) {
-        const gbData = await gbResponse.json();
-        if (gbData.items && gbData.items.length > 0) {
-          const books = gbData.items
-            .filter(item => item.volumeInfo?.title)
-            .map((item, idx) => {
-              const info = item.volumeInfo;
-              let coverUrl = "";
-              if (info.imageLinks) {
-                coverUrl = info.imageLinks.extraLarge || info.imageLinks.large ||
-                  info.imageLinks.medium || info.imageLinks.thumbnail ||
-                  info.imageLinks.smallThumbnail || "";
-                if (coverUrl) coverUrl = coverUrl.replace('http:', 'https:').replace('zoom=1', 'zoom=3');
-              }
-              return {
-                id: item.id || `gb-${idx}`,
-                title: info.title,
-                author: (info.authors || ["Auteur inconnu"]).join(", "),
-                year: info.publishedDate ? parseInt(info.publishedDate) : null,
-                pageCount: info.pageCount || null,
-                description: info.description || "",
-                coverUrl,
-                categories: info.categories || [],
-                isbn: info.industryIdentifiers?.[0]?.identifier || ""
-              };
-            })
-            .slice(0, 15);
-          setSearchResults(books);
-          setIsSearching(false);
-          return;
-        }
-      }
-    } catch (e) { /* fallback to Open Library */ }
 
-    // Fallback: Open Library
+    // Search Open Library — no rate limit, good multilingual coverage
     try {
       const olResponse = await fetch(
-        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i`
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=30&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i,language`
       );
       if (!olResponse.ok) throw new Error("Open Library error");
       const olData = await olResponse.json();
@@ -196,11 +158,21 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
               description: "",
               coverUrl: coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : "",
               categories: doc.subject ? doc.subject.slice(0, 3) : [],
-              isbn: doc.isbn?.[0] || ""
+              isbn: doc.isbn?.[0] || "",
+              languages: doc.language || []
             };
-          })
-          .slice(0, 15);
-        setSearchResults(books);
+          });
+
+        // Sort: prefer books with French edition first, then by relevance
+        const sorted = [...books].sort((a, b) => {
+          const aHasFr = a.languages.includes('fre') || a.languages.includes('fr');
+          const bHasFr = b.languages.includes('fre') || b.languages.includes('fr');
+          if (aHasFr && !bHasFr) return -1;
+          if (!aHasFr && bHasFr) return 1;
+          return 0;
+        });
+
+        setSearchResults(sorted.slice(0, 15));
       } else {
         setSearchResults([]);
       }
