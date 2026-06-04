@@ -1,0 +1,33 @@
+{
+  "name": "UserBadge",
+  "type": "object",
+  "properties": {
+    "badge_id": {
+      "type": "string",
+      "description": "ID du badge"
+    },
+    "unlocked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de d\u00e9blocage"
+    },
+    "progress_current": {
+      "type": "number",
+      "default": 0,
+      "description": "Progression actuelle"
+    },
+    "progress_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Total requis"
+    },
+    "is_new": {
+      "type": "boolean",
+      "default": true,
+      "description": "Badge pas encore vu"
+    }
+  },
+  "required": [
+    "badge_id"
+  ]
+}

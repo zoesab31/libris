@@ -1,0 +1,34 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "chat_room_id": {
+      "type": "string",
+      "description": "ID du chat"
+    },
+    "sender_email": {
+      "type": "string",
+      "description": "Email de l'exp\u00e9diteur"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu du message"
+    },
+    "seen_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des utilisateurs qui ont vu le message"
+    },
+    "attachment_url": {
+      "type": "string",
+      "description": "URL d'une pi\u00e8ce jointe (image, etc.)"
+    }
+  },
+  "required": [
+    "chat_room_id",
+    "sender_email",
+    "content"
+  ]
+}

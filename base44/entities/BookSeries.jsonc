@@ -1,0 +1,77 @@
+{
+  "name": "BookSeries",
+  "type": "object",
+  "properties": {
+    "series_name": {
+      "type": "string",
+      "description": "Nom de la saga"
+    },
+    "author": {
+      "type": "string",
+      "description": "Auteur de la saga"
+    },
+    "total_books": {
+      "type": "number",
+      "description": "Nombre total de livres dans la saga"
+    },
+    "books_read": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres lus",
+      "default": []
+    },
+    "books_in_pal": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres dans la PAL",
+      "default": []
+    },
+    "books_wishlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres en wishlist (Mes envies)",
+      "default": []
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Image de couverture de la saga"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description de la saga"
+    },
+    "reading_order": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "number"
+          },
+          "book_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Ordre de lecture des livres"
+    },
+    "is_abandoned": {
+      "type": "boolean",
+      "default": false,
+      "description": "S\u00e9rie abandonn\u00e9e"
+    }
+  },
+  "required": [
+    "series_name",
+    "total_books"
+  ]
+}

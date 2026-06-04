@@ -1,0 +1,44 @@
+{
+  "name": "FavoriteCouple",
+  "type": "object",
+  "properties": {
+    "couple_name": {
+      "type": "string",
+      "description": "Nom du couple (ex: Feyre & Rhysand)"
+    },
+    "character1_name": {
+      "type": "string",
+      "description": "Nom du premier personnage"
+    },
+    "character2_name": {
+      "type": "string",
+      "description": "Nom du deuxi\u00e8me personnage"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre d'o\u00f9 vient le couple"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Classement dans le top (1 = pr\u00e9f\u00e9r\u00e9)"
+    },
+    "why_i_love_them": {
+      "type": "string",
+      "description": "Pourquoi vous adorez ce couple"
+    },
+    "best_moment": {
+      "type": "string",
+      "description": "Meilleur moment du couple"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Photo/fanart du couple"
+    }
+  },
+  "required": [
+    "character1_name",
+    "character2_name",
+    "book_id",
+    "rank"
+  ]
+}

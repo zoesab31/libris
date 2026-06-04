@@ -1,0 +1,23 @@
+{
+  "name": "ReadingGoal",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ann\u00e9e de l'objectif"
+    },
+    "goal_count": {
+      "type": "number",
+      "description": "Nombre de livres \u00e0 lire cette ann\u00e9e"
+    },
+    "changes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de modifications effectu\u00e9es cette ann\u00e9e"
+    }
+  },
+  "required": [
+    "year",
+    "goal_count"
+  ]
+}

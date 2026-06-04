@@ -1,0 +1,24 @@
+{
+  "name": "UserPoints",
+  "type": "object",
+  "properties": {
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Points totaux gagn\u00e9s"
+    },
+    "spent_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Points d\u00e9pens\u00e9s"
+    },
+    "available_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Points disponibles"
+    }
+  },
+  "required": [
+    "total_points"
+  ]
+}

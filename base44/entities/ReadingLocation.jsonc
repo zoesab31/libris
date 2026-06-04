@@ -1,0 +1,43 @@
+{
+  "name": "ReadingLocation",
+  "type": "object",
+  "properties": {
+    "location_name": {
+      "type": "string",
+      "description": "Nom du lieu"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "\u00c0 la maison",
+        "Au parc",
+        "Au caf\u00e9",
+        "En voiture",
+        "Salle de sport",
+        "Autre"
+      ],
+      "description": "Cat\u00e9gorie du lieu"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo du moment"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "Livre lu \u00e0 cet endroit"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de lecture"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note sur le moment"
+    }
+  },
+  "required": [
+    "location_name",
+    "category"
+  ]
+}

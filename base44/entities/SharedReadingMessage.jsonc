@@ -1,0 +1,41 @@
+{
+  "name": "SharedReadingMessage",
+  "type": "object",
+  "properties": {
+    "shared_reading_id": {
+      "type": "string",
+      "description": "ID de la lecture commune"
+    },
+    "day_number": {
+      "type": "number",
+      "description": "Num\u00e9ro du jour (1, 2, 3...)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Message"
+    },
+    "chapter": {
+      "type": "string",
+      "description": "Chapitre concern\u00e9"
+    },
+    "is_spoiler": {
+      "type": "boolean",
+      "default": false,
+      "description": "Contient des spoilers"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo associ\u00e9e au message"
+    },
+    "reactions": {
+      "type": "object",
+      "description": "R\u00e9actions des utilisateurs par email {email: [emoji1, emoji2]}",
+      "default": {}
+    }
+  },
+  "required": [
+    "shared_reading_id",
+    "day_number",
+    "message"
+  ]
+}

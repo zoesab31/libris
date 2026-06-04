@@ -132,60 +132,94 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     ? customGenresData.map(g => g.name)
     : GENRES;
 
-  // Debounced search with Open Library API (no rate limits)
+  const performSearch = async (query) => {
+    if (query.trim().length < 2) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    try {
+      // Try Google Books first (better results for French books)
+      const gbResponse = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance&langRestrict=fr`
+      );
+      if (gbResponse.ok) {
+        const gbData = await gbResponse.json();
+        if (gbData.items && gbData.items.length > 0) {
+          const books = gbData.items
+            .filter(item => item.volumeInfo?.title)
+            .map((item, idx) => {
+              const info = item.volumeInfo;
+              let coverUrl = "";
+              if (info.imageLinks) {
+                coverUrl = info.imageLinks.extraLarge || info.imageLinks.large ||
+                  info.imageLinks.medium || info.imageLinks.thumbnail ||
+                  info.imageLinks.smallThumbnail || "";
+                if (coverUrl) coverUrl = coverUrl.replace('http:', 'https:').replace('zoom=1', 'zoom=3');
+              }
+              return {
+                id: item.id || `gb-${idx}`,
+                title: info.title,
+                author: (info.authors || ["Auteur inconnu"]).join(", "),
+                year: info.publishedDate ? parseInt(info.publishedDate) : null,
+                pageCount: info.pageCount || null,
+                description: info.description || "",
+                coverUrl,
+                categories: info.categories || [],
+                isbn: info.industryIdentifiers?.[0]?.identifier || ""
+              };
+            })
+            .slice(0, 15);
+          setSearchResults(books);
+          setIsSearching(false);
+          return;
+        }
+      }
+    } catch (e) { /* fallback to Open Library */ }
+
+    // Fallback: Open Library
+    try {
+      const olResponse = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i`
+      );
+      if (!olResponse.ok) throw new Error("Open Library error");
+      const olData = await olResponse.json();
+      if (olData.docs && olData.docs.length > 0) {
+        const books = olData.docs
+          .filter(doc => doc.title)
+          .map((doc, idx) => {
+            const coverId = doc.cover_i;
+            return {
+              id: doc.key || `ol-${idx}`,
+              title: doc.title,
+              author: (doc.author_name || ["Auteur inconnu"]).join(", "),
+              year: doc.first_publish_year || null,
+              pageCount: doc.number_of_pages_median || null,
+              description: "",
+              coverUrl: coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : "",
+              categories: doc.subject ? doc.subject.slice(0, 3) : [],
+              isbn: doc.isbn?.[0] || ""
+            };
+          })
+          .slice(0, 15);
+        setSearchResults(books);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error("Erreur de recherche:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced auto-search
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
       setIsSearching(false);
       return;
     }
-
-    setIsSearching(true);
-    const timeoutId = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i,ia`
-        );
-        if (!response.ok) {
-          throw new Error(`Open Library API error: ${response.status}`);
-        }
-        const data = await response.json();
-
-        if (data.docs && data.docs.length > 0) {
-          const books = data.docs
-            .filter(doc => doc.title)
-            .map((doc, idx) => {
-              const coverId = doc.cover_i;
-              const coverUrl = coverId
-                ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
-                : "";
-              return {
-                id: doc.key || `ol-${idx}`,
-                title: doc.title,
-                authors: doc.author_name || ["Auteur inconnu"],
-                author: (doc.author_name || ["Auteur inconnu"]).join(", "),
-                year: doc.first_publish_year || null,
-                pageCount: doc.number_of_pages_median || null,
-                description: "",
-                coverUrl,
-                categories: doc.subject ? doc.subject.slice(0, 3) : [],
-                isbn: doc.isbn?.[0] || ""
-              };
-            })
-            .slice(0, 12);
-          setSearchResults(books);
-        } else {
-          setSearchResults([]);
-        }
-      } catch (error) {
-        console.error("Erreur de recherche:", error);
-        toast.error("Erreur lors de la recherche");
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 600);
-
+    const timeoutId = setTimeout(() => performSearch(searchQuery), 800);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
@@ -640,6 +674,17 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
                   </button>
                 )}
               </div>
+
+              {/* Manual search button */}
+              {searchQuery.trim().length >= 2 && !isSearching && (
+                <button
+                  onClick={() => performSearch(searchQuery)}
+                  className="w-full py-2 rounded-xl text-sm font-bold"
+                  style={{ background: 'rgba(255,105,180,0.1)', color: '#FF1493' }}
+                >
+                  🔍 Lancer la recherche
+                </button>
+              )}
 
               {/* Loading */}
               {isSearching && (

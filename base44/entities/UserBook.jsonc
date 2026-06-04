@@ -1,0 +1,159 @@
+{
+  "name": "UserBook",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Lu",
+        "En cours",
+        "\u00c0 lire",
+        "Abandonn\u00e9",
+        "Wishlist"
+      ],
+      "default": "\u00c0 lire"
+    },
+    "custom_shelf": {
+      "type": "string",
+      "description": "\u00c9tag\u00e8re personnalis\u00e9e"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Note sur 5"
+    },
+    "review": {
+      "type": "string",
+      "description": "Avis d\u00e9taill\u00e9"
+    },
+    "current_page": {
+      "type": "number",
+      "description": "Page actuelle de lecture (pour livres en cours)"
+    },
+    "music_playlist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Titre de la chanson"
+          },
+          "artist": {
+            "type": "string",
+            "description": "Artiste"
+          },
+          "link": {
+            "type": "string",
+            "description": "Lien YouTube, Spotify ou Deezer"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "description": "Playlist de musiques associ\u00e9es au livre",
+      "default": []
+    },
+    "music": {
+      "type": "string",
+      "description": "Chanson/musique associ\u00e9e au livre (ancien champ, gard\u00e9 pour compatibilit\u00e9)"
+    },
+    "music_artist": {
+      "type": "string",
+      "description": "Artiste de la musique (ancien champ)"
+    },
+    "music_link": {
+      "type": "string",
+      "description": "Lien YouTube, Spotify ou Deezer (ancien champ)"
+    },
+    "reading_language": {
+      "type": "string",
+      "enum": [
+        "Fran\u00e7ais",
+        "Anglais",
+        "Espagnol",
+        "Italien",
+        "Allemand",
+        "Portugais",
+        "Japonais",
+        "Cor\u00e9en",
+        "Chinois",
+        "Autre"
+      ],
+      "default": "Fran\u00e7ais",
+      "description": "Langue dans laquelle le livre a \u00e9t\u00e9 lu"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de d\u00e9but de lecture initiale"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de fin de lecture initiale"
+    },
+    "rereads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date de d\u00e9but de la relecture"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date de fin de la relecture"
+          }
+        }
+      },
+      "description": "Liste des relectures avec leurs dates",
+      "default": []
+    },
+    "abandon_page": {
+      "type": "number",
+      "description": "Page d'abandon (pour livres abandonn\u00e9s)"
+    },
+    "abandon_percentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Pourcentage d'abandon (pour livres abandonn\u00e9s)"
+    },
+    "is_shared_reading": {
+      "type": "boolean",
+      "default": false,
+      "description": "Lecture commune avec l'amie"
+    },
+    "is_reread": {
+      "type": "boolean",
+      "default": false,
+      "description": "Est-ce une relecture en cours ?"
+    },
+    "favorite_character": {
+      "type": "string",
+      "description": "Personnage pr\u00e9f\u00e9r\u00e9 (book boyfriend potentiel)"
+    },
+    "book_color": {
+      "type": "string",
+      "description": "Couleur personnalis\u00e9e pour la biblioth\u00e8que virtuelle"
+    },
+    "shelf_position": {
+      "type": "number",
+      "description": "Position du livre sur l'\u00e9tag\u00e8re"
+    }
+  },
+  "required": [
+    "book_id",
+    "status"
+  ]
+}

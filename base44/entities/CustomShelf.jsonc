@@ -1,0 +1,34 @@
+{
+  "name": "CustomShelf",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom de l'\u00e9tag\u00e8re personnalis\u00e9e"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description de l'\u00e9tag\u00e8re"
+    },
+    "color": {
+      "type": "string",
+      "enum": [
+        "rose",
+        "bleu",
+        "vert",
+        "violet",
+        "orange",
+        "rouge"
+      ],
+      "default": "rose",
+      "description": "Couleur de l'\u00e9tag\u00e8re"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji ou ic\u00f4ne"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

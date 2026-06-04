@@ -1,0 +1,60 @@
+{
+  "name": "ActivityFeed",
+  "type": "object",
+  "properties": {
+    "activity_type": {
+      "type": "string",
+      "enum": [
+        "book_finished",
+        "book_started",
+        "book_rated",
+        "book_added_pal",
+        "milestone_reached"
+      ],
+      "description": "Type d'activit\u00e9"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre concern\u00e9"
+    },
+    "user_book_id": {
+      "type": "string",
+      "description": "ID du UserBook concern\u00e9"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Note donn\u00e9e (si applicable)"
+    },
+    "review_excerpt": {
+      "type": "string",
+      "description": "Extrait de l'avis (max 150 chars)"
+    },
+    "milestone_type": {
+      "type": "string",
+      "description": "Type de milestone (ex: 10_books, 50_books, 100_books)"
+    },
+    "is_visible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Visible dans le feed"
+    },
+    "likes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Emails des utilisateurs qui ont lik\u00e9"
+    },
+    "comments_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de commentaires"
+    }
+  },
+  "required": [
+    "activity_type"
+  ]
+}

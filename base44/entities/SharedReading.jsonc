@@ -1,0 +1,105 @@
+{
+  "name": "SharedReading",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la lecture commune"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de d\u00e9but"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de fin"
+    },
+    "duration_days": {
+      "type": "number",
+      "description": "Dur\u00e9e en jours"
+    },
+    "total_chapters": {
+      "type": "number",
+      "description": "Nombre total de chapitres du livre"
+    },
+    "chapters_per_day": {
+      "type": "number",
+      "description": "Nombre de chapitres par jour (calcul\u00e9 automatiquement)"
+    },
+    "use_custom_plan": {
+      "type": "boolean",
+      "default": false,
+      "description": "Utiliser la r\u00e9partition personnalis\u00e9e"
+    },
+    "custom_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day_number": {
+            "type": "number"
+          },
+          "chapters_text": {
+            "type": "string",
+            "description": "Ex: '1 \u00e0 4' ou '5-8'"
+          }
+        },
+        "required": [
+          "day_number",
+          "chapters_text"
+        ]
+      },
+      "description": "R\u00e9partition des chapitres par jour"
+    },
+    "ai_plan_source_image": {
+      "type": "string",
+      "description": "Image utilis\u00e9e pour l'extraction IA"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "En cours",
+        "Termin\u00e9e",
+        "\u00c0 venir"
+      ],
+      "default": "\u00c0 venir"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des participantes"
+    },
+    "pending_invitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des invitations en attente"
+    },
+    "planning_image": {
+      "type": "string",
+      "description": "URL de l'image du planning de lecture"
+    },
+    "current_day_override": {
+      "type": "number",
+      "description": "Jour actuel d\u00e9fini manuellement"
+    },
+    "current_day_set_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date \u00e0 laquelle le jour actuel a \u00e9t\u00e9 d\u00e9fini manuellement"
+    }
+  },
+  "required": [
+    "title",
+    "book_id"
+  ]
+}

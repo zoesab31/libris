@@ -1,0 +1,51 @@
+{
+  "name": "SharedReadingWishlist",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la liste de souhaits"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description de la liste"
+    },
+    "book_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres dans la liste de souhaits",
+      "default": []
+    },
+    "shared_with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des amies avec qui la liste est partag\u00e9e (peuvent la modifier)",
+      "default": []
+    },
+    "pending_invitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des invitations en attente",
+      "default": []
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "Liste publique visible par toutes les amies"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji pour la liste",
+      "default": "\ud83d\udcda"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

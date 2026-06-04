@@ -1,0 +1,93 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "profile_picture": {
+      "type": "string",
+      "description": "URL de la photo de profil"
+    },
+    "friend_code": {
+      "type": "string",
+      "description": "Code ami unique pour ajouter des amies"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Nom d'affichage personnalis\u00e9 (ex: Zo\u00e9, Clara, etc.)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "default": "light",
+      "description": "Th\u00e8me de l'application (clair ou sombre)"
+    },
+    "last_active_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Derni\u00e8re activit\u00e9 de l'utilisateur (pour d\u00e9terminer le statut en ligne)"
+    },
+    "profile_banner": {
+      "type": "string",
+      "description": "URL de la banni\u00e8re de profil"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Bio personnalis\u00e9e (max 200 caract\u00e8res)"
+    },
+    "pseudo": {
+      "type": "string",
+      "description": "Pseudo unique (@pseudo)"
+    },
+    "favorite_quote": {
+      "type": "string",
+      "description": "Citation favorite"
+    },
+    "books_to_know_me": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des 4 livres pour me conna\u00eetre",
+      "maxItems": 4
+    },
+    "favorite_books_2024": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des 4 coups de c\u0153ur 2024",
+      "maxItems": 4
+    },
+    "profile_visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "friends",
+        "private"
+      ],
+      "default": "public",
+      "description": "Visibilit\u00e9 du profil"
+    },
+    "show_reading_stats": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher les statistiques de lecture"
+    },
+    "show_badges": {
+      "type": "boolean",
+      "default": true,
+      "description": "Afficher les badges"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Points totaux accumul\u00e9s"
+    }
+  },
+  "required": [
+    "profile_picture",
+    "friend_code"
+  ]
+}

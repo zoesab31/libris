@@ -74,13 +74,9 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
 
   useEffect(() => {
     if (numberOfDays > 0 && selectedDay === null) {
-      if (reading.status === 'Terminée') {
-        // LC terminée : afficher tous les messages (on met un flag spécial -1)
-        setSelectedDay(-1);
-      } else {
-        const currentDay = getCurrentDay();
-        setSelectedDay(currentDay);
-      }
+      // Toujours ouvrir sur le jour actuel (même si LC terminée)
+      const currentDay = getCurrentDay();
+      setSelectedDay(currentDay);
     }
   }, [numberOfDays, reading.status]);
 
@@ -310,20 +306,18 @@ export default function SharedReadingDetailsDialog({ reading, book, open, onOpen
               >
                 📋
               </Button>
-              {reading.status === 'Terminée' && (
-                <Button
-                  size="sm"
-                  onClick={() => setSelectedDay(-1)}
-                  className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
-                  style={{
-                    backgroundColor: selectedDay === -1 ? '#9C27B0' : '#F3E5F5',
-                    color: selectedDay === -1 ? 'white' : '#9C27B0',
-                    border: 'none',
-                  }}
-                >
-                  Tout
-                </Button>
-              )}
+              <Button
+                size="sm"
+                onClick={() => setSelectedDay(-1)}
+                className="h-10 md:h-9 min-w-[56px] md:min-w-[44px] px-3 md:px-2 text-sm md:text-xs rounded-lg shrink-0 font-bold"
+                style={{
+                  backgroundColor: selectedDay === -1 ? '#9C27B0' : '#F3E5F5',
+                  color: selectedDay === -1 ? 'white' : '#9C27B0',
+                  border: 'none',
+                }}
+              >
+                Tout
+              </Button>
               {Array.from({ length: numberOfDays }, (_, i) => i + 1).map(day => (
                 <Button
                   key={day}

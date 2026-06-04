@@ -1,0 +1,42 @@
+{
+  "name": "NailInspo",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'inspiration"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "Livre associ\u00e9 (optionnel)"
+    },
+    "folder_path": {
+      "type": "string",
+      "description": "Chemin du dossier (ex: 'ACOTAR/Feyre' ou 'Romantasy/Printemps')"
+    },
+    "folder_cover_url": {
+      "type": "string",
+      "description": "URL de l'image de couverture du dossier"
+    },
+    "colors": {
+      "type": "string",
+      "description": "Couleurs utilis\u00e9es"
+    },
+    "note": {
+      "type": "string",
+      "description": "Notes"
+    },
+    "is_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "D\u00e9j\u00e0 r\u00e9alis\u00e9"
+    }
+  },
+  "required": [
+    "image_url"
+  ]
+}

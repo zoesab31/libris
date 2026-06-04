@@ -1,0 +1,33 @@
+{
+  "name": "FanArt",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre associ\u00e9"
+    },
+    "folder_path": {
+      "type": "string",
+      "description": "Chemin du dossier (ex: 'Keleana/Personnages' ou 'ACOTAR/Rhysand')"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image du fan art"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Lien source du fan art"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note personnelle"
+    }
+  },
+  "required": [
+    "image_url"
+  ]
+}

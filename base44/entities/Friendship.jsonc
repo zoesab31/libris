@@ -1,0 +1,36 @@
+{
+  "name": "Friendship",
+  "type": "object",
+  "properties": {
+    "friend_email": {
+      "type": "string",
+      "description": "Email de l'amie"
+    },
+    "friend_name": {
+      "type": "string",
+      "description": "Nom de l'amie"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "En attente",
+        "Accept\u00e9e"
+      ],
+      "default": "En attente",
+      "description": "Statut de l'amiti\u00e9"
+    },
+    "is_hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Masquer de la liste des meilleures amies"
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date de cr\u00e9ation"
+    }
+  },
+  "required": [
+    "friend_email"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "name": "ReadingJournalEntry",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre"
+    },
+    "user_book_id": {
+      "type": "string",
+      "description": "ID du UserBook"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "note",
+        "citation",
+        "r\u00e9flexion",
+        "question",
+        "th\u00e9orie"
+      ],
+      "default": "note",
+      "description": "Type d'entr\u00e9e"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu de l'entr\u00e9e"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "Num\u00e9ro de page"
+    },
+    "chapter": {
+      "type": "string",
+      "description": "Chapitre concern\u00e9"
+    },
+    "is_shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Partag\u00e9 avec les lectures communes"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "\ud83d\ude0a",
+        "\ud83d\ude0d",
+        "\ud83d\ude22",
+        "\ud83d\ude31",
+        "\ud83e\udd14",
+        "\ud83d\ude21",
+        "\ud83e\udd70",
+        "\ud83d\ude2d",
+        "\ud83d\udd25"
+      ],
+      "description": "Humeur/r\u00e9action"
+    }
+  },
+  "required": [
+    "book_id",
+    "content"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "BookOfTheYear",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ann\u00e9e"
+    },
+    "month": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Mois (pour votes mensuels pires livres)"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre \u00e9lu (null pour aucun livre)"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Pourquoi c'est votre livre/pire livre de l'ann\u00e9e"
+    },
+    "is_worst": {
+      "type": "boolean",
+      "default": false,
+      "description": "Est-ce la pire lecture"
+    }
+  },
+  "required": [
+    "year"
+  ]
+}

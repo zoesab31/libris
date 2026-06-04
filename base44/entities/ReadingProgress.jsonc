@@ -1,0 +1,24 @@
+{
+  "name": "ReadingProgress",
+  "type": "object",
+  "properties": {
+    "user_book_id": {
+      "type": "string",
+      "description": "ID du UserBook"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "Page atteinte"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure de la mise \u00e0 jour"
+    }
+  },
+  "required": [
+    "user_book_id",
+    "page_number",
+    "timestamp"
+  ]
+}

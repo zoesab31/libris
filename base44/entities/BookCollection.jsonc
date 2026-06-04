@@ -1,0 +1,27 @@
+{
+  "name": "BookCollection",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la collection (ex: 3 livres pour me conna\u00eetre)"
+    },
+    "book_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres (max 3)",
+      "maxItems": 3
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordre d'affichage"
+    }
+  },
+  "required": [
+    "title",
+    "book_ids",
+    "order"
+  ]
+}

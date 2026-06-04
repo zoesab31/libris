@@ -1,0 +1,63 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "friend_comment",
+        "new_quote",
+        "shared_reading_update",
+        "friend_request",
+        "bingo_complete",
+        "milestone",
+        "wishlist_invitation",
+        "suggestion"
+      ],
+      "description": "Type de notification"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre de la notification"
+    },
+    "message": {
+      "type": "string",
+      "description": "Message de la notification"
+    },
+    "link_type": {
+      "type": "string",
+      "enum": [
+        "book",
+        "comment",
+        "shared_reading",
+        "profile",
+        "quote",
+        "wishlist",
+        "suggestion"
+      ],
+      "description": "Type de lien"
+    },
+    "link_id": {
+      "type": "string",
+      "description": "ID de l'\u00e9l\u00e9ment li\u00e9"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Notification lue"
+    },
+    "from_user": {
+      "type": "string",
+      "description": "Email de l'utilisateur source"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email du destinataire de la notification"
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "message"
+  ]
+}

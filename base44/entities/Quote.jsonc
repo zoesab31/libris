@@ -1,0 +1,26 @@
+{
+  "name": "Quote",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre"
+    },
+    "quote_text": {
+      "type": "string",
+      "description": "Texte de la citation"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "Num\u00e9ro de page"
+    },
+    "note": {
+      "type": "string",
+      "description": "Note personnelle sur la citation"
+    }
+  },
+  "required": [
+    "book_id",
+    "quote_text"
+  ]
+}

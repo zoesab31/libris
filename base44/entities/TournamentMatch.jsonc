@@ -1,0 +1,41 @@
+{
+  "name": "TournamentMatch",
+  "type": "object",
+  "properties": {
+    "tournament_id": {
+      "type": "string",
+      "description": "ID du tournoi"
+    },
+    "round": {
+      "type": "string",
+      "enum": [
+        "round_of_16",
+        "quarter",
+        "semi",
+        "final"
+      ],
+      "description": "Tour du match"
+    },
+    "position": {
+      "type": "number",
+      "description": "Position dans le tour (0-7 pour 1/8, 0-3 pour 1/4, etc.)"
+    },
+    "book_1_id": {
+      "type": "string",
+      "description": "ID du premier livre"
+    },
+    "book_2_id": {
+      "type": "string",
+      "description": "ID du deuxi\u00e8me livre"
+    },
+    "winner_book_id": {
+      "type": "string",
+      "description": "ID du livre gagnant"
+    }
+  },
+  "required": [
+    "tournament_id",
+    "round",
+    "position"
+  ]
+}

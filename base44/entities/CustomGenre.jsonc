@@ -1,0 +1,18 @@
+{
+  "name": "CustomGenre",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom du genre personnalis\u00e9"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordre d'affichage",
+      "default": 0
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

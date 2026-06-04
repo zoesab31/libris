@@ -1,0 +1,59 @@
+{
+  "name": "ReadingComment",
+  "type": "object",
+  "properties": {
+    "user_book_id": {
+      "type": "string",
+      "description": "ID du UserBook"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "Num\u00e9ro de page ou % de progression"
+    },
+    "chapter": {
+      "type": "string",
+      "description": "Num\u00e9ro ou nom du chapitre"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Commentaire, impression, th\u00e9orie"
+    },
+    "is_spoiler": {
+      "type": "boolean",
+      "default": false,
+      "description": "Contient des spoilers"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "\ud83d\ude0a",
+        "\ud83d\ude0d",
+        "\ud83d\ude22",
+        "\ud83d\ude31",
+        "\ud83e\udd14",
+        "\ud83d\ude21",
+        "\ud83e\udd70"
+      ],
+      "description": "Humeur/r\u00e9action"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo du moment de lecture"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Plusieurs photos du moment"
+    }
+  },
+  "required": [
+    "book_id",
+    "comment"
+  ]
+}

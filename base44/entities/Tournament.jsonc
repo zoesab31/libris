@@ -1,0 +1,53 @@
+{
+  "name": "Tournament",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ann\u00e9e du tournoi"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "best",
+        "worst"
+      ],
+      "description": "Type de tournoi (meilleure ou pire lecture)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "setup",
+        "in_progress",
+        "completed"
+      ],
+      "default": "setup",
+      "description": "Statut du tournoi"
+    },
+    "current_round": {
+      "type": "string",
+      "enum": [
+        "round_of_16",
+        "quarter",
+        "semi",
+        "final"
+      ],
+      "description": "Tour actuel"
+    },
+    "winner_book_id": {
+      "type": "string",
+      "description": "ID du livre gagnant"
+    },
+    "participant_books": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs des livres participants"
+    }
+  },
+  "required": [
+    "year",
+    "type"
+  ]
+}

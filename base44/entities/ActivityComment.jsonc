@@ -1,0 +1,18 @@
+{
+  "name": "ActivityComment",
+  "type": "object",
+  "properties": {
+    "activity_id": {
+      "type": "string",
+      "description": "ID de l'activit\u00e9 comment\u00e9e"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Texte du commentaire"
+    }
+  },
+  "required": [
+    "activity_id",
+    "comment"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "Badge",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom du badge"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description du badge"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji ou URL de l'ic\u00f4ne"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "reading",
+        "social",
+        "completion",
+        "streak",
+        "diversity"
+      ],
+      "description": "Cat\u00e9gorie du badge"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "common",
+        "rare",
+        "epic",
+        "legendary"
+      ],
+      "default": "common",
+      "description": "Raret\u00e9 du badge"
+    },
+    "requirement_type": {
+      "type": "string",
+      "description": "Type de requirement (book_count, genre_count, etc.)"
+    },
+    "requirement_value": {
+      "type": "number",
+      "description": "Valeur requise pour d\u00e9bloquer"
+    },
+    "points": {
+      "type": "number",
+      "default": 10,
+      "description": "Points accord\u00e9s"
+    },
+    "color_primary": {
+      "type": "string",
+      "description": "Couleur principale"
+    },
+    "color_secondary": {
+      "type": "string",
+      "description": "Couleur secondaire pour gradient"
+    },
+    "unlock_message": {
+      "type": "string",
+      "description": "Message de d\u00e9blocage"
+    },
+    "is_secret": {
+      "type": "boolean",
+      "default": false,
+      "description": "Badge secret"
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "requirement_type",
+    "requirement_value"
+  ]
+}

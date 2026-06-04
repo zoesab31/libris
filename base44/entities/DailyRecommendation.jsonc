@@ -1,0 +1,52 @@
+{
+  "name": "DailyRecommendation",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de la recommandation (YYYY-MM-DD)"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre recommand\u00e9"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Raison de la recommandation"
+    },
+    "match_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Score de correspondance (0-100)"
+    },
+    "recommended_by_friends": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Emails des amies qui ont aim\u00e9 ce livre"
+    },
+    "similar_to_books": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs des livres similaires d\u00e9j\u00e0 lus"
+    },
+    "is_dismissed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Utilisateur a ignor\u00e9 cette recommandation"
+    }
+  },
+  "required": [
+    "date",
+    "book_id",
+    "reason",
+    "match_score"
+  ]
+}

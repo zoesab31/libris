@@ -138,6 +138,25 @@ export default function UserProfile() {
     enabled: !!userEmail && activeTab === 'map'
   });
 
+  const { data: sharedReadings = [] } = useQuery({
+    queryKey: ['sharedReadings', userEmail],
+    queryFn: () => base44.entities.SharedReading.filter({ created_by: userEmail }),
+    enabled: !!userEmail && activeTab === 'sharedreviews'
+  });
+
+  const { data: sharedReadingMessages = [] } = useQuery({
+    queryKey: ['sharedReadingMessages_profile', userEmail],
+    queryFn: async () => {
+      const allSRs = await base44.entities.SharedReading.filter({ created_by: userEmail });
+      if (!allSRs.length) return [];
+      const allMsgs = await Promise.all(
+        allSRs.map(sr => base44.entities.SharedReadingMessage.filter({ shared_reading_id: sr.id, created_by: userEmail }))
+      );
+      return allMsgs.flat();
+    },
+    enabled: !!userEmail && activeTab === 'sharedreviews'
+  });
+
   const { data: userPALs = [] } = useQuery({
     queryKey: ['userPALs', userEmail],
     queryFn: () => base44.entities.ReadingList.filter({ created_by: userEmail }),
@@ -585,6 +604,13 @@ export default function UserProfile() {
 
               <Map className="w-5 h-5 mr-2" />
               Map
+            </TabsTrigger>
+            <TabsTrigger
+              value="sharedreviews"
+              className="rounded-lg font-bold px-4 py-2 text-sm md:text-base"
+              style={activeTab === "sharedreviews" ? { backgroundColor: accentColor, color: '#FFFFFF' } : { color: '#000000' }}>
+              <UsersRound className="w-5 h-5 mr-2" />
+              Avis LC
             </TabsTrigger>
 
           </TabsList>
@@ -1691,6 +1717,44 @@ export default function UserProfile() {
                 <p style={{ color: 'var(--warm-pink)' }}>Aucun fan art</p>
               </div>
             }
+          </TabsContent>
+
+          <TabsContent value="sharedreviews">
+            <div className="space-y-4">
+              {sharedReadingMessages.length === 0 && (
+                <div className="text-center py-12">
+                  <UsersRound className="w-16 h-16 mx-auto mb-4 opacity-20" style={{ color: 'var(--warm-pink)' }} />
+                  <p style={{ color: 'var(--warm-pink)' }}>Aucun avis de lecture commune</p>
+                </div>
+              )}
+              {sharedReadingMessages.filter(msg => msg.message).map((msg) => {
+                const sr = sharedReadings.find(s => s.id === msg.shared_reading_id);
+                const book = sr ? allBooks.find(b => b.id === sr.book_id) : null;
+                return (
+                  <Card key={msg.id} className="p-4 bg-white border-0 shadow-md">
+                    <div className="flex gap-4 items-start">
+                      {book?.cover_url && (
+                        <div className="w-14 h-20 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
+                          <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {book && <p className="font-bold text-sm" style={{ color: accentColor }}>{book.title}</p>}
+                          {sr && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3E5F5', color: '#9C27B0' }}>📅 Jour {msg.day_number}</span>}
+                          {msg.mood && <span className="text-base">{msg.mood}</span>}
+                          {msg.chapter && <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#FCE4EC', color: '#E91E63' }}>📖 {msg.chapter}</span>}
+                        </div>
+                        <p className="text-sm leading-relaxed" style={{ color: '#2D1F3F' }}>{msg.message}</p>
+                        <p className="text-xs mt-2" style={{ color: '#A78BBA' }}>
+                          {new Date(msg.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           </TabsContent>
 
           <TabsContent value="map">

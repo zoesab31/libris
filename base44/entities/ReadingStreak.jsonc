@@ -1,0 +1,27 @@
+{
+  "name": "ReadingStreak",
+  "type": "object",
+  "properties": {
+    "current_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de jours cons\u00e9cutifs actuels"
+    },
+    "longest_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Plus longue s\u00e9rie de jours cons\u00e9cutifs"
+    },
+    "last_reading_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Derni\u00e8re date de lecture enregistr\u00e9e"
+    },
+    "total_reading_days": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre total de jours de lecture"
+    }
+  },
+  "required": []
+}

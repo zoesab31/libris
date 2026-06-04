@@ -1,0 +1,22 @@
+{
+  "name": "ReadingNote",
+  "type": "object",
+  "properties": {
+    "user_book_id": {
+      "type": "string",
+      "description": "ID du UserBook"
+    },
+    "page": {
+      "type": "number",
+      "description": "Num\u00e9ro de page (optionnel)"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu de la note"
+    }
+  },
+  "required": [
+    "user_book_id",
+    "content"
+  ]
+}

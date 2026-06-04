@@ -1,0 +1,44 @@
+{
+  "name": "BookBoyfriend",
+  "type": "object",
+  "properties": {
+    "character_name": {
+      "type": "string",
+      "description": "Nom du personnage"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre d'o\u00f9 vient le personnage"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Classement dans le top (1 = pr\u00e9f\u00e9r\u00e9)"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female"
+      ],
+      "default": "male",
+      "description": "Genre du personnage"
+    },
+    "why_i_love_him": {
+      "type": "string",
+      "description": "Pourquoi vous l'adorez"
+    },
+    "best_quote": {
+      "type": "string",
+      "description": "Citation pr\u00e9f\u00e9r\u00e9e du personnage"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Photo/fanart du personnage"
+    }
+  },
+  "required": [
+    "character_name",
+    "book_id",
+    "rank"
+  ]
+}

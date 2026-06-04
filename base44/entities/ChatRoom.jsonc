@@ -1,0 +1,43 @@
+{
+  "name": "ChatRoom",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "PRIVATE",
+        "GROUP"
+      ],
+      "description": "Type de chat"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nom du chat (optionnel pour priv\u00e9)"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails des participants"
+    },
+    "linked_reading_id": {
+      "type": "string",
+      "description": "ID de la lecture commune li\u00e9e (si applicable)"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'archivage"
+    },
+    "last_message_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date du dernier message"
+    }
+  },
+  "required": [
+    "type",
+    "participants"
+  ]
+}

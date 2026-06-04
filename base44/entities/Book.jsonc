@@ -1,0 +1,91 @@
+{
+  "name": "Book",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre du livre"
+    },
+    "author": {
+      "type": "string",
+      "description": "Auteur du livre"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "URL de la couverture"
+    },
+    "isbn": {
+      "type": "string",
+      "description": "ISBN du livre"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "Fran\u00e7ais",
+        "Anglais",
+        "Espagnol",
+        "Italien",
+        "Allemand",
+        "Autre"
+      ],
+      "default": "Fran\u00e7ais",
+      "description": "Langue du livre"
+    },
+    "genre": {
+      "type": "string",
+      "enum": [
+        "Romance",
+        "Fantasy",
+        "Thriller",
+        "Policier",
+        "Science-Fiction",
+        "Contemporain",
+        "Historique",
+        "Young Adult",
+        "New Adult",
+        "Dystopie",
+        "Paranormal",
+        "Autre"
+      ]
+    },
+    "custom_genres": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags/genres personnalis\u00e9s (Fantasy, Romantasy, Dark Romance, Thriller, Horreur, etc.)"
+    },
+    "page_count": {
+      "type": "number",
+      "description": "Nombre de pages"
+    },
+    "publication_year": {
+      "type": "number",
+      "description": "Ann\u00e9e de publication"
+    },
+    "synopsis": {
+      "type": "string",
+      "description": "R\u00e9sum\u00e9 du livre"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Audio",
+          "Num\u00e9rique",
+          "Broch\u00e9",
+          "Reli\u00e9",
+          "Poche",
+          "Wattpad",
+          "Service Press"
+        ]
+      },
+      "description": "Tags du livre (format, plateforme)"
+    }
+  },
+  "required": [
+    "title",
+    "author"
+  ]
+}

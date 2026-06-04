@@ -1,0 +1,64 @@
+{
+  "name": "LibraryDecoration",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom de la d\u00e9coration"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "plant",
+        "candle",
+        "mug",
+        "crystal",
+        "book",
+        "photo",
+        "light",
+        "other"
+      ],
+      "description": "Type de d\u00e9coration"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image de la d\u00e9coration"
+    },
+    "price": {
+      "type": "number",
+      "description": "Prix en points"
+    },
+    "position_x": {
+      "type": "number",
+      "description": "Position X sur l'\u00e9tag\u00e8re"
+    },
+    "position_y": {
+      "type": "number",
+      "description": "Position Y sur l'\u00e9tag\u00e8re"
+    },
+    "shelf_number": {
+      "type": "number",
+      "description": "Num\u00e9ro de l'\u00e9tag\u00e8re"
+    },
+    "rotation": {
+      "type": "number",
+      "description": "Rotation en degr\u00e9s"
+    },
+    "scale": {
+      "type": "number",
+      "default": 1,
+      "description": "\u00c9chelle de l'objet"
+    },
+    "is_owned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Poss\u00e9d\u00e9 par l'utilisateur"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "image_url",
+    "price"
+  ]
+}

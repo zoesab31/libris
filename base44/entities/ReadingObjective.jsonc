@@ -1,0 +1,53 @@
+{
+  "name": "ReadingObjective",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'objectif"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description d\u00e9taill\u00e9e (optionnel)"
+    },
+    "year": {
+      "type": "number",
+      "description": "Ann\u00e9e de l'objectif"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "livres",
+        "pages",
+        "jours",
+        "pourcentage",
+        "aucun"
+      ],
+      "default": "livres",
+      "description": "Unit\u00e9 de l'objectif"
+    },
+    "target_count": {
+      "type": "number",
+      "description": "Valeur cible (ex: 3 livres)"
+    },
+    "progress_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Progression actuelle"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Non commenc\u00e9",
+        "En cours",
+        "Termin\u00e9"
+      ],
+      "default": "Non commenc\u00e9",
+      "description": "Statut de l'objectif"
+    }
+  },
+  "required": [
+    "title",
+    "year"
+  ]
+}

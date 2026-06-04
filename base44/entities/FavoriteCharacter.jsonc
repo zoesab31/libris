@@ -1,0 +1,38 @@
+{
+  "name": "FavoriteCharacter",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur"
+    },
+    "character_name": {
+      "type": "string",
+      "description": "Nom du personnage"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre d'o\u00f9 vient le personnage"
+    },
+    "description": {
+      "type": "string",
+      "description": "Pourquoi ce personnage est sp\u00e9cial"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de l'image du personnage (optionnel)"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordre d'affichage (1-4)",
+      "minimum": 1,
+      "maximum": 4
+    }
+  },
+  "required": [
+    "user_id",
+    "character_name",
+    "book_id",
+    "order"
+  ]
+}

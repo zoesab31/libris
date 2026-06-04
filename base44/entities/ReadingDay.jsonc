@@ -1,0 +1,14 @@
+{
+  "name": "ReadingDay",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Jour de lecture au format YYYY-MM-DD"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

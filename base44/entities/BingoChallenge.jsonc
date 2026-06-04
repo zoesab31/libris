@@ -1,0 +1,52 @@
+{
+  "name": "BingoChallenge",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Ann\u00e9e du bingo",
+      "default": 2025
+    },
+    "grid_size": {
+      "type": "number",
+      "enum": [
+        16,
+        25
+      ],
+      "description": "Taille de la grille (16 ou 25 cases)",
+      "default": 25
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre du d\u00e9fi"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description du d\u00e9fi"
+    },
+    "position": {
+      "type": "number",
+      "description": "Position dans la grille (0-24 pour 25 cases, 0-15 pour 16 cases)"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "D\u00e9fi compl\u00e9t\u00e9"
+    },
+    "book_id": {
+      "type": "string",
+      "description": "ID du livre qui valide ce d\u00e9fi"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de validation"
+    }
+  },
+  "required": [
+    "title",
+    "position",
+    "year",
+    "grid_size"
+  ]
+}
