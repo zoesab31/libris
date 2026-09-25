@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import RealtimeSync from '@/components/RealtimeSync';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -66,6 +67,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationTracker />
+          <RealtimeSync />
           <AuthenticatedApp />
         </Router>
         <Toaster />
