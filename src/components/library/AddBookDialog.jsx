@@ -13,6 +13,7 @@ import { Loader2, Music as MusicIcon, Sparkles, Plus, BookOpen, Search, Upload, 
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import BarcodeScanner from "./BarcodeScanner";
+import { searchBooks } from "@/lib/bookSearch";
 
 // Helper function to extract dominant color from image
 const getDominantColor = (imageUrl) => {
@@ -136,97 +137,15 @@ export default function AddBookDialog({ open, onOpenChange, user }) {
     if (query.trim().length < 2) return;
     setIsSearching(true);
     setSearchResults([]);
-
-    const results = [];
-
-    // ── Source 1: Google Books (best for recent French translations) ──
     try {
-      const gbResponse = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&orderBy=relevance`
-      );
-      if (gbResponse.ok) {
-        const gbData = await gbResponse.json();
-        if (gbData.items) {
-          for (const item of gbData.items) {
-            const info = item.volumeInfo;
-            if (!info?.title) continue;
-            let coverUrl = "";
-            if (info.imageLinks) {
-              coverUrl = (info.imageLinks.extraLarge || info.imageLinks.large ||
-                info.imageLinks.medium || info.imageLinks.thumbnail ||
-                info.imageLinks.smallThumbnail || "").replace('http:', 'https:');
-              if (coverUrl) coverUrl = coverUrl.replace('zoom=1', 'zoom=3');
-            }
-            results.push({
-              id: `gb-${item.id}`,
-              title: info.title,
-              author: (info.authors || ["Auteur inconnu"]).join(", "),
-              year: info.publishedDate ? parseInt(info.publishedDate) : null,
-              pageCount: info.pageCount || null,
-              description: info.description || "",
-              coverUrl,
-              categories: info.categories || [],
-              isbn: info.industryIdentifiers?.find(i => i.type === 'ISBN_13')?.identifier ||
-                    info.industryIdentifiers?.[0]?.identifier || "",
-              source: 'google'
-            });
-          }
-        }
-      }
-    } catch (e) {
-      console.log("Google Books search failed:", e);
+      const books = await searchBooks(query);
+      setSearchResults(books);
+    } catch (error) {
+      console.error("Erreur de recherche:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
-
-    // ── Source 2: Open Library (no rate limit, broad coverage) ──
-    try {
-      const olResponse = await fetch(
-        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=key,title,author_name,first_publish_year,number_of_pages_median,subject,isbn,cover_i,language`
-      );
-      if (olResponse.ok) {
-        const olData = await olResponse.json();
-        if (olData.docs) {
-          for (const doc of olData.docs) {
-            if (!doc.title) continue;
-            const coverId = doc.cover_i;
-            results.push({
-              id: `ol-${doc.key}`,
-              title: doc.title,
-              author: (doc.author_name || ["Auteur inconnu"]).join(", "),
-              year: doc.first_publish_year || null,
-              pageCount: doc.number_of_pages_median || null,
-              description: "",
-              coverUrl: coverId ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg` : "",
-              categories: doc.subject ? doc.subject.slice(0, 3) : [],
-              isbn: doc.isbn?.[0] || "",
-              source: 'openlibrary'
-            });
-          }
-        }
-      }
-    } catch (e) {
-      console.log("Open Library search failed:", e);
-    }
-
-    // ── Deduplicate by title+author (case-insensitive) ──
-    const seen = new Set();
-    const deduped = results.filter(b => {
-      const key = `${b.title.toLowerCase().trim()}|${b.author.toLowerCase().trim()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    // ── Sort: books with cover first, then by year (newer first) ──
-    deduped.sort((a, b) => {
-      if (!!b.coverUrl !== !!a.coverUrl) return b.coverUrl ? 1 : -1;
-      if (a.year && b.year) return b.year - a.year;
-      if (a.year && !b.year) return -1;
-      if (!a.year && b.year) return 1;
-      return 0;
-    });
-
-    setSearchResults(deduped.slice(0, 20));
-    setIsSearching(false);
   };
 
   // Debounced auto-search
