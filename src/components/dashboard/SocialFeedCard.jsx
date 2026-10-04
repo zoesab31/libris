@@ -35,7 +35,7 @@ export default function SocialFeedCard({ activity, currentUser, allUsers }) {
     enabled: showComments,
   });
 
-  const activityUser = allUsers?.find(u => u.email === activity.created_by);
+  const activityUser = allUsers?.find(u => u.id === activity.created_by_id) || allUsers?.find(u => u.email === activity.created_by);
   const hasLiked = activity.likes?.includes(currentUser?.email);
 
   const toggleLikeMutation = useMutation({
@@ -80,7 +80,7 @@ export default function SocialFeedCard({ activity, currentUser, allUsers }) {
   };
 
   const getActivityText = () => {
-    const userName = activityUser?.display_name || activityUser?.full_name || activity.created_by?.split('@')[0];
+    const userName = activityUser?.display_name || activityUser?.full_name || activityUser?.email?.split('@')[0] || 'Une amie';
     
     switch (activity.activity_type) {
       case 'book_finished':
@@ -233,7 +233,7 @@ export default function SocialFeedCard({ activity, currentUser, allUsers }) {
         {showComments && (
           <div className="mt-4 space-y-3">
             {comments.map(comment => {
-              const commentUser = allUsers?.find(u => u.email === comment.created_by);
+              const commentUser = allUsers?.find(u => u.id === comment.created_by_id) || allUsers?.find(u => u.email === comment.created_by);
               return (
                 <div key={comment.id} className="flex gap-2">
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"

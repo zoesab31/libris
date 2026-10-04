@@ -112,15 +112,21 @@ export default function Dashboard() {
     enabled: !!user
   });
 
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const { data: friendsQuotes = [] } = useQuery({
-    queryKey: ['friendsQuotes'],
+    queryKey: ['friendsQuotes', user?.email],
     queryFn: async () => {
       const friendsEmails = myFriends.map((f) => f.friend_email);
-      if (friendsEmails.length === 0) return [];
-      const results = await Promise.all(friendsEmails.map((email) => base44.entities.Quote.filter({ created_by: email })));
-      return results.flat();
+      const friendIds = allUsers.filter((u) => friendsEmails.includes(u.email)).map((u) => u.id);
+      if (friendIds.length === 0) return [];
+      const results = await base44.entities.Quote.filter({ created_by_id: { $in: friendIds } });
+      return Array.isArray(results) ? results : (results.items || []);
     },
-    enabled: myFriends.length > 0
+    enabled: myFriends.length > 0 && allUsers.length > 0
   });
 
   const { data: readingDayToday = [] } = useQuery({
@@ -179,19 +185,15 @@ export default function Dashboard() {
     queryKey: ['activityFeed'],
     queryFn: async () => {
       const friendsEmails = myFriends.map((f) => f.friend_email);
+      const emailById = Object.fromEntries(allUsers.map((u) => [u.id, u.email]));
       if (friendsEmails.length === 0) return [];
       const allActivities = await base44.entities.ActivityFeed.list('-created_date', 50);
       return allActivities.filter((activity) =>
-      friendsEmails.includes(activity.created_by) && activity.is_visible
+      friendsEmails.includes(emailById[activity.created_by_id]) && activity.is_visible
       );
     },
-    enabled: myFriends.length > 0,
+    enabled: myFriends.length > 0 && allUsers.length > 0,
     refetchInterval: 30000
-  });
-
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list()
   });
 
   const { data: sharedReadings = [] } = useQuery({
@@ -827,12 +829,13 @@ export default function Dashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                         {friendsBooks.slice(0, 4).map((userBook, idx) => {
                         const book = allBooks.find((b) => b.id === userBook.book_id);
-                        const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
-                        const friendUser = allUsers.find((u) => u.email === userBook.created_by);
+                        const friendEmail = allUsers.find((u) => u.id === userBook.created_by_id)?.email;
+                        const friend = myFriends.find((f) => f.friend_email === friendEmail);
+                        const friendUser = allUsers.find((u) => u.email === friendEmail);
                         if (!book || !friend) return null;
                         const progress = userBook.current_page && book.page_count ?
                         Math.round(userBook.current_page / book.page_count * 100) : 0;
-                        const friendQuotes = friendsQuotes.filter((q) => q.book_id === book.id && q.created_by === userBook.created_by);
+                        const friendQuotes = friendsQuotes.filter((q) => q.book_id === book.id && q.created_by_id === userBook.created_by_id);
                         const friendQuote = friendQuotes.length > 0 ? friendQuotes[Math.floor(Math.random() * friendQuotes.length)] : null;
 
                         return (
