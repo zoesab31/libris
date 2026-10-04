@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import BookDetailsDialog from "../components/library/BookDetailsDialog";
 import BestFriendCard from "../components/dashboard/BestFriendCard";
+import ActiveSharedReadingCard from "../components/dashboard/ActiveSharedReadingCard";
 import SocialFeedCard from "../components/dashboard/SocialFeedCard";
 import ReadingStreakCard from "../components/dashboard/ReadingStreakCard";
 import MiniReadingCalendar from "../components/dashboard/MiniReadingCalendar";
@@ -93,16 +94,16 @@ export default function Dashboard() {
   });
 
   const { data: friendsBooks = [] } = useQuery({
-    queryKey: ['friendsBooks'],
+    queryKey: ['friendsBooks', user?.email],
     queryFn: async () => {
       const friendsEmails = myFriends.map((f) => f.friend_email);
       if (friendsEmails.length === 0) return [];
       const allFriendsBooks = await Promise.all(
-        friendsEmails.map((email) => base44.entities.UserBook.filter({ created_by: email }))
+        friendsEmails.map((email) => base44.entities.UserBook.filter({ created_by: email, status: "En cours" }))
       );
       return allFriendsBooks.flat();
     },
-    enabled: myFriends.length > 0
+    enabled: !!user && myFriends.length > 0
   });
 
   const { data: allQuotes = [] } = useQuery({
@@ -634,6 +635,11 @@ export default function Dashboard() {
               animate="visible"
               className="lg:col-span-2 space-y-4 md:space-y-6">
 
+              {/* Lecture commune en cours */}
+              <motion.div variants={itemVariants}>
+                <ActiveSharedReadingCard user={user} />
+              </motion.div>
+
               {/* Streak */}
               <motion.div variants={itemVariants}>
                 <ReadingStreakCard user={user} />
@@ -808,7 +814,7 @@ export default function Dashboard() {
               }
 
               {/* Tes amies lisent */}
-              {friendsBooks.filter((b) => b.status === "En cours").length > 0 &&
+              {friendsBooks.length > 0 &&
               <motion.div variants={itemVariants}>
                   <div className="glass-card-purple rounded-3xl shadow-sm overflow-hidden card-hover">
                     <div className="p-4 md:p-8">
@@ -819,7 +825,7 @@ export default function Dashboard() {
                         Tes amies lisent
                       </h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                        {friendsBooks.filter((b) => b.status === "En cours").slice(0, 4).map((userBook, idx) => {
+                        {friendsBooks.slice(0, 4).map((userBook, idx) => {
                         const book = allBooks.find((b) => b.id === userBook.book_id);
                         const friend = myFriends.find((f) => f.friend_email === userBook.created_by);
                         const friendUser = allUsers.find((u) => u.email === userBook.created_by);
